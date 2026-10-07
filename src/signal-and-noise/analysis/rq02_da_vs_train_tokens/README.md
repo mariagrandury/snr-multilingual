@@ -1,28 +1,68 @@
 # Decision accuracy against the tokens of the language seen
 
 Does a language's BPB rank the design variants like the reference once the
-proxy has seen enough of that language? Per proxy size and tenth of the run,
-the mean over languages of DA-goal (against the 1.7B final), DA-ckpt (against
-the proxy size's own final) and DA-size, against the training tokens of the
-language the proxies had seen; every figure over the multi-axis pairs, with
-mono-axis twins of the DA-goal and DA-ckpt figures. The figures and tables are
-written by
-[`../rq01_scaling_predictability/tokens_seen.py`](../rq01_scaling_predictability/tokens_seen.py)
-(pool `predictivity_all`), from the ladder-report snapshot of 2026-10-06; they
-were moved here from `rq01_scaling_predictability/` on 2026-10-07. The paper
-copy is `da_goal_multi_axes_across_langs_bpb_paper.png`. The above-chance
-counterpart is in
-[`../rq00_chance_vs_train_tokens/`](../rq00_chance_vs_train_tokens/README.md).
+proxy has seen enough of that language? Each point is the mean over 50
+languages (one BPB task each) of a decision accuracy at one proxy size and
+tenth of the run, placed at the tokens of that language the proxies had seen.
 
-**The 600M dip is the depth axis, not a loader fault.** DA-goal at the final
-checkpoint is 0.92 at 350M, 0.74 at 600M and 0.92 at 1B over the same pair
-set. At the 600M final the shallow cell has a lower BPB than its deep twin in
-96 % of the matched (L, scheme, language) comparisons, against at most 28 % at
-every other size (0.5 % at 1.7B), so every deep/shallow pair flips against the
-reference: in an L50 language, two of the six pairs, hence the many languages
-at 0.67. The 600M shallow rung trains on 15 % more compute than the deep one
-(3 to 9 % at the other sizes). The dip is a property of the 600M rung's
-design, and the figure needs that sentence wherever it is shown.
+Setup: pool `predictivity_seeds`, the pairs at seed 1904 across every data
+build (scheme A/B/C × temperature) among the variants that train the language,
+multi-axis set, at least 3 pairs per language (median 36, 6 to 325), proxies
+90M–1B and the 1.7B line as its own early checkpoints against its final, no
+task filter. Three accuracies: DA-goal (against the 1.7B final), DA-ckpt
+(against the proxy size's own final) and DA-size (each size's final against
+the 1.7B final), DA-goal and DA-ckpt each with a mono-axis twin.
+
+Numbers are from the ladder report of 2026-10-06 04:26 (outputs commit
+b316f53b, read 2026-10-07), written by
+[`../rq01_scaling_predictability/tokens_seen.py`](../rq01_scaling_predictability/tokens_seen.py);
+the figures moved here from `rq01_scaling_predictability/` on 2026-10-07. The
+above-chance counterpart is in
+[chance against tokens seen](../rq00_chance_vs_train_tokens/README.md), and
+decision accuracy over every task in
+[decision accuracy](../rq02_decision_accuracy/README.md).
+
+## Opening figure: DA-goal of BPB against tokens seen
+
+![DA-goal of BPB vs tokens seen, paper copy](pretraining/predictivity_seeds/da_goal_multi_axes_across_langs_bpb_paper.png)
+
+[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_goal_multi_axes_across_langs_bpb_paper.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_goal_multi_axes_across_langs_bpb_paper.csv)
+
+DA-goal, no filter, multi-axis pairs, pool `predictivity_seeds`, 50
+languages; the paper copy of the first figure in the generated block below.
+
+Key findings:
+- **The 600M rung is the outlier, not the smallest proxy.** At the final
+  checkpoint DA-goal is 0.96 at 90M and 175M, 0.92 at 350M, 0.74 at 600M and
+  0.92 at 1B (standard error over languages 0.006–0.010).
+- **Tokens seen do not set the level.** The 90M proxies read 0.95 at their
+  first tenth on 0.008 B tokens of a language, while the 600M proxies read
+  0.74 at their final on 0.51 B; 1B at its first tenth (0.08 B) reads 0.76
+  against 0.96 for 175M at its final (0.15 B).
+- **More training does not close the 600M gap.** 600M stays at 0.70–0.74 over
+  the whole run, while 350M climbs from 0.83 to 0.92 and 1B from 0.76 to 0.92.
+- **The reference settles early.** The 1.7B line reads 0.91 against its own
+  final at the first tenth, 0.96 at the second and 0.996 at the ninth.
+- **The 600M dip is sharpest in the smallest pair sets.** All 16 languages
+  with four variants (six pairs) read exactly 0.67 at the 600M final, two of
+  six pairs flipped, against 0.97–0.99 at 90M–1B; they are 16 of the 18
+  languages at 0.67.
+- **The 600M proxies agree with themselves, not with the reference.** Their
+  DA-ckpt is 0.94 at the first tenth and 0.997 at the ninth, the highest proxy
+  there, so the 600M order settles early on a ranking the 1.7B final does not
+  share.
+- **Final training loss does not single out 600M.** The shallow cell ends
+  below its deep twin in 7 of 10 matched (L, data build) pairs at 600M and
+  also at 1B, where DA-goal is 0.92
+  ([`scaling_fit.csv`](../rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_fit.csv)),
+  so which design axis drives the dip is open.
+
+Follow-ups:
+- A per-pair breakdown of the 600M final (which design axis each flipped pair
+  moves), to test whether the depth axis drives the dip; today's CSVs give
+  only per-language DA.
+- The same figures on the benchmark-BPB twins once they exist at every
+  checkpoint (finals only in these outputs).
 
 <!-- BEGIN auto:da-vs-train-tokens (tokens_seen.py --pool predictivity_seeds) -->
 ## Decision accuracy against the tokens of the language seen
@@ -96,6 +136,10 @@ Key findings:
 Key findings:
 - Over 50 languages, the proxies' last point ranges from 0.74 (600M) to 0.96 (175M).
 <!-- END auto:da-vs-train-tokens -->
+
+Key findings (generated figures):
+- **The mono-axis pairs read lower for DA-goal at every point (50 of 50), and for DA-ckpt at 43 of 45.** DA-goal at the final is 0.60 at 600M and 0.88–0.94 at the other proxies over the mono-axis pairs (median 12 per language), against 0.74 and 0.92–0.96 over the multi-axis set.
+- **DA-size has no size trend.** The finals read 0.96 (90M), 0.96 (175M), 0.92 (350M), 0.74 (600M) and 0.92 (1B), so a larger proxy does not rank this BPB population more like the 1.7B.
 
 Follow-ups:
 - A DA-goal figure with the 600M shallow rung left out, to show how much of the 600M dip the depth axis alone explains.

@@ -1,27 +1,81 @@
 # Task reformulation for the auto evals
 
-Status 2026-09-18; the generated blocks (`auto:rf-compare`, `auto:reformulations-gate`)
-are from the ladder-report snapshot **2026-09-30 23:54**, and the other dated
-sections (the pilot of 2026-09-18, the probe of 2026-09-23) keep their own dates.
+Status 2026-10-07. Every hand-written number outside the dated sections, and
+every generated block, is from the ladder-report snapshot **2026-10-06 04:26**
+(full refresh, commit b316f53b), read from this folder's CSVs and the
+`predictivity` gate mask (`../rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv`).
+
+The dated sections keep their own dates: the harness survey and the pilot of
+2026-09-18, the probe of 2026-09-23. The benchmark-BPB twins (`bbpb_*`) are
+left out of every count here.
+
 Companion to [plan/benchmark_selection.md](../../../../plan/benchmark_selection.md)
-(what we evaluate on) and [rq00_gate_and_curves](../rq00_gate_and_curves/) (the chance gate). The
-reference implementation is [lighteval_reference.py](lighteval_reference.py)
-(HuggingFace's FineWeb-edu ablation tasks) — it is a *reference*: everything
-here runs inside the lm-eval harness we already use.
+(what we evaluate on) and [the gate-and-curves README](../rq00_gate_and_curves/) (the chance gate).
+The reference implementation is [lighteval_reference.py](lighteval_reference.py)
+(HuggingFace's FineWeb-edu ablation tasks); everything here runs inside the lm-eval harness we already use.
 
-## Why
+## Research question
 
-Three quarters of the auto suite is at chance at these sizes: 113 of 461
-gated tasks clear chance at any size, and only 21 of 252 four-option tasks;
-`global_mmlu_full`, `global_piqa_*` and `truthfulqa-multi_mc1` never do.
+Do letter-format multiple-choice benchmarks leave chance at 90M–1.7B once the
+letters are dropped (`rf_`) or the items are rewritten as cloze statements
+(`rfgm_`), and do the reformulated twins then rank designs better?
+
+On 2026-09-18, before the twins and the probe promotions, 113 of 461 gated
+tasks cleared chance at any size, and only 21 of 252 four-option tasks. In
+today's mask, 549 of the 1,041 non-twin benchmark tasks clear chance at some
+size and 231 of the 615 four-option ones.
+
+`global_mmlu_full` clears in 6 of 37 languages at 175M, 2 at 350M, 1 at 1.7B
+and none at 90M, 600M or 1B. `global_piqa_*` clears in at most 3 of its 95
+tasks (at 1.7B), and `truthfulqa-multi_mc1` in 1 of 3 at every size but 600M.
+
 Base models at 90M–1.7B do not pick up the "answer with a letter" convention,
 so a lettered multiple-choice prompt measures the convention, not the
 knowledge. The lighteval file's fix for MMLU: no letters, no few-shot, the
-full answer string scored as the continuation after `Answer:`, `acc_norm`
+full answer string scored as the continuation after `Answer:`, with `acc_norm`
 (length-normalised) as the metric.
+
+## Setup
+
+Gate counts: the `predictivity` gate mask (seed 1904, every cell, data build
+and ladder, 90M–1.7B), read on the cells that trained the task's language
+(on every cell where none did). The twins exist only on the deep scheme-A seed-1904 cells, so a twin's verdict is
+taken over those runs and the original's over every cell of the pool.
+
+The mask carries 105 belebele, 37 Global-MMLU and 43 INCLUDE tasks, plus 45
+tasks of the five promoted families with an `rf_` twin (mmlu 1,
+commonsense_qa 1, bbh_mcq 17, acp_bench_mcq 7, cultural_bench_easy 19). The
+margins and significance tests use the deep scheme-A seed-1904 finals (six
+cells per size, L1–L50; five at 350M, no L1), trained languages only: 59
+belebele, 29 Global-MMLU and 36 INCLUDE tasks.
+
+## Highlighted result
+
+![The reformulations and the gate](reformulations_gate_paper.png)
+
+GitHub: [reformulations_gate_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate_paper.png) · [reformulations_gate_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate_paper.csv)
+
+Population: the `predictivity` gate mask, per family and size, the original
+(grey) against each twin, paired on the task; * marks McNemar p < 0.05. The
+counts below are tasks above the gate (`reformulations_gate_mcnemar.csv`).
+
+Key findings (snapshot 2026-10-06 04:26):
+
+- **The letter-format originals sit on chance.** Their median margin over chance (trained languages, deep scheme-A finals) stays within ±0.013 at every size; at 1.7B it is +0.011 on belebele, −0.010 on Global-MMLU and +0.005 on INCLUDE. At 1.7B the gate keeps 5 of 105 belebele, 1 of 37 Global-MMLU and 3 of 43 INCLUDE originals.
+- **Dropping the letters moves whole families across the gate.** At 1.7B the `rf_` twins pass in 86 of 105 belebele, 35 of 37 Global-MMLU and 31 of 43 INCLUDE tasks (McNemar twin-only : original-only 82 : 1, 34 : 0 and 29 : 1; p ≤ 5.8e-08). The McNemar test is significant at every size for belebele and Global-MMLU, and from 175M for INCLUDE.
+- **The margin gain is larger at 1.7B than at 90M.** rf − original goes from +0.030 / +0.017 / +0.004 at 90M to **+0.098 / +0.058 / +0.047** at 1.7B (belebele / Global-MMLU / INCLUDE), significant at 1.7B in 56 of 59, 26 of 29 and 18 of 36 tasks. belebele and INCLUDE grow at every size, while Global-MMLU dips to +0.009 at 175M and passes its 90M value again only from 600M (+0.019).
+- **The Gemini rewrite adds more where it exists.** `rfgm_` gains **+0.168** on belebele (59 of 59 tasks significant) and **+0.075** on INCLUDE (22 of 36) at 1.7B. `rfgm_belebele` passes the gate in 59 of 59 tasks at every size, and `rfgm_include_base_44` in 32 of 43 at 1.7B; Global-MMLU has no rewrite yet.
+- **The gain is not the metric.** On plain `acc` on both sides, the median rf gain per (task, model) at 1.7B is +0.124 belebele, +0.047 Global-MMLU and +0.062 INCLUDE, against +0.104 / +0.064 / +0.078 on acc_norm (`rf_significance.csv`, 288 pairs).
+- **Over the gate's whole population, the twins pass in 267 of 332 tasks at 1.7B (0.80)**, against 511 of 1,041 non-twin benchmark tasks (0.49). Their own 230 originals pass in 9.
+- **Passing the gate does not make the twins rank designs better.** Mean DA-size (proxy → 1.7B, multi-axis pairs, gated at proxy and reference, `predictivity`) is 0.485 at 90M and 0.550 at 1B on the twins (145 and 214 tasks), against 0.553 and 0.593 on the non-twin tasks (153 and 237). The twins' pairs come from the deep scheme-A cells alone (the L axis), so the two means are not on the same pairs.
+
+Follow-ups:
+
+- Draw DA-size for the twins against their own originals on the same deep scheme-A pairs, so that the last bullet compares like with like.
 
 ## What the harness already does per family
 
+The survey of 2026-09-18, before the twins and the probe promotions joined `auto`:
 467 auto tasks, all zero-shot (`NUM_FEWSHOT` is never set), 1.19M questions.
 Counts read from the offline cache (`$HF_HOME/datasets/*/dataset_info.json`).
 
@@ -145,13 +199,18 @@ scores `loglikelihood_acc_norm`). It is the metric the pipeline carries for
 the rf tasks: tasks.json's per-task `metric`, honoured by `results_io.flatten`
 (W&B) and `ladder_report._primary` (the report), so both show the same number.
 `compare.py` reads that `primary_score` from the ladder report through the
-rq00 gate (`above_random.scores_and_mask` on the `predictivity` pool, deep
-scheme-A cells): so the table below is `original acc → rf acc_norm`, and it
-moves only after `ladder_report.py --plot --publish --push-hf` has picked up
-new rf results and `scripts/refresh_analysis.sh` has re-run. Until then `compare.py` refuses to run against a report without the `rf_*` columns (it would empty the table); point `SNR_LADDER_DIR` at a report that has them. The conclusion
-does not depend on the metric — in the pilot at 1.7B in the trained
-languages belebele gains +0.14 on acc_norm and +0.16 on acc, Global-MMLU
-+0.08 and +0.06 (the per-task `acc` stays in the eval logs and W&B).
+chance gate (`above_random.scores_and_mask` on the `predictivity` pool, deep
+scheme-A cells). So the `auto:rf-compare` table further down (after
+[the length tell](#the-length-tell-and-where-it-actually-is)) is `original acc → rf acc_norm`.
+
+It moves only after `ladder_report.py --plot --publish --push-hf` has picked up
+new rf results and `scripts/refresh_analysis.sh` has re-run. Until then `compare.py` refuses to run against a report without the `rf_*` columns (it would empty the table); point `SNR_LADDER_DIR` at a report that has them.
+
+The conclusion does not depend on the metric. On the 2026-10-06 04:26 snapshot,
+the median rf gain per (task, model) at 1.7B is +0.104 on acc_norm and +0.124
+on acc for belebele, +0.064 and +0.047 for Global-MMLU, and +0.078 and +0.062
+for INCLUDE (`rf_significance.csv`, which carries the twin run's own `acc`, the
+metric the significance test reads).
 
 ### Pilot results (2026-09-18, final checkpoints, all 185 rf tasks)
 
@@ -346,7 +405,7 @@ python3.11 src/evals/scripts/rewrite_items_gemini.py online --family belebele --
 **`--L 50` is not an optimisation, it is the right task set.** The ladder
 only scores a task on models that trained its language (rule 2,
 `utils.trained_only`), so a twin outside the L-cell's languages is paid for
-and never read — the rq00 gate's own task counts are exactly this set. L50
+and never read — the chance gate's own task counts are exactly this set. L50
 keeps 124 of the 185 tasks:
 
 | family | all | L50 | items (L50) |
@@ -473,10 +532,10 @@ tasks are never dropped).
 **9. Report and analysis.** The report picks the `rfgm_*` columns up
 (`metric_for` → acc_norm); `compare.py` then draws five panels — original,
 rf, rfgm, rf − original, rfgm − original — with the significance counts
-per set, the table below gets both deltas, and the rq00 gate outputs
+per set, the table below gets both deltas, and the gate outputs
 (`first_size_above_random`, `gate_margin_by_benchmark`) list the `rf_*` and
 `rfgm_*` families as rows next to the originals: that is the direct read of
-the gate impact. Every other RQ (decision accuracy, SNR) sees the new tasks
+the gate impact. Every other analysis (decision accuracy, noise and SNR) sees the new tasks
 too, as it does the rf ones.
 
 ```bash
@@ -592,9 +651,11 @@ families above (whose numbers this does not change).
 
 **Outcome (2026-09-23).** Twenty of the twenty-one candidates were promoted
 into `groups.auto`, so every checkpoint is topped up with them and they enter
-every RQ — a population change, stated in `RULES.md`. `bbq` stays a candidate:
-it clears a 1/12 chance at 0.44 without telling us much, and it costs 23 min
-per checkpoint against 2.9 for mmlu and 0.3 for a belebele task.
+every analysis: a population change, stated in `RULES.md`.
+
+`bbq` was not promoted: it cleared a 1/12 chance at 0.44 without telling us
+much, and it cost 23 min per checkpoint against 2.9 for mmlu and 0.3 for a
+belebele task.
 
 ### The length tell, and where it actually is
 
@@ -666,6 +727,27 @@ GitHub: [rf_gate.png](https://github.com/mariagrandury/snr-multilingual/blob/mai
 GitHub: [rf_gate_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_by_language.png) · [rf_gate_by_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_by_language.csv) ·
 [rf_significance.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_significance.csv)
 
+The opening figure showed the twins crossing the gate; this one measures how far above chance they land.
+Population: `predictivity`, deep scheme-A seed-1904 cells (L1–L50; five at 350M, no L1), final checkpoints, 90M–1.7B, trained languages only; 59 belebele, 29 Global-MMLU and 36 INCLUDE tasks.
+
+Cells are medians over tasks of the margin over chance, `acc` for the originals and acc_norm for the twins.
+
+Key findings:
+
+- **The originals stay within ±0.013 of chance at every size** in all three families.
+- **The rf gain and its significance rise overall, but not at every size.** From 90M to 1.7B, belebele goes from +0.030 to +0.098 and INCLUDE from +0.004 to +0.047, rising at every size, while Global-MMLU goes from +0.017 to +0.058 with a dip to +0.009 at 175M. The significant-task counts by size (90M → 1.7B) are 41/45/55/54/57/56 of 59 on belebele, 6/14/17/15/24/26 of 29 on Global-MMLU and 7/3/9/10/14/18 of 36 on INCLUDE.
+- **rfgm beats rf at every size on belebele** (+0.067 at 90M → +0.168 at 1.7B; 53 of 59 tasks significant at 90M, 59 of 59 at 600M, 1B and 1.7B). On INCLUDE, rfgm stays within 0.003 of rf up to 350M (+0.022 each there) and pulls ahead from 600M (+0.075 against +0.047 at 1.7B).
+- **Per language at 1.7B** (`rf_gate_by_language.csv`), every belebele and Global-MMLU language gains. rf − original runs from +0.042 (hi) to +0.158 (ru) over 49 belebele languages (median +0.106; rfgm median +0.170) and from +0.011 (bn) to +0.107 (en) over 29 Global-MMLU languages (median +0.059).
+- **INCLUDE loses in two of 36 languages under each twin**: ne and ur under rf, ml and ur under rfgm; its median language gains +0.067 (rf) and +0.082 (rfgm).
+- **Part of every twin cell is the acc_norm choice.** Its mean offset (twin acc_norm − twin acc) over the 1,726 rf (task, model) pairs, 90M–1.7B, is −0.016 on belebele, +0.015 on Global-MMLU and +0.018 on INCLUDE, with a median of +0.004. The block's "rf median +0.005 … 36 % of the pairs" is a constant in `compare.py`; today |offset| exceeds half the pair's |acc_norm gain| in 45 % of the pairs.
+
+Follow-ups:
+
+- Draw each row once: `rf_gate.csv` holds 138 rows for 78 distinct cells, and `rf_gate_by_language.csv` 5,622 rows for 3,072, which makes the per-language figure unreadable. Splitting it by family would make the languages legible.
+- Compute the acc_norm-offset sentence in the block and caption from `rf_significance.csv` on every run, instead of the constants.
+- Add a same-metric panel (twin `acc` − original `acc`) beside the acc_norm one, since the z-test already runs on `acc`.
+- Add a Global-MMLU rfgm set: it is the family with the most items and the only letter family with no rewrite.
+
 <!-- BEGIN auto:rf-compare-probe (analysis/rq00_task_reformulation/compare.py --tag probe) -->
 Gate cells (median task margin over the task's chance level, trained languages, deep data-A seed-1904 ladder, from the ladder report; each set on the models that have the original and that twin scored — the original shown is the rf pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's own acc, p < 0.05; 3 of 1419 (task, model) pairs untested, no harness results file).
 
@@ -685,6 +767,22 @@ Gate cells (median task margin over the task's chance level, trained languages, 
 GitHub: [rf_gate_probe.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_probe.png) · [rf_gate_probe.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_probe.csv) ·
 GitHub: [rf_gate_by_language_probe.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_by_language_probe.png) · [rf_gate_by_language_probe.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_by_language_probe.csv) ·
 [rf_significance_probe.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_significance_probe.csv)
+
+The same reading on the promoted probe families, which tests whether the letter effect is specific to the three multilingual families.
+Population: the same deep scheme-A seed-1904 finals, on the five promoted families with an `rf_` twin: mmlu (1 task), commonsense_qa (1), bbh_mcq (17 subtasks) and acp_bench_mcq (7), all English, plus cultural_bench_easy (19 tasks over 8 languages).
+
+Key findings:
+
+- **rf − original is larger at 1.7B than at 90M on all four English families**: commonsense_qa +0.103 → +0.256, acp_bench_mcq +0.045 → +0.122, mmlu +0.030 → +0.093 and bbh_mcq +0.024 → +0.087. Only commonsense_qa rises at every size: mmlu dips at 175M (+0.029), and bbh_mcq (+0.031) and acp_bench_mcq (+0.052) dip at 350M.
+- **Significance:** mmlu and commonsense_qa are significant at every size, bbh_mcq's significant subtasks go from 6 to 12 of 17 (6/7/6/8/10/12, 90M → 1.7B), and acp_bench_mcq's stay at 4–5 of 7.
+- **acp_bench_mcq's gain partly rides [the length tell](#the-length-tell-and-where-it-actually-is).** Under acc_norm, which the cell plots, only areach beats its pick-shortest rate at 1.7B (0.688 against 0.50; prog 0.350 and val 0.181 stay below theirs, medians over the six 1.7B cells). Plain `acc`, which the significance count reads, reaches 0.527 on prog, above its 0.469.
+- **cultural_bench_easy's original is erratic**: +0.175 at 90M, −0.093 at 175M and +0.043 at 1.7B. Its rf − original (−0.165 at 90M, +0.049 with 7 of 19 tasks significant at 1.7B) reflects the original's instability below 600M, not the twin.
+
+Follow-ups:
+
+- Drop the two empty rfgm panels from `rf_gate_probe.png`, since no probe family has an rfgm set.
+- Test acp_bench_mcq's three length-tell subtasks against their pick-shortest rate instead of the original's `acc`, so that the significance count stops crediting the tell.
+- Check cultural_bench_easy's 90M original for a constant-answer bias before reading its small-size cells.
 
 <!-- BEGIN auto:probe-survivors (analysis/rq00_task_reformulation/probe_survivors.py) -->
 Probe survivors: which of the 33 candidate benchmarks in `auto_probe` clear the above-random gate (rule 1, read from the committed `predictivity` mask, cells that trained the language), over 47 languages. A cell counts languages (original | rf twin where one exists) — the population differs per cell (rule 13) — and the second table names the surviving benchmarks per language, the twin as `-rf`. Same items as `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance; this table is only the gate.
@@ -778,6 +876,23 @@ Probe survivors: which of the 33 candidate benchmarks in `auto_probe` clear the 
 
 [probe_survivors.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/probe_survivors.csv)
 
+The margins above leave open which candidates pass the gate at all, per language; this table answers that.
+Population: the `predictivity` gate mask (seed 1904, every cell and data build), cells that trained the language, the 33 candidates over 47 languages.
+
+Each cell counts languages, and the language count changes from row to row.
+
+Key findings:
+
+- **INCLUDE v2 has the broadest coverage.** include_v2_en clears the gate in 42 of 42 languages at 1.7B (32 of 42 at 90M), and include_v2_og in 35 of 42 (13 of 42 at 90M).
+- **arc_mt switches on with size.** It clears in 0 of 11 languages through 350M, then 2 at 600M, 10 at 1B and 11 at 1.7B.
+- **Three lettered originals never pass**: mmlu, commonsense_qa and acp_bench_mcq clear in 0 of 1 language at every size, while their `rf_` twins clear in 1 of 1. The bbh_mcq original passes only at 90M, 175M and 1B, its twin at every size.
+- **cultural_bench_easy's original passes in 6 of 8 languages at 90M and in none from 175M up**, while its twin rises from 1 of 8 to 5 of 8 at 1.7B.
+- **Ten candidates never pass in any language at any size:** acp_bench_cloze, bangla, bbh_cloze, ceval, cultural_bench_hard (0 of 8), haerae, openbookqa, toxigen, truthfulqa_mc2 (0 of 3) and turkishmmlu. blend_sample passes in 1 of 4 at 90M only, and xquad is generative and has no gate.
+
+Follow-ups:
+
+- Add a first-size-above-gate grid per candidate and language, as `first_size_above_random` draws for `auto`. It would condense the 47-row table above into one figure.
+
 <!-- BEGIN auto:reformulations-gate (reformulations_gate.py --pool predictivity) -->
 ## The twins and the gate, with significance
 
@@ -808,10 +923,24 @@ Per family at 1.7B: the share of languages above the gate for the original and t
 GitHub: [reformulations_gate.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate.png) · [reformulations_gate.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate.csv) ·
 [reformulations_gate_mcnemar.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate_mcnemar.csv)
 
-The reading of this figure — what the twins do to the gate, to DA-size, to
-the reliable share and to rq01's fits, with the key findings and follow-ups —
-is [rq00 figure 3](../rq00_gate_and_curves/README.md#3-the-reformulated-twins-move-whole-families-across-the-gate);
-the former `twins_gate.*` name of these outputs is retired.
+This figure is the full version of the opening one: every size, plus the pooled gate share and the decision-accuracy reading.
+Population: the `predictivity` gate mask; the McNemar rows pair each twin with its original on the task, and at 600M–1.7B the pooled rows split the 1,373 gated benchmark tasks into 1,041 non-twin tasks and 332 twins (1,372 and 1,040 at 90M–350M).
+
+Key findings:
+
+- **At 1.7B the large twins pass in significantly more tasks than their originals.** Twin-only : original-only is 82 : 1 for belebele rf (p 1.7e-23), 56 : 0 for belebele rfgm (2.8e-17), 34 : 0 for Global-MMLU rf (1.2e-10), 29 : 1 and 30 : 1 for INCLUDE rf and rfgm (5.8e-08, 3.0e-08), 10 : 0 for bbh_mcq (0.002) and 7 : 0 for cultural_bench_easy (0.016).
+- **acp_bench_mcq does not reach p < 0.05** (5 : 0, p 0.06), and mmlu and commonsense_qa have one task each (p 1).
+- **Across sizes, belebele and Global-MMLU are significant at every size, INCLUDE and bbh_mcq from 175M.** At 90M cultural_bench_easy is significant the other way: 13 of its 19 originals pass where the twin does not, and none the reverse.
+- **The "originals only" row is every non-twin benchmark task** (511 of 1,041 pass at 1.7B, 0.49), not the twins' own originals, which pass in 9 of 230.
+- **The twins do not rank designs better.** Mean DA-size (proxy → 1.7B, multi-axis pairs, gated at proxy and reference) is 0.485 / 0.505 / 0.499 / 0.500 / 0.550 on the twins from 90M to 1B, against 0.553 / 0.574 / 0.572 / 0.599 / 0.593 on the non-twin tasks. The twins' pairs are the deep scheme-A cells' alone (the L axis), so this is not a same-pairs comparison.
+
+Follow-ups:
+
+- Add the twins' own originals as a fourth pooled population, so that the "originals only" row stops reading as the twins' baseline.
+
+The fuller reading (what the twins do to the gate, to DA-size, to the reliable
+share and to the scaling fits) is [figure 3 of the gate-and-curves README](../rq00_gate_and_curves/README.md#3-the-reformulated-twins-move-whole-families-across-the-gate).
+The former `twins_gate.*` name of these outputs is retired.
 
 ## Extensions from other sweeps
 

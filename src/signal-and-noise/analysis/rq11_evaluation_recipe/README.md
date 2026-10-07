@@ -3,38 +3,42 @@
 ## Research question
 
 The rest of the analysis asks whether a cheap measurement reproduces the
-1.7B reference's design decision. This RQ turns that into advice for a reader
-who has to choose what to evaluate: for each benchmark, which **variant** —
-the items as published, their `rf_` cloze rewrite (RF) or their `rfgm_` LLM
-rewrite (LLM-RF), scored by **accuracy** or by the gold answer's **bits per
-byte** (bBPB) — reads the reference's decision from the smallest proxy?
+1.7B reference's design decision. This analysis turns that into advice for a
+reader who has to choose what to evaluate: for each benchmark, which
+**variant** — the items as published, their `rf_` cloze rewrite (RF) or their
+`rfgm_` LLM rewrite (LLM-RF), scored by **accuracy** or by the gold answer's
+**bits per byte** (bBPB) — reads the reference's decision from the smallest
+proxy?
+
 Reliable means DA-size ≥ τ = 0.75 (`utils.RELIABLE_DA`, the "safe" cut of
-rq02's early-small maps), and every figure, table and sentence here uses that
-one τ.
+decision accuracy's early-small maps), and every figure, table and sentence
+here uses that one τ. Every number below is from the ladder report of
+**2026-10-06 04:26** (the full refresh of 2026-10-07, outputs written 08:26).
 
 ## Experimental setup
 
-- **Pool** `predictivity` (seed 1904, every cell: each scheme, T, ladder and
-  architecture; 90M–1B proxies against the 1.7B reference), the gate
-  `predictivity`, both pair sets (multi-axis in the figures below, mono-axis
-  in the `_mono_axis` twins). The snapshot is the one the results block names.
+- **Pool** `predictivity`: seed 1904, every cell (every data build, read as
+  scheme A/B/C × temperature T; every L; the deep, shallow and swiglu
+  ladders), 90M–1B proxies against the 1.7B reference. Gate `predictivity`;
+  both pair sets (multi-axis in the figures below, mono-axis in the
+  `_mono_axis` twins).
 - **Input**: [decision accuracy](../rq02_decision_accuracy/README.md#3-early-and-small-da-goal-and-da-ckpt-on-the-ten-checkpoints)'s
-  per-task table `da_goal_early_small_per_task_both_axes.csv`, plus the bBPB
-  rows read against accuracy, computed here by the same kernel on the same
-  frame, pairs and grid. `recipe.py` stops when that table was computed on
-  another population than the pool loads now (its largest pair count differs
-  from the pool's), so the two kinds of rows are never mixed. The outputs on
-  disk today read a recomputation of that table on the current pool made
-  outside the driver (`compute_da.py`'s kernel, benchmark tasks only), because
-  the committed rq02 table predates the four-pool layout; the next
-  regeneration replaces both.
+  per-task table `da_goal_early_small_per_task_both_axes.csv` (regenerated
+  by the same refresh), plus the bBPB rows read against accuracy, computed
+  here by the same kernel on the same frame, pairs and grid. `recipe.py`
+  stops when that table was computed on another population than the pool
+  loads now (its largest pair count differs from the pool's), so the two
+  kinds of rows are never mixed.
+- **Tasks**: 1,662 over 31 benchmarks in the multi-axis table (846 accuracy
+  tasks, 816 bBPB twins, each twin read under both targets below).
 - **Variants**: each task is one variant of one benchmark in one language,
   its `format` (original, RF, LLM-RF) and `scoring` (accuracy, bBPB) the
   columns the loader writes (`utils.variant`).
-- **The bBPB twins** come from the per-item store, which holds each run's
-  final checkpoint only, so every table and figure here is DA-size. A store
-  that covers every checkpoint fills the twins' DA-goal and DA-ckpt cells in
-  decision accuracy's tables; here it changes only the `safe_compute` column.
+- **The bBPB twins** come from the per-item store at final checkpoints only,
+  so every table and figure here is DA-size. In these outputs a twin has a
+  value at the **175M and 1B proxies only** (90M, 350M and 600M are empty for
+  every bBPB row), so a bBPB safe size is 175M, 1B or never, decided on two
+  proxies where an accuracy variant's is decided on five.
 - **Twin coverage**: a twin exists only where the store holds the run, so a
   twin's cell with fewer pairs than its original's is left blank (the run
   prints how many) until the store covers the pool.
@@ -43,9 +47,9 @@ one τ.
 
 ![Mean DA-size per way of evaluating a benchmark](pretraining/predictivity/recipe_da_size_variants_multi_axes_paper.png)
 
-Population: DA-size against the 1.7B final, multi-axis pairs of `predictivity` (seed 1904), gate `predictivity` at the proxy and the reference (a bBPB task has no chance level and passes), ≥ 3 pairs, no filter, every task; bBPB at final checkpoints only; a point on fewer than 5 tasks is not drawn.
+Population: DA-size against the 1.7B final, multi-axis pairs of `predictivity` (seed 1904), gate `predictivity` at the proxy and the reference (a bBPB task has no chance level and passes), ≥ 3 pairs, no filter, every task (153–237 original, 76–130 RF and 69–84 LLM-RF accuracy tasks per proxy; 255 original, 139 RF and 89 LLM-RF bBPB twins; 298–934 tasks pooled under "all variants"); bBPB read against the 1.7B accuracy, at final checkpoints of the 175M and 1B proxies only; a point on fewer than 5 tasks is not drawn.
 
-**Key finding.** No way of evaluating a benchmark reaches the reliable threshold (0.75) on average by 1B, but bBPB scoring reads the reference better than accuracy and the LLM rewrite scored by bBPB is highest (0.56–0.65 against 0.51–0.54 for the original accuracy).
+**Key finding.** No way of evaluating a benchmark reads the reference's accuracy decision at τ = 0.75 on average by 1B: the best mean is 0.61 (LLM-RF bBPB at 1B; only the easier bBPB → 1.7B bBPB target, LLM-RF at 0.77, clears it, [section 2](#2-every-variant-together-and-apart)). Against the same truth, bBPB matches or edges the original accuracy at the two proxies where both have values (every task: 0.59 against 0.57 at 175M, 0.59 and 0.59 at 1B; paired: 0.60 and 0.60), and the rewrites help only when scored by bBPB (RF and LLM-RF accuracy 0.48–0.56 across the five proxies, their bBPB 0.59–0.61).
 
 GitHub: [recipe_da_size_variants_multi_axes_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_variants_multi_axes_paper.png) · [recipe_da_size_variants_multi_axes_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_variants_multi_axes_paper.csv). Variants together and apart, and the recommendation per benchmark: [Results](#results).
 
@@ -169,34 +173,40 @@ DA-size against the 1.7B final, multi-axis pairs (rule 15), pool `predictivity`,
 ![The cheapest reliable proxy](pretraining/predictivity/recipe_da_size_ladder_multi_axes.png)
 <!-- END auto:results -->
 
-**Key findings** (DA-size, multi-axis pairs, τ = 0.75, bBPB at final checkpoints; each bullet names the target it reads)
+**Key findings** (`recipe_da_size_recommendation_multi_axes.csv`: DA-size, multi-axis pairs, pool `predictivity`, τ = 0.75, bBPB at final checkpoints of 175M and 1B only; each bullet names the target it reads)
 
-- **Against the same truth (bBPB → 1.7B accuracy), bBPB and accuracy split
-  the benchmarks.** 22 of the 31 benchmarks have a value; bBPB is the pick for
-  11 and accuracy for 11. Nine of the bBPB picks are reliable somewhere (a
-  mean safe rank below 5) and two win the DA-size tie-break (Cultural Bench
-  easy, XNLI); seven of the accuracy picks are the only variant with a value,
-  because the twin is gated where its original is at chance at 1.7B.
-- **Against the easier target (bBPB → 1.7B bBPB), bBPB takes 17 of 26.** Four
-  of those have no accuracy variant at all (BLEnD, Global PIQA parallel, both
-  TruthfulQA tasks). ARC multilingual, PAWS and XCOPA switch from accuracy to
-  bBPB with the target, and MultiBLiMP from bBPB to accuracy.
-- **The median language is safe by 1B for few benchmarks.** With bBPB →
-  1.7B accuracy: HellaSwag and XStoryCloze (bBPB) and LAMBADA (accuracy) from
-  1B, Global PIQA non-parallel from 350M on 2 tasks. With bBPB → 1.7B bBPB:
-  HellaSwag, XStoryCloze and Global PIQA non-parallel from 90M, INCLUDE
-  (LLM-RF bBPB) from 600M, XCOPA and LAMBADA from 1B.
-- **Twin coverage.** 1,960 of the 16,320 bBPB cells have fewer pairs than
-  their original (the six L1 FineWeb cells have no twin yet) and are blank;
-  they return once the store covers the pool.
+- **Against the same truth (bBPB → 1.7B accuracy), bBPB is the pick for 16
+  of the 23 benchmarks with a value and accuracy for 7** (8 of 31 have none).
+  Nine bBPB picks and five accuracy picks are reliable somewhere (mean safe
+  rank below 5); six bBPB picks win only on the DA-size tie-break.
+- **The pick is not like for like yet.** A bBPB task is ranked on two proxies
+  (175M, 1B) and an accuracy task on five, so a bBPB pick can be safe "from
+  175M" while dipping below τ at 350M–600M unseen; the comparison waits for
+  twins at every proxy.
+- **Against the easier target (bBPB → 1.7B bBPB), bBPB takes 25 of the 30
+  benchmarks with a value**, 8 of them with no accuracy variant at all.
+  ARC (MT), INCLUDE v2 (EN), PAWS-X and XCOPA switch from accuracy to bBPB
+  with the target, MultiBLiMP and MMLU from bBPB to accuracy, Belebele from
+  RF to LLM-RF bBPB and ACP-Bench (MCQ) from RF to original bBPB (the latter
+  on the DA-size tie-break).
+- **Few benchmarks are safe by 1B in most languages.** With bBPB → 1.7B
+  accuracy, the share of ranked tasks safe by 1B is 0.80 for HellaSwag (25
+  tasks), 0.62 for XStoryCloze (8, bBPB) and 1.00 for LAMBADA (5, accuracy);
+  every other benchmark is at 0.50 or below. With bBPB → 1.7B bBPB it is 1.00
+  for HellaSwag, XStoryCloze, Global PIQA non-parallel (2 tasks) and LAMBADA
+  (5, accuracy), 0.81 for
+  INCLUDE (36 tasks, LLM-RF bBPB) and 0.50 for XCOPA (8).
+- **Twin coverage.** A bBPB cell with fewer pairs than its original is blank
+  until the store covers the pool; the run prints how many.
 
 **Follow-ups**
 
 - Comparing DA-goal and DA-ckpt across the variants needs new code here, a
   per-variant table and figure of the cheapest safe (proxy, checkpoint) and of
   DA-ckpt, beside the store rebuild over every checkpoint
-  (`build_per_item_store.sbatch --pool predictivity`, then `--bench-bpb`);
-  the rebuild alone moves only `safe_compute`.
+  (`build_per_item_store.sbatch --pool predictivity`, then `--bench-bpb`).
+- Re-read every bBPB pick once the twins have a value at 90M, 350M and 600M
+  too, so bBPB and accuracy are ranked on the same five proxies.
 - Add the SNR and the k-fold noise per variant to the table, so a reader can
   also see which variant is cheapest to measure reliably.
 - Weigh the evaluation cost of a variant (the LLM rewrite, a cloze
@@ -242,25 +252,27 @@ The same over the paired tasks (those whose own original, every `bbpb_`/`rf_`/`r
 ![Variants together and apart](pretraining/predictivity/recipe_da_size_variants_multi_axes.png)
 <!-- END auto:variants -->
 
-**Key findings** (the tables above; each bullet names its target)
+**Key findings** (`recipe_da_size_overview_multi_axes.csv`: DA-size, multi-axis pairs, pool `predictivity`, gate `predictivity`; bBPB at 175M and 1B only; each bullet names its target)
 
-- **On the same truth, bBPB reads the reference a little better than
-  accuracy.** Over every task, original bBPB → 1.7B accuracy is 0.58–0.61
-  against the original accuracy's 0.55–0.60: ahead at 90M–600M (0.61 against
-  0.55 at 90M) and level at 1B (0.59 and 0.59).
-- **On the paired tasks the lead holds at every proxy**: 0.60–0.64 against
-  0.55–0.60, so it is not only that bBPB is defined where accuracy is at
-  chance.
+- **On the same truth, bBPB reads the reference about as well as accuracy.**
+  Over every task, original bBPB → 1.7B accuracy is 0.59 at 175M and 0.59 at
+  1B (255 tasks) against the original accuracy's 0.57 (175 tasks) and 0.59
+  (237); nothing can be said yet about 90M, 350M or 600M.
+- **On the paired tasks the small lead holds**: 0.60 at 175M (165 tasks) and
+  0.60 at 1B (226) against 0.57 and 0.59, so it is not only that bBPB is
+  defined where accuracy is at chance.
 - **The easier target reads higher.** bBPB → 1.7B bBPB gives the original
-  0.61–0.67, LLM-RF 0.72–0.80 and all variants pooled 0.61–0.64, against
-  0.57–0.59 pooled with bBPB → 1.7B accuracy; part of bBPB's lead under that
-  reading is the target, not the score.
+  0.60 and 0.63 (552 tasks), RF 0.65 and 0.66 (169), LLM-RF 0.77 and 0.77
+  (95) at 175M and 1B, against 0.57 and 0.59 for all variants pooled under
+  bBPB → 1.7B accuracy; part of bBPB's lead under that reading is the target,
+  not the score.
 - **The rewrites help through bBPB, not accuracy.** RF and LLM-RF accuracy
-  sit at 0.47–0.55 and 0.49–0.54, at or below the original accuracy; their
-  bBPB → 1.7B accuracy reads 0.61–0.62 and 0.57–0.63. Their paired cells rest
-  on 1–4 tasks and are blank in the tables.
-- **Populations differ by target**: 253 original twins have a value under
-  bBPB → 1.7B accuracy (gated on the original's accuracy at 1.7B) and 490
+  sit at 0.48–0.56 and 0.49–0.54 over the five proxies, below the original
+  accuracy's 0.55–0.60; their bBPB → 1.7B accuracy reads 0.59–0.60 (139
+  tasks) and 0.60–0.61 (89); paired, they have only one task each, under
+  bBPB → 1.7B bBPB at 1B (n = 1).
+- **Populations differ by target**: 255 original twins have a value under
+  bBPB → 1.7B accuracy (gated on the original's accuracy at 1.7B) and 552
   under bBPB → 1.7B bBPB (never gated).
 
 **Follow-ups**
@@ -279,19 +291,22 @@ per benchmark and proxy.
 ![Benchmark x variant heat map](pretraining/predictivity/recipe_da_size_heatmap_multi_axes.png)
 <!-- END auto:heatmap -->
 
-**Key findings** (per benchmark, the mean DA-size over the five proxies of `recipe_da_size_by_variant_multi_axes.csv`; each bullet names its target)
+**Key findings** (`recipe_da_size_by_variant_multi_axes.csv`: per benchmark, the mean DA-size at the 175M and 1B proxies, the only two where bBPB has a value; benchmarks with ≥ 5 tasks in both variants at that proxy; each bullet names its target)
 
-- **bBPB → 1.7B accuracy beats the original accuracy on 10 of the 14
-  benchmarks that have both**, most on XCOPA (0.63 against 0.49), Cultural
-  Bench easy (0.46 against 0.30) and XStoryCloze (0.75 against 0.66). It is
-  behind on Belebele (0.51 against 0.58), INCLUDE base (0.49 against 0.57), PAWS
-  (0.54 against 0.58) and Global PIQA non-parallel (0.75 against 0.79).
-- **In the rewrites it beats the same format's accuracy everywhere both
-  exist**: 4 of 4 RF benchmarks (Global-MMLU RF 0.68 against 0.55) and 2 of 2
-  LLM-RF ones.
-- **bBPB → 1.7B bBPB is above bBPB → 1.7B accuracy on 14 of 14 original
-  benchmarks**, so a heat map of bBPB → bBPB cells overstates what bBPB tells
-  about the accuracy decision.
+- **bBPB → 1.7B accuracy beats the original accuracy on 5 of 7 benchmarks at
+  175M and 6 of 8 at 1B**, most on XStoryCloze (0.75 against 0.53 at 175M,
+  0.77 against 0.69 at 1B) and XCOPA at 175M (0.65 against 0.43). It is
+  behind on INCLUDE v2 (EN) and MultiBLiMP at 175M (0.43 against 0.47, 0.65
+  against 0.66) and on XCOPA and HellaSwag at 1B (0.60 against 0.65, 0.81
+  against 0.83).
+- **In the rewrites bBPB beats the same format's accuracy almost
+  everywhere**: RF on 3 of 4 benchmarks at 175M and 5 of 6 at 1B (Global-MMLU
+  RF 0.69 against 0.57 at 175M, but 0.68 against 0.69 at 1B), LLM-RF on 2 of 2
+  at both (INCLUDE 0.66 against 0.57 at 1B).
+- **bBPB → 1.7B bBPB is above bBPB → 1.7B accuracy on 8 of 10 original
+  benchmarks at 175M and 10 of 10 at 1B** (behind at 175M: ARC (MT) 0.60
+  against 0.62, INCLUDE v2 (EN) 0.41 against 0.43), so a heat map of bBPB → bBPB cells
+  overstates what bBPB tells about the accuracy decision.
 
 **Follow-ups**
 
@@ -308,12 +323,14 @@ reliable at each proxy, the quantity the safe rank summarises.
 ![Reliability profiles per benchmark](pretraining/predictivity/recipe_da_size_profiles_multi_axes.png)
 <!-- END auto:profiles -->
 
-**Key findings** (each bullet names its target)
+**Key findings** (`recipe_da_size_by_variant_multi_axes.csv`, `reliable_share_1B` over the benchmarks with a value at 1B; each bullet names its target)
 
-- **Few benchmarks have half their tasks reliable by 1B.** At the 1B proxy:
-  2 of 16 benchmarks with original accuracy, 3 of 14 with original bBPB →
-  1.7B accuracy, 4 of 19 with original bBPB → 1.7B bBPB, and no RF variant
-  under either target.
+- **Few benchmarks have half their tasks reliable at the 1B proxy.** Original
+  accuracy: 2 of 15 (HellaSwag, LAMBADA); original bBPB → 1.7B accuracy: 3 of
+  16 (HellaSwag, XStoryCloze, Global PIQA non-parallel on 2 tasks); original
+  bBPB → 1.7B bBPB: 4 of 28 (those three and XCOPA).
+- **No RF variant gets there under either target** (0 of 8), and of the two
+  LLM-RF benchmarks only INCLUDE does, with bBPB → 1.7B bBPB.
 
 **Follow-ups**
 
