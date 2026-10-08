@@ -53,6 +53,8 @@ comes from). The .tex carries the source path as a comment next to the
     app_rq12_above_chance_items <- rq12_above_chance_items/above_chance_items.py --paper  above_chance_items_snr_paper
     app_rq13_english_only      <- rq13_english_only/english_only.py --paper      english_only_scores_paper
                              (these five: the main figure of an appendix page of make_rq_appendix.py)
+    app_rq13_english_scaling_regimes <- rq13_english_only/english_regimes.py   english_only_scaling_regimes_paper
+                             (the extra figure of the English-only appendix page)
 
 The copies are PNG, the table TeX. The SVG and PDF of every figure here are not copied:
 `style.save` writes them under the paper name straight into ../figures_svg/ and ../figures_pdf/
@@ -124,6 +126,8 @@ FIGURES = {
     "app_rq12_above_chance_items": (ANALYSIS.joinpath("rq12_above_chance_items", *PRED, "above_chance_items_snr_paper"),
                                ("png",)),
     "app_rq13_english_only": (ANALYSIS.joinpath("rq13_english_only", *PRED, "english_only_scores_paper"), ("png",)),
+    "app_rq13_english_scaling_regimes": (ANALYSIS.joinpath("rq13_english_only", *PRED, "english_only_scaling_regimes_paper"),
+                                         ("png",)),
 }
 
 

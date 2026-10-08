@@ -321,6 +321,8 @@ pass "English only — the monolingual-English cells against the multilingual on
 # shallow, DCLM without edu, FineWeb), so this run writes the README too
 lane rq13 rq00 rq01 rq02 rq03 rq07
 run $PY analysis/rq13_english_only/english_only.py --pool predictivity
+# the K = 1 cells of each English corpus under rq01's scaling-regime fits (reads rq01's scaling_regimes.csv)
+run $PY analysis/rq13_english_only/english_regimes.py --pool predictivity
 
 pass "rq08 — subset selection"
 lane rq08 gate

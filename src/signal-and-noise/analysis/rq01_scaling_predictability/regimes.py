@@ -86,20 +86,20 @@ QUADRANTS = {(True, True): ("predictable across both", "#b9cfe8"), (False, True)
              (True, False): ("predictable across size only", "#b8ccd0"), (False, False): ("weak / unpredictable in both", "#f1d8bd")}
 
 
-def size_medians(fits: pd.DataFrame) -> pd.DataFrame:
+def size_medians(fits: pd.DataFrame, min_fits: int = MIN_FITS) -> pd.DataFrame:
     """Per task: median R² and oriented median ρ of the gated log-N fits of
     rq1_fits.csv (a (task, L) the gate left without a fit has NaN there)."""
     f = fits.dropna(subset=["r2"]).copy()
     f["rho"] = np.where(f["task"].map(lower_is_better), -f["rho"], f["rho"])
     g = f.groupby("task").agg(r2_size=("r2", "median"), rho_size=("rho", "median"), n_size_fits=("r2", "count"))
-    return g[g["n_size_fits"] >= MIN_FITS]
+    return g[g["n_size_fits"] >= min_fits]
 
 
-def trajectory_medians(df: pd.DataFrame, pool: str) -> pd.DataFrame:
+def trajectory_medians(df: pd.DataFrame, pool: str, cells=_grid) -> pd.DataFrame:
     """Per task: median R² of score ~ a + b log10(tokens) over the run's
     checkpoints, one fit per (L, size) grid cell where the task is above
-    chance (rule 1, `grids.mark_gated`)."""
-    g0 = G.mark_gated(_grid(df), pool, "size", "primary_score")
+    chance (rule 1, `grids.mark_gated`); `cells` as in `fit_table`."""
+    g0 = G.mark_gated(cells(df), pool, "size", "primary_score")
     g0 = g0[~g0["gated"] & (g0["tokens"] > 0)]
     rows = []
     for (task, L, size), g in g0.groupby(["task", "L", "size"]):
@@ -112,6 +112,19 @@ def trajectory_medians(df: pd.DataFrame, pool: str) -> pd.DataFrame:
     t = pd.DataFrame(rows).dropna(subset=["r2"])
     g = t.groupby("task").agg(r2_trajectory=("r2", "median"), n_trajectory_fits=("r2", "size"))
     return g[g["n_trajectory_fits"] >= MIN_FITS]
+
+
+def regime_table(fits: pd.DataFrame, df: pd.DataFrame, pool: str, cells=_grid, min_fits: int = MIN_FITS) -> pd.DataFrame:
+    """One row per task: the size and trajectory medians and the regime, over
+    `cells` (the deep data-A seed-1904 grid by default); `min_fits` is the
+    size fits a task needs (one per L)."""
+    t = size_medians(fits, min_fits).join(trajectory_medians(df, pool, cells), how="inner").reset_index()
+    t["family"] = t["task"].map(benchmark_family)
+    t["language"] = t["task"].map(assign_language)
+    t = languages_only(t)     # rule 7: the loss is not a benchmark-language pair
+    t["regime"] = [DECLINES if rho < 0 else QUADRANTS[(x >= R2_SPLIT, y >= R2_SPLIT)][0]
+                   for x, y, rho in zip(t["r2_size"], t["r2_trajectory"], t["rho_size"])]
+    return t[["task", "family", "language", "n_size_fits", "r2_size", "rho_size", "n_trajectory_fits", "r2_trajectory", "regime"]]
 
 
 def short(family: str) -> str:
@@ -355,14 +368,7 @@ def main(pool: str) -> None:
     fits = pd.read_csv(out_dir / "rq1_fits.csv")
     gated_out = sorted(set(fits.loc[fits["gated"], "task"]) - set(fits.dropna(subset=["r2"])["task"]))   # at chance wherever a fit was possible
     gated_note = ", ".join(f"{f} {n}" for f, n in pd.Series(map(benchmark_family, gated_out)).value_counts().sort_index().items()) or "none"
-    df = ladder_frame(pool)
-    t = size_medians(fits).join(trajectory_medians(df, pool), how="inner").reset_index()
-    t["family"] = t["task"].map(benchmark_family)
-    t["language"] = t["task"].map(assign_language)
-    t = languages_only(t)     # rule 7: the loss is not a benchmark-language pair
-    t["regime"] = [DECLINES if rho < 0 else QUADRANTS[(x >= R2_SPLIT, y >= R2_SPLIT)][0]
-                   for x, y, rho in zip(t["r2_size"], t["r2_trajectory"], t["rho_size"])]
-    t = t[["task", "family", "language", "n_size_fits", "r2_size", "rho_size", "n_trajectory_fits", "r2_trajectory", "regime"]]
+    t = regime_table(fits, ladder_frame(pool), pool)
     t.to_csv(out_dir / "scaling_regimes.csv", index=False)
     fam, out = family_table(t), outliers(t, family_table(t))
     fam.to_csv(out_dir / "scaling_regimes_families.csv", index=False)

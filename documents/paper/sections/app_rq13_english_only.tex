@@ -32,3 +32,11 @@
 \end{minipage}
 \vspace{\baselineskip}
 }]
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq13_english_scaling_regimes.png}
+% source: src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_scaling_regimes_paper.png
+\caption{\textbf{At $K$ = 1 the FineWeb cell puts 72\% of the English tasks in the regime predictable across both size and training, against 41\%--42\% for the two DCLM corpora.} The scaling regimes of Figure~\ref{fig:rq1} drawn for the monolingual English cells, one column per English corpus: DCLM-Edu (the English of every other cell), DCLM without the educational filter, and FineWeb. Each is one deep cell at seed 1904, 90M--1.7B, on the same 130 English tasks (originals, RF, LLM-RF, bBPB twins and the English bits per byte). The lead is in the bBPB twins: on the 31 accuracy tasks alone the three corpora reach 55\% (DCLM-Edu), 45\% (DCLM), 55\% (FineWeb). The fits and the above-chance gate are those of Figure~\ref{fig:rq1}. With one $K$, a task has one model-size fit instead of a median over the six $K$, and the trajectory $R^2$ is the median over at least two sizes. Top: the $R^2$ of the model-size fit against its Spearman $\rho$. Bottom: the same $R^2$ against the median $R^2$ of the training-trajectory fits, shaded by regime at 0.5. A black edge marks a task whose score declines with size. The grey points are the 952 tasks of Figure~\ref{fig:rq1} (medians over $K$, 79\% predictable across both), so they sit higher than a single fit would.}
+\label{fig:app_rq13_english_scaling_regimes}
+\end{figure*}

@@ -134,6 +134,32 @@ def rq02_language_per_proxy_caption(d):
         "benchmarks with a DA-size at some proxy are drawn. " + setup)
 
 
+def rq13_regimes_caption(d):
+    """The caption of app_rq13_english_scaling_regimes, its numbers read from the figure's CSV `d`."""
+    pct = lambda v: f"{100 * v:.0f}\\%"
+    d = d.assign(b=d["regime"] == "predictable across both", acc=~d["family"].str.startswith(("bbpb", "bpb")))
+    both = d.groupby("corpus")["b"].agg(["mean", "size"])
+    acc = d[d["acc"]].groupby("corpus")["b"].agg(["mean", "size"])
+    dclm = both.loc[["DCLM-Edu", "DCLM"], "mean"]
+    back = "every K (rq01)"
+    return (
+        f"\\textbf{{At $K$ = 1 the FineWeb cell puts {pct(both.at['FineWeb', 'mean'])} of the English tasks in the "
+        f"regime predictable across both size and training, against {pct(dclm.min())}--{pct(dclm.max())} for the two "
+        "DCLM corpora.} The scaling regimes of Figure~\\ref{fig:rq1} drawn for the monolingual English cells, one "
+        "column per English corpus: DCLM-Edu (the English of every other cell), DCLM without the educational filter, "
+        f"and FineWeb. Each is one deep cell at seed 1904, 90M--1.7B, on the same {int(both.at['FineWeb', 'size'])} "
+        "English tasks (originals, RF, LLM-RF, bBPB twins and the English bits per byte). The lead is in the bBPB "
+        f"twins: on the {int(acc.at['FineWeb', 'size'])} accuracy tasks alone the three corpora reach "
+        + ", ".join(f"{pct(acc.at[c, 'mean'])} ({c})" for c in ("DCLM-Edu", "DCLM", "FineWeb")) + ". "
+        "The fits and the above-chance gate are those of Figure~\\ref{fig:rq1}. With one $K$, a task has one "
+        "model-size fit instead of a median over the six $K$, and the trajectory $R^2$ is the median over at least two "
+        "sizes. Top: the $R^2$ of the model-size fit against its Spearman $\\rho$. Bottom: the same $R^2$ against the "
+        "median $R^2$ of the training-trajectory fits, shaded by regime at 0.5. A black edge marks a task whose score "
+        f"declines with size. The grey points are the {int(both.at[back, 'size'])} tasks of Figure~\\ref{{fig:rq1}} "
+        f"(medians over $K$, {pct(both.at[back, 'mean'])} predictable across both), so they sit higher than a single "
+        "fit would.")
+
+
 # folder -> title, paper figure stem, setup, (README image the finding follows, which bullet)[, extras]
 PAGES = {
     "rq00_gate_and_curves": (
@@ -282,7 +308,8 @@ PAGES = {
         "We compare the monolingual English cells ($K = 1$) with the baseline cells of the same depth at every "
         "other language setting. These other cells give half of their tokens to English. We use seed 1904, final "
         "checkpoints and sizes 90M--1.7B, on the English accuracy tasks above chance at each size.",
-        None, 0),
+        None, 0,
+        (("app_rq13_english_scaling_regimes", rq13_regimes_caption, "fig:app_rq13_english_scaling_regimes"),)),
 }
 
 # what each main figure draws, after its bold takeaway (the README's alt text when a folder has none)

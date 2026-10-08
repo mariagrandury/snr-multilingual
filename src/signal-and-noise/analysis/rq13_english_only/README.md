@@ -202,6 +202,40 @@ Follow-ups:
 - The power law on the English BPB of each L1 build's OWN corpus (the
   DCLM-without-edu and FineWeb cells are scored here on the edu-filtered DCLM
   validation set, off their training distribution).
+- Next: whether the English benchmarks fall into the same scaling regimes at
+  L1 as on the multilingual ladder, [Scaling regimes at L1](#scaling-regimes-at-l1).
+
+### Scaling regimes at L1
+
+The [scaling regimes](../rq01_scaling_predictability/README.md#1-scaling-regimes-the-paper-figure)
+of the paper's benchmark scaling behaviour section, drawn for the monolingual
+comparison point: the three English corpora at L1, one family each, under
+the same gate and the same fits. All three have finished and been evaluated at
+every rung from 90M to 1.7B; the DCLM-Edu cell's 350M evaluation covers 20 of
+its 208 tasks, so that size drops out of its trajectory medians.
+
+<!-- BEGIN auto:english-regimes (english_regimes.py --pool predictivity) -->
+![Scaling regimes at L1](pretraining/predictivity/english_only_scaling_regimes.png)
+
+Pool `predictivity`: the L1 deep seed-1904 cell of each English corpus (DCLM-Edu = data A, DCLM = DCLMP, FineWeb = FWEB), 90M–1.7B, gate `predictivity`; the fits and regimes of the scaling-predictability figure, one size fit per task (one L) and the median trajectory R² over ≥ 2 sizes; English tasks (originals, RF, LLM-RF, bBPB twins) and `bpb_dclm`. The populations differ: the corpora share the gate, so they read the same tasks, and rq01's grey points are every trained language. Regenerate with `python analysis/rq13_english_only/english_regimes.py --pool predictivity`.
+
+Key findings (share of tasks per regime; both = predictable across size and training):
+
+- **DCLM-Edu** (130 tasks, 31 accuracy-scored): both 42%, training only 5%, size only 18%, weak 20%, declines 15%; median R² across size 0.71, along training 0.50; the accuracy-scored tasks alone: both 55%.
+- **DCLM** (130 tasks, 31 accuracy-scored): both 41%, training only 3%, size only 18%, weak 23%, declines 15%; median R² across size 0.62, along training 0.48; the accuracy-scored tasks alone: both 45%.
+- **FineWeb** (130 tasks, 31 accuracy-scored): both 72%, training only 4%, size only 5%, weak 11%, declines 8%; median R² across size 0.86, along training 0.68; the accuracy-scored tasks alone: both 55%.
+- **The same single-fit reading at every other L** (the English tasks of the deep data-A cell, 130 tasks): predictable across both 42%–53% at L2–L50 (L2 42%, L8 46%, L15 53%, L30 50%, L50 49%).
+- **every K (rq01)** (952 tasks, every trained language, medians over the L): both 79%, training only 1%, size only 10%, weak 7%, declines 3%. A median over six fits is smoother than one fit, so this is the figure's backdrop, not the like-for-like comparison (the bullet above is).
+<!-- END auto:english-regimes -->
+
+Follow-ups:
+
+- The same panels per benchmark family: FineWeb's lead is in the bBPB twins
+  (98 of the 130 tasks; on the accuracy-scored tasks alone it ties DCLM-Edu),
+  so which twins it scales on is the next question.
+- A replicate seed of the FineWeb L1 cell: one family per corpus cannot tell
+  a corpus effect from a seed effect.
+
 - Next: whether a small L1 proxy also ranks the L1 variants like 1.7B does,
   [Decision accuracy](#decision-accuracy).
 
@@ -413,6 +447,8 @@ blocks above.
 | `english_only_snr.png/.csv`, `english_only_snr_per_task.csv` | SNR per group (mirrored families and deep against shallow) with the task counts, per task at 1B, and the SNR → DA-size Spearman ρ |
 | `english_only_allenai.png/.csv`, `english_only_allenai_per_task.csv` | ours next to DataDecide on the format-matched shared tasks, with L1's pair or run count |
 | `english_only_verdict.csv` | the verdict table |
+| `english_only_scaling_regimes.png/.csv`, `…_paper.png/.csv` | `english_regimes.py`: the scaling regimes of each English corpus at L1, one row per (corpus, task), with rq01's points as `every K (rq01)` |
+| `english_only_scaling_regimes_summary.csv` | the share of tasks per regime for each corpus, and the same single-fit reading of the English tasks of the deep data-A cell at every other L |
 
 ## How to run
 
@@ -420,6 +456,7 @@ blocks above.
 cd src/signal-and-noise
 python analysis/rq13_english_only/english_only.py --pool predictivity
 # --readme writes the blocks from another pool (by default only `predictivity` writes them)
+python analysis/rq13_english_only/english_regimes.py --pool predictivity   # after rq01's regimes.py
 ```
 
 It reads the above-random mask (the pool's own, else `predictivity`'s), the
