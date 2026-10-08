@@ -349,6 +349,65 @@ reliable at each proxy, the quantity the safe rank summarises.
 
 GitHub: [recipe_da_size_profiles_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_profiles_multi_axes.png) · [recipe_da_size_profiles_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_profiles_multi_axes.csv)
 
+### 5. The best benchmarks along size and training (paper figure)
+
+The profiles read one decision accuracy at final checkpoints; this figure
+follows the eight best benchmarks through all three, so a variant that wins at
+the 90M final can be checked early in the run too.
+
+**DA-size, DA-ckpt, DA-goal · no reliability filter · multi-axis pairs · pairs
+from `predictivity` at seed 1904 · gate `predictivity`** (accuracy at the proxy
+and 1.7B, DA-ckpt at the proxy only; bBPB → 1.7B accuracy on the accuracy of
+the same items at 1.7B; bBPB → 1.7B bBPB never gated). Snapshot: the
+2026-10-07 15:51 ladder report, the one rq02's tables on disk were computed on.
+Rows: Overall (BPB of the 50 trained languages, accuracy over every format,
+every twin against the 1.7B bBPB), then the eight benchmarks with the highest
+`mean_da_size` (`recipe_da_size_by_variant_multi_axes.csv`: mean over tasks
+per proxy, then over the proxies 90M–1B with a value), the better of the
+original and RF format, among the formats with ≥ 5 ranked tasks (the ranking
+is the CSV's `ranking` rows). Columns: DA-size per proxy; DA-ckpt (rq02's
+`da_all_pooled_per_task_multi_axes.csv`, `da_own`) and DA-goal
+(`recipe_da_goal_per_task_multi_axes.csv`) per tenth, each task averaged over
+the proxies 90M–1B first. The bBPB lines are the twins of the ranking format;
+bBPB → 1.7B accuracy has no DA-ckpt (its reference would be the proxy's own
+accuracy, another score). Bands: 95 % bootstrap over the tasks of a line
+(1,000 resamples); a point on < 5 tasks is not drawn. Task counts differ
+across lines and, for accuracy, across proxies (the gate; the CSV's `n_tasks`).
+
+![DA-size, DA-ckpt and DA-goal per benchmark](pretraining/predictivity/recipe_da_all_by_benchmark_multi_axes_paper.png)
+
+**Key findings** (`recipe_da_all_by_benchmark_multi_axes_paper.csv`)
+
+- **Ranking**: HellaSwag 0.76, LAMBADA 0.72, XStoryCloze 0.66, MultiBLiMP
+  0.65, ARC (MT) 0.58 (original), Global-MMLU 0.56 and INCLUDE 0.54 (RF),
+  INCLUDE v2 (OG) 0.54 (original); next XWinograd 0.53. INCLUDE and INCLUDE
+  v2 (OG) differ in the fourth decimal.
+- **At the 90M proxy bBPB → 1.7B accuracy beats the benchmark's accuracy on
+  4 of the 5 benchmarks where both have a value** (HellaSwag 0.87 against
+  0.69, Global-MMLU 0.68 against 0.44 for RF, INCLUDE v2 (OG) 0.60 against
+  0.47, MultiBLiMP 0.66 against 0.63; INCLUDE ties, 0.63 against 0.63 for RF).
+  At 1B accuracy catches up on HellaSwag (0.83 against 0.81) and Global-MMLU
+  (0.69 against 0.68).
+- **DA-goal keeps that order along the run**: bBPB → 1.7B accuracy is above
+  every accuracy format at 80–100 % of the tenths on the seven benchmarks with
+  a twin. HellaSwag accuracy climbs from 0.54 at 0.5C to 0.75 at 5C, still
+  under its twin (0.77–0.82).
+- **DA-ckpt is highest for bBPB → 1.7B bBPB on every benchmark and tenth**
+  (0.06–0.30 above the best accuracy format), as in rq02: a twin persists
+  within its own run more than accuracy does, which is not a decision.
+- **Overall**, DA-size on accuracy goes from 0.52 at 90M to 0.57 at 1B, the
+  bBPB twins stay at 0.63–0.67 and BPB at 0.74–0.96; DA-goal reads 0.51–0.55,
+  0.63–0.66 and 0.84–0.90.
+
+**Follow-ups**
+
+- The same figure on mono-axis pairs (the rq2 pair set), once the bBPB → 1.7B
+  accuracy cells are read there too.
+- A per-language twin of a row (e.g. HellaSwag), to see whether the bBPB lead
+  at 90M is a few languages or all of them.
+
+GitHub: [recipe_da_all_by_benchmark_multi_axes_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_all_by_benchmark_multi_axes_paper.png) · [recipe_da_all_by_benchmark_multi_axes_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_all_by_benchmark_multi_axes_paper.csv)
+
 ## Files
 
 - `pretraining/<pool>/recipe_da_all_per_task{_multi_axes,_mono_axis}.csv` —
@@ -366,3 +425,10 @@ GitHub: [recipe_da_size_profiles_multi_axes.png](https://github.com/mariagrandur
   and pooled, every task and paired, with the task counts.
 - `…/recipe_da_size_{variants,heatmap,ladder,profiles}*.png/.csv` — the
   figures, each with its table.
+- `…/recipe_da_goal_per_task*.csv` — the early-small cells every table reads:
+  per task, reading, proxy and tenth, rule 5 applied, the gate verdict in
+  `gated` (DA-size is its `frac` = 1.0 rows).
+- `…/recipe_da_all_by_benchmark_multi_axes_paper.png/.csv` — the paper's
+  per-benchmark figure (section 5): per row, line and DA kind the mean, the
+  95 % bootstrap band, `n_tasks` and `drawn`; the benchmark ranking in the
+  `ranking` rows.

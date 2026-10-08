@@ -32,3 +32,11 @@
 \end{minipage}
 \vspace{\baselineskip}
 }]
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq11_recipe_by_benchmark.png}
+% source: src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_all_by_benchmark_multi_axes_paper.png
+\caption{\textbf{At the 90M proxy, a benchmark's bBPB read against the 1.7B accuracy ranks the design pairs more like the reference than its best accuracy format on 4 of the 5 top benchmarks where both have a value.} Overall, DA-size on accuracy goes from 0.52 at 90M to 0.57 at 1B, against 0.63--0.67 for the bBPB twins (read against the 1.7B bBPB) and 0.74--0.96 for BPB. The other rows are the 8 benchmarks with the highest mean DA-size over 90M--1B in their original or RF format (at least five tasks), ranked, with that format and value after the name. Columns: DA-size against the 1.7B final checkpoint, DA-ckpt against the proxy's own final checkpoint and DA-goal against the 1.7B final checkpoint, the last two averaged over the proxies 90M--1B. All use the multi-axis pairs of the seed-1904 runs, and accuracy is gated above chance. bBPB uses the twins of the ranking format, read against the 1.7B accuracy of the same items or against the 1.7B bBPB. The reading against accuracy has no DA-ckpt, as its reference would be another score. LAMBADA has no twin. The bands are 95\% bootstrap intervals over tasks. A point on fewer than five tasks is not drawn. A hollow point is 1.0 by self comparison.}
+\label{fig:app_rq11_recipe_by_benchmark}
+\end{figure*}

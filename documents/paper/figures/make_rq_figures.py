@@ -39,6 +39,8 @@ comes from). The .tex carries the source path as a comment next to the
     app_rq10_size_generalisation <- rq10_size_generalisation/reference_consistency.py --paper
                              gate_share_and_da_size_mono_axis_paper
     app_rq11_evaluation_recipe <- rq11_evaluation_recipe/recipe.py --paper               recipe_da_size_variants_multi_axes_paper
+    app_rq11_recipe_by_benchmark <- the same                                    recipe_da_all_by_benchmark_multi_axes_paper
+                             (the extra full-page figure of the evaluation-recipe appendix page)
 
     app_rq02_decision_accuracy <- rq02_decision_accuracy/scale_convergence.py --paper  scale_convergence_da_size_multi_axes_paper
     app_rq02_bbpb               <- rq02_decision_accuracy/paper_rq2.py --axes mono-axis  rq2_da_all_above_66_either_transformation_by_scoring_mono_axis
@@ -102,6 +104,8 @@ FIGURES = {
                                 ("png",)),
     "app_rq11_evaluation_recipe": (ANALYSIS.joinpath("rq11_evaluation_recipe", *PRED, "recipe_da_size_variants_multi_axes_paper"),
                               ("png",)),
+    "app_rq11_recipe_by_benchmark": (ANALYSIS.joinpath("rq11_evaluation_recipe", *PRED, "recipe_da_all_by_benchmark_multi_axes_paper"),
+                                     ("png",)),
     # the main figures of the per-analysis appendix pages (make_rq_appendix.py)
     "app_rq02_bbpb": (ANALYSIS / "rq02_decision_accuracy" / "pretraining" / "predictivity"
                       / "rq2_da_all_above_66_either_transformation_by_scoring_mono_axis", ("png",)),

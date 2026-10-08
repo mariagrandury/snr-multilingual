@@ -29,7 +29,9 @@ the first finding for the main figure, a fixed sentence for the extras.
                  to its bold lead and first sentence
     extras       optional sixth PAGES element: further figures after the main
                  one, each (paper figure stem, caption in LaTeX starting with
-                 its bold takeaway, label), on a full-width float page of their own
+                 its bold takeaway, label), on a full-width float page of their own;
+                 the caption may be a function of the figure's CSV, so its
+                 numbers follow each refresh
 
 A FIGURE_PAGES entry writes sections/<stem>.tex, one more figure on a float page
 of its own, with a caption built from the figure's CSV on every run:
@@ -55,6 +57,37 @@ from make_rq_figures import ANALYSIS, FIGURES, HERE
 SECTIONS = HERE.parent / "sections"
 # the appendix section the pages are subsections of, opened by the first page
 PARENT = ("Detailed Analyses", "app:analyses")
+
+
+def rq11_benchmarks_caption(d):
+    """The caption of app_rq11_recipe_by_benchmark, its numbers read from the figure's CSV `d`."""
+    drawn = d[d["drawn"] & (d["panel"] != "ranking")]
+    size = drawn[drawn["panel"] == "DA-size"].pivot_table(index=["row", "x"], columns="line", values="da")
+    rows = [r for r in dict.fromkeys(drawn["row"]) if r != "Overall"]
+    acc = [c for c in ("original", "rf", "rfgm") if c in size]
+    small = size.xs("90M", level="x")
+    both = small.dropna(subset=["bbpb_acc"])[small.dropna(subset=["bbpb_acc"])[acc].notna().any(axis=1)]
+    wins = int((both["bbpb_acc"] > both[acc].max(axis=1)).sum())
+    ov = size.xs("Overall", level="row")
+    no_twin = [r for r in rows if not drawn[(drawn["row"] == r) & drawn["line"].str.startswith("bbpb")].shape[0]]
+    n = len(rows)
+    return (
+        f"\\textbf{{At the 90M proxy, a benchmark's bBPB read against the 1.7B accuracy ranks the design pairs more like "
+        f"the reference than its best accuracy format on {wins} of the {len(both)} top benchmarks where both have a "
+        f"value.}} Overall, DA-size on accuracy goes from {ov.at['90M', 'acc']:.2f} at 90M to {ov.at['1B', 'acc']:.2f} at "
+        f"1B, against {ov['bbpb_bbpb'].min():.2f}--{ov['bbpb_bbpb'].max():.2f} for the bBPB twins (read against the 1.7B "
+        f"bBPB) and {ov['bpb'].min():.2f}--{ov['bpb'].max():.2f} for BPB. The other rows are the {n} benchmarks with the "
+        "highest mean DA-size over 90M--1B in their original or RF format (at least five tasks), ranked, with that "
+        "format and value after the name. "
+        "Columns: DA-size against the 1.7B final checkpoint, DA-ckpt against the proxy's own final checkpoint and "
+        "DA-goal against the 1.7B final checkpoint, the last two averaged over the proxies 90M--1B. All use the "
+        "multi-axis pairs of the seed-1904 runs, and accuracy is gated above chance. bBPB uses the twins of the "
+        "ranking format, read against the 1.7B accuracy of the same items or against the 1.7B bBPB. The reading "
+        "against accuracy has no DA-ckpt, as its reference would be another score. "
+        + (f"{' and '.join(no_twin)} {'has' if len(no_twin) == 1 else 'have'} no twin. " if no_twin else "")
+        + "The bands are 95\\% bootstrap intervals over tasks. A point on fewer than five tasks is not drawn. A hollow "
+        "point is 1.0 by self comparison.")
+
 
 # folder -> title, paper figure stem, setup, (README image the finding follows, which bullet)[, extras]
 PAGES = {
@@ -187,7 +220,8 @@ PAGES = {
         "checkpoint, on multi-axis pairs and on the tasks above chance at the proxy and at the reference. Each "
         "benchmark is read in up to six ways. The items are used as published, as RF or as LLM-RF, and each "
         "version is scored by accuracy or by the bits per byte of the gold answer (bBPB).",
-        None, 0),
+        None, 0,
+        (("app_rq11_recipe_by_benchmark", rq11_benchmarks_caption, "fig:app_rq11_recipe_by_benchmark"),)),
     "rq12_above_chance_items": (
         "Above-chance items", "app_rq12_above_chance_items",
         "Seed-1904 runs of every cell, 90M--1.7B, final checkpoints. Every benchmark-language task keeps only "
@@ -569,7 +603,8 @@ def page(folder, title, stem, setup, kf_image, kf_bullet, extras=()):
         "}]",
         "",
     ] + ([float_page(stem, caption, label)] if tall(stem) else [])
-      + [float_page(e_stem, plain(e_caption), e_label) for e_stem, e_caption, e_label in extras])
+      + [float_page(e_stem, plain(e_caption(pd.read_csv(FIGURES[e_stem][0].with_suffix(".csv"))) if callable(e_caption)
+                                  else e_caption), e_label) for e_stem, e_caption, e_label in extras])
 
 
 def main():
