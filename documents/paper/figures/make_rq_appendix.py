@@ -345,7 +345,8 @@ def rq06_family_caption(d):
         + ("on the other subfamilies it does not" if s["other family"].max() < 0.005 else
            f"on the other subfamilies by no more than {s['other family'].max():+.2f}") + ".} Each panel is one cell (rows) "
         "and one family level (columns). A line is the share of the cell's accuracy tasks in untrained languages whose "
-        "final run clears chance, split by whether the language shares the family of a trained non-English language "
+        "final run clears chance (on the benchmarks every cell is evaluated on, not on the candidates still being "
+        "screened), split by whether the language shares the family of a trained non-English language "
         "(left: the top-level family such as Indo-European, right: the subfamily such as Slavic, from a Glottolog-style "
         "classification of every evaluated language). The dotted lines are the English-only $K$ = 1 cell on exactly the "
         "same tasks, so the gap between a solid line and its dotted twin is what training the cell's languages adds. "
@@ -359,13 +360,19 @@ def rq06_lift_caption(d):
     trained, other = d[d["same_sub"]], d[~d["same_sub"]]
     w = lambda g: (g["lift"] * g["n_verdicts"]).sum() / g["n_verdicts"].sum()
     r = d[(d["cell"] == "L8 A") & (d["family_sub"] == "Indo-European, Romance")].iloc[0]
+    up = trained[trained["lift"] > 0]
+    lead = (f"All {len(trained)} subfamilies that a cell trains" if len(up) == len(trained)
+            else f"Of the {len(trained)} subfamilies that a cell trains, {len(up)}")
     return (
-        f"\\textbf{{All {len(trained)} subfamilies that a cell trains clear chance more often than under English only "
-        f"({trained['lift'].min():+.2f} to {trained['lift'].max():+.2f}), while the {len(other)} others centre on zero "
-        f"(median {other['lift'].median():+.2f}).}} The largest is Romance under the $K$ = 8 scheme-A cell, which trains "
-        f"Spanish, French and Italian: {100 * r['share_above']:.0f}\\% of the Catalan, Galician, Portuguese and Romanian "
-        f"tasks above chance against {100 * r['baseline_share_above']:.0f}\\% for English only. Each row is one "
-        "subfamily of the untrained languages. A dot is the share of a cell's tasks in those languages above chance minus "
+        f"\\textbf{{{lead} clear chance more often than under English only "
+        f"({up['lift'].min():+.2f} to {up['lift'].max():+.2f}), while the {len(other)} others centre on zero "
+        f"(median {other['lift'].median():+.2f}).}} The largest trained lift is Romance under the $K$ = 8 scheme-A cell, "
+        f"which trains Spanish, French and Italian: {100 * r['share_above']:.0f}\\% of the Catalan, Galician, Portuguese "
+        f"and Romanian tasks above chance against {100 * r['baseline_share_above']:.0f}\\% for English only. "
+        + "".join(f"{x.family_sub.split(', ')[-1]} under the $K$ = {x.cell[1:-2]} scheme-{x.cell[-1]} cell is the "
+                  f"exception ({x.lift:+.2f}). " for x in trained[trained["lift"] <= 0].itertuples())
+        + "Each row is one subfamily of the untrained languages, read on the benchmarks every cell is evaluated on, not "
+        "on the candidates still being screened. A dot is the share of a cell's tasks in those languages above chance minus "
         "the share of the English-only $K$ = 1 cell on the same tasks and sizes, pooled over the sizes both have (every "
         "size but 350M for scheme A, 600M and 1B for scheme B), drawn where it rests on at least 20 verdicts. A filled "
         "dot marks a subfamily of one of the cell's trained languages. Weighted by verdicts, the trained subfamilies gain "

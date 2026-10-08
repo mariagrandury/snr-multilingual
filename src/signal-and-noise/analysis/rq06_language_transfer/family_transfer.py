@@ -5,7 +5,10 @@ No decision accuracy here, only the gate's run-level verdict (rule 1,
 `above_random.above_chance`: the one-sided 95 % Wilson lower bound of the run's
 final accuracy clears the task's chance level), read from the gate's own table
 `rq00_gate_and_curves/.../above_random_runs.csv` (pool `predictivity`, seed
-1904, final checkpoints, accuracy-scored parent tasks).
+1904, final checkpoints, accuracy-scored parent tasks). The gate covers every
+evaluated task, the probe candidates included, so only the tasks of `auto`
+benchmarks are read (`utils.auto_tasks`; RULES.md, "The probe candidates are not
+in the populations").
 
 Cells: the L1, L2 and L8 settings of the deep ladder, every data build the
 launcher has there (`DATA_SCHEMES`: L1 A / DCLMP / FWEB, L2 A / ZH / ES, L8 A /
@@ -63,7 +66,7 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, replace_block  # noqa: E402
 from analysis.paths import GATE_AND_CURVES  # noqa: E402
-from analysis.utils import ANALYSIS_SIZES, GRID_SEED, assign_language, benchmark_family  # noqa: E402
+from analysis.utils import ANALYSIS_SIZES, GRID_SEED, assign_language, auto_tasks, benchmark_family  # noqa: E402
 from pretrain.launch_trainings import DATA_SCHEMES, cell_languages  # noqa: E402
 from pretrain.pretrain_progress import NAME_RE, SCHEME_OF_LABEL  # noqa: E402
 
@@ -86,10 +89,10 @@ def family(lang: str, level: str) -> str | None:
 
 
 def verdicts(pool: str) -> tuple[pd.DataFrame, list]:
-    """Every untrained-language accuracy verdict of the deep seed-1904 L1/L2/L8 cells, with the
-    family groups; and the cells that have none."""
+    """Every untrained-language accuracy verdict of the deep seed-1904 L1/L2/L8 cells on `auto`
+    benchmarks, with the family groups; and the cells that have none."""
     runs = pd.read_csv(GATE_AND_CURVES / load_pools()[pool].get("stage", "pretraining") / pool / "above_random_runs.csv")
-    runs = runs[runs["above"].notna()]
+    runs = runs[runs["above"].notna() & runs["task"].isin(auto_tasks())]
     m = runs["model"].str.extract(NAME_RE)
     runs = runs.assign(size=m["size"], L=pd.to_numeric(m["L"]), data=m["scheme"].fillna("").map(SCHEME_OF_LABEL),
                        ladder=m["ladder"], seed=pd.to_numeric(m["seed"]), language=runs["task"].map(assign_language))
@@ -172,7 +175,8 @@ def figure(t: pd.DataFrame, path: Path, empty: list, paper: bool) -> None:
         S.save_paper(fig, path.with_suffix(""))
         return
     top = G._header(fig, "Above chance on untrained languages, by whether a trained language shares their family",
-                    "share of the cell's untrained-language accuracy tasks whose final run clears chance (rule 1, the gate's "
+                    "share of the cell's untrained-language accuracy tasks (auto benchmarks, no probe candidates) whose final run "
+                    "clears chance (rule 1, the gate's "
                     "run-level verdict), seed 1904, deep; same family = the language shares the top-level family / the "
                     "subfamily of a trained non-English language (configs/languages.json); dotted = the English-only L1 A "
                     "cell on exactly the same tasks; no untrained-language results for " + ", ".join(empty))
@@ -224,7 +228,7 @@ def figure_lift(t: pd.DataFrame, path: Path, paper: bool) -> None:
         S.save_paper(fig, path.with_suffix(""))
         return
     top = G._header(fig, "What training a language adds on the untrained languages of its subfamily",
-                    "per (cell, subfamily): the cell's share of untrained-language accuracy tasks above chance (rule 1) "
+                    "per (cell, subfamily): the cell's share of untrained-language accuracy tasks (auto benchmarks) above chance (rule 1) "
                     "minus the English-only L1 A cell's on the same (size, task) verdicts, pooled over the sizes both "
                     f"have; filled = the cell trains a non-English language of that subfamily; drawn where >= {MIN_VERDICTS} "
                     "verdicts")
@@ -249,7 +253,8 @@ def generate_readme(pool: str, t: pd.DataFrame, v: pd.DataFrame, empty: list) ->
     body = "\n\n".join([
         "## Above chance on untrained languages, by language family",
         f"Pool `{pool}`, the gate's run-level verdicts (rule 1) at the final checkpoint, deep seed-{GRID_SEED} cells at "
-        "L1, L2 and L8, accuracy-scored parent tasks in languages the cell does not train; same family = the language "
+        "L1, L2 and L8, accuracy-scored parent tasks of `auto` benchmarks (no probe candidates, `utils.auto_tasks`) in "
+        "languages the cell does not train; same family = the language "
         "shares the top-level family or the subfamily (`configs/languages.json` `family`) of a trained non-English "
         "language. Untrained-language results exist for the scheme-A cells (every size but L1 350M) and the L8 scheme-B "
         f"cell (350M–1B) only: none for {', '.join(empty)}. Left out: {len(nofam)} languages without a family in "

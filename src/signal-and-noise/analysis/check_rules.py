@@ -15,7 +15,9 @@ checks, by rule:
   12  a CSV of the same name next to every PNG
    2  a table with `task`, `L` and `data` columns holds no untrained
       (task, L, data build) row, except under rq06 and the rq00 gate (a table
-      written before 2026-10-05 carries the build in `scheme`, and is read so)
+      written before 2026-10-05 carries the build in `scheme`, and is read so);
+      and rq06, exempt from that, holds no benchmark outside `auto` (the probe
+      candidates are not in the populations; the rq00 gate keeps them by design)
 
   17  every generated block names a generator the regeneration runs: a README
       `<!-- BEGIN auto:KEY (script ...) -->` block's script is in
@@ -51,9 +53,9 @@ _REPO = Path(__file__).resolve().parents[1]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from analysis.utils import (ANALYSIS_SIZES, AXES_SUFFIX, EVAL_SIZES, FRAC_TOL, LANGUAGE_AGGREGATES,  # noqa: E402
+from analysis.utils import (ANALYSIS_SIZES, AXES_SUFFIX, BBPB, EVAL_SIZES, FRAC_TOL, LANGUAGE_AGGREGATES,  # noqa: E402
                             MIN_PAIRS, NOISE_WINDOW, CKPT_DA_EARLY_FRACS, SHARED_FRACS,
-                            _is_parent_task, is_trained)
+                            _is_parent_task, auto_tasks, benchmark_family, is_trained)
 
 # Rule 10, derived from the constants, never spelled out, so that moving
 # TARGET_SIZE moves the check: every evaluated size past the reference — 3B
@@ -176,6 +178,12 @@ def check_csv(path: Path) -> list[str]:
         bad = [(t, L, d) for t, L, d in zip(sub["task"], sub["L"], sub[build]) if not is_trained(str(t), int(L), str(d))]
         if bad:
             out.append(f"rule 2: {len(bad)} untrained (task, L, data build) rows, e.g. {bad[:2]}")
+    # rule 2, the probe candidates: rq06 reads untrained languages, never a benchmark outside `auto`
+    if "task" in df.columns and "rq06_language_transfer" in path.parts:
+        tasks = pd.Series(df["task"].dropna().astype(str).unique()).str.removeprefix(BBPB)
+        probe = tasks[~tasks.map(benchmark_family).isin(["bpb", "loss"]) & ~tasks.isin(auto_tasks())]
+        if len(probe):
+            out.append(f"rule 2: {len(probe)} benchmark tasks outside `auto` (probe candidates), e.g. {list(probe[:3])}")
     return out
 
 

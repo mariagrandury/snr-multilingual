@@ -792,6 +792,21 @@ def trained_only(df: pd.DataFrame) -> pd.DataFrame:
     return df[np.asarray(keep, dtype=bool)]
 
 
+@lru_cache(maxsize=None)
+def auto_tasks() -> frozenset[str]:
+    """Every task of the benchmarks rule 2's trained set is drawn from, in every
+    language: the `auto` group (or the groups SNR_TRAINED_GROUPS names, as in
+    `pretrain.ladder_report._trained_tasks`), the `discarded` tasks left out.
+    The gate is built with `untrained=True`, so its tables (`above_random_*.csv`)
+    also hold the probe candidates; a script that reads them directly instead
+    of a pool filtered by `trained_only` keeps only these tasks (RULES.md, "The
+    probe candidates are not in the populations")."""
+    import os
+    from pretrain import ladder_report as lr
+    benchmarks = [b for g in os.environ.get("SNR_TRAINED_GROUPS", "auto").split(",") for b in lr.auto_benchmarks(g.strip())]
+    return frozenset(lr.tasks_for_benchmarks(benchmarks, lr.eval_languages(1, "A", all_languages=True)))
+
+
 def with_bbpb_twins(df: pd.DataFrame) -> pd.DataFrame:
     """`df` plus a `bbpb_<task>` row for every benchmark row the BBPB table
     (`BENCH_BPB`, written from the per-item store) has a value for: a copy of

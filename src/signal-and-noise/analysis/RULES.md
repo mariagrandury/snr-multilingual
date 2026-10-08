@@ -173,7 +173,13 @@ moves while it is only a candidate. The one pass that reads them,
 `rq00_task_reformulation/probe.sh`, opts in with `SNR_TRAINED_GROUPS=auto,auto_probe`
 (`pretrain.ladder_report._trained_tasks`), which only widens the trained set
 for that process; the gate it rewrites differs from the committed one in the
-probe rows alone.
+probe rows alone. The gate itself is built with `untrained=True` and so keeps
+the candidates: a script that draws a population from its tables directly
+(`above_random_runs.csv` and the mask, share and scores) rather than from a
+pool keeps only `utils.auto_tasks()`, as rq06's `family_transfer.py` does
+(`check_rules.py` checks rq06), or the share's `trained` population, as rq00's
+`panels.py` does. `reformulations_gate.py` (the probe screen) and
+`run_apertus.py`'s count of every chance-level task in the gate read them all.
 
 **Promoted 2026-09-23**, and this moves every population: twenty of the
 twenty-one candidates are now in `auto` — the BBH / ACP-Bench cloze arms and
