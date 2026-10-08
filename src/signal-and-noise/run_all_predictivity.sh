@@ -296,6 +296,10 @@ run $PY analysis/rq06_language_transfer/analyze.py --pool predictivity_seeds
 run $PY analysis/rq06_language_transfer/panels.py --pool predictivity_seeds
 # the minimal language panel: one language / English / the panel macro at the proxy against the 1.7B macro ranking
 run $PY analysis/rq06_language_transfer/language_panel.py --pool predictivity
+# the cross-task ranking transfer (proxy task y at 90M-1B against target task x at 1.7B; reads rq02's reliable tasks)
+run $PY analysis/rq06_language_transfer/cross_task_transfer.py --pool predictivity
+# above chance on untrained languages by language family (reads the gate's run-level verdicts)
+run $PY analysis/rq06_language_transfer/family_transfer.py --pool predictivity
 
 pass "rq07 — external frameworks"
 # rq07 needs the AllenAI-side SNR table (built once from the DataDecide `core`

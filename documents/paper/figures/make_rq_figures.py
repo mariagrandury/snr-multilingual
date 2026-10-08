@@ -33,6 +33,10 @@ comes from). The .tex carries the source path as a comment next to the
     app_external_models   <- the same                                  above_random_external_models.tex (a LaTeX table)
     app_rq05_design_decisions  <- rq05_design_decisions/panels.py --paper (pool predictivity_seeds)  da_all_lines_mono_axis_paper
     app_rq06_language_transfer <- rq06_language_transfer/panels.py --paper (pool predictivity_seeds)  transfer_da_all_lines_mono_axis_paper
+    app_rq06_cross_task_hellaswag <- rq06_language_transfer/cross_task_transfer.py  cross_task_da_size_by_language_hellaswag_all_languages_mono_axis_paper
+    app_rq06_family_transfer   <- rq06_language_transfer/family_transfer.py  above_chance_untrained_by_family_paper
+    app_rq06_family_lift       <- the same                                 above_chance_untrained_lift_by_subfamily_paper
+                             (these three: the extra float pages of the language-transfer appendix page)
     app_rq07_external_frameworks <- rq07_external_frameworks/analyze.py --pool predictivity --paper  snr_apertus_vs_snr_allenai_paper
     app_rq08_subset_selection  <- rq08_subset_selection/panels.py --paper                gain_over_null_paper
     app_rq09_benchmark_design  <- rq09_benchmark_design/analyze.py --pool predictivity --paper  snr_per_family_ranked_paper
@@ -106,6 +110,13 @@ FIGURES = {
     "app_rq05_design_decisions": (ANALYSIS.joinpath("rq05_design_decisions", *SEEDS, "da_all_lines_mono_axis_paper"), ("png",)),
     "app_rq06_language_transfer": (ANALYSIS.joinpath("rq06_language_transfer", *SEEDS, "transfer_da_all_lines_mono_axis_paper"),
                               ("png",)),
+    "app_rq06_cross_task_hellaswag": (ANALYSIS.joinpath("rq06_language_transfer", *PRED,
+                                                         "cross_task_da_size_by_language_hellaswag_all_languages_mono_axis_paper"),
+                                      ("png",)),
+    "app_rq06_family_transfer": (ANALYSIS.joinpath("rq06_language_transfer", *PRED, "above_chance_untrained_by_family_paper"),
+                                 ("png",)),
+    "app_rq06_family_lift": (ANALYSIS.joinpath("rq06_language_transfer", *PRED, "above_chance_untrained_lift_by_subfamily_paper"),
+                             ("png",)),
     "app_rq07_external_frameworks": (ANALYSIS.joinpath("rq07_external_frameworks", *PRED, "snr_apertus_vs_snr_allenai_paper"),
                                 ("png",)),
     "app_rq08_subset_selection": (ANALYSIS.joinpath("rq08_subset_selection", *PRED, "gain_over_null_paper"), ("png",)),

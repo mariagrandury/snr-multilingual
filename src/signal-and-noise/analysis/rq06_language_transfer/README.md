@@ -52,6 +52,115 @@ Population: pool `predictivity_seeds`, the list decision (scheme A vs B on the L
 
 GitHub: [transfer_da_all_lines_mono_axis_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_seeds/transfer_da_all_lines_mono_axis_paper.png) · [transfer_da_all_lines_mono_axis_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_seeds/transfer_da_all_lines_mono_axis_paper.csv). Every intervention by language count: [Per benchmark and per language](#per-benchmark-and-per-language).
 
+<!-- BEGIN auto:cross-task-transfer (cross_task_transfer.py --pool predictivity) -->
+## Cross-task transfer of the ranking
+
+Pool `predictivity` (seed 1904, every data build), mono-axis pairs, ≥ 3 pairs per (task pair, size), each side gated (proxy task at the proxy size, target task at 1.7B), accuracy-scored parent tasks. A cell: DA-size of the proxy task's final ranking at a proxy size (y) against the target task's final ranking at 1.7B (x), the mean over 90M–1B. `trained` reads each family only on the languages it trains (rule 2); `all_languages` adds the scheme-A deep seed-1904 cells' scores on every other language (and the scheme-B L8 deep cells' at 350M–1B), rq06's exception to rule 2. Regenerate with `python analysis/rq06_language_transfer/cross_task_transfer.py --pool predictivity`.
+
+| population | filter | tasks | cells | diagonal | same benchmark, other language | other benchmark, same language | other benchmark and language | off-diagonal share ≥ 0.75 |
+|---|---|---|---|---|---|---|---|---|
+| trained | `above_chance` | 448 | 200704 | 0.51 | 0.48 | 0.49 | 0.48 | 0.04 |
+| trained | `above_66_either` | 117 | 13689 | 0.64 | 0.59 | 0.59 | 0.53 | 0.14 |
+| trained | `L8` | 143 | 20449 | 0.50 | 0.50 | 0.48 | 0.48 | 0.00 |
+| trained | `hellaswag` | 25 | 625 | 0.72 | 0.62 | – | – | 0.23 |
+| all_languages | `above_chance` | 725 | 525625 | 0.57 | 0.52 | 0.50 | 0.47 | 0.01 |
+| all_languages | `above_66_either` | 117 | 13689 | 0.67 | 0.59 | 0.60 | 0.53 | 0.05 |
+| all_languages | `L8` | 261 | 68121 | 0.55 | 0.53 | 0.48 | 0.45 | 0.00 |
+| all_languages | `hellaswag` | 26 | 676 | 0.75 | 0.61 | – | – | 0.14 |
+
+![HellaSwag, language against language](pretraining/predictivity/cross_task_da_size_by_language_hellaswag_all_languages_mono_axis.png)
+
+![By benchmark, the rq2 tasks](pretraining/predictivity/cross_task_da_size_by_benchmark_above_66_either_mono_axis.png)
+
+![By language, the rq2 tasks](pretraining/predictivity/cross_task_da_size_by_language_above_66_either_mono_axis.png)
+
+The other maps (every filter, per task, per benchmark and per language, both populations) sit beside them as `cross_task_da_size_by_<task|benchmark|language>_<filter>[_all_languages]_mono_axis.png`.
+<!-- END auto:cross-task-transfer -->
+
+The earlier version of this reading is the decision-accuracy analysis's
+[cross-task maps](../rq02_decision_accuracy/README.md#cross-task-predictability)
+(`rq02_decision_accuracy/cross_task.py`, 2026-09-18), which draw the smallest
+safe proxy size; this script reuses its pair-sign kernel and draws the value
+instead, proxy on y and target on x. Snapshot: the ladder report cached on
+2026-10-08 04:36 (the `above_66_either` task list is the committed rq02 table).
+
+Key findings (`cross_task_da_size_summary_mono_axis.csv`, the HellaSwag map's CSV):
+
+- **Within one benchmark, the languages a mixture trains together predict each
+  other.** On HellaSwag (all languages), German, Spanish, French and Italian, the
+  four European languages of the L8 list, predict each other's 1.7B ranking at
+  0.81 on average, as well as each predicts itself (0.81).
+- **English is a poor proxy for the other languages.** English HellaSwag ranks
+  itself at 0.83 but the other languages at 0.41 on average, and they rank it at
+  0.47. Basque, which no list trains, is predicted by no other language (its
+  column averages 0.29).
+- **Across benchmarks the transfer is weak.** On every task above chance (trained
+  languages) the own-task diagonal averages 0.51 and every off-diagonal kind
+  0.48–0.49; only 4 % of the off-diagonal cells reach 0.75. On the rq2 tasks
+  (`above_66_either`) the diagonal is 0.64, the same benchmark in another
+  language 0.59, another benchmark in the same language 0.59 and both different
+  0.53.
+- **A cell reads the pairs both tasks have**, so two cells can average different
+  decisions; in the all-languages maps a language no list trains is read on the
+  scheme-A cells alone (pairs moving L). The trained HellaSwag map is noisier
+  for the L30 and L50 languages, which few families train (few pairs, quantized
+  values).
+
+Follow-ups:
+
+- The same HellaSwag map per proxy size, to see whether the L8 block forms
+  from 90M or only at 1B.
+- The language map ordered by language family instead of resource rank, to test
+  the block structure against the family reading below.
+
+<!-- BEGIN auto:family-transfer (family_transfer.py --pool predictivity) -->
+## Above chance on untrained languages, by language family
+
+Pool `predictivity`, the gate's run-level verdicts (rule 1) at the final checkpoint, deep seed-1904 cells at L1, L2 and L8, accuracy-scored parent tasks in languages the cell does not train; same family = the language shares the top-level family or the subfamily (`configs/languages.json` `family`) of a trained non-English language. Untrained-language results exist for the scheme-A cells (every size but L1 350M) and the L8 scheme-B cell (350M–1B) only: none for L2 ZH, L2 ES, L1 DCLMP, L1 FWEB. Left out: 61 languages without a family in languages.json. Regenerate with `python analysis/rq06_language_transfer/family_transfer.py --pool predictivity`.
+
+![Above chance on untrained languages by family](pretraining/predictivity/above_chance_untrained_by_family.png)
+
+![Lift over English only by subfamily](pretraining/predictivity/above_chance_untrained_lift_by_subfamily.png)
+
+Numbers (generated):
+
+- **L2 A, subfamily**: share above chance, same family 90M 0.38, 175M 0.40, 350M 0.42, 600M 0.38, 1B 0.47, 1.7B 0.49; other family 90M 0.37, 175M 0.38, 350M 0.39, 600M 0.41, 1B 0.44, 1.7B 0.49. Lift over L1 A on the same tasks: same family +0.00, +0.07, +nan, -0.01, +0.08, +0.04, other family -0.01, -0.00, +nan, -0.01, -0.01, -0.03.
+- **L2 A, top-level family**: share above chance, same family 90M 0.37, 175M 0.40, 350M 0.40, 600M 0.40, 1B 0.45, 1.7B 0.49; other family 90M 0.36, 175M 0.37, 350M 0.38, 600M 0.42, 1B 0.44, 1.7B 0.48. Lift over L1 A on the same tasks: same family -0.00, +0.02, +nan, -0.01, +0.00, -0.05, other family -0.02, -0.02, +nan, -0.00, -0.01, +0.00.
+- **L8 A, subfamily**: share above chance, same family 90M 0.42, 175M 0.48, 350M 0.42, 600M 0.45, 1B 0.52, 1.7B 0.53; other family 90M 0.30, 175M 0.36, 350M 0.37, 600M 0.34, 1B 0.38, 1.7B 0.42. Lift over L1 A on the same tasks: same family +0.00, +0.08, +nan, +0.03, +0.05, +0.01, other family -0.04, +0.00, +nan, -0.02, +0.00, -0.01.
+- **L8 A, top-level family**: share above chance, same family 90M 0.38, 175M 0.43, 350M 0.39, 600M 0.40, 1B 0.46, 1.7B 0.50; other family 90M 0.30, 175M 0.37, 350M 0.38, 600M 0.36, 1B 0.39, 1.7B 0.42. Lift over L1 A on the same tasks: same family -0.00, +0.05, +nan, +0.01, +0.03, -0.01, other family -0.05, +0.00, +nan, -0.02, +0.00, +0.00.
+- **L8 B, subfamily**: share above chance, same family 350M 0.27, 600M 0.29, 1B 0.31; other family 350M 0.20, 600M 0.22, 1B 0.27. Lift over L1 A on the same tasks: same family +nan, +0.02, +0.02, other family +nan, -0.01, +0.02.
+- **L8 B, top-level family**: share above chance, same family 350M 0.24, 600M 0.29, 1B 0.30; other family 350M 0.19, 600M 0.16, 1B 0.25. Lift over L1 A on the same tasks: same family +nan, +0.02, +0.01, other family +nan, -0.04, +0.05.
+
+GitHub: [above_chance_untrained_by_family.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/above_chance_untrained_by_family.png) · [above_chance_untrained_by_family.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/above_chance_untrained_by_family.csv) · [above_chance_untrained_lift_by_subfamily.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/above_chance_untrained_lift_by_subfamily.png) · [above_chance_untrained_lift_by_subfamily.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/above_chance_untrained_lift_by_subfamily.csv) · [above_chance_untrained_by_family_per_task.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/above_chance_untrained_by_family_per_task.csv)
+<!-- END auto:family-transfer -->
+
+Key findings (`above_chance_untrained_by_family.csv`, `above_chance_untrained_lift_by_subfamily.csv`):
+
+- **Training a Romance language helps the untrained Romance languages clear
+  chance.** L8 A (Spanish, French, Italian) puts 0.57 of the Portuguese, Romanian
+  and Catalan tasks above chance against 0.49 for English only on the same
+  verdicts (+0.08, the largest lift of a trained subfamily). L8 B, whose list
+  has no Romance language, reads them at +0.01 (600M and 1B only).
+- **Slavic is lifted by Russian at every L.** +0.04 for L2 A (Russian alone),
+  +0.04 for L8 A and +0.02 for L8 B (600M and 1B only), over the nine untrained
+  Slavic languages.
+- **The effect is small and mid-size.** On the subfamily split, L8 A's lift on
+  its own subfamilies is 0.00 at 90M, +0.08 at 175M, +0.03 at 600M, +0.05 at 1B
+  and +0.01 at 1.7B (no 350M: the L1 cell's evaluation is incomplete there); on the other subfamilies it is −0.04 to 0.00. The raw same-family share
+  sits above the other-family one in every panel, but English only shows most of
+  that gap too, so the gap is mostly which languages and benchmarks are in each
+  group.
+- **Most untrained-language cells have no results.** DCLMP, FWEB, ZH and ES are
+  evaluated on their own languages only, L8 B on the untrained ones at
+  350M–1B only, and 60 evaluated languages have no family in `languages.json`.
+
+Follow-ups:
+
+- Evaluate the ZH and ES L2 cells on the untrained languages (Sino-Tibetan has
+  no untrained language here, Romance would test Spanish alone against L8 A).
+- Family entries for the 60 languages without one, to bring the whole Belebele
+  and Global-PIQA set into the split.
+
 ## Methodology
 
 - **Own exponent.** log BPB = a − α log N per language over the proxy rungs.

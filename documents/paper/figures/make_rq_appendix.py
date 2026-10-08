@@ -178,6 +178,64 @@ def rq13_regimes_caption(d):
         "fit would.")
 
 
+def rq06_cross_task_caption(d):
+    """The caption of app_rq06_cross_task_hellaswag, its numbers read from the figure's CSV `d`."""
+    lang = lambda t: "en" if t == "hellaswag" else t.rsplit("_", 1)[-1]
+    d = d.assign(pl=d["proxy"].map(lang), tl=d["target"].map(lang))
+    off, diag = d[d["pl"] != d["tl"]], d[d["pl"] == d["tl"]].set_index("pl")["da_size"]
+    eu4 = ["de", "es", "fr", "it"]
+    block = off[off["pl"].isin(eu4) & off["tl"].isin(eu4)]["da_size"].mean()
+    return (
+        f"\\textbf{{On HellaSwag, German, Spanish, French and Italian, which the $K$ = 8 list trains together, predict "
+        f"each other's 1.7B ranking at {block:.2f}, as well as each predicts its own ({diag[eu4].mean():.2f}), while English "
+        f"ranks the other languages at {off[off['pl'] == 'en']['da_size'].mean():.2f}.}} Each cell is the DA-size of the "
+        "ranking of the design variants on the HellaSwag task of one language at a proxy size (rows) against the ranking "
+        "on the task of another language at the 1.7B final checkpoint (columns), averaged over the proxies 90M--1B. The "
+        "diagonal is the task's own DA-size. The pairs are the mono-axis design pairs of the seed-1904 runs, at least "
+        "three per size, each task gated above chance at the size it is read at. A model's score on a language it does "
+        "not train counts here: the scheme-A runs are evaluated on every language, so a language that no list trains, "
+        f"such as Basque (its column averages {off[off['tl'] == 'eu']['da_size'].mean():.2f}), is read on those runs "
+        "alone. A cell averages the pairs both tasks have, so two cells may average different decisions. The colour is "
+        "centred at 0.5, the agreement of a coin flip. Languages follow the resource order of the training lists.")
+
+
+def rq06_family_caption(d):
+    """The caption of app_rq06_family_transfer, its numbers read from the figure's CSV `d`."""
+    s = d[(d["cell"] == "L8 A") & (d["level"] == "sub")].pivot(index="size", columns="group", values="lift")
+    best = s["same family"].idxmax()
+    return (
+        f"\\textbf{{The $K$ = 8 cell clears chance on more of its untrained same-subfamily tasks than English only does on "
+        f"the same tasks, by up to {s.at[best, 'same family']:+.2f} at {best}, and "
+        + ("on the other subfamilies it does not" if s["other family"].max() < 0.005 else
+           f"on the other subfamilies by no more than {s['other family'].max():+.2f}") + ".} Each panel is one cell (rows) and one family level (columns). A line is "
+        "the share of the cell's accuracy tasks in untrained languages whose final run clears chance, split by whether "
+        "the language shares the family of a trained non-English language (left: the top-level family such as "
+        "Indo-European, right: the subfamily such as Slavic). The dotted lines are the English-only $K$ = 1 cell on "
+        "exactly the same tasks, so the gap between a solid line and its dotted twin is what training the cell's "
+        "languages adds. Deep runs at seed 1904. Only the scheme-A cells and, at 350M--1B, the $K$ = 8 cell of scheme B "
+        "are evaluated on untrained languages, and the $K$ = 1 cell has no 350M evaluation, so its dotted lines break "
+        "there. Languages without a family in our language table are left out.")
+
+
+def rq06_lift_caption(d):
+    """The caption of app_rq06_family_lift, its numbers read from the figure's CSV `d`."""
+    r = d[(d["cell"] == "L8 A") & (d["family_sub"] == "Indo-European, Romance")].iloc[0]
+    rb = d[(d["cell"] == "L8 B") & (d["family_sub"] == "Indo-European, Romance")].iloc[0]
+    trained = d[d["same_sub"]].sort_values("lift", ascending=False)
+    return (
+        f"\\textbf{{Training Spanish, French and Italian lifts the untrained Romance languages most: the $K$ = 8 scheme-A "
+        f"cell puts {100 * r['share_above']:.0f}\\% of their tasks above chance against {100 * r['baseline_share_above']:.0f}\\% "
+        f"for English only, while the scheme-B list, which has no Romance language, gains {rb['lift']:+.2f}.}} Each row is "
+        "one subfamily of the untrained languages. A dot is the share of a cell's tasks in those languages above chance "
+        "minus the share of the English-only $K$ = 1 cell on the same tasks and sizes, pooled over the sizes both have "
+        "(every size but 350M for scheme A, 600M and 1B for scheme B). A filled dot marks a subfamily of one of the "
+        "cell's trained languages: " + ", ".join(
+            f"{f} for $K$ = {c.split()[0][1:]} scheme {c.split()[1]} ({v:+.2f})"
+            for c, f, v in zip(trained["cell"], trained["family_sub"].str.replace("Indo-European, ", ""), trained["lift"]))
+        + ". "
+        "Rows follow their mean over the cells.")
+
+
 RQ09_POP = ("the per-task DA-size of Figure~\\ref{fig:rq2}: the final checkpoint of each proxy against the 1.7B final, "
             "on the mono-axis design pairs of the seed-1904 runs, on the tasks above chance at the proxy and at 1.7B. A "
             "benchmark's DA-size is the median over its tasks at a proxy, averaged over the proxies 90M--1B")
@@ -348,7 +406,10 @@ PAGES = {
         "list or neither list trains them. When neither list trains a language, we also check whether they train "
         "its script. We report the DA-size of the proxies 90M--1B and the DA-ckpt of the checkpoints of the "
         "1.7B run, against the 1.7B final checkpoint.",
-        None, 0),
+        None, 0,
+        (("app_rq06_cross_task_hellaswag", rq06_cross_task_caption, "fig:app_rq06_cross_task_hellaswag"),
+         ("app_rq06_family_transfer", rq06_family_caption, "fig:app_rq06_family_transfer"),
+         ("app_rq06_family_lift", rq06_lift_caption, "fig:app_rq06_family_lift"))),
     "rq07_external_frameworks": (
         "Agreement with DataDecide", "app_rq07_external_frameworks",
         "We compare our 1B rung (seed 1904, every cell and data build) with the 1B rung of DataDecide (25 data "
