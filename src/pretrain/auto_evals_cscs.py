@@ -705,10 +705,26 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
               + ("(dry-run: not written)" if args.dry_run else f"details in {path}"))
 
 
-# (scheme, ladder, seed) of the runs evaluated in EVERY language, flag or not:
-# one full size x L ladder showing how each benchmark behaves in languages
-# the model never trained on (eval_progress_all_languages.png).
-ALL_LANGUAGES_RUNS = ("A", "deep", 1904)
+# The runs evaluated in EVERY language, flag or not, showing how each
+# benchmark behaves in languages the model never trained on
+# (eval_progress_all_languages.png): the deep ladder (deep, xielu, ademamix)
+# at seed 1904, in these schemes at these settings (None = every setting).
+# Scheme A is the full size x L ladder; ZH and ES (L2) and B at L8 add the
+# other recipes at a fixed L. AT3, the other ladders and the replicate seeds
+# stay on their trained languages.
+ALL_LANGUAGES_RUNS = {"A": None, "ZH": {2}, "ES": {2}, "B": {8}}
+# For the titles of the figures that draw them.
+ALL_LANGUAGES_LABEL = "deep seed-1904 runs of " + ", ".join(
+    s if Ls is None else f"{s} L{'/'.join(map(str, sorted(Ls)))}"
+    for s, Ls in ALL_LANGUAGES_RUNS.items())
+
+
+def all_languages_run(scheme: str, ladder: str, seed: int, L: int) -> bool:
+    """Whether the watcher evaluates this cell in every language."""
+    if ladder != "deep" or int(seed) != 1904 or scheme not in ALL_LANGUAGES_RUNS:
+        return False
+    settings = ALL_LANGUAGES_RUNS[scheme]
+    return settings is None or int(L) in settings
 
 
 def eval_languages(L: int, scheme: str, all_languages: bool = False):
@@ -743,9 +759,9 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
         due = due[-1:]
     # The cell's task list: every auto benchmark, in the languages this cell
     # trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...), or in all of them
-    # under --all-languages and for the ALL_LANGUAGES_RUNS.
+    # under --all-languages and for the all_languages_run cells.
     langs = eval_languages(c["L"], scheme, args.all_languages
-                           or (scheme, c["ladder"], c["seed"]) == ALL_LANGUAGES_RUNS)
+                           or all_languages_run(scheme, c["ladder"], c["seed"], c["L"]))
     task_list = tasks_for_benchmarks(benchmarks, langs)
     # Convert EVERY saved checkpoint (persist all of them to capstor), but
     # evaluate only the due ones — conversion is the durability step, eval

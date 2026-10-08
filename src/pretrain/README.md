@@ -512,9 +512,10 @@ automatically at the end of every `launch_trainings.py cscs` invocation;
 `eval_progress.png` (embedded above) is refreshed by the auto-eval watcher after every pass,
 since that is what changes the state it shows. So is
 [`eval_progress_all_languages.png`](eval_progress_all_languages.png): the
-deep scheme-A seed-1904 runs, which the watcher always evaluates in every
-language (`ALL_LANGUAGES_RUNS` in `auto_evals_cscs.py`), counted against
-that full list. Unlike the two model
+deep (xielu, AdEMAMix) seed-1904 runs of scheme A at every setting, ZH and
+ES at L2 and B at L8, which the watcher always evaluates in every language
+(`all_languages_run` in `auto_evals_cscs.py`), counted against that full
+list. Unlike the two model
 heatmaps it counts only runs the grid names — a run on disk outside the grid
 is work the watcher will never do, and is reported on stderr instead of
 painting its cell as permanently under-evaluated.

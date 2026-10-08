@@ -49,7 +49,7 @@ Measured from the completed runs, not extrapolated (2026-10-02):
 | | per 6-rung ladder |
 | --- | ---: |
 | training | **921 node-h** (1,036 at the launcher's `ITER_MS`, which carries headroom) |
-| eval + BPB + conversion | ~370 node-h for an `ALL_LANGUAGES_RUNS` cell, ~200 otherwise |
+| eval + BPB + conversion | ~370 node-h for a ladder evaluated in every language (`all_languages_run`), ~200 otherwise |
 
 **~1,120–1,290 node-h per ladder**; the activation axis at three settings is
 **~3,400 node-h**. The two top rungs are 84 % of the training cost (1.7B 546,

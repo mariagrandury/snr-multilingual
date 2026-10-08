@@ -49,7 +49,7 @@ from launch_trainings import (  # noqa: E402
     exp_name, mix_label,
     n_checkpoints, run_interval, save_interval)
 from auto_evals_cscs import (  # noqa: E402
-    ALL_LANGUAGES_RUNS, auto_benchmarks, eval_languages, saved_valid_iters)
+    ALL_LANGUAGES_LABEL, all_languages_run, auto_benchmarks, eval_languages, saved_valid_iters)
 from evals.scripts.utils.configs import metric_for, tasks_for_benchmarks  # noqa: E402
 
 # Training logs come from every account's TRAIN_LOG_DIRS (pretrain_progress);
@@ -1067,13 +1067,14 @@ def plot_benchmarks(csv_path: Path, out_dir: Path,
 
     Two figures, because a mean over different task sets is not a comparison.
     By default every cell counts only the tasks in the languages it trains
-    on (the deep scheme-A seed-1904 runs carry ~2,900 tasks, their siblings
+    on (the all-languages runs carry ~2,900 tasks, their siblings
     74-155), and one line is drawn per (size, ladder, scheme, L) so a line is
     always one task population. Within a line the mean is still over whatever
     tasks that checkpoint was scored on, which is a diagnostic curve, not a
     comparison — `transform_effects` is what differences two cells.
-    all_languages=True draws only ALL_LANGUAGES_RUNS, the runs evaluated in
-    every language, over every task they have, trained on or not.
+    all_languages=True draws only the runs evaluated in every language
+    (auto_evals_cscs.all_languages_run), over every task they have, trained
+    on or not, one line per (size, scheme, L) as above.
     """
     import matplotlib.pyplot as plt
 
@@ -1081,8 +1082,8 @@ def plot_benchmarks(csv_path: Path, out_dir: Path,
     if df.empty:
         return None
     if all_languages:
-        scheme, ladder, seed = ALL_LANGUAGES_RUNS
-        df = df[(df["scheme"] == scheme) & (df["ladder"] == ladder) & (df["seed"] == seed)]
+        df = df[[all_languages_run(*k)
+                 for k in zip(df["scheme"], df["ladder"], df["seed"], df["L"])]]
     else:
         df = df[[k in _trained_tasks(L, s)
                  for k, L, s in zip(df["key"], df["L"], df["scheme"])]]
@@ -1116,7 +1117,7 @@ def plot_benchmarks(csv_path: Path, out_dir: Path,
         ax.set_ylabel("accuracy", fontsize=7)
         ax.tick_params(labelsize=6)
         ax.grid(alpha=0.25, lw=0.4)
-    fig.suptitle(("ALL languages — deep scheme-A seed-1904 runs only\n" if all_languages
+    fig.suptitle((f"ALL languages — {ALL_LANGUAGES_LABEL} only\n" if all_languages
                   else "Trained languages only — each cell's own task list\n")
                  + "Benchmark accuracy vs checkpoint, averaged over each "
                  "benchmark's languages\ncolour = size, dotted red = chance "

@@ -423,8 +423,9 @@ def eval_counts(root: Path, logs_root: Path | None = None,
     per language the cell trains on, 13 at L=1 and 329 at L=50. That is why
     the eval cost of a cell is a property of L, not of the model size.
 
-    all_languages counts only auto_evals_cscs.ALL_LANGUAGES_RUNS (one run per
-    cell), each against every language — exactly what the watcher runs there.
+    all_languages counts only the runs auto_evals_cscs.all_languages_run
+    names (deep, seed 1904: one per scheme it includes at that setting), each
+    against every language — exactly what the watcher runs there.
 
     Due checkpoints and the benchmark list come from auto_evals_cscs itself
     (imported lazily: it imports this module, so a top-level import would
@@ -464,8 +465,9 @@ def eval_counts(root: Path, logs_root: Path | None = None,
                            for a in ladders_for(v, size, L))
                     for v in schemes}
             if all_languages:
-                s, a, seed = ae.ALL_LANGUAGES_RUNS
-                runs = {s: 1} if s in runs and seed in seeds_for(size, L, s, a) else {}
+                runs = {v: 1 for v in runs if ae.all_languages_run(v, "deep", 1904, L)
+                        and "deep" in ladders_for(v, size, L)
+                        and 1904 in seeds_for(size, L, v, "deep")}
                 if not runs:
                     continue
             cells[(size, L)] = {
@@ -502,8 +504,8 @@ def eval_counts(root: Path, logs_root: Path | None = None,
         size, L = m["size"], int(m["L"])
         c = cells.get((size, L))
         scheme = SCHEME_OF_LABEL[m["scheme"] or ""]
-        if c is None or (all_languages and (scheme, m["ladder"], int(m["seed"]))
-                         != ae.ALL_LANGUAGES_RUNS):
+        if c is None or (all_languages and not ae.all_languages_run(
+                scheme, m["ladder"], int(m["seed"]), L)):
             continue
         saved = ae.saved_valid_iters(entry.name, root)
         if not saved:
@@ -538,7 +540,9 @@ def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
     """Heatmap of eval progress per grid cell, three numbers deep.
 
     all_languages=True draws eval_progress_all_languages.png instead: only the
-    auto_evals_cscs.ALL_LANGUAGES_RUNS, each against every language.
+    runs auto_evals_cscs.all_languages_run names, each against every language
+    (a cell holds every scheme included at its setting: A, ZH and ES at L2,
+    A and B at L8).
 
     Each cell reads:
 
@@ -561,6 +565,7 @@ def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
     """
     import matplotlib.pyplot as plt
     from matplotlib.colors import LinearSegmentedColormap
+    from auto_evals_cscs import ALL_LANGUAGES_LABEL
 
     cells = eval_counts(root, logs_root, all_languages)
     matrix, labels = [], []
@@ -615,7 +620,7 @@ def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
     ax.set_xlabel("model size (non-embedding)")
     ax.set_ylabel("number of languages")
     ax.set_title(
-        ("ALL languages — deep scheme-A seed-1904 runs only\n" if all_languages else "")
+        (f"ALL languages — {ALL_LANGUAGES_LABEL} only\n" if all_languages else "")
         + "Eval progress per grid cell — benchmark results banked (bold)\n"
         "models x checkpoints x benchmarks: trained so far (middle), "
         "planned (bottom)\n"
