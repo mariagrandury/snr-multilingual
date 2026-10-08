@@ -488,7 +488,19 @@ PAGES = {
         "language's share of the mixture $\\times$ the size's budget $\\times$ the tenth. We use seed-1904 runs of "
         "every data build and ladder, 90M--1.7B, at $K \\in \\{1, 2, 8, 15, 30, 50\\}$. The above-chance gate "
         "is applied per run.",
-        None, 0),
+        None, 0,
+        (("rq00_thresholds",
+          "\\textbf{Training tokens of the language from which a benchmark is above chance.} For each multilingual "
+          "benchmark (trained in at least two languages) and answer format, the lower edge of the token bin from which "
+          "the share of (language, $K$, checkpoint) cells above chance is at least 50\\% or 90\\% in that bin and in "
+          "every larger bin, pooled over the model sizes 90M--1.7B and for the 90M and 1.7B models alone. Bins are three "
+          "per decade of the training tokens of the language that the checkpoint had seen, and a bin counts only with at "
+          "least 20 cells. $\\leq$ marks a level already met in the first bin and never a level not reached. Lang. is "
+          "the number of trained languages. Margin is the median accuracy above chance that a task needs for its Wilson "
+          "bound to clear chance, and Items its median item count. Seed-1904 runs of every data build and ladder, every "
+          "evaluated tenth of a run. The pooled bins mix sizes, and from $10^{10}$ tokens on most of their cells are "
+          "English.",
+          "tab:rq0_thresholds"),)),
     "rq01_scaling_predictability": (
         "Scaling predictability", "rq1",
         "We fit the final score of each task against model size with a log-linear fit, one series per task and "
@@ -524,7 +536,28 @@ PAGES = {
          ("app_rq02_da_size_by_language_per_proxy", rq02_language_per_proxy_caption,
           "fig:app_rq02_da_size_by_language_per_proxy"),
          ("app_rq02_rq2_crossfit", rq02_crossfit_caption, "fig:app_rq02_rq2_crossfit"),
-         ("app_rq02_decision_accuracy_crossfit", rq02_da_crossfit_caption, "fig:app_rq02_decision_accuracy_crossfit"))),
+         ("app_rq02_decision_accuracy_crossfit", rq02_da_crossfit_caption, "fig:app_rq02_decision_accuracy_crossfit"),
+         ("app_rq02_definition_sensitivity",
+          "\\textbf{No definition of decision accuracy lifts benchmark accuracy far above a coin flip.} DA-size of the "
+          "final checkpoint of each proxy against the 1.7B final checkpoint, on multi-axis pairs, under the definition "
+          "of Eq.~\\ref{eq:decision-accuracy} and its variants: a pair tied on one side counts one half, the pairs the "
+          "reference ties are dropped, or only the pairs whose 1.7B difference exceeds one or two checkpoint standard "
+          "deviations of the reference (over the last 20\\% of its run, detrended) or one or two seed standard "
+          "deviations of a difference are kept. A value is the mean over the tasks above chance at the proxy and at "
+          "1.7B, for benchmark accuracy, for accuracy and the bBPB twins together, and for the per-language bits per "
+          "byte, which never tie. Pairs kept is the share of the comparable pairs a variant keeps, pooled over the "
+          "proxy sizes. The task set moves across rows, since a cell needs three kept pairs: on accuracy it holds "
+          "302--470 tasks per proxy under Eq.~\\ref{eq:decision-accuracy} and 216--329 under the strictest filter.",
+          "tab:app_rq02_definition_sensitivity"),
+         ("app_rq02_seed_uncertainty",
+          "\\textbf{Two seeds of one design agree with each other about as often as a proxy agrees with the "
+          "reference.} The replicated cells only: English at 175M, 600M and 1B and Russian at 1B, the deep cells with "
+          "the baseline data trained with three seeds. Left: DA-size of the proxy at each of its three seeds against "
+          "the 1.7B final checkpoint (filled: seed 1904). Middle: the agreement between two seeds' rankings of the "
+          "same designs at one size. Right: DA-ckpt of the pairs formed by two seeds of one design, which have nothing to decide "
+          "(seed null), against the real design pairs, over the evaluated checkpoints of each size. Every task above "
+          "chance, bBPB twins included.",
+          "fig:app_rq02_seed_uncertainty"))),
     "rq02_permutation_null": (
         "Decision accuracy against a no-signal null", "app_rq02_permutation_null",
         "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B, on pairs that may differ on any "
@@ -561,7 +594,18 @@ PAGES = {
         "absolute effect of each design decision on the final score by a noise. The seed noise is the sample "
         "standard deviation across seeds. The checkpoint noise is the detrended standard deviation over the last "
         "20\\% of the run. Cells at chance are left out.",
-        None, 0),
+        None, 0,
+        (("app_rq03_flip_attribution",
+          "\\textbf{At 600M, per-language BPB misses the 1.7B decision almost only on the depth pairs, which are not "
+          "size-matched.} One row per design axis (single-axis pairs) and for the multi-axis pairs, split by whether "
+          "the pair moves depth. A comparison is one design pair on one of the 50 per-language BPB tasks, between the "
+          "final checkpoints of seed 1904 at 600M and at 1.7B. (a): the 600M difference exceeds one 600M seed standard "
+          "deviation of the task, the median over the deep three-seed cells of the baseline data. (b): its sign differs "
+          "from the sign of the 1.7B difference. (b) without (a) means that the 600M comparison cannot distinguish the "
+          "variants, (a) with (b) that the design choice has opposite measured effects at the two sizes. The last "
+          "column counts the (a), (b) comparisons whose 1.7B difference also exceeds that deviation. The activation "
+          "and optimizer axes have no per-language BPB pair at both sizes.",
+          "tab:app_rq03_flip_attribution"),)),
     "rq04_surrogates": (
         "SNR as a surrogate for decision accuracy", "app_rq04_surrogates",
         "Seed-1904 runs of every cell, 90M--1.7B, on the tasks above chance. For each of 22 SNR definitions, "
@@ -976,12 +1020,12 @@ def float_page(stem, caption, label):
     0.8 of the text height, which leaves room for a caption of ten lines: a float
     taller than the page runs into the bottom margin, which ACL's format check
     rejects. The page block caps its figure at 0.36 for the same reason. A stem
-    copied as TeX is a generated table, set in a table* float instead. A callable
+    copied as TeX is a generated table (in ../tables/), set in a table* float instead. A callable
     `caption` is built from the figure's CSV, so its numbers follow each refresh."""
     caption = plain(caption(pd.read_csv(FIGURES[stem][0].with_suffix(".csv"))) if callable(caption) else caption)
     if FIGURES[stem][1] == ("tex",):
         return "\n".join(["\\begin{table*}[p]", "\\centering", "\\small", f"\\caption{{{caption}}}",
-                          f"\\label{{{label}}}", f"\\input{{figures/{stem}}}",
+                          f"\\label{{{label}}}", f"\\input{{tables/{stem}}}",
                           f"% source: {FIGURES[stem][0].relative_to(ANALYSIS.parents[2])}.tex", "\\end{table*}", ""])
     return "\n".join([
         "\\begin{figure*}[p]",

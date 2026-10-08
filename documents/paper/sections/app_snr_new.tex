@@ -303,12 +303,13 @@ The \emph{ceiling} of a truth is its $\rho$ with itself when the reference is re
 \subsection{Summary of correlations}
 \label{app:sur-results}
 
-Tables~\ref{tab:sur-corr-catalogue} and~\ref{tab:sur-corr-snr} give the correlation of every surrogate with the three truths over the benchmark tasks.
-Four readings hold across them.
+Tables~\ref{tab:sur-corr-catalogue} and~\ref{tab:sur-corr-snr} give the correlation of every surrogate with the three truths over the benchmark tasks, and Table~\ref{tab:sur-corr-strata} gives the correlation with DA-size within each proxy size, language tier and benchmark.
+Five readings hold across them.
 First, no surrogate reaches the ceiling. The best proxy-only statistics recover $\rho \approx 0.82$--$0.83$ of a DA-size whose own re-measurement correlates at 0.92.
 Second, the statistics that track decision accuracy best describe whether the proxy's ranking and curves are stable (sign persistence, consecutive Kendall's $\tau$, crossings, agreement with the rung below), not how far apart the variants are. \checknum{The dispersion signals alone (range, standard deviation, pairwise distance) carry almost nothing, with $\rho$ between $-0.02$ and $0.13$ against every truth}.
 Third, the SNR of \citet{heineman_signal_2025} (relative dispersion over the relative checkpoint noise, detrended) reaches $\rho = 0.68$ with DA-size, against $R = 0.79$ in their setting. \checknum{Replacing the checkpoint noise by the $k$-fold benchmark noise raises only 6 of the 22 signals, the discrepancy and depth ones}.
 Fourth, the benchmark noise is largely a function of the item count, and the item count alone correlates at 0.37, \checknum{about half the best ratio (0.79)}. \texttt{dispersion\_shifted} is constant, so its ratios are the inverse noise.
+Fifth, the pooled correlation hides large differences between strata (Table~\ref{tab:sur-corr-strata}). The relative-standard-deviation SNR reaches $\rho = 0.79$ over all clusters but 0.51--0.67 within one proxy size, 0.81 within HellaSwag and 0.27 on the per-language bits per byte.
 
 % BEGIN generated: surrogate-tables (make_surrogate_tables.py)
 \begin{table}[h]
@@ -427,4 +428,44 @@ control & \texttt{n\_items} & \textbf{0.37} & \textbf{0.40} & \textbf{0.52} \\
 \caption{The signal $\times$ noise grid. We give the Spearman $\rho$ with decision accuracy of each signal alone, of its ratio to the relative checkpoint noise (/ckpt, where \texttt{rel\_dispersion} / \texttt{ckpt\_rel} is the SNR of \citet{heineman_signal_2025} as released, with the detrended checkpoint noise) and of its ratio to the relative $k$-fold benchmark noise (/$k$-fold). The last rows give each noise alone. The population and conventions are the same as in Table~\ref{tab:sur-corr-catalogue}. Rows are ordered by $|\rho|$ of the checkpoint-noise SNR with DA-size. The strongest of the 132 ratios is \texttt{mpd} / \texttt{ckpt\_abs}, $\rho = 0.79$ for DA-size, \texttt{mpd} / \texttt{ckpt\_abs}, $\rho = 0.83$ for DA-goal and \texttt{mpd} / \texttt{ckpt\_abs}, $\rho = 0.86$ for DA-ckpt.}
 \label{tab:sur-corr-snr}
 \end{table}
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\begin{tabular}{@{}lrrlrlr@{}}
+\toprule
+\textbf{Stratum} & \textbf{Clusters} & \textbf{SNR} & \textbf{Best SNR definition} & $\rho$ & \textbf{Best statistic} & $\rho$ \\
+\midrule
+every benchmark & 420 & \textbf{0.79} & \texttt{mpd} / \texttt{ckpt\_abs} & \textbf{0.79} & \texttt{sign\_persistence} & \textbf{0.83} \\
+\midrule
+proxy 90M & 417 & \textbf{0.51} & \texttt{mpd} / \texttt{ckpt\_abs} & \textbf{0.54} & \texttt{bpb\_rank\_agreement} & \textbf{0.60} \\
+proxy 175M & 419 & \textbf{0.63} & \texttt{aad} / \texttt{ckpt\_abs} & \textbf{0.63} & \texttt{bpb\_rank\_agreement} & \textbf{0.69} \\
+proxy 350M & 419 & \textbf{0.67} & \texttt{mpd} / \texttt{ckpt\_abs} & \textbf{0.68} & \texttt{bpb\_rank\_agreement} & \textbf{0.73} \\
+proxy 600M & 420 & \textbf{0.66} & \texttt{rms\_deviation} / \texttt{ckpt\_abs} & \textbf{0.66} & \texttt{sign\_persistence} & \textbf{0.67} \\
+proxy 1B & 420 & \textbf{0.65} & \texttt{mpd} / \texttt{ckpt\_abs} & \textbf{0.66} & \texttt{ladder\_da} & \textbf{0.72} \\
+\midrule
+$K$ = 8 tier & 116 & \textbf{0.66} & \texttt{mpd} / \texttt{ckpt\_abs} & \textbf{0.70} & \texttt{ladder\_da} & \textbf{0.86} \\
+$K$ = 15 tier & 69 & \textbf{0.71} & \texttt{dispersion} / \texttt{ckpt\_abs} & \textbf{0.74} & \texttt{sign\_persistence} & \textbf{0.83} \\
+$K$ = 30 tier & 113 & \textbf{0.79} & \texttt{mpd} / \texttt{ckpt\_abs} & \textbf{0.80} & \texttt{prev\_rung\_da} & \textbf{0.82} \\
+$K$ = 50 tier & 122 & \textbf{0.80} & \texttt{dispersion} / \texttt{ckpt\_abs} & \textbf{0.81} & \texttt{mde\_resolved} & \textbf{0.83} \\
+\midrule
+HellaSwag & 26 & \textbf{0.81} & \texttt{mpd} / \texttt{kfold\_abs} & \textbf{0.93} & \texttt{resolved\_pairs\_binomial} & \textbf{0.93} \\
+ARC & 16 & 0.29 & \texttt{rel\_dispersion} / \texttt{projection\_depth} & 0.34 & \texttt{pseudo\_ref\_da} & 0.64 \\
+ARC (translated) & 10 & 0.15 & \texttt{projection} / \texttt{ckpt\_rel} & 0.65 & \texttt{projection} / \texttt{ckpt\_rel} & 0.65 \\
+XNLI & 13 & $-$0.10 & \texttt{star\_discrepancy} / \texttt{kfold\_rel} & 0.47 & \texttt{size\_monotonicity} & 0.57 \\
+MultiBLiMP & 34 & \textbf{0.77} & \texttt{rel\_mpd} / \texttt{ckpt\_abs} & \textbf{0.87} & \texttt{mde\_resolved} & \textbf{0.88} \\
+INCLUDE v2 (original language) & 31 & 0.37 & \texttt{projection} / \texttt{kfold\_rel} & \textbf{0.45} & \texttt{pseudo\_ref\_da} & \textbf{0.72} \\
+INCLUDE v2 (English) & 41 & $-$0.19 & \texttt{rel\_dispersion} / \texttt{kfold\_abs} & 0.25 & \texttt{bpb\_rank\_agreement} & \textbf{0.45} \\
+Belebele RF & 49 & 0.26 & \texttt{tukey} / \texttt{kfold\_rel} & 0.33 & \texttt{pseudo\_ref\_da} & \textbf{0.57} \\
+Belebele LLM-RF & 49 & 0.13 & \texttt{dispersion} / \texttt{kfold\_rel} & 0.31 & \texttt{prev\_rung\_da} & \textbf{0.39} \\
+Global-MMLU RF & 28 & \textbf{0.51} & \texttt{mpd} / \texttt{kfold\_abs} & \textbf{0.56} & \texttt{window\_kendall} & \textbf{0.74} \\
+INCLUDE RF & 25 & 0.43 & \texttt{rel\_std} / \texttt{kfold\_rel} & \textbf{0.53} & \texttt{sign\_persistence} & \textbf{0.84} \\
+INCLUDE LLM-RF & 25 & 0.33 & \texttt{mpd} / \texttt{kfold\_rel} & 0.41 & \texttt{bpb\_rank\_agreement} & \textbf{0.75} \\
+\midrule
+per-language BPB & 50 & 0.27 & \texttt{mad} / \texttt{ckpt\_rel} & \textbf{0.62} & \texttt{retest\_agreement} & \textbf{0.76} \\
+\bottomrule
+\end{tabular}
+\caption{Spearman $\rho$ of a surrogate with DA-size within one stratum of the benchmark tasks: one proxy size, one language-count tier (the tasks in the languages that first enter the scheme-A lists at that $K$), one benchmark, or the per-language bits per byte. \emph{SNR} is the relative standard deviation over the relative checkpoint noise. The next columns give the strongest of the 132 signal $\times$ noise ratios and the strongest statistic of the whole catalogue in the stratum. The population and conventions are those of Table~\ref{tab:sur-corr-catalogue}: one point per (benchmark, language) cluster, every pair of variants, the proxies 90M--1B pooled except in the proxy rows. Strata with fewer than 10 clusters are not shown. A best-of-many $\rho$ in a small stratum is optimistic, so the SNR column is the like-for-like comparison across rows. Bold marks Benjamini-Hochberg $q < 0.05$.}
+\label{tab:sur-corr-strata}
+\end{table*}
 % END generated: surrogate-tables

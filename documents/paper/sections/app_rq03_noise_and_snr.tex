@@ -32,3 +32,12 @@
 \end{minipage}
 \vspace{\baselineskip}
 }]
+
+\begin{table*}[p]
+\centering
+\small
+\caption{\textbf{At 600M, per-language BPB misses the 1.7B decision almost only on the depth pairs, which are not size-matched.} One row per design axis (single-axis pairs) and for the multi-axis pairs, split by whether the pair moves depth. A comparison is one design pair on one of the 50 per-language BPB tasks, between the final checkpoints of seed 1904 at 600M and at 1.7B. (a): the 600M difference exceeds one 600M seed standard deviation of the task, the median over the deep three-seed cells of the baseline data. (b): its sign differs from the sign of the 1.7B difference. (b) without (a) means that the 600M comparison cannot distinguish the variants, (a) with (b) that the design choice has opposite measured effects at the two sizes. The last column counts the (a), (b) comparisons whose 1.7B difference also exceeds that deviation. The activation and optimizer axes have no per-language BPB pair at both sizes.}
+\label{tab:app_rq03_flip_attribution}
+\input{tables/app_rq03_flip_attribution}
+% source: src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/flip_attribution_da_size_by_axis_both_axes.tex
+\end{table*}

@@ -607,6 +607,16 @@ include them in full.
   only 6, 6 and 6 of the 22 signals (DA-size, DA-goal, DA-ckpt), although
   alone it still reads slightly stronger (−0.46, −0.51, −0.64 against
   −0.44, −0.45, −0.58). `n_items` alone reads 0.37, 0.40 and 0.52.
+- **Within a stratum the SNR tracks DA-size less well than pooled, with two
+  exceptions** (`surrogate_correlations.csv`, DA-size, multi-axis, every L;
+  the paper's Table `tab:sur-corr-strata`, written by
+  `documents/paper/sections/make_surrogate_tables.py`). AllenAI's `rel_std` /
+  checkpoint-noise SNR reads 0.79 over the 420 clusters, 0.51–0.67 within one
+  proxy size (0.51 at 90M), 0.66 / 0.71 / 0.79 / 0.80 within the L8 / L15 /
+  L30 / L50 language tiers, from −0.19 (INCLUDE v2 English, 41 clusters) to
+  0.81 (HellaSwag, 26) within one of the table's twelve benchmarks, and 0.27 on per-language BPB
+  (50). The best of the 132 SNR ratios per stratum reaches 0.93 on HellaSwag,
+  0.70 on the L8 tier and 0.62 on BPB, best-of-many values on small strata.
 - **Signal alone carries almost nothing:** range, `dist_std` and `mpd` across
   variants read −0.02 to 0.13 against the three DA truths, and the depth
   signals are negative (−0.17 to −0.38).

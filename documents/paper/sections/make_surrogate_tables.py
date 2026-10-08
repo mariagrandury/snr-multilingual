@@ -1,8 +1,11 @@
-"""The two correlation tables of app_snr_new.tex, from rq04's search outputs.
+"""The three correlation tables of app_snr_new.tex, from rq04's search outputs.
 
 Rewrites the block between `% BEGIN generated: surrogate-tables` and its END
 marker: the catalogue statistics and the signal x noise grid against DA-size,
-DA-goal and DA-ckpt (benchmarks, multi-axis pairs, every L), with the ceiling.
+DA-goal and DA-ckpt (benchmarks, multi-axis pairs, every L), with the ceiling,
+and the DA-size correlations per stratum (proxy size, language tier,
+benchmark, per-language BPB) that the analysis section's stratification
+sentence cites.
 Reads surrogate_correlations.csv, surrogate_definitions.csv and da_all_retest_multi_axes.csv,
 which catalogue.py and search.py write; scripts/refresh_analysis.sh runs this
 after the analysis, so the appendix cannot drift from the tables.
@@ -75,7 +78,54 @@ out += ["\\bottomrule", "\\end{tabular}",
         "\\texttt{rel\\_dispersion} / \\texttt{ckpt\\_rel} is the SNR of \\citet{heineman_signal_2025} as released, with the detrended checkpoint noise) and of its ratio to the relative $k$-fold benchmark noise (/$k$-fold). "
         "The last rows give each noise alone. The population and conventions are the same as in Table~\\ref{tab:sur-corr-catalogue}. Rows are ordered by $|\\rho|$ of the checkpoint-noise SNR with DA-size. "
         f"The strongest of the 132 ratios is {best[0]} for DA-size, {best[1]} for DA-goal and {best[2]} for DA-ckpt.}}",
-        "\\label{tab:sur-corr-snr}", "\\end{table}"]
+        "\\label{tab:sur-corr-snr}", "\\end{table}", ""]
+# table C: DA-size per stratum (proxy size, language-count tier, benchmark, per-language BPB)
+call = pd.read_csv(D / "surrogate_correlations.csv", low_memory=False)
+call = call[(call["axes"] == "multi-axis") & (call["L"].astype(str) == "all") & (call["metric"] == "da")
+            & (call["t_kind"] == "size")]
+SNR_REF = "snr__rel_std__ckpt_rel"   # the relative-std SNR over the relative checkpoint noise
+MIN_UNITS = 10
+BENCH = {"hellaswag": "HellaSwag", "arc": "ARC", "arc_mt": "ARC (translated)", "xnli": "XNLI",
+         "multiblimp": "MultiBLiMP", "include_v2_og": "INCLUDE v2 (original language)",
+         "include_v2_en": "INCLUDE v2 (English)", "rf_belebele": "Belebele RF", "rfgm_belebele": "Belebele LLM-RF",
+         "rf_global_mmlu_full": "Global-MMLU RF", "rf_include_base_44": "INCLUDE RF",
+         "rfgm_include_base_44": "INCLUDE LLM-RF"}
+strata = [("all", "benchmarks", "every benchmark")]
+strata += [("proxy", p, f"proxy {p}") for p in ["90M", "175M", "350M", "600M", "1B"]]
+strata += [("tier", t, f"$K$ = {t[1:]} tier") for t in ["L8", "L15", "L30", "L50"]]
+strata += [("benchmark", b, n) for b, n in BENCH.items()]
+strata += [("all", "bpb", "per-language BPB")]
+name_of = lambda s: " / ".join(tt(x) for x in s.split("__")[1:]) if s.startswith("snr__") else tt(s)
+fmt = lambda r, q: (lambda v: f"\\textbf{{{v}}}" if pd.notna(q) and q < 0.05 else v)(f"{r:.2f}".replace("-", "$-$"))
+rows, dropped = [], []
+for st, sub, name in strata:
+    g = call[(call["subset_type"] == st) & (call["subset"] == sub)].dropna(subset=["rho"])
+    if g.empty or g["n_units"].max() < MIN_UNITS:
+        dropped.append(name)
+        continue
+    ref = g[g["surrogate"] == SNR_REF]
+    snr = g[g["surrogate"].str.startswith("snr__")]
+    s_best, a_best = snr.loc[snr["rho"].idxmax()], g.loc[g["rho"].idxmax()]
+    rows.append(f"{name} & {int(g['n_units'].max())} & "
+                + (fmt(ref['rho'].iloc[0], ref['q'].iloc[0]) if len(ref) else "--")
+                + f" & {name_of(s_best['surrogate'])} & {fmt(s_best['rho'], s_best['q'])} & {name_of(a_best['surrogate'])} & {fmt(a_best['rho'], a_best['q'])} \\\\")
+    if st in ("all", "proxy", "tier") and sub in ("benchmarks", "1B", "L50"):
+        rows.append("\\midrule")
+if rows[-1] == "\\midrule":
+    rows.pop()
+rows.insert(-1, "\\midrule")   # per-language BPB on its own
+out += ["\\begin{table*}[t]", "\\centering", "\\scriptsize", "\\begin{tabular}{@{}lrrlrlr@{}}", "\\toprule",
+        "\\textbf{Stratum} & \\textbf{Clusters} & \\textbf{SNR} & \\textbf{Best SNR definition} & $\\rho$ & \\textbf{Best statistic} & $\\rho$ \\\\",
+        "\\midrule", *rows, "\\bottomrule", "\\end{tabular}",
+        "\\caption{Spearman $\\rho$ of a surrogate with DA-size within one stratum of the benchmark tasks: one proxy size, one language-count tier "
+        "(the tasks in the languages that first enter the scheme-A lists at that $K$), one benchmark, or the per-language bits per byte. "
+        "\\emph{SNR} is the relative standard deviation over the relative checkpoint noise. The next columns give the strongest of the 132 signal $\\times$ noise ratios "
+        "and the strongest statistic of the whole catalogue in the stratum. "
+        "The population and conventions are those of Table~\\ref{tab:sur-corr-catalogue}: one point per (benchmark, language) cluster, every pair of variants, the proxies 90M--1B pooled except in the proxy rows. "
+        f"Strata with fewer than {MIN_UNITS} clusters are not shown"
+        + (f" ({', '.join(dropped)})" if dropped else "") + ". "
+        "A best-of-many $\\rho$ in a small stratum is optimistic, so the SNR column is the like-for-like comparison across rows. Bold marks Benjamini-Hochberg $q < 0.05$.}",
+        "\\label{tab:sur-corr-strata}", "\\end{table*}"]
 block = "\n".join(out)
 t = TEX.read_text()
 B, E = "% BEGIN generated: surrogate-tables", "% END generated: surrogate-tables"

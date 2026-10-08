@@ -64,3 +64,20 @@
 \caption{\textbf{On the multi-axis pairs, the reliable benchmark tasks chosen out of sample and in sample give DA-size within 0.00 of each other.} Figure~\ref{fig:app_rq02_decision_accuracy} with the reliable benchmark tasks, chosen out of sample (solid) and in sample (dashed) on the same half of the pairs, over the splits of Figure~\ref{fig:app_rq02_rq2_crossfit}.}
 \label{fig:app_rq02_decision_accuracy_crossfit}
 \end{figure*}
+
+\begin{table*}[p]
+\centering
+\small
+\caption{\textbf{No definition of decision accuracy lifts benchmark accuracy far above a coin flip.} DA-size of the final checkpoint of each proxy against the 1.7B final checkpoint, on multi-axis pairs, under the definition of Eq.~\ref{eq:decision-accuracy} and its variants: a pair tied on one side counts one half, the pairs the reference ties are dropped, or only the pairs whose 1.7B difference exceeds one or two checkpoint standard deviations of the reference (over the last 20\% of its run, detrended) or one or two seed standard deviations of a difference are kept. A value is the mean over the tasks above chance at the proxy and at 1.7B, for benchmark accuracy, for accuracy and the bBPB twins together, and for the per-language bits per byte, which never tie. Pairs kept is the share of the comparable pairs a variant keeps, pooled over the proxy sizes. The task set moves across rows, since a cell needs three kept pairs: on accuracy it holds 302--470 tasks per proxy under Eq.~\ref{eq:decision-accuracy} and 216--329 under the strictest filter.}
+\label{tab:app_rq02_definition_sensitivity}
+\input{tables/app_rq02_definition_sensitivity}
+% source: src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_definition_sensitivity_multi_axes.tex
+\end{table*}
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq02_seed_uncertainty.png}
+% source: src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/seed_uncertainty_da_all_seed_null_paper.png
+\caption{\textbf{Two seeds of one design agree with each other about as often as a proxy agrees with the reference.} The replicated cells only: English at 175M, 600M and 1B and Russian at 1B, the deep cells with the baseline data trained with three seeds. Left: DA-size of the proxy at each of its three seeds against the 1.7B final checkpoint (filled: seed 1904). Middle: the agreement between two seeds' rankings of the same designs at one size. Right: DA-ckpt of the pairs formed by two seeds of one design, which have nothing to decide (seed null), against the real design pairs, over the evaluated checkpoints of each size. Every task above chance, bBPB twins included.}
+\label{fig:app_rq02_seed_uncertainty}
+\end{figure*}

@@ -31,3 +31,12 @@
 \caption{\textbf{Outside English, the share of cells above chance rises with every decade of the language's tokens from $10^{7}$ on.} One panel per benchmark (its number of tasks in parentheses). Each point is the share of (language, K, checkpoint) cells above chance, binned by the training tokens of the task's language that the checkpoint had seen (log scale). There is one line per model size, a darker blue for a larger size.}
 \label{fig:app_rq00_chance_vs_train_tokens}
 \end{figure*}
+
+\begin{table*}[p]
+\centering
+\small
+\caption{\textbf{Training tokens of the language from which a benchmark is above chance.} For each multilingual benchmark (trained in at least two languages) and answer format, the lower edge of the token bin from which the share of (language, $K$, checkpoint) cells above chance is at least 50\% or 90\% in that bin and in every larger bin, pooled over the model sizes 90M--1.7B and for the 90M and 1.7B models alone. Bins are three per decade of the training tokens of the language that the checkpoint had seen, and a bin counts only with at least 20 cells. $\leq$ marks a level already met in the first bin and never a level not reached. Lang. is the number of trained languages. Margin is the median accuracy above chance that a task needs for its Wilson bound to clear chance, and Items its median item count. Seed-1904 runs of every data build and ladder, every evaluated tenth of a run. The pooled bins mix sizes, and from $10^{10}$ tokens on most of their cells are English.}
+\label{tab:rq0_thresholds}
+\input{tables/rq00_thresholds}
+% source: src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_seeds/pass_threshold_tokens_by_benchmark_1904_ckpts.tex
+\end{table*}
