@@ -90,48 +90,66 @@ def rq11_benchmarks_caption(d):
 
 
 def _rq02_maps(d):
-    """What the two per-language maps share: the drawn cells, the not-drawn benchmarks, the setup sentences."""
+    """What the per-language maps share: the drawn cells and the setup sentences (the filter read from the CSV)."""
     rest = d[~d["drawn"]].drop_duplicates("benchmark")
     single, empty = (sorted(rest.loc[rest["n_languages"] < 2, "benchmark"]),
                      sorted(rest.loc[rest["n_languages"] >= 2, "benchmark"]))
+    filt = d["filter"].iloc[0]
+    cut = ("Only the tasks whose median DA-size or median DA-ckpt is at least 0.66 are kept, as there. This "
+           "filter selects on DA, so the maps are conditional on it." if filt != "none" else "There is no reliability "
+           "filter.")
     setup = (
         "A cell is the mean over a benchmark's original accuracy tasks (no RF, LLM-RF or bBPB twin) in a trained "
-        "language. The maps use the mono-axis pairs of Figure~\\ref{fig:rq2} without its reliability cut, which "
-        "would select cells by their value. Grey cells are gated, white cells have no value, and the scale is centred at 0.5 (a "
-        "coin flip). Languages follow resource rank, with lines where the lists of $K$ = 1, 2, 8, 15, 30 and 50 "
-        f"languages end. Not drawn: {len(single)} single-language benchmarks"
-        + (f", and {', '.join(empty)}, which have no value." if empty else "."))
-    return d[d["drawn"]], setup
+        f"language, on the mono-axis pairs of Figure~\\ref{{fig:rq2}}. {cut} Grey cells are gated, white cells have "
+        "no value, and the scale is centred at 0.5 (a coin flip). Languages follow resource rank, with lines where "
+        f"the lists of $K$ = 1, 2, 8, 15, 30 and 50 languages end. Not drawn: {len(single)} single-language "
+        "benchmarks" + (f", and {', '.join(empty)}, which have no value." if empty else "."))
+    lead = "On the tasks that rank reliably, {}" if filt != "none" else "{}"
+    return d[d["drawn"]], setup, lambda t: lead.format(t if filt != "none" else t[0].upper() + t[1:])
 
 
 def rq02_language_caption(d):
     """The caption of app_rq02_da_by_language, its numbers read from the figure's CSV `d`."""
-    drawn, setup = _rq02_maps(d)
+    drawn, setup, lead = _rq02_maps(d)
     clear = {k: (g.drop_duplicates("family")["benchmark_lo"].gt(0.5).sum(),
-                 g.drop_duplicates("language")["language_lo"].gt(0.5).sum(), g["da"].mean())
+                 g.drop_duplicates("family")["benchmark_mean"].notna().sum(),
+                 g.drop_duplicates("language")["language_lo"].gt(0.5).sum(),
+                 g.drop_duplicates("language")["language_mean"].notna().sum(), g["da"].mean())
              for k, g in drawn.groupby("kind")}
-    n_b, n_l = drawn["family"].nunique(), drawn.dropna(subset=["da"])["language"].nunique()
-    (sb, sl, sm), (cb, cl, cm), (gb, gl, gm) = clear["DA-size"], clear["DA-ckpt"], clear["DA-goal"]
+    (sb, nb, sl, nl, sm), (cb, cnb, cl, cnl, cm), (gb, gnb, gl, gnl, gm) = (clear[k] for k in ("DA-size", "DA-ckpt", "DA-goal"))
     return (
-        f"\\textbf{{Averaged over the proxies 90M--1B, DA-size is above 0.5 (95\\% interval) on only {sb} of {n_b} "
-        f"benchmarks and {sl} of {n_l} languages, against {cb} and {cl} for DA-ckpt.}} DA-goal clears it on {gb} "
-        f"benchmarks and {gl} languages. Cell means: {sm:.2f}, {cm:.2f} and {gm:.2f}. Top: DA-size of each proxy's "
-        "final checkpoint against the 1.7B final. Middle: DA-ckpt of its nine earlier tenths against its own final. "
-        "Bottom: DA-goal of its ten tenths against the 1.7B final. Each task is first averaged over the proxies "
-        "90M--1B and the tenths. Side panels: row and column means with 95\\% bootstrap intervals over the cells. "
-        + setup)
+        "\\textbf{" + lead(f"averaged over the proxies 90M--1B, DA-size is above 0.5 (95\\% interval) on {sb} of "
+                            f"{nb} benchmarks and {sl} of {nl} languages.") + "} "
+        f"DA-goal clears 0.5 on {gb} of {gnb} benchmarks and {gl} of {gnl} languages, DA-ckpt on {cb} of {cnb} and {cl} of {cnl}. Cell means: {sm:.2f}, {cm:.2f} and {gm:.2f}. Top: "
+        "DA-size of each proxy's final checkpoint against the 1.7B final. Middle: DA-ckpt of the nine earlier tenths "
+        "of each run against its own final, over the proxies and the 1.7B run, where DA-ckpt is defined too. Bottom: "
+        "DA-goal of the ten tenths of each proxy against the 1.7B final. DA-size and DA-goal stop at 1B because 1.7B "
+        "is their reference. Each task is first averaged over these readings. Side panels: row and column means with "
+        "95\\% bootstrap intervals over the cells. " + setup)
 
 
 def rq02_language_per_proxy_caption(d):
-    """The caption of app_rq02_da_size_by_language_per_proxy, its numbers read from the figure's CSV `d`."""
-    drawn, setup = _rq02_maps(d)
-    per = drawn.groupby("proxy_size").agg(cells=("da", "count"), mean=("da", "mean"))
-    lo, hi = per.loc["90M"], per.loc["1B"]
-    return (
-        f"\\textbf{{A larger proxy lets more benchmark-language cells past the gate ({int(lo['cells'])} at 90M, "
-        f"{int(hi['cells'])} at 1B), but their mean DA-size only moves from {lo['mean']:.2f} to {hi['mean']:.2f}.}} "
-        "DA-size of each proxy's final checkpoint against the 1.7B final, one map per proxy, the row means last. Only "
-        "benchmarks with a DA-size at some proxy are drawn. " + setup)
+    """The caption of app_rq02_da_size_by_language_per_proxy, its numbers read from the figure's CSV `d` and,
+    for the contrast, from the same figure without the filter."""
+    drawn, setup, lead = _rq02_maps(d)
+
+    def per(x):
+        return x.groupby("proxy_size").agg(cells=("da", "count"), mean=("da", "mean"), above=("da", lambda v: v.gt(0.5).mean()))
+    p = per(drawn)
+    hl = drawn[drawn["highlight"]].iloc[0]
+    out = ("\\textbf{" + lead(
+        f"a larger proxy decides more like the 1.7B reference: {p.at['90M', 'above']:.0%} of the cells have DA-size "
+        f"above 0.5 at 90M and {p.at['1B', 'above']:.0%} at 1B, and {hl['benchmark']} (outlined) is above 0.5 at every "
+        f"proxy in {int(hl['steady_languages'])} of its {int(hl['complete_languages'])} languages.") + "} "
+           f"The mean goes from {p.at['90M', 'mean']:.2f} to "
+           f"{p.at['1B', 'mean']:.2f}. ").replace("%", "\\%")
+    if d["filter"].iloc[0] != "none":
+        src = FIGURES["app_rq02_da_size_by_language_per_proxy"][0]
+        u = per(pd.read_csv(src.with_name(src.name.replace(f"_{d['filter'].iloc[0]}", "")).with_suffix(".csv"))
+                .query("drawn"))
+        out += f"Without the filter it goes only from {u.at['90M', 'mean']:.2f} to {u.at['1B', 'mean']:.2f}. "
+    return out + ("DA-size of each proxy's final checkpoint against the 1.7B final, one map per proxy, the row means "
+                  "last. Only benchmarks with a DA-size at some proxy are drawn. " + setup)
 
 
 def rq13_regimes_caption(d):

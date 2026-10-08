@@ -606,60 +606,85 @@ GitHub: [rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.png](htt
 
 **Per benchmark and language** (`paper_rq2.py --axes mono-axis`, the paper's
 `app_rq02_da_by_language` and `app_rq02_da_size_by_language_per_proxy`). The
-lines above average over every benchmark and language; these two maps give
-each (benchmark, language) cell. **DA-size, DA-ckpt, DA-goal · no reliability
-filter · mono-axis pairs · pairs from `predictivity` at seed 1904 · gate
-`predictivity`** (the proxy, and 1.7B where it is the reference), on the
-ORIGINAL accuracy tasks only (no `rf_`/`rfgm_`/`bbpb_` twin; the variants are
-rq11's figure). No `above_66` cut: a cell map shows every task's value, and the
-cut would select on it. Read from `da_all_per_task_both_axes.csv`; a cell is
-the mean over the benchmark's tasks in the language (one task, but for the
-English subtask families) of each task's mean over its readings. Rows are the
-benchmarks with two or more trained languages and a value somewhere, ordered by
-DA-size; columns the trained languages by resource rank, a line where the
-K = 1, 2, 8, 15, 30, 50 lists end (ar and sr come from the diversity-first lists
-only). Grey = gated, white = no value, the scale centred at 0.5.
+lines above average over every benchmark and language; these maps give each
+(benchmark, language) cell. **DA-size, DA-ckpt, DA-goal · filter
+`above_66_either` (paper) and none (beside it) · mono-axis pairs · pairs from
+`predictivity` at seed 1904 · gate `predictivity`** (the proxy, and 1.7B where
+it is the reference), on the ORIGINAL accuracy tasks only (no
+`rf_`/`rfgm_`/`bbpb_` twin; the variants are rq11's figure). Read from
+`da_all_per_task_both_axes.csv`; a cell is the mean over the benchmark's tasks
+in the language (one task, but for the English subtask families) of each task's
+mean over its readings. Rows are the benchmarks with two or more trained
+languages and a value somewhere, ordered by DA-size; columns the trained
+languages by resource rank, a line where the K = 1, 2, 8, 15, 30, 50 lists end
+(ar and sr come from the diversity-first lists only). Grey = gated, white = no
+value (or, in the filtered maps, a task the filter drops), the scale centred at
+0.5.
 
-- `rq2_da_all_by_benchmark_and_language_mono_axis.png`: one map per DA, DA-size
-  averaged over the proxies 90M–1B, DA-ckpt over the proxies and the nine
-  tenths before the final, DA-goal over the proxies and the ten tenths; beside
-  and under each map the row and column means with a 95 % bootstrap band over
-  the cells (`utils.bootstrap_band`).
-- `rq2_da_size_by_benchmark_and_language_per_proxy_mono_axis.png`: DA-size, one
-  map per proxy, the row means in a last column (the benchmarks with a DA-size
-  at some proxy).
+- `rq2_da_all_by_benchmark_and_language[_above_66_either]_mono_axis.png`: one
+  map per DA, DA-size averaged over the proxies 90M–1B, DA-ckpt over the
+  proxies, 1.7B (DA-ckpt is defined there, against its own final) and the nine
+  tenths before the final, DA-goal over the proxies and the ten tenths
+  (DA-size and DA-goal stop at 1B: 1.7B is their reference); beside and under
+  each map the row and column means with a 95 % bootstrap band over the cells
+  (`utils.bootstrap_band`).
+- `rq2_da_size_by_benchmark_and_language_per_proxy[_above_66_either]_mono_axis.png`:
+  DA-size, one map per proxy, the row means in a last column. The benchmark
+  with the most languages above 0.5 at every proxy is outlined (HellaSwag).
 
-![Decision accuracy per benchmark and language, mono-axis pairs](pretraining/predictivity/rq2_da_all_by_benchmark_and_language_mono_axis.png)
+**Which variant the paper shows: the filtered one.** `above_66_either` keeps
+the tasks whose median DA-size or median DA-ckpt is ≥ 0.66 (the paper rq2
+figure's population), so it selects on DA and every map over it is
+conditional; the paper captions say so. It is the more informative one per
+benchmark and language: on it the proxy size matters (below), while the
+unfiltered maps are close to a coin flip almost everywhere, so they mostly
+restate figure 1.
 
-![DA-size per benchmark and language at each proxy, mono-axis pairs](pretraining/predictivity/rq2_da_size_by_benchmark_and_language_per_proxy_mono_axis.png)
+![DA per benchmark and language, above_66_either, mono-axis pairs](pretraining/predictivity/rq2_da_all_by_benchmark_and_language_above_66_either_mono_axis.png)
 
-**Key findings** (`rq2_da_all_by_benchmark_and_language_mono_axis.csv`,
-`rq2_da_size_by_benchmark_and_language_per_proxy_mono_axis.csv`; 19 benchmarks,
-49 languages with a value)
+![DA-size per benchmark and language at each proxy, above_66_either, mono-axis pairs](pretraining/predictivity/rq2_da_size_by_benchmark_and_language_per_proxy_above_66_either_mono_axis.png)
 
-- **Averaged over the proxies, DA-size clears 0.5 (95 % band above it) on 4 of
-  the 19 benchmarks** (HellaSwag 0.73, LAMBADA 0.64, XStoryCloze 0.63,
-  MultiBLiMP 0.58) and on 15 of 49 languages; DA-goal on 5 benchmarks and 16
-  languages. The mean over the 192 cells with a value is 0.56 for DA-size and
-  0.54 for DA-goal; 170 cells are gated.
-- **DA-ckpt clears 0.5 on 15 benchmarks and 45 languages** (cell mean 0.62),
-  the persistence that figure 7's seed null reads as well. It also has values
-  where DA-size has none (Belebele, Global-MMLU), because it is gated at the
-  proxy only.
-- **A larger proxy admits more cells, not better ones**: 130 cells pass the
-  gate at 90M and 191 at 1B, while the cell mean of DA-size goes 0.53, 0.57,
-  0.55, 0.59, 0.58 from 90M to 1B. HellaSwag rises from 0.66 to 0.82.
-- No language stands out once its cells are many: under DA-size the languages
-  with five or more cells sit between 0.48 (el, hu) and 0.60 (id, uk); the
-  extremes rest on few cells (ta 0.37 on 4, et 0.84 on 2, sl 0.75 on 1).
+![DA per benchmark and language, no filter, mono-axis pairs](pretraining/predictivity/rq2_da_all_by_benchmark_and_language_mono_axis.png)
+
+![DA-size per benchmark and language at each proxy, no filter, mono-axis pairs](pretraining/predictivity/rq2_da_size_by_benchmark_and_language_per_proxy_mono_axis.png)
+
+**Key findings** (the four CSVs of the same names)
+
+- **On the reliable tasks a larger proxy decides more like the reference.**
+  With `above_66_either`, the share of cells with DA-size above 0.5 goes from
+  0.52 at 90M to 0.73 at 1B (mean 0.60 to 0.71, 65 to 83 cells): XCOPA 0.58 to
+  0.83, XStoryCloze 0.58 to 0.78, INCLUDE v2 (OG) 0.46 to 0.66, HellaSwag 0.66
+  to 0.85. Without the filter the mean only goes from 0.53 to 0.58 (130 to 191
+  cells) and the share from 0.26 to 0.40.
+- **HellaSwag is the clean case** (the outlined row): its DA-size is above 0.5
+  at every proxy in 16 of the 23 languages with a value at all five (ar, da,
+  de, en, es, fr, hi, hr, id, it, nl, pt, ro, ru, sv, vi), in both variants.
+  MultiBLiMP, the other wide benchmark (34 languages), stays at 0.57–0.60 at
+  every proxy unfiltered and 0.62–0.67 filtered: there the proxy's size does
+  not help.
+- **Averaged over the proxies** (the mean maps), DA-size clears 0.5 (95 % band
+  above it) on 8 of 11 benchmarks and 30 of 41 languages with the filter, 4 of
+  14 and 15 of 49 without (HellaSwag 0.73, LAMBADA 0.64, XStoryCloze 0.63,
+  MultiBLiMP 0.58). DA-goal: 9 of 11 and 31 of 41 filtered, 5 of 14 and 16 of
+  49 unfiltered. DA-ckpt, now with 1.7B: 13 of 13 and 40 of 41 filtered, 14 of
+  20 and 43 of 49 unfiltered (cell mean 0.69 and 0.62): the persistence that
+  figure 7's seed null reads as well, and the only DA with values on Belebele
+  and Global-MMLU, as it is gated at the proxy only.
+- No language stands out once its cells are many: unfiltered, the languages
+  with five or more DA-size cells sit between 0.48 (el, hu) and 0.63 (ca); the
+  extremes rest on few cells (ta 0.37 on 4, et 0.84 on 2, sl 0.75 on 1). The
+  language lists (K blocks) do not order the cells either.
 
 **Follow-ups**
 
 - The same maps on the RF and LLM-RF twins, where Belebele, Global-MMLU and
   INCLUDE clear the gate (rq11 has them per benchmark, not per language).
-- A multi-axis twin is written beside these (`_multi_axes`); compare the cell
-  means once the paper settles on one pair set for the appendix.
+- Read the filtered rise on a fixed task set, so the gate admitting more
+  tasks at 1B is not part of it.
+- A multi-axis twin of every map is written beside these (`_multi_axes`).
 
+GitHub: [rq2_da_all_by_benchmark_and_language_above_66_either_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_by_benchmark_and_language_above_66_either_mono_axis.png) · [rq2_da_all_by_benchmark_and_language_above_66_either_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_by_benchmark_and_language_above_66_either_mono_axis.csv) ·
+GitHub: [rq2_da_size_by_benchmark_and_language_per_proxy_above_66_either_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_size_by_benchmark_and_language_per_proxy_above_66_either_mono_axis.png) · [rq2_da_size_by_benchmark_and_language_per_proxy_above_66_either_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_size_by_benchmark_and_language_per_proxy_above_66_either_mono_axis.csv) ·
 GitHub: [rq2_da_all_by_benchmark_and_language_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_by_benchmark_and_language_mono_axis.png) · [rq2_da_all_by_benchmark_and_language_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_by_benchmark_and_language_mono_axis.csv) ·
 GitHub: [rq2_da_size_by_benchmark_and_language_per_proxy_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_size_by_benchmark_and_language_per_proxy_mono_axis.png) · [rq2_da_size_by_benchmark_and_language_per_proxy_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_size_by_benchmark_and_language_per_proxy_mono_axis.csv)
 

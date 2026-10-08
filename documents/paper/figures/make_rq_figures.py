@@ -45,8 +45,8 @@ comes from). The .tex carries the source path as a comment next to the
     app_rq02_decision_accuracy <- rq02_decision_accuracy/scale_convergence.py --paper  scale_convergence_da_size_multi_axes_paper
     app_rq02_bbpb               <- rq02_decision_accuracy/paper_rq2.py --axes mono-axis  rq2_da_all_above_66_either_transformation_by_scoring_mono_axis
                              (rq2 in two rows: accuracy above, the bBPB twins below)
-    app_rq02_da_by_language     <- the same                    rq2_da_all_by_benchmark_and_language_mono_axis
-    app_rq02_da_size_by_language_per_proxy <- the same         rq2_da_size_by_benchmark_and_language_per_proxy_mono_axis
+    app_rq02_da_by_language     <- the same                    rq2_da_all_by_benchmark_and_language_above_66_either_mono_axis
+    app_rq02_da_size_by_language_per_proxy <- the same         rq2_da_size_by_benchmark_and_language_per_proxy_above_66_either_mono_axis
                              (these two: the extra full-page figures of the decision-accuracy appendix page)
     app_rq03_noise_and_snr     <- rq03_noise_and_snr/effect_vs_noise.py --paper (pool predictivity_seeds)  effect_vs_noise_paper
     app_rq04_surrogates        <- rq04_surrogates/snr_definition_postprocess.py --pool predictivity --paper  top_variants_overall_paper
@@ -116,10 +116,10 @@ FIGURES = {
                       / "rq2_da_all_above_66_either_transformation_by_scoring_mono_axis", ("png",)),
     "app_rq02_decision_accuracy": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED, "scale_convergence_da_size_multi_axes_paper"),
                               ("png",)),
-    "app_rq02_da_by_language": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED, "rq2_da_all_by_benchmark_and_language_mono_axis"),
+    "app_rq02_da_by_language": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED, "rq2_da_all_by_benchmark_and_language_above_66_either_mono_axis"),
                                 ("png",)),
     "app_rq02_da_size_by_language_per_proxy": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED,
-                                                                 "rq2_da_size_by_benchmark_and_language_per_proxy_mono_axis"),
+                                                                 "rq2_da_size_by_benchmark_and_language_per_proxy_above_66_either_mono_axis"),
                                                ("png",)),
     "app_rq03_noise_and_snr": (ANALYSIS.joinpath("rq03_noise_and_snr", *SEEDS, "effect_vs_noise_paper"), ("png",)),
     "app_rq04_surrogates": (ANALYSIS.joinpath("rq04_surrogates", *PRED, "top_variants_overall_paper"), ("png",)),

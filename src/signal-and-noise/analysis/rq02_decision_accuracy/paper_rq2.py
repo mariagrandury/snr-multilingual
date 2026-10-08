@@ -89,11 +89,13 @@ exception, and says so below.
     rq2_da_all_by_benchmark_and_language.*
                                  per (benchmark, language) of the ORIGINAL accuracy tasks,
                                  one map per DA, each averaged over the proxies 90M-1B
-                                 (and the tenths for DA-ckpt and DA-goal), with the
-                                 row and column means and their 95 % bootstrap bands.
-                                 No reliability filter (`language_figures`).
+                                 (DA-ckpt also over 1.7B, and over the tenths for DA-ckpt
+                                 and DA-goal), with the row and column means and their
+                                 95 % bootstrap bands (`language_figures`); unfiltered,
+                                 and over the `above_66_either` tasks (`_above_66_either`).
     rq2_da_size_by_benchmark_and_language_per_proxy.*
-                                 DA-size of the same cells, one map per proxy.
+                                 DA-size of the same cells, one map per proxy (both
+                                 populations too).
 
 Every name above carries the pair set's AXES_SUFFIX (rule 15), `rq2_da_all_multi_axes.*`
 or `rq2_da_all_mono_axis.*` with --axes mono-axis, and reads the tables with the same one.
@@ -330,7 +332,9 @@ def scoring_figure(out_dir: Path, pool: str, axes: str = "multi-axis") -> None:
 HEAT_FRACS = [k / 10 for k in range(1, 11)]          # the ten evaluated tenths (rule 3)
 HEAT_KINDS = {  # DA kind -> (its (proxy, tenth, column) cells of da_all_per_task_both_axes, the reference the gate checks)
     "DA-size": ([(s, 1.0, f"decision_acc_size_{s}") for s in SMALL_SIZES], TARGET_SIZE),
-    "DA-ckpt": ([(s, f, f"decision_acc_ckpt_f{round(f * 100)}_{s}") for s in SMALL_SIZES for f in HEAT_FRACS[:-1]], None),
+    # DA-ckpt is defined at the reference too (its own run), so it reads 1.7B beside the proxies
+    "DA-ckpt": ([(s, f, f"decision_acc_ckpt_f{round(f * 100)}_{s}") for s in SMALL_SIZES + [TARGET_SIZE]
+                 for f in HEAT_FRACS[:-1]], None),
     "DA-goal": ([(s, f, f"decision_acc_goal_f{round(f * 100)}_{s}") for s in SMALL_SIZES for f in HEAT_FRACS], TARGET_SIZE),
 }
 MEAN = "Mean"
@@ -402,24 +406,30 @@ def _key(fig, im, y: float) -> None:
                loc="lower left", bbox_to_anchor=(0.70, y - 0.01), ncol=1, fontsize=6, frameon=False)
 
 
-def language_figures(out_dir: Path, pool: str, axes: str = "multi-axis") -> None:
+def language_figures(out_dir: Path, pool: str, axes: str = "multi-axis", filt: str | None = None) -> None:
     """Two benchmark x language figures of the original accuracy tasks
     (`language_cells`), the rows the benchmarks with at least two trained
     languages and a value somewhere, ordered by their mean DA-size; the columns
     the trained languages by resource rank, a line where a language list ends.
-    Each CSV holds every cell, the benchmarks not drawn too (`drawn`).
+    Each CSV holds every cell, the benchmarks not drawn too (`drawn`). `filt`
+    (a reliable_tasks FILTERS name) keeps only the tasks that pass it on the same
+    pair set and adds `_<filt>` to the names; the tasks it drops are white.
 
-    rq2_da_all_by_benchmark_and_language<axes>   one map per DA kind, a cell the
-        mean over the proxies 90M-1B (DA-size), over the proxies and the nine
-        tenths before the final (DA-ckpt), over the proxies and the ten tenths
-        (DA-goal), each task averaged before the tasks of a cell; beside and
+    rq2_da_all_by_benchmark_and_language[_<filt>]<axes>   one map per DA kind, a cell the
+        mean over the proxies 90M-1B (DA-size), over the proxies, 1.7B and the nine
+        tenths before the final (DA-ckpt, defined at 1.7B too), over the proxies
+        and the ten tenths (DA-goal), each task averaged before the tasks of a cell; beside and
         under each map the row and column means with a 95 % bootstrap band over
         the cells (`utils.bootstrap_band`).
-    rq2_da_size_by_benchmark_and_language_per_proxy<axes>   DA-size, one map per
-        proxy 90M-1B, the row means in a last column."""
+    rq2_da_size_by_benchmark_and_language_per_proxy[_<filt>]<axes>   DA-size, one map per
+        proxy 90M-1B, the row means in a last column; the benchmark with the most
+        languages above 0.5 at every proxy is outlined (`highlight`, with its
+        `steady_languages` of `complete_languages`)."""
     from analysis.rq02_decision_accuracy.cross_task import l_boundaries, resource_order
     x = language_cells(out_dir, pool, axes)
-    a = AXES_SUFFIX[axes]
+    if filt:                         # the reliability filter, reached on the same pair set (rule 15); dropped = white
+        x = x[x["task"].isin(set(load_reliable(out_dir, filt, axes)["task"]))]
+    a = (f"_{filt}" if filt else "") + AXES_SUFFIX[axes]
     mean = _cells(x, ["kind"])
     n_lang = mean.groupby("family")["language"].nunique()
     n_val = mean.groupby("family")["da"].count()
@@ -477,6 +487,7 @@ def language_figures(out_dir: Path, pool: str, axes: str = "multi-axis") -> None
                  .merge(lang.rename(columns={"key": "language", "mean": "language_mean", "lo": "language_lo",
                                              "hi": "language_hi"}).drop(columns="margin"), how="left"))
     table.assign(benchmark=table["family"].map(G.paper_name), drawn=table["family"].isin(drawn), axes=axes,
+                 filter=filt or "none",
                  n_languages=table["family"].map(n_lang)).to_csv(out_dir / f"rq2_da_all_by_benchmark_and_language{a}.csv",
                                                                  index=False)
     S.save_paper(fig, out_dir / f"rq2_da_all_by_benchmark_and_language{a}")
@@ -484,6 +495,10 @@ def language_figures(out_dir: Path, pool: str, axes: str = "multi-axis") -> None
     # 2. DA-size, one map per proxy, over the benchmarks with a DA-size somewhere (the rest is grey at every proxy)
     per = _cells(x[x["kind"] == "DA-size"], ["proxy_size"])
     sized = [r for r in rows if per.loc[per["family"] == r, "da"].notna().any()]
+    # the highlighted row: the benchmark with the most languages above 0.5 at every proxy (a value at all five)
+    wide = per.pivot_table(index=["family", "language"], columns="proxy_size", values="da").reindex(columns=SMALL_SIZES)
+    steady = wide.dropna().gt(0.5).all(axis=1).groupby(level="family").sum()
+    best = steady.idxmax()
     heights = [h for i in range(len(SMALL_SIZES)) for h in ((2.4 if i == 0 else 1.3), len(sized))]
     fig = plt.figure(figsize=(6.05, sum(heights) * unit + top + foot))
     gs = fig.add_gridspec(len(heights), 1, hspace=0, height_ratios=heights,
@@ -493,11 +508,16 @@ def language_figures(out_dir: Path, pool: str, axes: str = "multi-axis") -> None
         val, gat = grid(per[per["proxy_size"] == s_])
         im = _heat(ax, val.reindex(sized), gat.reindex(sized), True, cuts)
         ax.set_ylabel(f"{s_} proxy", fontsize=7)
+        y = sized.index(best)                    # the callout: an outline around the highlighted row
+        ax.add_patch(mpl.patches.Rectangle((-0.5, y - 0.5), len(langs), 1, fill=False, ec=S.INK, lw=1.0, clip_on=False))
         ax.tick_params(labeltop=i == 0, labelbottom=i == len(SMALL_SIZES) - 1)
     _key(fig, im, 1 - 0.12 / fig.get_figheight())
     rmean = per[per["family"].isin(sized)].groupby(["proxy_size", "family"])["da"].mean().rename("benchmark_mean")
     per = per.merge(rmean.reset_index(), how="left")
     per.assign(benchmark=per["family"].map(G.paper_name), drawn=per["family"].isin(sized), axes=axes,
+               filter=filt or "none", highlight=per["family"] == best,
+               steady_languages=per["family"].map(steady), complete_languages=per["family"].map(
+                   wide.dropna().groupby(level="family").size()),
                n_languages=per["family"].map(n_lang)).to_csv(
         out_dir / f"rq2_da_size_by_benchmark_and_language_per_proxy{a}.csv", index=False)
     S.save_paper(fig, out_dir / f"rq2_da_size_by_benchmark_and_language_per_proxy{a}")
@@ -513,4 +533,5 @@ if __name__ == "__main__":
     for v in RQ2_VARIANTS:
         figure(out, v, args.axes)
     scoring_figure(out, args.pool, args.axes)
-    language_figures(out, args.pool, args.axes)
+    for filt in (None, SCORING_FILTER):
+        language_figures(out, args.pool, args.axes, filt)
