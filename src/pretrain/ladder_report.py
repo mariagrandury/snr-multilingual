@@ -383,8 +383,9 @@ SCHEME_STYLE = {v: _DASHES[i % len(_DASHES)] for i, v in enumerate(DATA_SCHEMES)
 # steps (mid and dark); an earlier assignment gave shallow the palest step and
 # it was legible in the legend but not in the plot. Swiglu takes the darkest:
 # it trains scheme A like deep, so with deep's shade it would share deep's dash
-# too and its curves would be indistinguishable from deep's.
-LADDER_STEP = {"deep": 1, "shallow": 2, "swiglu": 3}
+# too and its curves would be indistinguishable from deep's. Muon (scheme A as
+# well) takes the one step left, the palest, for the same reason.
+LADDER_STEP = {"deep": 1, "shallow": 2, "swiglu": 3, "muon": 0}
 # The scaling panels put SIZE on the x axis, so colour is free to carry the
 # whole intervention there — one hue per (ladder, scheme). Generated from the
 # registry rather than written out, for the same reason as SCHEME_STYLE: the

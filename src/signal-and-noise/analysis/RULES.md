@@ -27,6 +27,7 @@ mappings the loader applies (`snr/download/ladder.py`; the frame keeps
 | deep | deep | xielu | ademamix |
 | shallow | shallow | xielu | ademamix |
 | swiglu | deep | swiglu | ademamix |
+| muon | deep | xielu | muon |
 
 | data build (`DATA_SCHEMES`: `letter`, `temp`) | L | scheme | T |
 |---|---|---|---|

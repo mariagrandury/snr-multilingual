@@ -65,7 +65,7 @@ BUILD_DESC = {
     "DCLMP": "DCLM without the edu filter",
     "FWEB": r"FineWeb (crawls $\le$ 2022)",
 }
-LADDER_DESC = {"deep": "deep", "shallow": "shallow", "swiglu": "deep + SwiGLU"}
+LADDER_DESC = {"deep": "deep", "shallow": "shallow", "swiglu": "deep + SwiGLU", "muon": "deep + Muon"}
 
 # Benchmarks of the `auto` group: (name, capability, format, construction).
 # Counts are computed; only these descriptive columns are curated. A group

@@ -29,7 +29,7 @@ of scheme:
                                   ladders, every data scheme, tokenizers).
   pretrain_progress_detailed.png  one row of binary heatmaps per
                                   transformation — SEED (every seed the sweep
-                                  uses), LADDER (deep/shallow/swiglu), DATA (the
+                                  uses), LADDER (deep/shallow/swiglu/muon), DATA (the
                                   DATA_SCHEMES keys), TOKENIZER (v1) —
                                   yellow 0 / blue 1.
 

@@ -125,28 +125,28 @@ are one `scheme` axis, plan/decision_accuracy.md §9).
 A ladder added to `HYPERPARAMS` without a `LADDERS` entry raises rather than
 being silently pooled into an axis.
 
-## The optimizer axis is blocked
+## The optimizer axis: muon (2026-10-08)
 
-`--optimizer` in this Megatron accepts **`adam | sgd | ademamix`** only
-(`megatron/training/arguments.py:1538`), and there is no Muon implementation
-anywhere in the checkout. The mechanism is ready — `LADDERS` carries an
-`optimizer` level, the launcher's `--optimizer` selects it, and `cell_env`
-emits `OPTIMIZER` whenever a ladder differs from the baseline — but nothing can
-consume it yet. Muon would be an optimizer level (a new ladder at arch deep,
-activation xielu, optimizer muon), never an architecture. Three ways forward:
+Option 1 of the three this section listed (implement Muon, use AdamW, defer)
+was taken by porting upstream Megatron's Muon (core_v0.16.0 factory,
+Emerging-Optimizers' Newton–Schulz vendored) into the fork:
+`src/pretrain/patches/optimizer_muon.py` and the three files beside it,
+copied into the shared checkout. The `muon` ladder is (deep, xielu, muon):
+`hyperparams_muon.json` is deep's configs 90M–1.7B trained with the Moonlight
+recipe (update × 0.2·√max(A, B), so the AdamW LR and weight decay 0.1 carry
+over; momentum 0.95 Nesterov, 5 Newton–Schulz steps), scheme A at
+L ∈ {8, 15, 30}, seed 1904 — the swiglu grid. The distributed optimizer is not
+ported, so muon cells train with a replicated optimizer
+(`megatron_args.sh`). Validated by a 90M smoke pair against AdEMAMix
+(`diag-smoke-90M-L1-{muon,ademamix}`, W&B project `msnr-diag`).
 
-1. **Implement Muon in the fork.** Newton–Schulz orthogonalisation on the 2D
-   parameters, an AdamW path for embeddings / norms / the head, and an
-   interaction with `--use-distributed-optimizer` to settle. Real work, and it
-   would want its own validation before 3,400 node-h ride on it.
-2. **Use AdamW instead** (`--optimizer adam`, supported today). Arguably the
-   better paper contrast: AdEMAMix against the baseline everyone knows, and
-   this project already has a live question about AdEMAMix's slow-EMA timescale
-   (`plan/90M-rung-anomaly.md`, the β₃ = 0.9999 endpoint against a 4,500-iter
-   90M run).
-3. **Defer**, and ship the activation axis alone.
-
-Nothing is registered for it, so the grid is unchanged until the choice is made.
+**Decisions (2026-10-08, user).** No separate 1.7B smoke: the 18 cells are
+launched directly (`launch_trainings.py cscs --optimizer muon`, `--dry-run`
+first) and the first 50 steps are watched — `--optimizer muon` and
+`--muon-extra-scale-factor 0.2` in the rank-0 argument dump, a falling loss,
+and memory headroom at 1.7B, where the replicated optimizer is new. The 90M
+and 175M rungs keep their grid batches (`-b84`/`-b168`), so a (deep, muon)
+pair differs in the optimizer alone.
 
 ## Launching
 

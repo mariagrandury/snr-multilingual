@@ -840,9 +840,9 @@ def main() -> None:
     # Default: every ladder and every scheme. One watcher covers the whole
     # grid, so the shallow ladder and the non-A schemes cannot quietly fall
     # behind while a deep/A-only watcher runs. The flags narrow it for a
-    # targeted pass: --arch and --activation keep the ladders at that level
-    # (`--arch deep` is the deep and swiglu ladders).
-    for k in ("arch", "activation"):
+    # targeted pass: --arch, --activation and --optimizer keep the ladders at
+    # that level (`--arch deep` is the deep, swiglu and muon ladders).
+    for k in ("arch", "activation", "optimizer"):
         p.add_argument(f"--{k}", default=None,
                        choices=list(dict.fromkeys(v[k] for v in LADDERS.values())),
                        help=f"only the ladders at this {k} (default: every "
@@ -917,7 +917,8 @@ def main() -> None:
     # The pass iterates over these; a flag narrows the default "everything".
     args.ladders = [lad for lad in HYPERPARAMS
                     if args.arch in (None, LADDERS[lad]["arch"])
-                    and args.activation in (None, LADDERS[lad]["activation"])]
+                    and args.activation in (None, LADDERS[lad]["activation"])
+                    and args.optimizer in (None, LADDERS[lad]["optimizer"])]
     args.schemes = [args.scheme] if args.scheme else list(DATA_SCHEMES)
     args.sizes = args.size.split(",") if args.size else EVAL_SIZES
     if bad := set(args.sizes) - set(LADDER):

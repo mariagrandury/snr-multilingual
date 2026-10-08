@@ -66,7 +66,7 @@ Two sweeps, in this order:
    against 1.7B) differ, so they are compared as replications of a finding,
    never pooled. `plan/next_analyses.md` says what each period can still add.
 2. **The predictivity sweep** (current work): a 7-rung ladder
-   90M–3B × 6 language settings × deep/shallow (+ the swiglu activation on deep at L 8/15/30) × seven data builds
+   90M–3B × 6 language settings × deep/shallow (+ the swiglu activation and the muon optimizer on deep at L 8/15/30) × seven data builds
    (A, AT3, B, ZH, ES, DCLMP, FWEB — the `DATA_SCHEMES` registry in
    `src/pretrain/launch_trainings.py`, the single source of truth for the
    grid; the analysis reads a build as scheme A/B/C × temperature T, never by
@@ -138,12 +138,14 @@ Eval results are NOT in the repo: they live on the cluster at
   hand-curated, read by the site's Benchmarks tab
 - Each trained model configuration (a **ladder**) lives in
   `src/pretrain/hyperparams/hyperparams_<ladder>.json`: `deep` the baseline,
-  `shallow` the depth level, `swiglu` the activation level.
+  `shallow` the depth level, `swiglu` the activation level, `muon` the
+  optimizer level.
   `launch_trainings.LADDERS` gives each ladder its levels on the three
   intervention axes — `arch` ∈ {deep, shallow}, `activation` ∈ {xielu,
-  swiglu}, `optimizer` ∈ {ademamix} — so `swiglu` is a deep model with the
-  swiglu activation, not an architecture; muon would be an optimizer level
-  (needs Megatron work first)
+  swiglu}, `optimizer` ∈ {ademamix, muon} — so `swiglu` is a deep model with
+  the swiglu activation, not an architecture, and `muon` a deep model trained
+  with Muon (upstream Megatron's, ported into the shared checkout by
+  `src/pretrain/patches/`)
 
 ## Development
 
@@ -289,7 +291,7 @@ are retired — do not carry them into new work):
   axis. Its 88.5B build stays on disk, unreferenced. "Variant" is the older, looser word for any
   run configuration (seed × ladder × scheme) — don't use it for the data axis.
 - Cell name = Slurm job name = checkpoint dir = W&B run name:
-  `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu>-seed<seed>`
+  `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu|muon>-seed<seed>`
   — the last token is the ladder, not the arch (`swiglu` = arch deep +
   activation swiglu); names stay as trained
 - Each size trains its own budget D(N) = 100 × N tokens (5× Chinchilla)
