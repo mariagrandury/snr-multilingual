@@ -174,6 +174,11 @@ Impact: **high on SNR levels and the rq07 comparison; none on DA.**
   | rf_mmlu (cloze) | 0.003 | 0.003 |
 
 - **Letter bias.** On 1.7B L50 `global_mmlu_full_es`, 72.5 % of predictions are "A".
+- **Direct check (CPU, HF fp32 vs the vLLM bf16 samples).** On 40 MMLU items
+  of the 1.7B L1 final, fp32 has 0 ties at the max against vLLM's 7, and the
+  argmax agrees on only 35 of 40. About 12 % of item decisions change from
+  logit precision alone. On ARC-E (90M, 67 items × 4 choices) fp32 and vLLM
+  agree on 65 of 67, with max |Δ| 0.18 nats.
 - **Effect on the mean is small.** For 1.7B MMLU the eval agent computed
   0.319 under a random tie-break against 0.314 first-index (same micro-average
   over `global_mmlu_full_en`). The tie mostly removes information: the model's
@@ -315,9 +320,9 @@ From the training audit (two independent agents; scripts in the scratchpad `trai
 | NaN / skipped iterations | logs | 0 |
 | Scaling | `bpb_dclm`, L1 deep | 0.985 → 0.938 → 0.905 → 0.854 → 0.819 → 0.782 (90M→1.7B); rungs are 10–40 seed SD apart |
 | RoPE | `pretrain_gpt.py:121-136`, HF `config.json` | Factor 8 in training and eval; the printed `32.0` is inert, as the memory note says |
-| Conversion | HF fp32 on CPU, 90M L1 final, 8,192 training tokens | 2.879 nats against Megatron 2.97–3.06; `score_bpb` held-out at 1.7B is 2.42 against training 2.36, a gap equal to the 90M's (+0.05) |
+| Conversion | HF fp32 on CPU, 90M L1 final, 49k packed training tokens | 2.943 nats against Megatron 2.97–3.06; `score_bpb` held-out at 1.7B is 2.42 against training 2.36, a gap equal to the 90M's (+0.05) |
 | HF config | `config.json` | xielu, rms eps 1e-5, θ 5e5, tied embeddings, qk_norm, GQA all match Megatron |
-| vLLM vs HF | 90M, ARC-E, 34 items | Max |Δ| 0.18 nats, mean 0.04; argmax agrees on 33/34 (bf16 noise) |
+| vLLM vs HF | 90M, ARC-E, 67 items × 4 choices | Max abs Δ 0.18 nats, mean 0.04; argmax agrees on 65/67 (bf16 noise) |
 | Harness | results JSON config | No chat template, `add_bos_token`, max length 4096, 0-shot, vLLM bf16, TP 1 |
 | Per-item scores | HellaSwag / ARC / MMLU samples, 1.7B L1 final | Recomputed acc equals the results JSON and `ladder_report.csv` (0.508863, 0.743266, 0.410410, 0.337416) |
 | Attribution | regex `(.+)-iter(\d+)$` (`ladder_report.py:459-466`); newest run wins (`:269-288`); scan of 3,660 dirs / 12,841 results files | 0 model-path vs (cell, iter) mismatches, 0 `--limit` runs |
