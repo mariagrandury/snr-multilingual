@@ -427,11 +427,13 @@ def languages_table() -> None:
     rows = [r[:7] for r in rows]
 
     def tab(part):
-        lines = [r"\begin{tabular}{llllrrr}", r"\toprule",
+        # max width: a long language name must not push the right half into the margin;
+        # [t] puts the baseline on the top row, so the two halves align at their tops
+        lines = [r"\begin{adjustbox}{max width=\linewidth}", r"\begin{tabular}[t]{llllrrr}", r"\toprule",
                  r"Subset & Language & Script & Family & $K_A$ & $K_B$ & Fam. \\", r"\midrule"]
         for r in part:
             lines.append(" & ".join(esc(x) for x in r) + r" \\")
-        lines += [r"\bottomrule", r"\end{tabular}"]
+        lines += [r"\bottomrule", r"\end{tabular}", r"\end{adjustbox}"]
         return "\n".join(lines)
 
     c_builds = "".join(

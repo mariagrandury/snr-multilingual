@@ -495,11 +495,14 @@ FIGURE_PAGES = {"app_rq02_bbpb": (rq02_bbpb_caption, "fig:app_rq02_bbpb")}
 
 
 def float_page(stem, caption, label):
-    """A full-width figure on a float page of its own."""
+    """A full-width figure on a float page of its own. The figure takes at most
+    0.8 of the text height, which leaves room for a caption of ten lines: a float
+    taller than the page runs into the bottom margin, which ACL's format check
+    rejects. The page block caps its figure at 0.36 for the same reason."""
     return "\n".join([
         "\\begin{figure*}[p]",
         "\\centering",
-        f"\\includegraphics[width=\\textwidth,height=0.85\\textheight,keepaspectratio]{{figures/{stem}.png}}",
+        f"\\includegraphics[width=\\textwidth,height=0.8\\textheight,keepaspectratio]{{figures/{stem}.png}}",
         f"% source: {FIGURES[stem][0].relative_to(ANALYSIS.parents[2])}.png",
         f"\\caption{{{caption}}}",
         f"\\label{{{label}}}",
@@ -535,7 +538,7 @@ def page(folder, title, stem, setup, kf_image, kf_bullet, extras=()):
         "\\vspace{\\baselineskip}",
         "\\noindent\\begin{minipage}{\\textwidth}",
         "\\centering",
-        f"\\includegraphics[width=\\textwidth,height=0.4\\textheight,keepaspectratio]{{figures/{stem}.png}}",
+        f"\\includegraphics[width=\\textwidth,height=0.36\\textheight,keepaspectratio]{{figures/{stem}.png}}",
         f"% source: {src.relative_to(ANALYSIS.parents[2])}.png",
         f"\\captionof{{figure}}{{{caption}}}",
         f"\\label{{{label}}}",

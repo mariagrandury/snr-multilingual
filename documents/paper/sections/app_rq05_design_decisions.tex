@@ -25,7 +25,7 @@
 \vspace{\baselineskip}
 \noindent\begin{minipage}{\textwidth}
 \centering
-\includegraphics[width=\textwidth,height=0.4\textheight,keepaspectratio]{figures/app_rq05_design_decisions.png}
+\includegraphics[width=\textwidth,height=0.36\textheight,keepaspectratio]{figures/app_rq05_design_decisions.png}
 % source: src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/da_all_lines_mono_axis_paper.png
 \captionof{figure}{\textbf{Per-language BPB of the trained languages reads the temperature decision from every proxy (0.95--0.99, mean over K15--K50) and the language-list decision at 0.77--1.00 (K8--K30), while on the gated benchmarks only two proxies read a decision at 0.75, both K1 English-data swaps (DCLMP at 350M, 0.79, FWEB at 600M, 0.75).} Decision accuracy (mean over K) of each single-axis design decision. Left: the final checkpoint of each proxy size against the 1.7B final checkpoint (DA-size). Right: the earlier checkpoints of the 1.7B run against its final checkpoint (DA-ckpt), in Chinchilla multiples. Solid lines read the decision on the bits per byte of the trained languages and dashed lines on the benchmark tasks above chance. The dotted line marks 0.75.}
 \label{fig:app_rq05_design_decisions}

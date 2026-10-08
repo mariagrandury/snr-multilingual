@@ -25,7 +25,7 @@
 \vspace{\baselineskip}
 \noindent\begin{minipage}{\textwidth}
 \centering
-\includegraphics[width=\textwidth,height=0.4\textheight,keepaspectratio]{figures/rq1.png}
+\includegraphics[width=\textwidth,height=0.36\textheight,keepaspectratio]{figures/rq1.png}
 % source: src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_outliers_paper.png
 \captionof{figure}{\textbf{Accuracy scales log-linearly where it is above chance.} Each point is one benchmark-language task. Left: the median Spearman $\rho$ of the score with model size against the median R$^2$ of the log-linear fits across model size. Right: the median R$^2$ of the fits along training against the same x axis. The shading splits each axis at 0.5. Bold labels name each benchmark family at its median point (its number of tasks in parentheses) and small labels name the outlying tasks.}
 \label{fig:app_rq01_scaling_predictability}
@@ -35,7 +35,7 @@
 
 \begin{figure*}[p]
 \centering
-\includegraphics[width=\textwidth,height=0.85\textheight,keepaspectratio]{figures/app_rq00_benchmark_size_curves.png}
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq00_benchmark_size_curves.png}
 % source: src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_size_curves_paper.png
 \caption{\textbf{The reformulated twins rise with model size while their letter-format originals stay at chance up to 1.7B.} Benchmark accuracy against model size. For each benchmark family, we plot the final-checkpoint accuracy of every design against non-embedding parameters. This accuracy is the mean over the tasks in the languages the design trains on. There is one line per (number of languages, ladder, data build, seed), 90M--1.7B, for every seed and data build. Colour gives the number of trained languages, line width the ladder and line style the data build. The dotted red line is chance. The curves are not gated, so a family at chance stays visible.}
 \label{fig:app_size_scaling}
@@ -43,7 +43,7 @@
 
 \begin{figure*}[p]
 \centering
-\includegraphics[width=\textwidth,height=0.85\textheight,keepaspectratio]{figures/app_rq00_benchmark_curves.png}
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq00_benchmark_curves.png}
 % source: src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_curves_paper.png
 \caption{\textbf{Along training the letter-format originals stay at chance for the whole run while their reformulated twins climb steadily.} Benchmark accuracy along training. For each benchmark family, we plot the accuracy of every run at the ten evaluated tenths of the run. This accuracy is the mean over the tasks in the languages the run trains on. Training progress is given in Chinchilla multiples of the run's token budget. The figure covers every seed and data build, 90M--1.7B. Colour gives the model size, line width the ladder and line style the data build. The dotted red line is chance. The curves are not gated.}
 \label{fig:app_training_scaling}

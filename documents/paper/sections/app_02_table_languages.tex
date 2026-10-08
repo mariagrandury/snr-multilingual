@@ -3,7 +3,8 @@
 \tiny
 \setlength{\tabcolsep}{2.5pt}
 \begin{minipage}[t]{0.49\textwidth}\centering
-\begin{tabular}{llllrrr}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}[t]{llllrrr}
 \toprule
 Subset & Language & Script & Family & $K_A$ & $K_B$ & Fam. \\
 \midrule
@@ -59,9 +60,11 @@ urd\_Arab & Urdu & Arab & Indo-European & 50 & -- & 7 \\
 als\_Latn & Tosk Albanian & Latn & Indo-European & 50 & -- & 5 \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.49\textwidth}\centering
-\begin{tabular}{llllrrr}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}[t]{llllrrr}
 \toprule
 Subset & Language & Script & Family & $K_A$ & $K_B$ & Fam. \\
 \midrule
@@ -117,6 +120,7 @@ ibo\_Latn & Igbo & Latn & Niger-Congo & val & -- & 2 \\
 sot\_Latn & Southern Sotho & Latn & Niger-Congo & val & -- & 1 \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{minipage}
 \caption{The languages of the sweep. $K_A$ gives the smallest language setting whose scheme-A (resource-ranked) list contains the subset. $K_B$ gives the smallest trained setting of a scheme-B build that contains it (the Chinese swap at $K=2$, the diversity-first lists at $K \in \{8, 15, 30\}$). The scheme-C build at $K=2$ trains Spanish. The lists are nested, so a language is also trained at every larger setting of its scheme. The 50 languages marked val are in no training mixture. They enter only the shared validation set. Fam.\ counts the benchmark families of the pretraining suite (reformulated variants excluded) that the harness offers for the language. English is the DCLM half of every mixture. Family names are shortened to their top-level group.}
 \label{tab:app-languages}
