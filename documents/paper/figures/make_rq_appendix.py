@@ -319,33 +319,33 @@ def rq06_family_caption(d):
         f"\\textbf{{The $K$ = 8 cell clears chance on more of its untrained same-subfamily tasks than English only does on "
         f"the same tasks, by up to {s.at[best, 'same family']:+.2f} at {best}, and "
         + ("on the other subfamilies it does not" if s["other family"].max() < 0.005 else
-           f"on the other subfamilies by no more than {s['other family'].max():+.2f}") + ".} Each panel is one cell (rows) and one family level (columns). A line is "
-        "the share of the cell's accuracy tasks in untrained languages whose final run clears chance, split by whether "
-        "the language shares the family of a trained non-English language (left: the top-level family such as "
-        "Indo-European, right: the subfamily such as Slavic). The dotted lines are the English-only $K$ = 1 cell on "
-        "exactly the same tasks, so the gap between a solid line and its dotted twin is what training the cell's "
-        "languages adds. Deep runs at seed 1904. Only the scheme-A cells and, at 350M--1B, the $K$ = 8 cell of scheme B "
-        "are evaluated on untrained languages, and the $K$ = 1 cell has no 350M evaluation, so its dotted lines break "
-        "there. Languages without a family in our language table are left out.")
+           f"on the other subfamilies by no more than {s['other family'].max():+.2f}") + ".} Each panel is one cell (rows) "
+        "and one family level (columns). A line is the share of the cell's accuracy tasks in untrained languages whose "
+        "final run clears chance, split by whether the language shares the family of a trained non-English language "
+        "(left: the top-level family such as Indo-European, right: the subfamily such as Slavic, from a Glottolog-style "
+        "classification of every evaluated language). The dotted lines are the English-only $K$ = 1 cell on exactly the "
+        "same tasks, so the gap between a solid line and its dotted twin is what training the cell's languages adds. "
+        "Deep runs at seed 1904. Only the scheme-A cells and, at 350M--1B, the $K$ = 8 cell of scheme B are evaluated on "
+        "untrained languages, and the $K$ = 1 cell has no 350M evaluation, so its dotted lines break there.")
 
 
 def rq06_lift_caption(d):
     """The caption of app_rq06_family_lift, its numbers read from the figure's CSV `d`."""
+    d = d[d["n_verdicts"] >= 20]
+    trained, other = d[d["same_sub"]], d[~d["same_sub"]]
+    w = lambda g: (g["lift"] * g["n_verdicts"]).sum() / g["n_verdicts"].sum()
     r = d[(d["cell"] == "L8 A") & (d["family_sub"] == "Indo-European, Romance")].iloc[0]
-    rb = d[(d["cell"] == "L8 B") & (d["family_sub"] == "Indo-European, Romance")].iloc[0]
-    trained = d[d["same_sub"]].sort_values("lift", ascending=False)
     return (
-        f"\\textbf{{Training Spanish, French and Italian lifts the untrained Romance languages most: the $K$ = 8 scheme-A "
-        f"cell puts {100 * r['share_above']:.0f}\\% of their tasks above chance against {100 * r['baseline_share_above']:.0f}\\% "
-        f"for English only, while the scheme-B list, which has no Romance language, gains {rb['lift']:+.2f}.}} Each row is "
-        "one subfamily of the untrained languages. A dot is the share of a cell's tasks in those languages above chance "
-        "minus the share of the English-only $K$ = 1 cell on the same tasks and sizes, pooled over the sizes both have "
-        "(every size but 350M for scheme A, 600M and 1B for scheme B). A filled dot marks a subfamily of one of the "
-        "cell's trained languages: " + ", ".join(
-            f"{f} for $K$ = {c.split()[0][1:]} scheme {c.split()[1]} ({v:+.2f})"
-            for c, f, v in zip(trained["cell"], trained["family_sub"].str.replace("Indo-European, ", ""), trained["lift"]))
-        + ". "
-        "Rows follow their mean over the cells.")
+        f"\\textbf{{All {len(trained)} subfamilies that a cell trains clear chance more often than under English only "
+        f"({trained['lift'].min():+.2f} to {trained['lift'].max():+.2f}), while the {len(other)} others centre on zero "
+        f"(median {other['lift'].median():+.2f}).}} The largest is Romance under the $K$ = 8 scheme-A cell, which trains "
+        f"Spanish, French and Italian: {100 * r['share_above']:.0f}\\% of the Catalan, Galician, Portuguese and Romanian "
+        f"tasks above chance against {100 * r['baseline_share_above']:.0f}\\% for English only. Each row is one "
+        "subfamily of the untrained languages. A dot is the share of a cell's tasks in those languages above chance minus "
+        "the share of the English-only $K$ = 1 cell on the same tasks and sizes, pooled over the sizes both have (every "
+        "size but 350M for scheme A, 600M and 1B for scheme B), drawn where it rests on at least 20 verdicts. A filled "
+        "dot marks a subfamily of one of the cell's trained languages. Weighted by verdicts, the trained subfamilies gain "
+        f"{w(trained):+.2f} and the others {w(other):+.2f}. Rows follow their mean over the cells.")
 
 
 RQ09_POP = ("the per-task DA-size of Figure~\\ref{fig:rq2}: the final checkpoint of each proxy against the 1.7B final, "
@@ -356,21 +356,23 @@ RQ09_POP = ("the per-task DA-size of Figure~\\ref{fig:rq2}: the final checkpoint
 def rq09_correlation_caption(d):
     """The caption of app_rq09_design_da_correlation, its numbers read from the figure's CSV `d`."""
     v = d.set_index(["reading", "characteristic"])
-    signed = d[d["statistic"] == "spearman_rho"]
-    crosses = lambda r: bool(((signed["reading"] == r) & (signed["ci_low"] <= 0) & (signed["ci_high"] >= 0)).sum()
-                             == (signed["reading"] == r).sum())
+    ok = d[d["ci_low"].notna()]
+    crosses = lambda r: bool(((ok["reading"] == r) & (ok["ci_low"] <= 0) & (ok["ci_high"] >= 0)).sum()
+                             == (ok["reading"] == r).sum())
     snr, rel, unf = (v.loc[(r, "n_options")] for r in ("snr", "above_66_either", "unfiltered"))
     return (
         "\\textbf{No characteristic orders the benchmarks by DA-size"
-        + (": every signed rank correlation has a 95\\% interval that contains zero" if crosses("above_66_either")
+        + (": every 95\\% interval on DA-size contains zero" if crosses("above_66_either")
            and crosses("unfiltered") else "")
         + f".}} The answer options, which correlate with SNR at $\\rho = {snr['value']:.2f}$ "
         f"(${snr['ci_low']:.2f}$ to ${snr['ci_high']:.2f}$), reach ${rel['value']:.2f}$ on the reliable tasks and "
         f"${unf['value']:.2f}$ on every task above chance. A row is one characteristic of the benchmark families (Table "
-        "\\ref{tab:app_rq09_benchmark_characteristics}). For the answer options, the reading passage, the source and the "
-        "two lengths the value is a Spearman $\\rho$ over the benchmarks against the characteristic's code (the options "
-        "ranked 2 to 4, no passage to passage, translated to native). For curation and task format, which have no order, "
-        "it is the rank correlation ratio $\\eta$ from the Kruskal-Wallis $H$, which has no sign and is always positive. "
+        "\\ref{tab:app_rq09_benchmark_characteristics}). The value is a Spearman $\\rho$ over the benchmarks against the "
+        "characteristic's code: the options ranked 2 to 4, no passage to passage, translated from English to originally "
+        "multilingual, and the two lengths as they are. Curation and task format are split in two, translated to native "
+        "(written in the language or generated from its treebanks) and continuation to lettered options. On these "
+        "benchmarks native curation picks the same benchmarks as an originally multilingual source, so the two rows "
+        "agree. A split whose smaller side holds one benchmark has no value. "
         f"DA-size is {RQ09_POP}. Left: that mean with a 95\\% bootstrap interval over the "
         f"{int(rel['n_benchmarks'])} benchmarks whose tasks pass the reliability filter of Figure~\\ref{{fig:rq2}} "
         f"(filled), over the {int(unf['n_benchmarks'])} benchmarks with any task above chance (hollow), and the same "
@@ -393,18 +395,22 @@ def rq09_levels_caption(d):
 
 def rq09_quadrant_caption(d):
     """The caption of app_rq09_design_da_quadrant, its numbers read from the figure's CSV `d`."""
-    dots, cnt = d[(d["row"] == "benchmark") & (d["population"] == "above_66_either")], d[d["row"] == "quadrant count"]
-    left = cnt[cnt["x_side"] < 0].groupby("characteristic")[["n_benchmarks", "n_benchmarks_unfiltered"]].sum()
+    dots, cnt = d[d["row"] == "benchmark"], d[d["row"] == "quadrant count"]
+    below = dots.drop_duplicates("family")
+    below = below[below["x"] < 0].sort_values("x")
+    low = dots[dots["family"].isin(below["family"]) & (dots["code"] != 0)]
+    one_sided = sorted(low.groupby("label")["code"].agg(lambda c: c.gt(0).nunique() == 1).loc[lambda x: x].index)
+    spread = ("they fall on both levels of every characteristic" if not one_sided else
+              f"they fall on both levels of every characteristic but {' and '.join(l.lower() for l in one_sided)}")
     return (
-        f"\\textbf{{On the reliable tasks all {dots['family'].nunique()} benchmarks decide above chance agreement, so "
-        "the left quadrants stay empty.} On every task above chance "
-        f"{int(left['n_benchmarks_unfiltered'].max())} benchmarks fall below 0.5. "
-        "One panel per characteristic with an order: x is the DA-size minus 0.5 and y the characteristic's code centred "
-        "at 0 (the options ranked 2, 3, 4 as $-1$, 0, $+1$, a binary characteristic as $-1$ and $+1$). Filled dots read "
-        "the tasks that pass the reliability filter of Figure~\\ref{fig:rq2}, hollow dots every task above chance "
-        "(drawn a little lower). The numbers count the benchmarks per quadrant, reliable (every task). A benchmark on a "
-        "zero line, such as the three-option XNLI, is in no quadrant. The shaded quadrants are the ones a positive "
-        f"correlation fills. DA-size is {RQ09_POP}.")
+        f"\\textbf{{On every task above chance, {len(below)} of the {dots['family'].nunique()} benchmarks decide below chance "
+        f"agreement ({', '.join(below['name'])}), and {spread}.}} One panel per characteristic: x is the DA-size minus 0.5, so the vertical line is chance agreement, and y "
+        "the characteristic's code centred at 0 (the options ranked 2, 3, 4 as $-1$, 0, $+1$, every other characteristic "
+        "split in two as $-1$ and $+1$), jittered. The numbers count the benchmarks per quadrant. A benchmark on a zero "
+        "line, such as the three-option XNLI, is in no quadrant. The shaded quadrants are the ones a positive correlation "
+        f"fills. {dots.loc[dots['da_size'].idxmax(), 'name']} is outlined. DA-size is {RQ09_POP}, on every task above "
+        "chance at the proxy and at 1.7B (on the tasks that pass the reliability filter of Figure~\\ref{fig:rq2} every "
+        "benchmark sits right of 0.5).")
 
 
 def rq09_table_caption(d):

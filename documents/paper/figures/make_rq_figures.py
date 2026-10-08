@@ -42,7 +42,7 @@ comes from). The .tex carries the source path as a comment next to the
     app_rq09_benchmark_design  <- rq09_benchmark_design/analyze.py --pool predictivity --paper  snr_per_family_ranked_paper
     app_rq09_design_da_correlation <- rq09_benchmark_design/design_da.py  design_da_size_correlation_above_66_either_mono_axis_paper
     app_rq09_design_da_by_level    <- the same                       design_da_size_by_level_above_66_either_mono_axis_paper
-    app_rq09_design_da_quadrant    <- the same                       design_da_size_quadrant_above_66_either_mono_axis_paper
+    app_rq09_design_da_quadrant    <- the same                       design_da_size_quadrant_mono_axis_paper (every task above chance)
     app_rq09_benchmark_characteristics <- the same                   benchmark_characteristics.tex (a LaTeX table)
                              (these four: the extra float pages of the benchmark-design appendix page)
     app_rq10_size_generalisation <- rq10_size_generalisation/reference_consistency.py --paper
@@ -137,7 +137,7 @@ FIGURES = {
     "app_rq09_design_da_by_level": (ANALYSIS.joinpath("rq09_benchmark_design", *PRED,
                                                        "design_da_size_by_level_above_66_either_mono_axis_paper"), ("png",)),
     "app_rq09_design_da_quadrant": (ANALYSIS.joinpath("rq09_benchmark_design", *PRED,
-                                                       "design_da_size_quadrant_above_66_either_mono_axis_paper"), ("png",)),
+                                                       "design_da_size_quadrant_mono_axis_paper"), ("png",)),
     "app_rq09_benchmark_characteristics": (ANALYSIS.joinpath("rq09_benchmark_design", *PRED, "benchmark_characteristics"),
                                            ("tex",)),
     "app_rq10_size_generalisation": (ANALYSIS.joinpath("rq10_size_generalisation", *PRED, "gate_share_and_da_size_mono_axis_paper"),
