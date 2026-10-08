@@ -15,6 +15,9 @@ is trained, not the one that was planned when the text was written.
     benchmarks  block in app_03_evaluation.tex: the evaluated benchmarks
                 (configs/tasks.json `auto` group) with their language and
                 task counts on the sweep's trained languages
+    discarded   block in app_03_evaluation.tex: the screened probe tasks
+                dropped at the gate (configs/tasks.json `discarded` group),
+                per benchmark family
     nbenchmarks block in main.tex: the setup counts the prose quotes, written
                 in the same run as the tables they count:
                 \\nbenchmarks   rows of the benchmarks table's multilingual block
@@ -362,6 +365,28 @@ def benchmark_table() -> tuple[str, dict]:
     return "\n".join(lines), stats
 
 
+def discarded_table() -> str:
+    """The `discarded` group per family: probe tasks not above chance at 1B nor
+    at 1.7B (the rule-1 gate on the cells that trained the language), so they
+    left `auto_probe` (plan/todos/probe-candidates-2026-10-08.md)."""
+    cfg = json.loads((REPO / "configs" / "tasks.json").read_text())
+    tasks, by = cfg["tasks"], {}
+    for t in cfg["groups"]["discarded"]:
+        by.setdefault(tasks[t]["benchmark"], []).append(canon(tasks[t]["language"]))
+    lines = [r"\begin{table}[t]", r"\centering", r"\small", r"\resizebox{\columnwidth}{!}{", r"\begin{tabular}{llrl}", r"\toprule",
+             r"\textbf{Benchmark} & \textbf{Languages} & \textbf{Tasks} & \textbf{Reason} \\", r"\midrule"]
+    for b, langs in sorted(by.items(), key=lambda kv: (-len(kv[1]), kv[0])):
+        name = re.sub(r" \(.*\)$", "", cfg["benchmarks"].get(b, {}).get("name", b))   # "C-Eval (Chinese)"
+        lines.append(f"{esc(name)} & {fmt_list(sorted(set(langs)))} & {len(langs)} & not above chance at 1B and 1.7B \\\\")
+    lines += [r"\midrule", f"Total & & {sum(map(len, by.values()))} & \\\\", r"\bottomrule", r"\end{tabular}", "}",
+              r"\caption{Screened benchmark tasks that we discarded. A task is discarded when fewer than half of "
+              r"the runs that trained its language have a one-sided 95\% Wilson lower bound above chance, both at "
+              r"1B and at 1.7B. Tasks counts the discarded tasks of the benchmark. Its other tasks stay in the "
+              r"screen. Languages are ISO 639-1 codes.}",
+              r"\label{tab:discarded-benchmarks}", r"\end{table}"]
+    return "\n".join(lines)
+
+
 # --- languages --------------------------------------------------------------
 
 def languages_table() -> None:
@@ -460,6 +485,7 @@ def main():
     replace_block(SECTIONS / "app_01_model_ladder.tex", "ladder", ladder_table(runs))
     body, stats = benchmark_table()
     replace_block(SECTIONS / "app_03_evaluation.tex", "benchmarks", body)
+    replace_block(SECTIONS / "app_03_evaluation.tex", "discarded", discarded_table())
     # written in the same run as the tables they count, so text and tables cannot disagree
     per_K = tasks_per_K()
     if unnamed := sorted(set(per_K) - set(K_WORDS)):

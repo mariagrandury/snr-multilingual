@@ -78,6 +78,36 @@ Total & & & & & 50 & 846 \\
 \end{table*}
 % END generated: benchmarks
 
+Table~\ref{tab:discarded-benchmarks} lists the screened benchmark tasks that we discarded because they stayed at chance at both 1B and 1.7B.
+
+% BEGIN generated: discarded (make_appendix_tables.py)
+\begin{table}[t]
+\centering
+\small
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{llrl}
+\toprule
+\textbf{Benchmark} & \textbf{Languages} & \textbf{Tasks} & \textbf{Reason} \\
+\midrule
+C-Eval & zh & 51 & not above chance at 1B and 1.7B \\
+ZhoBLiMP & zh & 10 & not above chance at 1B and 1.7B \\
+NorEval & no & 9 & not above chance at 1B and 1.7B \\
+TurkishMMLU & tr & 9 & not above chance at 1B and 1.7B \\
+BLiMP-NL & nl & 8 & not above chance at 1B and 1.7B \\
+HAE-RAE Bench & ko & 5 & not above chance at 1B and 1.7B \\
+Bangla benchmarks & bn & 3 & not above chance at 1B and 1.7B \\
+TurBLiMP & tr & 3 & not above chance at 1B and 1.7B \\
+EVALITA-LLM & it & 2 & not above chance at 1B and 1.7B \\
+\midrule
+Total & & 100 & \\
+\bottomrule
+\end{tabular}
+}
+\caption{Screened benchmark tasks that we discarded. A task is discarded when fewer than half of the runs that trained its language have a one-sided 95\% Wilson lower bound above chance, both at 1B and at 1.7B. Tasks counts the discarded tasks of the benchmark. Its other tasks stay in the screen. Languages are ISO 639-1 codes.}
+\label{tab:discarded-benchmarks}
+\end{table}
+% END generated: discarded
+
 \textbf{Task selection.} We select the registered tasks whose language is in the training mixture. Task counts can exceed family counts. For the resource-ranked lists, the number of tasks grows with $K$: \ntasksKone at $K=1$, \ntasksKtwo at $K=2$, \ntasksKeight at $K=8$, \ntasksKfifteen at $K=15$, \ntasksKthirty at $K=30$, and \ntasksKfifty at $K=50$. These counts cover the whole evaluated group of Table~\ref{tab:benchmark-families}, that is, the multilingual families, the reformulated variants of the letter-format families (\S\ref{subsec:rq1}) and the English-text benchmarks. Every trained language is covered by at least one family. For the seed-1904 deep scheme-A ladder, we also run every task in every language, independent of the training mixture. This lets us read cross-lingual transfer on the benchmarks as well as on bits-per-byte. 
 
 \textbf{Language coverage.} Every trained language is covered by at least one benchmark family. English is covered by 14 of the multilingual families plus 11 of the English-text benchmarks. Of the 100 languages of Table~\ref{tab:app-languages}, eighteen have exactly one family and fourteen have two. The languages with a single family are covered by Belebele (12), MultiBLiMP (4) or Global PIQA (2) alone. For those languages, the per-language benchmark read rests on one task. Counting tasks instead of families, a cell is evaluated on \ntasksKone tasks at $K=1$, \ntasksKtwo at $K=2$, \ntasksKeight at $K=8$, \ntasksKfifteen at $K=15$, \ntasksKthirty at $K=30$ and \ntasksKfifty at $K=50$, including the reformulated variants and the English-only benchmarks. Two IrokoBench families (AfriXNLI and AfriMMLU) are wired but disabled because of a loading defect in the pinned harness. Enabling them again would add a second or third human-translated family for Amharic, Igbo, Kinyarwanda, Southern Sotho, Xhosa and Zulu.
