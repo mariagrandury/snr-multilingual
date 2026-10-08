@@ -10,8 +10,8 @@
 ## Highlighted result
 
 - **The above-random gate decides which families are read at all.** Every family whose tasks sit at chance at the reference size is dropped before SNR is computed, leaving **17 families** that clear the gate — most of them 2-option.
-- **Among survivors, no family-level design axis separates the families convincingly** (five Kruskal–Wallis tests on the same families, uncorrected): curation H = 1.62, p = 0.655; source origin H = 0.16, p = 0.688; option count H = 5.69, p = 0.017; task format H = 1.73, p = 0.422; passage flag H = 0.40, p = 0.527. Option count is under 0.05, which one of five uncorrected tests reaches by chance. Too little variation is left among the survivors (mostly 2-option) to resolve any axis.
-- **Per-task curation test** (tasks as observations, 328 tasks of which 59 are `rfgm_belebele`): H = 91.44, p = 0.000 — nominally significant, but the tasks of one family are not independent observations, so it says which family dominates, not which curation works.
+- **Among survivors, no family-level design axis separates the families convincingly** (five Kruskal–Wallis tests on the same families, uncorrected): curation H = 2.45, p = 0.485; source origin H = 0.49, p = 0.482; option count H = 3.81, p = 0.051; task format H = 2.46, p = 0.293; passage flag H = 0.01, p = 0.916. Too little variation is left among the survivors (mostly 2-option) to resolve any axis.
+- **Per-task curation test** (tasks as observations, 344 tasks of which 59 are `rfgm_belebele`): H = 93.27, p = 0.000 — nominally significant, but the tasks of one family are not independent observations, so it says which family dominates, not which curation works.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -124,23 +124,23 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | family | median SNR | n | format | n_opts |
 |---|---|---|---|---|
-| `multiblimp` | 1.70 | 34 | minimal_pair | 2 |
-| `xstorycloze` | 1.53 | 8 | completion | 2 |
-| `xwinograd` | 1.45 | 6 | completion | 2 |
-| `paws` | 1.37 | 5 | classification | 2 |
-| `xcopa` | 0.98 | 8 | completion | 2 |
-| `xnli` | 0.89 | 14 | classification | 3 |
-| `global_mmlu_full` | 0.83 | 1 | mcq_question_only | 4 |
-| `include_base_44` | 0.70 | 3 | mcq_question_only | 4 |
-| `rfgm_belebele` | 0.62 | 59 | statement_continuation | 4 |
-| `hellaswag` | 0.61 | 25 | completion | 4 |
-| `rf_include_base_44` | 0.60 | 29 | cloze_completion | 4 |
-| `rfgm_include_base_44` | 0.58 | 30 | statement_continuation | 4 |
-| `arc` | 0.51 | 16 | mcq_question_only | 4 |
-| `rf_belebele` | 0.49 | 57 | cloze_completion | 4 |
-| `global_piqa_parallel_cloze` | 0.48 | 1 | completion | 2 |
-| `belebele` | 0.46 | 3 | mrc_passage | 4 |
-| `rf_global_mmlu_full` | 0.41 | 29 | cloze_completion | 4 |
+| `multiblimp` | 2.39 | 34 | minimal_pair | 2 |
+| `hellaswag` | 2.29 | 26 | completion | 4 |
+| `xstorycloze` | 2.18 | 8 | completion | 2 |
+| `xwinograd` | 1.77 | 6 | completion | 2 |
+| `paws` | 1.55 | 5 | classification | 2 |
+| `xcopa` | 1.32 | 8 | completion | 2 |
+| `global_mmlu_full` | 1.26 | 1 | mcq_question_only | 4 |
+| `xnli` | 1.01 | 14 | classification | 3 |
+| `rf_global_mmlu_full` | 0.84 | 29 | cloze_completion | 4 |
+| `rfgm_belebele` | 0.83 | 59 | statement_continuation | 4 |
+| `arc` | 0.73 | 22 | mcq_question_only | 4 |
+| `rfgm_include_base_44` | 0.72 | 30 | statement_continuation | 4 |
+| `include_base_44` | 0.66 | 3 | mcq_question_only | 4 |
+| `rf_belebele` | 0.61 | 57 | cloze_completion | 4 |
+| `global_piqa_parallel_cloze` | 0.59 | 10 | completion | 2 |
+| `rf_include_base_44` | 0.58 | 29 | cloze_completion | 4 |
+| `belebele` | 0.51 | 3 | mrc_passage | 4 |
 
 ![Per-family SNR ranking](pretraining/predictivity/snr_per_family_ranked.png)
 
@@ -148,11 +148,11 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | axis | H | p |
 |---|---|---|
-| n_options | 5.69 | 0.02 |
-| format | 1.73 | 0.42 |
-| data source | 0.16 | 0.69 |
-| curation method | 1.62 | 0.66 |
-| reading passage | 0.40 | 0.53 |
+| n_options | 3.81 | 0.05 |
+| format | 2.46 | 0.29 |
+| data source | 0.49 | 0.48 |
+| curation method | 2.45 | 0.48 |
+| reading passage | 0.01 | 0.92 |
 <!-- END auto:results -->
 
 [snr_per_family_ranked.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_per_family_ranked.png) ·

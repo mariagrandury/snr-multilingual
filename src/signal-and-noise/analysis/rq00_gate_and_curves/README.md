@@ -14,7 +14,7 @@
 ## Highlighted result
 
 - **The benchmarks that separate the language settings most: `cultural_bench_easy`, `bbpb_bbh_cloze`, `bbpb_bbh_mcq`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1.7B.
-- **Above-random gate.** Of **1373 benchmarks, 820 clear chance at ≥1 size** and 778 at 1.7B (553 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
+- **Above-random gate.** Of **1679 benchmarks, 997 clear chance at ≥1 size** and 954 at 1.7B (682 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
 <!-- END auto:highlight -->
 
 ## Setup
@@ -112,16 +112,16 @@ An educational reading of the rule above on one benchmark-language task (the gat
 Key findings:
 
 - `include_v2_og_hungarian_hungary` has 4 options (0.25 chance) and 1,386 items, so a single run needs 0.270 (+0.020 over chance) for its LCB to clear chance; at n = 1,386 the bound sits 0.019 below the score.
-- Verdict per size (runs passing / runs that train the language, ≥ 50% needed): 90M 1/10 → at chance, 175M 3/9 → at chance, 350M 5/10 → above, 600M 5/10 → above, 1B 6/10 → above, 1.7B 7/9 → above; the task enters every RQ from **350M** on and is grey below it.
+- Verdict per size (runs passing / runs that train the language, ≥ 50% needed): 90M 1/11 → at chance, 175M 5/11 → at chance, 350M 6/11 → above, 600M 5/10 → above, 1B 6/10 → above, 1.7B 8/10 → above; the task enters every RQ from **350M** on and is grey below it.
 - What that means in rq02 (panel c): a DA-size cell needs the proxy and the reference above chance, so `include_v2_og_hungarian_hungary` contributes only the 350M → 1.7B, 600M → 1.7B, 1B → 1.7B DA-size cell(s); a DA-ckpt cell needs the run's own size above chance, so it contributes only the 350M, 600M, 1B, 1.7B run(s). 4 of 11 cells are blanked; the task is never a decision at 90M, 175M.
 - The highlighted run `lm-350M-L30-deep-seed1904` ends at 0.258 with LCB 0.239: not above chance — a score above the dotted line is not enough, the band's lower edge has to be.
-- Population: 58 runs over 6 sizes (rule 2: only the runs that train the language count; a run scored on a language it never saw sits at chance and would drag the share down). The six runs of a size answer the same items, so their verdicts are correlated, not six independent trials.
-- What the gate is not: chance is uniform guessing (1/4), so a run that always picks the majority gold label is not caught (on `include_v2_og_hungarian_hungary` that scores the majority label's share, above 0.25); and the gate is not a filter on DA — it blanks a cell by the gate alone, whatever the DA there (DA-size per proxy: 90M 0.50 gated; 175M 0.67 gated; 350M 0.39; 600M 0.58; 1B 0.53).
+- Population: 63 runs over 6 sizes (rule 2: only the runs that train the language count; a run scored on a language it never saw sits at chance and would drag the share down). The six runs of a size answer the same items, so their verdicts are correlated, not six independent trials.
+- What the gate is not: chance is uniform guessing (1/4), so a run that always picks the majority gold label is not caught (on `include_v2_og_hungarian_hungary` that scores the majority label's share, above 0.25); and the gate is not a filter on DA — it blanks a cell by the gate alone, whatever the DA there (DA-size per proxy: 90M 0.56 gated; 175M 0.69 gated; 350M 0.40; 600M 0.64; 1B 0.56).
 
 Follow-ups:
 
 - `--task hellaswag_ta`: the clean step (0/6 at 175M–600M, 5/6 at 1B, 6/6 at 1.7B), with no run near the limit.
-- `--task hellaswag_eu`: a task whose verdict is not monotone in size (mask 0/0/1/0/0/1), to show the share moving with the runs.
+- `--task hellaswag_eu`: a task whose verdict is not monotone in size (mask 1/1/1/1/1/1), to show the share moving with the runs.
 - The same figure on a 35-item task (`cultural_bench_easy_argentina`), where the needed margin is +0.12: the item count, not the model, decides.
 - A `--pool predictivity_seeds` version with the replicate seeds, to see how much the per-run verdict moves with the seed.
 
@@ -272,11 +272,11 @@ Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00
 
 | options | chance | above ≥1 size | above @1.7B |
 |---|---|---|---|
-| 2 | 0.50 | 289 / 358 | 285 / 358 |
-| 3 | 0.33 | 19 / 24 | 17 / 24 |
-| 4 | 0.25 | 493 / 932 | 459 / 932 |
-| 5 | 0.20 | 14 / 43 | 13 / 43 |
-| 6 | 0.17 | 1 / 4 | 1 / 4 |
+| 2 | 0.50 | 314 / 416 | 309 / 416 |
+| 3 | 0.33 | 24 / 33 | 22 / 33 |
+| 4 | 0.25 | 611 / 1141 | 577 / 1141 |
+| 5 | 0.20 | 16 / 46 | 15 / 46 |
+| 6 | 0.17 | 28 / 31 | 28 / 31 |
 | 7 | 0.14 | 1 / 7 | 1 / 7 |
 | 8 | 0.12 | 2 / 2 | 1 / 2 |
 | 10 | 0.10 | 0 / 2 | 0 / 2 |
@@ -419,32 +419,29 @@ rule on 1,169 of its 1,171 cells), not the Wilson gate the auto block names.*
 <!-- BEGIN auto:above-random-external (above_random_external.py --pool predictivity) -->
 ## Benchmark floors: the ladder's gate against the public models'
 
-Of the 86 tasks both tiers score, 38 are at chance at every ladder size. Where the external models (270M–70B, every release the external tier holds, base and post-trained, same gate) first read them: ≤ 600M 8, 1B–1.7B 19, 3B–4B 1, 7B–14B 5, ≥ 27B 2, never 3. A task readable at ≤ 1.7B by a public model is a size/recipe floor (the 5×-Chinchilla ladder does not reach it; public models of that size train on 10–36 T tokens); a task that needs ≥ 3B or is never read is a benchmark or language-resource floor. "Never reads" is the gate's verdict: at every ladder size fewer than 50% of the size's runs that train the task's language clear the one-sided 95 % Wilson bound over chance; single runs may clear it. Overlap is the 36-sweep's 86-task list only. Regenerate with `python analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity`.
+Of the 73 tasks both tiers score, 27 are at chance at every ladder size. Where the external models (270M–70B, every release the external tier holds, base and post-trained, same gate) first read them: ≤ 600M 8, 1B–1.7B 16, 3B–4B 0, 7B–14B 1, ≥ 27B 0, never 2. A task readable at ≤ 1.7B by a public model is a size/recipe floor (the 5×-Chinchilla ladder does not reach it; public models of that size train on 10–36 T tokens); a task that needs ≥ 3B or is never read is a benchmark or language-resource floor. "Never reads" is the gate's verdict: at every ladder size fewer than 50% of the size's runs that train the task's language clear the one-sided 95 % Wilson bound over chance; single runs may clear it. Overlap is the 36-sweep's 86-task list only, less the 25 tasks in a language no ladder cell trains at some size (there the gate reads untrained runs, a transfer measurement, rule 2). Regenerate with `python analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity`.
 
 | family | ≤ 600M | 1B–1.7B | 3B–4B | 7B–14B | ≥ 27B | never |
 |---|---|---|---|---|---|---|
-| belebele | 3 | 9 | 0 | 0 | 0 | 0 |
-| global_mmlu_full | 1 | 9 | 0 | 0 | 0 | 0 |
-| arc | 0 | 0 | 0 | 2 | 0 | 1 |
-| xnli | 0 | 0 | 0 | 2 | 0 | 1 |
+| belebele | 3 | 7 | 0 | 0 | 0 | 0 |
+| global_mmlu_full | 1 | 8 | 0 | 0 | 0 | 0 |
 | paws | 0 | 1 | 0 | 0 | 0 | 1 |
 | truthfulqa_mc2 | 2 | 0 | 0 | 0 | 0 | 0 |
-| xstorycloze | 0 | 0 | 0 | 1 | 1 | 0 |
+| arc | 0 | 0 | 0 | 1 | 0 | 0 |
 | commonsense_qa | 1 | 0 | 0 | 0 | 0 | 0 |
 | mmlu | 1 | 0 | 0 | 0 | 0 | 0 |
-| openbookqa | 0 | 0 | 1 | 0 | 0 | 0 |
-| xcopa | 0 | 0 | 0 | 0 | 1 | 0 |
+| xnli | 0 | 0 | 0 | 0 | 0 | 1 |
 
 ![The gate on the public models](pretraining/predictivity/above_random_external.png)
 
-The paper version, `above_random_external_paper.png` (alternatives `_paper_b`, one cell per task, and `_paper_c`, a family by bucket grid), recomputes the floor on the public base releases alone (no post-trained release, none of apertus3-a06, ap-from8b-TOP256): ≤ 600M 19, 1B–1.7B 9, 3B–4B 4, 7B–14B 0, ≥ 27B 4, never 2. `above_random_external_models.tex` lists those models per line and size bucket.
+The paper version, `above_random_external_paper.png` (alternatives `_paper_b`, one cell per task, and `_paper_c`, a family by bucket grid), recomputes the floor on the public base releases alone (no post-trained release, none of apertus3-a06, ap-from8b-TOP256): ≤ 600M 16, 1B–1.7B 6, 3B–4B 1, 7B–14B 0, ≥ 27B 2, never 2. `above_random_external_models.tex` lists those models per line and size bucket.
 
-Population: the `predictivity` pool (seed 1904, 175M–1.7B, final checkpoint, trained languages) against every external release (`all/external`, base and post-trained, same gate; the paper version uses the public base releases only; panels (c) and (d) use the six public lines gemma-3, Qwen3, OLMo-2, Olmo-3, Apertus, apertus3-a06); no task filter beyond the 84-task overlap.
+Population: the `predictivity` pool (seed 1904, 90M–1.7B, final checkpoint, trained languages) against every external release (`all/external`, base and post-trained, same gate; the paper version uses the public base releases only; panels (c) and (d) use the six public lines gemma-3, Qwen3, OLMo-2, Olmo-3, Apertus, apertus3-a06); no task filter beyond the 84-task overlap.
 
 Key findings:
-- 38 of the 86 shared tasks are gated at every ladder size; 27 of them are read by an external model ≤ 1.7B, 3 by none up to 70B.
-- (c) the ladder reads 37% of the shared tasks at 90M and 56% at 1.7B; the public base models ≤ 1.7B read Qwen3-1.7B-Base 87%, Qwen3-0.6B-Base 81%, OLMo-2-0425-1B 64%, gemma-3-1b-pt 64%, apertus3-1b-21-nodes 62%, gemma-3-270m 58% (a model's own run clears the bound; the ladder's share is its mask, half of the runs).
-- (d) 29 of the 38 ladder-gated tasks have a trained run at 1.7B (no 1.7B cell trains eu, sw, rule 2); 23 of them have a single run whose lower bound clears chance (near misses: the gate wants half of the runs), and the best public base model ≤ 1.7B beats the ladder's best run on 29.
+- 27 of the 73 shared tasks are gated at every ladder size; 24 of them are read by an external model ≤ 1.7B, 2 by none up to 70B.
+- (c) the ladder reads 41% of the shared tasks at 90M and 63% at 1.7B; the public base models ≤ 1.7B read Qwen3-1.7B-Base 93%, Qwen3-0.6B-Base 85%, OLMo-2-0425-1B 66%, gemma-3-1b-pt 65%, apertus3-1b-21-nodes 63%, gemma-3-270m 59% (a model's own run clears the bound; the ladder's share is its mask, half of the runs).
+- (d) 27 of the 27 ladder-gated tasks have a trained run at 1.7B (no 1.7B cell trains , rule 2); 24 of them have a single run whose lower bound clears chance (near misses: the gate wants half of the runs), and the best public base model ≤ 1.7B beats the ladder's best run on 25.
 
 Follow-ups:
 - (c) with the post-trained releases as open markers: whether instruction tuning moves a task over the gate at the same size.

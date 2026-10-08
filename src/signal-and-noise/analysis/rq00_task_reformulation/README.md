@@ -715,8 +715,8 @@ Gate cells (median task margin over the task's chance level, trained languages, 
 | family | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---:|---:|---:|---:|---:|---:|
 | belebele | +0.004 · rf +0.033 (**+0.030**, n=59, sig=41) · rfgm +0.071 (**+0.067**, n=59, sig=53) | -0.003 · rf +0.039 (**+0.042**, n=59, sig=45) · rfgm +0.081 (**+0.084**, n=59, sig=58) | -0.013 · rf +0.046 (**+0.059**, n=59, sig=55) · rfgm +0.089 (**+0.102**, n=59, sig=57) | -0.007 · rf +0.058 (**+0.065**, n=59, sig=54) · rfgm +0.113 (**+0.120**, n=59, sig=59) | +0.000 · rf +0.083 (**+0.083**, n=59, sig=57) · rfgm +0.139 (**+0.139**, n=59, sig=59) | +0.011 · rf +0.109 (**+0.098**, n=59, sig=56) · rfgm +0.179 (**+0.168**, n=59, sig=59) |
-| global_mmlu_full | -0.012 · rf +0.006 (**+0.017**, n=29, sig=6) · rfgm — | -0.000 · rf +0.009 (**+0.009**, n=29, sig=14) · rfgm — | -0.000 · rf +0.009 (**+0.010**, n=29, sig=17) · rfgm — | -0.004 · rf +0.015 (**+0.019**, n=29, sig=15) · rfgm — | -0.008 · rf +0.029 (**+0.037**, n=29, sig=24) · rfgm — | -0.010 · rf +0.048 (**+0.058**, n=29, sig=26) · rfgm — |
-| include_base_44 | +0.003 · rf +0.007 (**+0.004**, n=36, sig=7) · rfgm +0.009 (**+0.006**, n=36, sig=4) | +0.001 · rf +0.013 (**+0.012**, n=36, sig=3) · rfgm +0.015 (**+0.015**, n=36, sig=6) | +0.001 · rf +0.023 (**+0.022**, n=36, sig=9) · rfgm +0.023 (**+0.022**, n=36, sig=9) | +0.001 · rf +0.027 (**+0.026**, n=36, sig=10) · rfgm +0.035 (**+0.035**, n=36, sig=16) | +0.002 · rf +0.039 (**+0.037**, n=36, sig=14) · rfgm +0.055 (**+0.053**, n=36, sig=16) | +0.005 · rf +0.052 (**+0.047**, n=36, sig=18) · rfgm +0.080 (**+0.075**, n=36, sig=22) |
+| global_mmlu_full | -0.012 · rf +0.006 (**+0.017**, n=29, sig=2) · rfgm — | -0.000 · rf +0.009 (**+0.009**, n=29, sig=1) · rfgm — | -0.000 · rf +0.009 (**+0.010**, n=29, sig=3) · rfgm — | -0.004 · rf +0.015 (**+0.019**, n=29, sig=13) · rfgm — | -0.008 · rf +0.029 (**+0.037**, n=29, sig=24) · rfgm — | -0.010 · rf +0.048 (**+0.058**, n=29, sig=26) · rfgm — |
+| include_base_44 | +0.003 · rf +0.007 (**+0.004**, n=36, sig=2) · rfgm +0.009 (**+0.006**, n=36, sig=1) | +0.001 · rf +0.013 (**+0.012**, n=36, sig=1) · rfgm +0.015 (**+0.015**, n=36, sig=3) | +0.001 · rf +0.023 (**+0.022**, n=36, sig=7) · rfgm +0.023 (**+0.022**, n=36, sig=7) | +0.001 · rf +0.027 (**+0.026**, n=36, sig=6) · rfgm +0.035 (**+0.035**, n=36, sig=12) | +0.002 · rf +0.039 (**+0.037**, n=36, sig=12) · rfgm +0.055 (**+0.053**, n=36, sig=15) | +0.005 · rf +0.052 (**+0.047**, n=36, sig=17) · rfgm +0.080 (**+0.075**, n=36, sig=21) |
 
 ![family x size](rf_gate.png)
 
@@ -755,9 +755,9 @@ Gate cells (median task margin over the task's chance level, trained languages, 
 |---|---:|---:|---:|---:|---:|---:|
 | mmlu | -0.007 · rf +0.023 (**+0.030**, n=1, sig=1) · rfgm — | +0.001 · rf +0.030 (**+0.029**, n=1, sig=1) · rfgm — | -0.005 · rf +0.036 (**+0.041**, n=1, sig=1) · rfgm — | +0.001 · rf +0.057 (**+0.057**, n=1, sig=1) · rfgm — | -0.004 · rf +0.082 (**+0.086**, n=1, sig=1) · rfgm — | +0.017 · rf +0.111 (**+0.093**, n=1, sig=1) · rfgm — |
 | commonsense_qa | +0.004 · rf +0.107 (**+0.103**, n=1, sig=1) · rfgm — | +0.004 · rf +0.135 (**+0.131**, n=1, sig=1) · rfgm — | -0.000 · rf +0.148 (**+0.148**, n=1, sig=1) · rfgm — | +0.002 · rf +0.188 (**+0.186**, n=1, sig=1) · rfgm — | +0.001 · rf +0.214 (**+0.213**, n=1, sig=1) · rfgm — | +0.009 · rf +0.265 (**+0.256**, n=1, sig=1) · rfgm — |
-| cultural_bench_easy | +0.175 · rf +0.010 (**-0.165**, n=19, sig=9) · rfgm — | -0.093 · rf +0.025 (**+0.118**, n=19, sig=7) · rfgm — | -0.026 · rf +0.021 (**+0.047**, n=19, sig=2) · rfgm — | -0.015 · rf +0.025 (**+0.039**, n=19, sig=7) · rfgm — | +0.021 · rf +0.065 (**+0.044**, n=19, sig=5) · rfgm — | +0.043 · rf +0.092 (**+0.049**, n=19, sig=7) · rfgm — |
-| bbh_mcq | -0.000 · rf +0.024 (**+0.024**, n=17, sig=6) · rfgm — | -0.004 · rf +0.030 (**+0.034**, n=17, sig=7) · rfgm — | +0.005 · rf +0.036 (**+0.031**, n=17, sig=6) · rfgm — | +0.006 · rf +0.060 (**+0.054**, n=17, sig=8) · rfgm — | +0.000 · rf +0.075 (**+0.075**, n=17, sig=10) · rfgm — | -0.003 · rf +0.084 (**+0.087**, n=17, sig=12) · rfgm — |
-| acp_bench_mcq | +0.003 · rf +0.047 (**+0.045**, n=7, sig=4) · rfgm — | -0.001 · rf +0.064 (**+0.065**, n=7, sig=5) · rfgm — | +0.010 · rf +0.062 (**+0.052**, n=7, sig=5) · rfgm — | +0.000 · rf +0.087 (**+0.087**, n=7, sig=5) · rfgm — | +0.006 · rf +0.105 (**+0.099**, n=7, sig=5) · rfgm — | +0.010 · rf +0.132 (**+0.122**, n=7, sig=5) · rfgm — |
+| cultural_bench_easy | +0.175 · rf +0.010 (**-0.165**, n=19, sig=0) · rfgm — | -0.093 · rf +0.025 (**+0.118**, n=19, sig=7) · rfgm — | -0.026 · rf +0.021 (**+0.047**, n=19, sig=2) · rfgm — | -0.015 · rf +0.025 (**+0.039**, n=19, sig=7) · rfgm — | +0.021 · rf +0.065 (**+0.044**, n=19, sig=5) · rfgm — | +0.043 · rf +0.092 (**+0.049**, n=19, sig=7) · rfgm — |
+| bbh_mcq | -0.000 · rf +0.024 (**+0.024**, n=17, sig=6) · rfgm — | -0.004 · rf +0.030 (**+0.034**, n=17, sig=6) · rfgm — | +0.005 · rf +0.036 (**+0.031**, n=17, sig=5) · rfgm — | +0.006 · rf +0.060 (**+0.054**, n=17, sig=7) · rfgm — | +0.000 · rf +0.075 (**+0.075**, n=17, sig=8) · rfgm — | -0.003 · rf +0.084 (**+0.087**, n=17, sig=10) · rfgm — |
+| acp_bench_mcq | +0.003 · rf +0.047 (**+0.045**, n=7, sig=4) · rfgm — | -0.001 · rf +0.064 (**+0.065**, n=7, sig=5) · rfgm — | +0.010 · rf +0.062 (**+0.052**, n=7, sig=4) · rfgm — | +0.000 · rf +0.087 (**+0.087**, n=7, sig=5) · rfgm — | +0.006 · rf +0.105 (**+0.099**, n=7, sig=5) · rfgm — | +0.010 · rf +0.132 (**+0.122**, n=7, sig=5) · rfgm — |
 
 ![family x size](rf_gate_probe.png)
 
@@ -785,93 +785,122 @@ Follow-ups:
 - Check cultural_bench_easy's 90M original for a constant-answer bias before reading its small-size cells.
 
 <!-- BEGIN auto:probe-survivors (analysis/rq00_task_reformulation/probe_survivors.py) -->
-Probe survivors: which of the 33 candidate benchmarks in `auto_probe` clear the above-random gate (rule 1, read from the committed `predictivity` mask, cells that trained the language), over 47 languages. A cell counts languages (original | rf twin where one exists) — the population differs per cell (rule 13) — and the second table names the surviving benchmarks per language, the twin as `-rf`. Same items as `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance; this table is only the gate.
+Probe survivors: which of the 59 candidate benchmarks in `auto_probe` clear the above-random gate (rule 1, read from the committed `predictivity` mask, cells that trained the language), over 50 languages. A cell counts languages (original | rf twin where one exists) — the population differs per cell (rule 13) — and the second table names the surviving benchmarks per language, the twin as `-rf`. Same items as `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance; this table is only the gate.
 
 | benchmark | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---:|---:|---:|---:|---:|---:|
 | acp_bench_cloze | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
 | acp_bench_mcq | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| arabicmmlu | orig — | orig — | orig — | orig 0/1 · rf 0/1 | orig 0/1 · rf 0/1 | orig 0/1 · rf 1/1 |
 | arc_mt | orig 0/11 | orig 0/11 | orig 0/11 | orig 2/11 | orig 10/11 | orig 11/11 |
 | bangla | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
 | bbh_cloze | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
 | bbh_mcq | orig 1/1 · rf 1/1 | orig 1/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 1/1 · rf 1/1 | orig 0/1 · rf 1/1 |
 | blend_sample | orig 1/4 | orig 0/4 | orig 0/4 | orig 0/4 | orig 0/4 | orig 0/4 |
 | blimp_nl | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
+| careqa | orig — | orig — | orig — | orig 0/1 · rf 0/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
 | ceval | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
 | commonsense_qa | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| copal_id | orig — | orig — | orig — | orig 0/1 | orig 0/1 | orig 1/1 |
 | cultural_bench_easy | orig 6/8 · rf 1/8 | orig 0/8 · rf 1/8 | orig 0/8 · rf 2/8 | orig 0/8 · rf 3/8 | orig 0/8 · rf 3/8 | orig 0/8 · rf 5/8 |
 | cultural_bench_hard | orig 0/8 | orig 0/8 | orig 0/8 | orig 0/8 | orig 0/8 | orig 0/8 |
-| evalita_llm | orig 0/1 | orig 0/1 | orig 0/1 | orig 1/1 | orig 1/1 | orig 1/1 |
-| french_bench | orig 0/1 | orig 0/1 | orig 0/1 | orig 1/1 | orig 1/1 | orig 1/1 |
-| haerae | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
+| evalita_llm | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
+| evalita_llm_extra | orig — | orig — | orig — | orig 0/1 | orig 0/1 | orig 1/1 |
+| french_bench | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
+| french_bench_extra | orig — | orig — | orig — | orig 1/1 · rf 0/1 | orig 1/1 · rf 0/1 | orig 1/1 · rf 0/1 |
+| headqa | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
 | ibero_arc | orig 2/2 | orig 2/2 | orig 2/2 | orig 2/2 | orig 2/2 | orig 2/2 |
+| ibero_cola | orig 1/2 | orig 0/2 | orig 0/2 | orig 0/2 | orig 1/2 | orig 1/2 |
+| ibero_copa | orig — | orig — | orig — | orig 1/2 | orig 1/2 | orig 1/2 |
+| ibero_nli | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
 | ibero_openbookqa | orig 2/3 | orig 3/3 | orig 3/3 | orig 3/3 | orig 3/3 | orig 3/3 |
+| ibero_paraphrase | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
 | ibero_piqa | orig 2/2 | orig 2/2 | orig 2/2 | orig 2/2 | orig 2/2 | orig 2/2 |
+| ibero_siqa | orig 0/1 | orig 0/1 | orig 0/1 | orig 1/1 | orig 1/1 | orig 1/1 |
+| ibero_truthfulqa | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/2 | orig 0/2 | orig 0/2 |
 | include_v2_en | orig 32/42 | orig 34/42 | orig 36/42 | orig 38/42 | orig 41/42 | orig 42/42 |
 | include_v2_og | orig 13/42 | orig 16/42 | orig 23/42 | orig 29/42 | orig 31/42 | orig 35/42 |
+| kmmlu | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 1/1 | orig 1/1 |
+| kobest | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
+| m_mmlu | orig — | orig — | orig — | orig 0/27 · rf 23/27 | orig 0/27 · rf 24/27 | orig 0/27 · rf 27/27 |
+| m_truthfulqa_mc1 | orig — | orig — | orig — | orig 6/26 | orig 6/26 | orig 3/26 |
+| m_truthfulqa_mc2 | orig — | orig — | orig — | orig 24/24 | orig 24/24 | orig 24/24 |
 | mathqa | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
+| mela | orig — | orig — | orig — | orig — | orig — | orig — |
 | mmlu | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| mmmlu | orig — | orig — | orig — | orig 0/12 · rf 9/12 | orig 0/12 · rf 10/12 | orig 0/12 · rf 12/12 |
+| multiblimp-extra | orig — | orig — | orig — | orig 3/3 | orig 3/3 | orig 3/3 |
 | noreval | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
-| openbookqa | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
+| noreval_extra | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
+| oall_acva | orig — | orig — | orig — | orig 0/1 | orig 0/1 | orig 0/1 |
+| oall_alghafa | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
+| oall_arabic_mmlu | orig — | orig — | orig — | orig 0/1 · rf 0/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| oall_exams | orig — | orig — | orig — | orig 0/1 · rf 0/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| oall_mt | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
+| openbookqa | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
 | toksuite | orig 5/5 | orig 5/5 | orig 5/5 | orig 5/5 | orig 5/5 | orig 5/5 |
 | toksuite_math | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
 | toksuite_stem | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
 | toxigen | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
+| truthfulqa-multi_mc2 | orig — | orig — | orig — | orig 3/3 | orig 3/3 | orig 3/3 |
+| truthfulqa_mc1 | orig — | orig — | orig — | orig 0/1 | orig 0/1 | orig 0/1 |
 | truthfulqa_mc2 | orig 0/3 | orig 0/3 | orig 0/3 | orig 0/3 | orig 0/3 | orig 0/3 |
 | turblimp | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
-| turkishmmlu | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
 | xquad | orig — | orig — | orig — | orig — | orig — | orig — |
 | zhoblimp | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
 
 | language | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| ar | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ar | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, oall_alghafa, oall_mt | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf, oall_alghafa, oall_arabic_mmlu-rf, oall_exams-rf, oall_mt | arabicmmlu-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf, oall_alghafa, oall_arabic_mmlu-rf, oall_exams-rf, oall_mt |
 | az | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
 | bg | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| bn | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ca | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_openbookqa, ibero_piqa |
+| bn | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_truthfulqa_mc2 | include_v2_en, include_v2_og, m_truthfulqa_mc2 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf |
+| ca | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_nli, ibero_openbookqa, ibero_paraphrase, ibero_piqa, ibero_siqa, m_mmlu-rf, m_truthfulqa_mc2, truthfulqa-multi_mc2 | ibero_arc, ibero_nli, ibero_openbookqa, ibero_paraphrase, ibero_piqa, ibero_siqa, m_mmlu-rf, m_truthfulqa_mc2, truthfulqa-multi_mc2 | ibero_arc, ibero_nli, ibero_openbookqa, ibero_paraphrase, ibero_piqa, ibero_siqa, m_mmlu-rf, m_truthfulqa_mc2, truthfulqa-multi_mc2 |
 | cs | include_v2_og | include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| da | — | — | — | include_v2_en | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
-| de | — | — | include_v2_en | include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
+| da | — | — | — | include_v2_en, m_mmlu-rf, m_truthfulqa_mc2 | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 |
+| de | — | — | include_v2_en | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf |
 | el | include_v2_en | include_v2_en | include_v2_en | include_v2_en | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
-| en | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, blend_sample, commonsense_qa-rf, cultural_bench_easy, cultural_bench_easy-rf, mathqa, mmlu-rf, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, toksuite, toksuite_math, toksuite_stem |
-| es | cultural_bench_easy, include_v2_en, include_v2_og | ibero_openbookqa, include_v2_en, include_v2_og | ibero_openbookqa, include_v2_en, include_v2_og | arc_mt, cultural_bench_easy-rf, ibero_openbookqa, include_v2_en, include_v2_og | arc_mt, cultural_bench_easy-rf, ibero_openbookqa, include_v2_en, include_v2_og | arc_mt, cultural_bench_easy-rf, ibero_openbookqa, include_v2_en, include_v2_og |
+| en | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, blend_sample, commonsense_qa-rf, cultural_bench_easy, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem, truthfulqa-multi_mc2 | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem, truthfulqa-multi_mc2 | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem, truthfulqa-multi_mc2 |
+| es | cultural_bench_easy, ibero_cola, include_v2_en, include_v2_og | ibero_openbookqa, include_v2_en, include_v2_og | ibero_openbookqa, include_v2_en, include_v2_og | arc_mt, cultural_bench_easy-rf, headqa, ibero_copa, ibero_openbookqa, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf, truthfulqa-multi_mc2 | arc_mt, careqa-rf, cultural_bench_easy-rf, headqa, ibero_cola, ibero_copa, ibero_openbookqa, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf, truthfulqa-multi_mc2 | arc_mt, careqa-rf, cultural_bench_easy-rf, headqa, ibero_cola, ibero_copa, ibero_openbookqa, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf, truthfulqa-multi_mc2 |
 | et | — | — | — | — | — | include_v2_en |
 | eu | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa |
 | fa | toksuite | toksuite | toksuite | toksuite | include_v2_en, toksuite | include_v2_en, toksuite |
 | fi | — | include_v2_en | include_v2_en | include_v2_en | include_v2_en | arc_mt, include_v2_en |
-| fr | include_v2_en | include_v2_en | include_v2_en | french_bench, include_v2_en, include_v2_og | french_bench, include_v2_en, include_v2_og | french_bench, include_v2_en, include_v2_og |
+| fr | french_bench, include_v2_en | french_bench, include_v2_en | french_bench, include_v2_en | french_bench, french_bench_extra, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf | french_bench, french_bench_extra, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf | french_bench, french_bench_extra, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf |
 | gl | ibero_openbookqa | ibero_openbookqa | ibero_openbookqa | ibero_openbookqa | ibero_openbookqa | ibero_openbookqa |
 | he | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og |
-| hi | cultural_bench_easy, include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en | cultural_bench_easy-rf, include_v2_en, include_v2_og |
-| hr | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| hu | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
-| id | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| it | include_v2_en, toksuite | include_v2_en, toksuite | include_v2_en, include_v2_og, toksuite | arc_mt, evalita_llm, include_v2_en, include_v2_og, toksuite | arc_mt, evalita_llm, include_v2_en, include_v2_og, toksuite | arc_mt, evalita_llm, include_v2_en, include_v2_og, toksuite |
-| ja | cultural_bench_easy, include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og |
+| hi | cultural_bench_easy, include_v2_en | include_v2_en | include_v2_en | include_v2_en, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf |
+| hr | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, multiblimp-extra | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, multiblimp-extra | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, multiblimp-extra |
+| hu | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 |
+| id | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf | copal_id, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf |
+| is | — | — | — | — | — | — |
+| it | evalita_llm, include_v2_en, toksuite | evalita_llm, include_v2_en, toksuite | evalita_llm, include_v2_en, include_v2_og, toksuite | arc_mt, evalita_llm, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf, toksuite | arc_mt, evalita_llm, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf, toksuite | arc_mt, evalita_llm, evalita_llm_extra, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf, toksuite |
+| ja | cultural_bench_easy, include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og, mmmlu-rf | include_v2_en, include_v2_og, mmmlu-rf | cultural_bench_easy-rf, include_v2_en, include_v2_og, mmmlu-rf |
 | ka | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
 | kk | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ko | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ko | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, kobest, mmmlu-rf | include_v2_en, include_v2_og, kmmlu, kobest, mmmlu-rf | include_v2_en, include_v2_og, kmmlu, kobest, mmmlu-rf |
 | lt | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ml | — | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en |
-| mr | — | — | — | — | include_v2_en | include_v2_en |
+| lv | — | — | — | multiblimp-extra | multiblimp-extra | multiblimp-extra |
+| ml | — | include_v2_en | include_v2_en | include_v2_en, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 |
+| mr | — | — | — | m_mmlu-rf, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc2 |
 | ms | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ne | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| nl | blimp_nl, include_v2_en | blimp_nl, include_v2_en | blimp_nl, include_v2_en, include_v2_og | blimp_nl, include_v2_en, include_v2_og | blimp_nl, include_v2_en, include_v2_og | blimp_nl, include_v2_en, include_v2_og |
-| no | noreval | noreval | noreval | noreval | arc_mt, noreval | arc_mt, noreval |
+| ne | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, include_v2_og, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 |
+| nl | blimp_nl, include_v2_en | blimp_nl, include_v2_en | blimp_nl, include_v2_en, include_v2_og | blimp_nl, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 | blimp_nl, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 | blimp_nl, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 |
+| no | noreval | noreval | noreval | m_mmlu-rf, noreval, noreval_extra | arc_mt, m_mmlu-rf, noreval, noreval_extra | arc_mt, m_mmlu-rf, noreval, noreval_extra |
 | pl | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
-| pt | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
-| ru | cultural_bench_easy, include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| sk | — | — | — | — | include_v2_en | include_v2_en |
-| sq | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| sr | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og |
-| sv | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
-| ta | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en |
+| pt | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2, mmmlu-rf |
+| ro | — | — | — | m_mmlu-rf, m_truthfulqa_mc2 | m_mmlu-rf, m_truthfulqa_mc2 | m_mmlu-rf, m_truthfulqa_mc2 |
+| ru | cultural_bench_easy, include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 |
+| sk | — | — | — | m_mmlu-rf, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc2 |
+| sq | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og, multiblimp-extra | include_v2_en, include_v2_og, multiblimp-extra | include_v2_en, include_v2_og, multiblimp-extra |
+| sr | include_v2_en | include_v2_en | include_v2_en | include_v2_en, m_mmlu-rf, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 |
+| sv | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 |
+| ta | include_v2_en | include_v2_en | include_v2_en | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc2 |
 | tr | include_v2_en, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp |
-| uk | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| uk | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc2 |
 | ur | — | — | — | include_v2_en | include_v2_en | include_v2_en, include_v2_og |
-| vi | include_v2_en, include_v2_og | include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og |
-| zh | cultural_bench_easy, include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp |
+| vi | include_v2_en, include_v2_og | include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
+| zh | cultural_bench_easy, include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp |
 <!-- END auto:probe-survivors -->
 
 [probe_survivors.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/probe_survivors.csv)
@@ -901,21 +930,28 @@ Per family at 1.7B: the share of languages above the gate for the original and t
 | family | twin | languages | original | twin | twin only / original only | p (McNemar) |
 |---|---|---|---|---|---|---|
 | acp_bench_mcq | rf | 7 | 0.00 | 0.71 | 5 / 0 | 0.0625 |
+| arabicmmlu | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 | bbh_mcq | rf | 17 | 0.00 | 0.59 | 10 / 0 | 0.00195 |
 | belebele | rf | 105 | 0.05 | 0.82 | 82 / 1 | 1.74e-23 |
 | belebele | rfgm | 59 | 0.05 | 1.00 | 56 / 0 | 2.78e-17 |
+| careqa | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 | commonsense_qa | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 | cultural_bench_easy | rf | 19 | 0.00 | 0.37 | 7 / 0 | 0.0156 |
+| french_bench_extra | rf | 1 | 0.00 | 0.00 | 0 / 0 | — |
 | global_mmlu_full | rf | 37 | 0.03 | 0.95 | 34 / 0 | 1.16e-10 |
 | include_base_44 | rf | 43 | 0.07 | 0.72 | 29 / 1 | 5.77e-08 |
 | include_base_44 | rfgm | 43 | 0.07 | 0.74 | 30 / 1 | 2.98e-08 |
+| m_mmlu | rf | 27 | 0.00 | 1.00 | 27 / 0 | 1.49e-08 |
 | mmlu | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
+| mmmlu | rf | 12 | 0.00 | 1.00 | 12 / 0 | 0.000488 |
+| oall_arabic_mmlu | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
+| oall_exams | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 
 | population | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| every task | 0.40 | 0.43 | 0.46 | 0.49 | 0.53 | 0.57 |
-| originals only | 0.37 | 0.38 | 0.41 | 0.43 | 0.46 | 0.49 |
-| twins only | 0.52 | 0.58 | 0.63 | 0.70 | 0.75 | 0.80 |
+| every task | 0.39 | 0.42 | 0.45 | 0.49 | 0.53 | 0.57 |
+| originals only | 0.36 | 0.38 | 0.40 | 0.43 | 0.47 | 0.50 |
+| twins only | 0.52 | 0.58 | 0.62 | 0.70 | 0.76 | 0.82 |
 
 ![The reformulations and the gate](reformulations_gate.png)
 <!-- END auto:reformulations-gate -->

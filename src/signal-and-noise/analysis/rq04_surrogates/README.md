@@ -20,9 +20,9 @@
 <!-- BEGIN auto:highlight (snr_definition_postprocess.py --pool predictivity) -->
 ## Highlighted result
 
-- **Global-best SNR definition (`predictivity`): `aad`** — mean Pearson r of log₁₀(SNR) vs decision accuracy **0.30** (DA-size, proxy → 1.7B, 50 languages), **0.42** (DA-ckpt, proxy sizes pooled, 50 languages), 0.36 overall. DA-ckpt is led by `aad`/`rms_deviation`/`dist_std` (≈ 0.42; one family: dispersion) — recommend the *family*, not an exact variant.
-- **Per-language anchor: `bbpb_multiblimp`** — the highest-SNR above-random benchmark in **12 of 50** languages (`aad` SNR @ 1.7B; `train_loss` and `bpb_macro` are not a language's and are left out); the language's own BPB, ungated and on its own noise scale, outranks that benchmark in 1 of the 50 languages that have both. Weakest variants overall: `projection`, `tukey`.
-- **Seed holdout (predictivity_seeds_train → predictivity_seeds_test)**: Spearman ρ of the global variant ranking **0.84** (DA-ckpt), **0.81** (DA-size); family-level per-language agreement 100% / 100%. A ranking that does not survive the seed swap is noise-dominated — only the *family* recommendation transfers.
+- **Global-best SNR definition (`predictivity`): `rel_std`** — mean Pearson r of log₁₀(SNR) vs decision accuracy **0.56** (DA-size, proxy → 1.7B, 50 languages), **0.58** (DA-ckpt, proxy sizes pooled, 50 languages), 0.57 overall. DA-ckpt is led by `rel_std`/`rel_mpd`/`rel_dispersion` (≈ 0.58; one family: rel_spread) — recommend the *family*, not an exact variant.
+- **Per-language anchor: `bbpb_rfgm_include_base_44`** — the highest-SNR above-random benchmark in **12 of 50** languages (`rel_std` SNR @ 1.7B; `train_loss` and `bpb_macro` are not a language's and are left out); the language's own BPB, ungated and on its own noise scale, outranks that benchmark in 26 of the 50 languages that have both. Weakest variants overall: `projection`, `tukey`.
+- **Seed holdout (predictivity_seeds_train → predictivity_seeds_test)**: Spearman ρ of the global variant ranking **0.70** (DA-ckpt), **0.55** (DA-size); family-level per-language agreement 100% / 100%. A ranking that does not survive the seed swap is noise-dominated — only the *family* recommendation transfers.
 <!-- END auto:highlight -->
 
 ## Headlines (ladder report 2026-10-07 15:51)
@@ -140,16 +140,16 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | variant | DA-size r | DA-ckpt r | overall |
 |---|---|---|---|
-| `aad` | 0.30 | 0.42 | 0.36 |
-| `dist_std` | 0.30 | 0.42 | 0.36 |
-| `quartile_deviation` | 0.30 | 0.42 | 0.36 |
-| `rms_deviation` | 0.30 | 0.42 | 0.36 |
-| `mpd` | 0.29 | 0.42 | 0.35 |
-| `range` | 0.28 | 0.41 | 0.35 |
-| `dispersion` | 0.28 | 0.41 | 0.35 |
+| `rel_std` | 0.56 | 0.58 | 0.57 |
+| `rel_mpd` | 0.55 | 0.58 | 0.57 |
+| `rel_dispersion` | 0.54 | 0.57 | 0.56 |
+| `iqr` | 0.52 | 0.54 | 0.53 |
+| `aad` | 0.47 | 0.56 | 0.51 |
+| `rms_deviation` | 0.47 | 0.55 | 0.51 |
+| `dist_std` | 0.47 | 0.55 | 0.51 |
 | … |  |  |  |
-| `tukey` | -0.12 | -0.21 | -0.17 |
-| `projection` | -0.15 | -0.23 | -0.19 |
+| `tukey` | -0.01 | -0.11 | -0.06 |
+| `projection` | -0.06 | -0.14 | -0.10 |
 
 ![SNR variants ranked by correlation with DA](pretraining/predictivity/top_variants_overall.png)
 
@@ -157,63 +157,63 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | pool | best variant (overall) | DA-size r | DA-ckpt r |
 |---|---|---|---|
-| `predictivity` (grid, seed 1904, every design) | `aad` | 0.30 | 0.42 |
-| `predictivity_seeds` (every seed) | `dist_std` | 0.30 | 0.42 |
+| `predictivity` (grid, seed 1904, every design) | `rel_std` | 0.56 | 0.58 |
+| `predictivity_seeds` (every seed) | `rel_std` | 0.56 | 0.58 |
 
-**Most reliable benchmark per language** — `aad` SNR @ 1.7B over the above-random benchmarks, with the language's own BPB SNR alongside (ungated, on its own noise scale; DA-size is undefined at the reference size itself, so DA-ckpt@1.7B is shown; `train_loss` and `bpb_macro` measure the whole mixture and are not a row, rule 7):
+**Most reliable benchmark per language** — `rel_std` SNR @ 1.7B over the above-random benchmarks, with the language's own BPB SNR alongside (ungated, on its own noise scale; DA-size is undefined at the reference size itself, so DA-ckpt@1.7B is shown; `train_loss` and `bpb_macro` measure the whole mixture and are not a row, rule 7):
 
 | lang | top benchmark | SNR | DA-ckpt@1.7B | BPB SNR |
 |---|---|---|---|---|
-| ar | `bbpb_rf_belebele_arb_Latn` | 3.33 | 0.60 | 0.75 |
-| az | `bbpb_include_v2_og_azerbaijani_azerbaijan` | 12.65 | 0.98 | 1.71 |
-| bg | `multiblimp_bul` | 2.62 | 0.81 | 0.80 |
-| bn | `bbpb_global_piqa_parallel_cloze_ben_latn` | 3.09 | 0.67 | 0.74 |
-| bs | `bbpb_global_piqa_nonparallel_cloze_bos_latn` | 2.49 | 0.87 | 2.06 |
-| ca | `bbpb_xnli_ca` | 5.88 | 0.89 | 1.65 |
-| cs | `bbpb_multiblimp_ces` | 1.95 | 0.76 | 0.44 |
-| da | `multiblimp_dan` | 3.21 | 0.46 | 0.97 |
-| de | `bbpb_multiblimp_deu` | 2.07 | 0.73 | 0.63 |
-| el | `bbpb_belebele_ell_Grek` | 2.56 | 0.67 | 0.27 |
-| en | `bbpb_acp_bench_cloze_val` | 4.33 | 0.59 | 1.41 |
-| es | `bbpb_xnli_es` | 3.04 | 0.79 | 0.83 |
-| et | `bbpb_multiblimp_est` | 7.11 | 0.91 | 2.36 |
-| fa | `bbpb_belebele_pes_Arab` | 2.00 | 0.71 | 0.65 |
-| fi | `bbpb_multiblimp_fin` | 3.01 | 0.80 | 1.29 |
-| fr | `bbpb_include_v2_og_french_canada` | 3.68 | 0.65 | 0.48 |
-| he | `bbpb_multiblimp_heb` | 5.18 | 0.79 | 1.21 |
-| hi | `bbpb_include_base_44_hindi` | 3.09 | 0.66 | 0.74 |
-| hr | `bbpb_global_piqa_parallel_cloze_hrv_latn` | 2.53 | 0.87 | 1.72 |
-| hu | `bbpb_include_v2_og_hungarian_hungary` | 2.60 | 0.72 | 0.70 |
-| id | `bbpb_include_base_44_indonesian` | 2.17 | 0.61 | 0.55 |
-| it | `bbpb_multiblimp_ita` | 2.47 | 0.76 | 0.53 |
-| ja | `bbpb_include_v2_og_japanese_japan` | 2.46 | 0.63 | 0.79 |
-| ka | `bbpb_belebele_kat_Geor` | 1.71 | 0.75 | 0.65 |
-| kk | `bbpb_rf_include_base_44_kazakh` | 4.61 | 0.83 | 1.37 |
-| ko | `bbpb_belebele_kor_Hang` | 1.82 | 0.63 | 0.73 |
-| lt | `bbpb_include_v2_og_lithuanian_lithuania` | 3.63 | 0.85 | 1.67 |
-| lv | `bbpb_rfgm_belebele_lvs_Latn` | 1.59 | 0.98 | 2.09 |
-| ml | `bbpb_include_base_44_malayalam` | 2.80 | 0.72 | 0.72 |
-| mr | `bbpb_belebele_mar_Deva` | 2.70 | 0.69 | 1.23 |
-| ms | `bbpb_include_v2_og_malay_singapore` | 5.90 | 0.67 | 1.65 |
-| ne | `bbpb_rf_belebele_npi_Latn` | 2.61 | 0.81 | 1.17 |
-| nl | `bbpb_multiblimp_nld` | 2.24 | 0.73 | 0.61 |
-| no | `bbpb_global_piqa_parallel_cloze_nob_latn` | 1.49 | 0.63 | 0.89 |
-| pl | `bbpb_multiblimp_pol` | 3.32 | 0.70 | 0.49 |
-| pt | `bbpb_multiblimp_por` | 3.08 | 0.64 | 0.46 |
-| ro | `bbpb_multiblimp_ron` | 2.28 | 0.71 | 0.71 |
-| ru | `bbpb_include_base_44_russian` | 2.73 | 0.72 | 0.82 |
-| sk | `bbpb_global_piqa_parallel_cloze_slk_latn_sari` | 3.46 | 0.89 | 1.32 |
-| sl | `bbpb_global_piqa_parallel_cloze_slv_latn_cerk` | 7.65 | 0.85 | 2.44 |
-| sq | `bbpb_include_v2_og_albanian_albania` | 5.81 | 0.85 | 2.37 |
-| sr | `bbpb_global_piqa_parallel_cloze_srp_latn` | 3.11 | 0.83 | 1.37 |
-| sv | `bbpb_multiblimp_swe` | 2.56 | 0.81 | 1.03 |
-| ta | `bbpb_include_base_44_tamil` | 3.05 | 0.72 | 0.64 |
-| th | `bbpb_belebele_tha_Thai` | 1.65 | 0.66 | 0.40 |
-| tr | `bbpb_multiblimp_tur` | 3.46 | 0.55 | 0.60 |
-| uk | `bbpb_belebele_ukr_Cyrl` | 2.27 | 0.73 | 0.18 |
-| ur | `bbpb_rf_include_base_44_urdu` | 6.22 | 0.81 | 1.79 |
-| vi | `bbpb_include_v2_og_vietnamese_vietnam` | 1.87 | 0.70 | 0.88 |
-| zh | `bbpb_paws_zh` | 4.87 | 0.86 | 1.52 |
+| ar | `bbpb_rfgm_belebele_arz_Arab` | 5.14 | 0.82 | 5.37 |
+| az | `bbpb_rfgm_include_base_44_azerbaijani` | 10.98 | 0.93 | 7.67 |
+| bg | `bbpb_rfgm_include_base_44_bulgarian` | 4.48 | 0.86 | 5.92 |
+| bn | `bbpb_rfgm_include_base_44_bengali` | 5.75 | 0.89 | 7.69 |
+| bs | `bbpb_global_piqa_nonparallel_cloze_bos_latn` | 6.00 | 0.87 | 8.56 |
+| ca | `bbpb_hellaswag_ca` | 7.67 | 0.98 | 7.24 |
+| cs | `bbpb_multiblimp_ces` | 3.38 | 0.75 | 2.37 |
+| da | `multiblimp_dan` | 5.70 | 0.48 | 4.51 |
+| de | `bbpb_hellaswag_de` | 6.62 | 0.89 | 3.91 |
+| el | `bbpb_multiblimp_ell` | 2.76 | 0.72 | 2.55 |
+| en | `hellaswag` | 5.96 | 0.90 | 17.08 |
+| es | `include_v2_og_spanish_espa_a` | 8.44 | 0.74 | 8.33 |
+| et | `bbpb_xcopa_et` | 12.99 | 0.91 | 8.93 |
+| fa | `bbpb_rfgm_include_base_44_persian` | 6.87 | 0.87 | 5.22 |
+| fi | `bbpb_rfgm_include_base_44_finnish` | 4.37 | 0.87 | 5.51 |
+| fr | `bbpb_hellaswag_fr` | 6.06 | 0.93 | 3.26 |
+| he | `bbpb_rfgm_include_base_44_hebrew` | 6.78 | 0.91 | 6.94 |
+| hi | `bbpb_hellaswag_hi` | 5.80 | 0.91 | 7.32 |
+| hr | `bbpb_rfgm_include_base_44_croatian` | 8.68 | 0.94 | 7.02 |
+| hu | `bbpb_multiblimp_hun` | 4.16 | 0.83 | 3.41 |
+| id | `bbpb_rfgm_include_base_44_indonesian` | 4.36 | 0.74 | 3.74 |
+| it | `hellaswag_it` | 4.60 | 0.85 | 3.30 |
+| ja | `bbpb_rf_global_mmlu_full_ja` | 4.56 | 0.73 | 5.07 |
+| ka | `bbpb_rfgm_belebele_kat_Geor` | 6.19 | 0.88 | 7.51 |
+| kk | `bbpb_global_piqa_nonparallel_cloze_kaz_cyrl` | 9.03 | 0.98 | 9.52 |
+| ko | `bbpb_paws_ko` | 3.08 | 0.79 | 3.71 |
+| lt | `bbpb_rfgm_include_base_44_lithuanian` | 6.43 | 0.89 | 6.90 |
+| lv | `bbpb_rfgm_belebele_lvs_Latn` | 8.94 | 0.98 | 8.46 |
+| ml | `bbpb_global_piqa_parallel_cloze_mal_mlym` | 6.06 | 0.89 | 7.76 |
+| mr | `bbpb_rfgm_belebele_mar_Deva` | 6.49 | 1.00 | 10.31 |
+| ms | `bbpb_include_v2_og_malay_malaysia` | 7.73 | 0.93 | 7.32 |
+| ne | `bbpb_hellaswag_ne` | 6.85 | 0.85 | 10.88 |
+| nl | `bbpb_hellaswag_nl` | 4.18 | 0.91 | 3.83 |
+| no | `global_piqa_parallel_cloze_nob_latn` | 2.42 | 0.45 | 4.24 |
+| pl | `bbpb_rf_global_mmlu_full_pl` | 3.24 | 0.66 | 3.21 |
+| pt | `hellaswag_pt` | 4.27 | 0.92 | 3.19 |
+| ro | `bbpb_multiblimp_ron` | 3.95 | 0.70 | 3.69 |
+| ru | `bbpb_hellaswag_ru` | 7.74 | 0.91 | 9.55 |
+| sk | `bbpb_hellaswag_sk` | 4.19 | 0.96 | 5.67 |
+| sl | `bbpb_multiblimp_slv` | 7.43 | 0.91 | 8.81 |
+| sq | `bbpb_rfgm_include_base_44_albanian` | 10.10 | 0.91 | 9.27 |
+| sr | `bbpb_hellaswag_sr` | 8.22 | 0.96 | 9.55 |
+| sv | `bbpb_hellaswag_sv` | 4.93 | 0.95 | 4.97 |
+| ta | `bbpb_rfgm_include_base_44_tamil` | 5.39 | 0.93 | 7.23 |
+| th | `bbpb_xnli_th` | 3.06 | 0.76 | 3.77 |
+| tr | `bbpb_rf_include_base_44_turkish` | 5.48 | 0.74 | 3.30 |
+| uk | `bbpb_multiblimp_ukr` | 3.11 | 0.76 | 1.95 |
+| ur | `bbpb_rfgm_belebele_urd_Arab` | 7.26 | 0.98 | 10.14 |
+| vi | `bbpb_rfgm_include_base_44_vietnamese` | 5.75 | 0.83 | 5.62 |
+| zh | `bbpb_xstorycloze_zh` | 7.01 | 0.92 | 8.31 |
 
 ![Top-5 benchmarks per language by SNR](pretraining/predictivity/top_benchmarks_per_language.png)
 
@@ -221,11 +221,11 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | metric | DA-size | DA-ckpt |
 |---|---|---|
-| Spearman ρ on global variant ranking | 0.81 | 0.84 |
-| Pearson r between splits (all cells) | 0.85 | 0.67 |
+| Spearman ρ on global variant ranking | 0.55 | 0.70 |
+| Pearson r between splits (all cells) | 0.72 | 0.34 |
 | Exact-variant agreement (per lang) | 0% | 0% |
 | Family-level agreement (per lang) | 100% | 100% |
-| Retention of train-best r on test | 48% | 96% |
+| Retention of train-best r on test | 85% | 97% |
 <!-- END auto:results -->
 
 GitHub: [top_variants_overall.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/top_variants_overall.png) · [top_variants_overall.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/top_variants_overall.csv) ·

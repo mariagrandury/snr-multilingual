@@ -18,8 +18,9 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
-- **On the `predictivity` pool SNR values and rank order cannot be compared across corpora** — variant `aad` (rq04's global best, not selected here), Pearson r of log₁₀(SNR) **0.87**, Spearman ρ **1.00**, over only **3** shared English tasks after the above-random gate — too few for a correlation to mean anything.
-- **The shared universe is the English tasks both corpora evaluate** (ARC, HellaSwag, MMLU via the Global-MMLU English split, PIQA/CSQA/OpenBookQA where run), so the evidence is the SNR *correlation* over that handful, not top-K Jaccard (trivially 1.0 on so small a universe).
+- **On the `predictivity` pool SNR values and rank order agree across corpora** — variant `rel_std` (rq04's global best, not selected here), Pearson r of log₁₀(SNR) **0.81**, Spearman ρ **0.83** over the 6 shared English tasks.
+- **The shared universe is the English tasks both corpora evaluate** (ARC, HellaSwag, OpenBookQA, and MMLU / CSQA through our cloze twins), so the evidence is the SNR *correlation* over that handful, not top-K Jaccard (trivially 1.0 on so small a universe).
+- **Like for like since 2026-10-08:** the same 20 % noise window (5 points at 1B), the same detrended checkpoint noise (rule 4) and the same metric on both sides (`build_allenai_variants.py`); the signal populations still differ (25 pretraining corpora against our design variants).
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -175,10 +176,10 @@ Cross-corpus agreement by pool (headline = `predictivity`). Regenerate with `pyt
 
 | pool | variant (from rq04) | Pearson r | Spearman ρ | n_shared |
 |---|---|---|---|---|
-| `predictivity` (grid, seed 1904) | `aad` | 0.87 | 1.00 | 3 |
-| `predictivity_seeds` (all seeds) | `dist_std` | 0.99 | 1.00 | 3 |
+| `predictivity` (grid, seed 1904) | `rel_std` | 0.81 | 0.83 | 6 |
+| `predictivity_seeds` (all seeds) | `rel_std` | 0.83 | 0.83 | 6 |
 
-![Ladder vs AllenAI SNR — rq04's variant](pretraining/predictivity/snr_apertus_vs_snr_allenai_aad.png)
+![Ladder vs AllenAI SNR — rq04's variant](pretraining/predictivity/snr_apertus_vs_snr_allenai_rel_std.png)
 
 ![Ladder vs AllenAI SNR across variants](pretraining/predictivity/snr_apertus_vs_snr_allenai_grid.png)
 <!-- END auto:results -->
