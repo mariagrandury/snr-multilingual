@@ -3,12 +3,18 @@
 squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /seed28/ {print $1}' | xargs -r scancel
 scontrol update JobId=3593053 Partition=normal
 
+
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual
+git diff --stat b08dd163 HEAD -- documents/paper/sections/
+git difftool -y b08dd163 HEAD -- documents/paper/sections/ 
+
+
 ## Pretraining
 
 python3.11 pretrain/launch_trainings.py cscs --scheme FWEB --partition preemptable
 python3.11 pretrain/launch_trainings.py cscs --size 3B --partition preemptable
 python3.11 pretrain/launch_trainings.py cscs --activation swiglu --partition preemptable
-
+python3.11 pretrain/launch_trainings.py cscs --optimizer muon --partition preemptable
 
 
 ## Convert and eval new ckpts
@@ -25,6 +31,20 @@ SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --group auto
 
 ✅ compare probe benchmarks and decide which to keep:
 bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/signal-and-noise/analysis/rq00_task_reformulation/probe.sh
+
+# bBPB for 3B models
+
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/signal-and-noise
+sbatch analysis/rq08_subset_selection/build_per_item_store.sbatch --pool predictivity --above-reference
+
+sbatch analysis/rq08_subset_selection/build_per_item_store.sbatch --pool predictivity-seeds
+
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual
+source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr
+(cd src/signal-and-noise && PYTHONPATH=$PWD:$PWD/../../src HF_HUB_OFFLINE=1 python analysis/rq08_subset_selection/build_per_item_store.py --bench-bpb)
+FORCE=1 PARALLEL=1 MAXJOBS=5 SEARCH_WORKERS=12 COMPUTE_DA_WORKERS=8 OPENBLAS_NUM_THREADS=2 OMP_NUM_THREADS=2 HF_HUB_OFFLINE=1 \
+  bash scripts/refresh_analysis.sh --no-fetch --no-deck --no-report
+
 
 ## Update analysis with new evals
 
@@ -370,3 +390,114 @@ What the optimisation draft measured:
 - **Eight steps already failed on 10-04:** `by_L.py` (3 runs), `agreement.py`, `scaling_vs_ranking.py`, `public_ladders.py`, `finetasks_criteria.py`, `per_item_ladder.py`. Check the paper job's log for those in case it uses any of their figures.
 
 Nothing else is running on my side. The paper job (3593053) and the store build (3593047) are still queued on preemptable and will run without me.
+
+
+3B MODELS
+
+I canceled the seed job, why would I need it? I launched only the 3B bBPB
+
+
+
+PAPER RQ APPENDIX LAYOUT
+
+Each RQ should be one page:
+(do not add the auto-generated disclaimer)
+start with \clearpage
+then section title
+then "Research Question" paragraph with the question in italic
+then "Setup" paragraph
+then 3 key findings, each starting with a sentence in bold and then elaborate it
+then a horizontal figure
+then optionally a full-page figure(s)
+
+since the ACL layout is in 2 columns, the layout of each RQ page should be, after the title, on the left the RQ and setup, on the right the key findings, the figure below occupying both columns, with a detailed caption starting with the main key takeaway visualized in bold, then the usual description of plot
+
+the full-page figures should use figure* to occupy the full width (I think the other horizontal ones too)
+
+FIGURE NAMES AND EXTENSIONS
+
+- add the "rqNN" to the name of the paper/figures/app_rqNN_x.png so they're more easily to find (do not regenerate, just git mv in a dedicated renaming commit)
+- save the svg versions in a new paper/figures_svg/
+- save the pdf versions in a new paper/figures_pdf/
+- these two new folders should be the ONLY place with figures in svg or pdf format, the others are just redundant and make the repo crowded
+
+FIGURE UPDATES
+
+Besides updating the captions, here are some additional specific details to update:
+
+rq00 above change gate
+- generate a horizontal version of the figure to try, we might keep the vertical one if the benchmark names in the x axis are not readable
+
+scaling predictability
+- src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_size_curves_paper.png -> make the grid 5 columns
+- src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_curves_paper.png -> make the grid have 5 columns
+
+
+for paper/figures/
+
+app_rq02_decision accuracy.tex:
+
+
+app_rq11_evaluation_recipe.tex:
+add a full page figure:
+- an A4 panel where each subplot is a benchmark's DA (y axis) vs size/chinchilla. 3 columns for DA-size, DA-ckpt, DA-goal. The first row should be "Overall" and have 3 lines for bpb, benchmarks, bbpb.  One row per benchmark, keep only the 8 benchmarks with best DA size (either in original or rf versions). In each benchmark row, each subplot should have a line for the original benchmark, rf, rfgm, bbpb (predicting acc), bbpb (predicting bbpb). Include the corresponding band for each line.
+
+app 3b:
+- update with new benchmark and bbpb results
+
+benchmark design.tex:
+- the option number finding is not too interesting, it's okey to mention but not to highlight.
+- generate a table with the benchmark characteristics considered (source curation, etc) 
+- Compute again correlations but instead of with SNR with DA-size
+- generate a plot with 2 axis that intersect in the origin (0,0). The x axis is DA-size, the y axis is the characteristic (doesnt matter that they are not numerical). EAch characteristic has a color, let's see if we get patterns or zones with more density of dots (i.e. benchmarks).
+- think of other possible representations
+
+
+language transfer.tex:
+- rescue the analyses we had done with a heatmap with all combinations of languages and tasks and see whether ranking at small scale on the task of the y axis can help predict ranking ont he benchmark on the x axis. Try different filters besides the above chance threshold that could help us get a nice plot (e.g. above 66, only certain benchs/languages). Do this for trained and all-languages
+- also, generate a figure to visualize how training on these languages help pass the above random threshold on non-trained langauges (no mention of DA here, just above chance). Do a version focusing only on the L1, L2 (3 schemes) and L8 (2 schemes) schemes, and analyse whether they help pass chance on languages from their same family.
+
+english-only:
+- generate a figure to support the benchmark scaling behaviour section. FineWeb English sweep: the $K{=}1$ runs under the same filter and the same fits, as the monolingual comparison point for the benchmark scaling behaviour section.
+
+add the new figures to the existing ones, do not delete any
+
+of course, to edit the .tex you first have to update the script that generated the original image, then copy it. Same for the prose, always update the original README first, then the paper so they never diverge.
+
+
+MUON OPTIMIZER
+
+- You said that it wasn't available in megatron, but it's because we are using an old version (from the swissai fork). Copy the implementation of the optimizer from the updated upstream version. 
+- Moonlight version, add to docs and paper
+- The muon grid should train the same L count and other interventions as swiglu
+- The 90M and 175M Muon cells keep the 84 and 168 batches, and there will be no separate 1.7B smoke run.
+
+Here is the plan:
+1. Once the appendix and benchmarks agents have committed, I review the Muon ladder and land it in the order the chains need.
+2. I run `launch_trainings.py cscs --dry-run --optimizer muon` and show you the cell and job count.
+3. After your yes, I submit.
+4. I watch the first 50 steps of the 1.7B links, checking peak memory and step time.
+
+
+PROBE BENCHMARKS
+
+- Check from the benchmarks that are in the website's list, which are available on the harness and haven't been part of auto_probe yet. Give me the list of potential additions, divided per language, starting with the langauges that have lower coverage.
+- Add to probe all non-English benchmarks that are on the harness, MCQA, in one of the L50 training languages
+- Generate the RF version of all letter benchmarks
+- Launch evals for 600M, 1B, 1.7B models, only last checkpoint
+- Check which pass the above chance threshold at least at 1B and 1.7B. Add those to auto.
+- Launch the auto watcher eval on preemptable to eval on all sizes and checkpoints 
+
+
+WEBSITE
+
+- Update the Landing Page
+- Model grid: 
+
+
+MSG
+
+The order I suggest:
+- intro
+- methodology
+- appendix: D onward
