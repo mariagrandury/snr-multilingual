@@ -1,11 +1,13 @@
 """rq08 as one grid: where does the best subset beat the random-subset null?
 
     gain_over_null.png   best-subset SNR minus the null's 95th percentile, task x size, one subplot per case
+    gain_over_null_paper.png/.svg/.csv   its language-subset case (one subset of each benchmark's languages) alone, for the paper
 
 Reads `summary.csv`. The per-benchmark and per-language sweeps themselves are
 `per_benchmark_plots/` and `global_mmlu_full_per_language_plots/`.
 
     python analysis/rq08_subset_selection/panels.py --pool predictivity
+    python analysis/rq08_subset_selection/panels.py --paper     # the paper figure alone, from gain_over_null.csv
 """
 
 from __future__ import annotations
@@ -37,6 +39,24 @@ CANONICAL = "predictivity"
 mpl.rcParams.update(S.RC)
 
 
+def paper_figure(out_dir: Path) -> None:
+    """The per-benchmark (language-subset) panel of gain_over_null, in the
+    paper's names; the subject cases hold four tasks and stay in the grid."""
+    g = pd.read_csv(out_dir / "gain_over_null.csv")
+    g = g[g["case"] == "case1_per_benchmark"].assign(name=lambda d: d["task"].map(G.paper_name))
+    sizes = [b for b in bucket_order() if b in set(g["size"])]
+    rows = [G.paper_name(t) for t in G.panel_order(g["task"].unique())]
+    mat = g.pivot_table(index="name", columns="size", values="gain_over_null").reindex(index=rows, columns=sizes)
+    gated = g.pivot_table(index="name", columns="size", values="gated", aggfunc="any").fillna(False).astype(bool)
+    fig, ax = plt.subplots(figsize=(4.4, 0.19 * len(rows) + 0.9))
+    G.matrix_ax(ax, mat, "", vmin=-2, vmax=2, center=0.0, cmap=S.DIV, fmt="{:+.2f}", gated=gated)
+    ax.set_xlabel("Model size", fontsize=8.5)
+    fig.colorbar(ax.images[-1], ax=ax, shrink=0.4, pad=0.03).set_label("Best subset SNR over the null's 95th percentile", fontsize=7.5)
+    fig.tight_layout()
+    g[["task", "name", "size", "gain_over_null", "gated"]].to_csv(out_dir / "gain_over_null_paper.csv", index=False)
+    S.save_paper(fig, out_dir / "gain_over_null_paper")
+
+
 def main(pool: str) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     out_dir = OUT_ROOT / stage / pool
@@ -48,6 +68,7 @@ def main(pool: str) -> None:
                  fmt="{:+.2f}", counts=False, first=(), cbar="best-subset SNR − null p95", xlabel="model size",
                  ylabel="benchmark", title="Subset selection against the random-subset null (> 0 beats it)",
                  note="cell = SNR of the best subset found minus the 95th percentile of the SNR of random subsets of the same size")
+    paper_figure(out_dir)
     sizes = [b for b in bucket_order() if b in set(s["size"])]
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.6))
     by = s.assign(beats=s["gain_over_null"] > 0).groupby(["case", "size"])["beats"]
@@ -70,4 +91,9 @@ def main(pool: str) -> None:
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL)
-    main(p.parse_args().pool)
+    p.add_argument("--paper", action="store_true", help="only the paper figure, from gain_over_null.csv on disk")
+    args = p.parse_args()
+    if args.paper:
+        paper_figure(OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool)
+    else:
+        main(args.pool)

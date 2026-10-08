@@ -65,11 +65,29 @@ build_megatron_cmd() {
 		--rope-scaling-factor 8
 		--make-vocab-size-divisible-by 128
 		--normalization RMSNorm
-		--xielu
 		--qk-layernorm
 		--qknorm-impl apex
 		--attention-backend flash
 	)
+
+	# The activation is one of a ladder's intervention axes (LADDERS in
+	# launch_trainings.py). The default reproduces every trained cell's args
+	# exactly; ACTIVATION=swiglu swaps XIELU for Megatron's gated SiLU MLP,
+	# whose extra per-layer matrix is why the swiglu ladder carries a narrower
+	# FFN at a matched parameter count (hyperparams/find_hyperparams_swiglu.py).
+	case "${ACTIVATION:-xielu}" in
+		xielu)  NETWORK_SIZE_ARGS+=(--xielu)  ;;
+		swiglu) NETWORK_SIZE_ARGS+=(--swiglu) ;;
+		*) echo "megatron_args.sh: unknown ACTIVATION '$ACTIVATION'" >&2; return 1 ;;
+	esac
+	# The optimizer is a LADDERS axis too, and launch_trainings.py emits
+	# OPTIMIZER for a ladder that changes it — but only AdEMAMix is wired here
+	# (TRAINING_ARGS, and its betas and warmups below). Refuse anything else
+	# rather than train AdEMAMix under another ladder's name.
+	case "${OPTIMIZER:-ademamix}" in
+		ademamix) ;;
+		*) echo "megatron_args.sh: OPTIMIZER '$OPTIMIZER' is not wired (ademamix only)" >&2; return 1 ;;
+	esac
 
 	LOGGING_ARGS=(
 		--log-throughput
@@ -133,7 +151,7 @@ build_megatron_cmd() {
 		# Width-scaled init: the launcher sets INIT_STD = 0.008944 x
 		# sqrt(1792 / hidden_size) — 1/sqrt(d) scaling anchored at the 1B
 		# (d=1792, which keeps the reviewed 0.008944 exactly), so the init
-		# is consistent across the 768..3072 ladder widths instead of one
+		# is consistent across the 768..2816 ladder widths instead of one
 		# fixed value. Default = the old fixed value for raw runs.
 		--init-method-std ${INIT_STD:-0.008944}
 	)

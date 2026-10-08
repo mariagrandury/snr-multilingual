@@ -1,0 +1,20 @@
+task: rf_acp_bench_mcq_areach
+dataset_path: ibm-research/acp_bench
+dataset_name: acp_areach_mcq
+test_split: test
+output_type: multiple_choice
+num_fewshot: 0
+doc_to_text: '{{context}} {{query}}
+
+  Answer:'
+doc_to_choice: '{{choices.text}}'
+doc_to_target: '{{choices.label.index(answer.strip())}}'
+metric_list:
+- metric: acc
+  aggregation: mean
+  higher_is_better: true
+- metric: acc_norm
+  aggregation: mean
+  higher_is_better: true
+metadata:
+  version: 0.0

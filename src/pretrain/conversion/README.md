@@ -54,7 +54,12 @@ If Step 1 was run, replace `CHECKPOINT_PATH` with
 Add `--test-logits` to verify that the HF model's logits match the
 Megatron implementation (TP1, PP1 only).
 
-Apertus models use a custom `ApertusForCausalLM`. Install the latest
+Apertus models use a custom `ApertusForCausalLM`. The swiglu ladder is
+exported as `Qwen3ForCausalLM` instead (Apertus' MLP has no gate) by the
+patched saver `../patches/tools_checkpoint_saver_swissai_hf.py`, which also
+raises when the HF reload drops or misses a weight (`convert-snr.sh` then
+refuses to mark the save dir complete). `TEST_LOGITS=1` adds `--test-logits`
+in every `convert-snr.sh` mode, the sbatch wrapper included. Install the latest
 swiss-ai transformers fork before converting:
 
 ```bash

@@ -26,13 +26,14 @@ Two families of cells are NaN and stay NaN downstream: (task, bucket) cells
 the above-random gate puts at chance (rq00's committed mask, `load_mask`; the pool's own
 runs; cells with no chance level, BPB and the loss, pass), and the discrepancy
 family (`DISCREPANCY_UNIT_INTERVAL`: `discrepancy`, `star_discrepancy`,
-`star_discrepancy_shifted`, `rel_star_discrepancy`) on every task that is not a
-benchmark, because those aggregators read the scores as points of [0, 1] and
-return finite but meaningless values on BPB and the loss.
+`star_discrepancy_shifted`, `rel_star_discrepancy`) on every score that is not
+on [0, 1] (`utils.lower_is_better`: BPB, the bBPB twins and the loss), because
+those aggregators read the scores as points of [0, 1] and return finite but
+meaningless values on bits per byte and the loss.
 `snr_variant_coverage.csv` counts the finite cells per (variant, bucket).
 
 Decision accuracy is not computed here: rq02 `compute_da.py` writes
-`da_per_task.csv` first and this script joins its columns in front of the SNR
+`da_all_per_task_both_axes.csv` first and this script joins its columns in front of the SNR
 ones. The pool's models come from `analysis.utils.build_snr_pool` (parent
 tasks and trained languages only, 90M dropped); there is no seed or external
 model option.
@@ -72,8 +73,8 @@ from evals.scripts.utils.configs import (  # noqa: E402
     pool_include_external,
     size_bucket,
 )
-from analysis.utils import (  # noqa: E402
-    NOISE_WINDOW, _is_parent_task, benchmark_family, ladder_frame,
+from analysis.utils import (one_axes,  # noqa: E402
+    NOISE_WINDOW, _is_parent_task, ladder_frame, lower_is_better,
     noise_checkpoints, pool_models,
 )
 from analysis.autodoc import CANONICAL_POOL  # noqa: E402
@@ -243,7 +244,7 @@ def run(pool: str, out_dir: Path):
     print(f"  Buckets: {pool_buckets}")
     print(f"  Pool models per bucket: {pool_n_models}")
     print(f"  Noise window: the k/20 points in the last {NOISE_WINDOW:.0%} of each run (rule 4), "
-          f"every kind of measurement; {sorted(DISCREPANCY_UNIT_INTERVAL)} are NaN outside benchmarks")
+          f"every kind of measurement; {sorted(DISCREPANCY_UNIT_INTERVAL)} are NaN on BPB, the bBPB twins and the loss")
 
     write_variants_definitions(out_dir)
 
@@ -256,13 +257,13 @@ def run(pool: str, out_dir: Path):
         row = {"task": task}
         dft = df_by_task[task]
         size_inputs = {b: per_model_inputs(dft, task, b) for b in pool_buckets}
-        is_benchmark = benchmark_family(task) not in ("bpb", "loss")
+        on_unit = not lower_is_better(task)          # a score on [0, 1]: not BPB, a bBPB twin or the loss
         for fd in AGGREGATION_FUNCTIONS:
             key = variant_key(fd)
             for b in pool_buckets:
                 # Gate at-chance cells: random benchmarks carry no signal.
-                # The [0, 1] discrepancy family is undefined off the benchmarks.
-                if (task, b) in at_chance or (key in DISCREPANCY_UNIT_INTERVAL and not is_benchmark):
+                # The [0, 1] discrepancy family is undefined off [0, 1] scores.
+                if (task, b) in at_chance or (key in DISCREPANCY_UNIT_INTERVAL and not on_unit):
                     sig = noi = snr = np.nan
                 else:
                     sig, noi, snr = variant_signal_noise_snr(size_inputs[b], fd["func"])
@@ -290,13 +291,15 @@ def run(pool: str, out_dir: Path):
 
     # Copy the DA ground truth (rq02) and append the SNR columns. DA is computed
     # before SNR, so the table must already exist.
-    da_path = DECISION_ACCURACY / out_dir.parent.name / out_dir.name / "da_per_task.csv"
+    da_path = DECISION_ACCURACY / out_dir.parent.name / out_dir.name / "da_all_per_task_both_axes.csv"
     if not da_path.exists():
         raise SystemExit(
             f"DA table missing: {da_path}\n"
             f"Run `compute_da.py --pool {pool}` first (DA is computed before SNR)."
         )
-    da_df = pd.read_csv(da_path, index_col="task")
+    # one row per task again: the SNR columns are computed over the pool, not
+    # over a pair set, so they join the multi-axis reading (rule 15).
+    da_df = one_axes(pd.read_csv(da_path)).set_index("task")
     combined = da_df.join(snr_df)
 
     out_dir.mkdir(parents=True, exist_ok=True)

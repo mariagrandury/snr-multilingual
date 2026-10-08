@@ -26,10 +26,10 @@ This is a local fork of [allenai/signal-and-noise](https://github.com/allenai/si
 augmented to run the SNR / decision-accuracy pipeline on our own pretraining
 ladders. Two generations of models flow through it:
 
-- the **predictivity ladder** (current): `lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>`,
+- the **predictivity ladder** (current): `lm-<size>-L<L>[-schemeB]-<deep|shallow|swiglu>-seed<seed>`,
   90M–1.7B × L ∈ {1, 2, 8, 15, 30, 50} (L100 was planned and dropped on
-  2026-09-20, plan/l100_data_mixture.md) × deep/shallow × scheme A/B/AT3/ZH/ES ×
-  seeds, evaluated during training by `src/pretrain/auto_evals_*.py` and
+  2026-09-20, plan/l100_data_mixture.md) × deep/shallow (+ the swiglu activation on deep at L 8/15/30) × data build
+  A/AT3/B/ZH/ES/DCLMP/FWEB (read as scheme A/B/C × T, analysis/RULES.md Definitions) × seeds, evaluated during training by `src/pretrain/auto_evals_*.py` and
   summarised by `src/pretrain/ladder_report.py` into **one wide CSV** published
   as the HF dataset `msnr-data/ladder-report`. That CSV is the source of truth.
 - the **36-model sweep** (2026-04…06, superseded): `apertus-<size>-fwEdu<N>-fw<M>-seed<S>`
@@ -58,8 +58,19 @@ python analysis/rq05_design_decisions/analyze.py --pool predictivity_seeds   # o
 
 **Loaders.** `snr/download/ladder.py::load_predictivity_eval_results` pulls
 `ladder_report.csv` (`hf_hub_download` into `<DATA_DIR>/ladder-report`, or
-`$SNR_LADDER_DIR`) and melts it to the long schema (`model, size, L, arch,
-scheme, seed, mix, step, task, kind, primary_score, tokens, compute, family`).
+`$SNR_LADDER_DIR`) and melts it to the long schema (`model, size, L, ladder,
+arch, activation, optimizer, data, scheme, T, seed, mix, step, task, kind,
+primary_score, tokens, compute, family`). `ladder` is the cell-name token
+(`deep`/`shallow`/`swiglu`, one trained configuration); `arch` (deep|shallow),
+`activation` (xielu|swiglu) and `optimizer` (ademamix) are its levels on the
+three intervention axes (`launch_trainings.LADDERS`), so `arch == "deep"`
+also matches the swiglu cells — the deep baseline configuration is
+`ladder == "deep"`. The same split for the data: the report's `scheme` is the
+BUILD label and becomes `data` (A, AT3, B, ZH, ES, DCLMP, FWEB: what names
+cells, lists and token shares), and `scheme` (A|B|C, the recipe at that L) and
+`T` (1|3) are its levels (`DATA_SCHEMES` `letter`, `temp`), so `scheme == "A"`
+also matches AT3 — the A baseline is `data == "A"`. A cached CSV from before the split (no `ladder` column,
+`arch` = the token) goes through one compatibility branch in the loader.
 `snr/download/apertus.py` is the parquet loader of the 36-sweep and the
 external models. `analysis/utils.build_snr_pool(pool)` picks the loader from
 the pool members' `source` (`configs/models.json` → `sources.<source>.loader`),
@@ -73,16 +84,31 @@ so a script never decides by model name.
   SNR variants do not care about. The above-random gate skips them (no chance
   level). `assign_language` maps subsets through `configs/languages.json`
   (`fineweb_iso2`).
+- Each benchmark gets a BPB twin, `bbpb_<task>`: the gold answer's bits per
+  byte at a checkpoint, from `analysis/rq08_subset_selection/bench_bpb.csv`
+  (the per-item store reduced by `build_per_item_store.py --bench-bpb`, the
+  driver's first step; without the cluster-only store it keeps the committed
+  table). `build_snr_pool` appends it AFTER its rule filters, as a copy of the
+  original's row, so it exists only where the original is AND the store holds
+  that (model, step): an inner join on `bench_bpb.csv`. The nightly only
+  reduces the store and extracts nothing, so a cell evaluated after the last
+  `build_per_item_store.sbatch` run (the six L1 FineWeb cells for now)
+  has no twin until the sbatch is re-submitted; the loader prints those models. Its
+  family is `bbpb_<family>`, its language the original's, and it is
+  lower-is-better (`utils.lower_is_better`). Finals only for now: see
+  RULES.md "The benchmark-BPB twins".
 - `mix` is the cell's design variant (`L8-schemeB-deep`, `launch_trainings.mix_label`)
   — the role the data mixture played in the 36-sweep — and `family`
   (`lm-L8-schemeB-deep-seed1904`) is the cross-size identity DA groups on.
 - Diverged runs (`run__diverged`) and runs short of their target are dropped
   by default; the pool flag `include_diverged` keeps them. `build_snr_pool`
-  also drops every size outside `utils.ANALYSIS_SIZES`, the ladder from 175M
-  up to the reference (rule 10): the 90M rung trains but is off the ladder
-  (nine of its ten runs diverge), and the 3B rung sits ABOVE the reference and
-  belongs to the size-generalization question alone, which opts in with
-  `above_reference=True`. Neither carries into any other pool, table or
+  also drops every size outside `utils.ANALYSIS_SIZES`, the ladder from 90M
+  up to the reference (rule 10). The loader keeps only the runs at the batch a
+  rung uses now (`ladder_report.on_grid`): the 90M and 175M rungs were
+  retrained at batch 84 / 168 on 2026-09-23 and their diverged batch-504
+  predecessors, still on disk, would otherwise share a `family` with them. The
+  3B rung sits ABOVE the reference and belongs to the size-generalization
+  question alone, which opts in with `above_reference=True`. Neither carries into any other pool, table or
   figure. `ANALYSIS_SIZES` derives from `TARGET_SIZE`, so moving the reference
   moves the ladder with it.
 - **Shared checkpoint grid** (`shared_grid=True`): benchmark rows on the k/10
@@ -102,37 +128,94 @@ so a script never decides by model name.
   read the seed replicates for the noise that does not depend on the window.
 - **The analysis-wide rules** — `analysis/RULES.md`: the gate, trained
   languages only, ten checkpoints, one noise window, three pairs, parent tasks
-  only, `multi` is not a language, three tasks per language, one reference, no
-  90M and no size above the reference, no leakage, the figure conventions.
+  only, `multi` is not a language, three tasks per language, one reference,
+  sizes 90M–1.7B at each rung's own batch and no size above the reference, no
+  leakage, the figure conventions.
   `build_snr_pool` applies the
   population rules at load (parents only, trained languages only; rq06 and
   rq08 opt out explicitly), the rq02 kernels enforce the pair minimum, and
   `analysis/check_rules.py` tests the tables on disk; the driver and the
   review skill run it.
 - Pool member filters apply to the frame's columns (`seeds`, `sizes`, `L`,
-  `arch`, `scheme`), not to models.json names, so scheme-B cells and adopted
-  off-grid seeds count whether or not the registry lists them.
+  `ladder`, `arch`, `activation`, `optimizer`, `data`, `scheme`, `T`;
+  `arch: [deep]` admits the swiglu ladder too), not to models.json names, so
+  new cells and adopted off-grid seeds count whether or not the registry lists
+  them; `cells_of: <pool>` keeps only the cells (`utils.CELL_KEYS`: size, L,
+  ladder, data) that pool has — the seed holdout's test split.
 - `tokens = iter × 2,064,384`; `compute = 6 × (N_non_emb + d·V) × tokens` from
   the reviewed hyperparams files (`configs.flops_params` convention).
 
-**Pipeline order** (`run_all_predictivity.sh`): rq00 `above_random.py` (the
-gate) → rq02 `compute_da.py` (the truth) → rq03 `run_apertus_snr_variants.py`
-(22 SNR variants × bucket, joined to the DA table) → rq03
-`compare_seed_splits.py` (holdout) → per pool rq04 `analyze_snr_variants.py`
-and `snr_definition_postprocess.py`, rq02 `da_per_benchmark.py` and `early_small.py`, rq09
-`analyze.py`, rq07 `analyze.py` → on `predictivity_all` (every seed and
-scheme) rq05 `analyze.py` + `early_decision.py`, rq01 `analyze.py` +
-`scaling_law_error.py`, rq03 `effect_vs_noise.py`, rq06 → rq08, the rq00
-curves (`run_apertus.py`, `curves.py`), rq02 `by_L.py` (decision accuracy
-per language count, on `predictivity_all` at the grid seed), rq04 `analyze.py`
-(reads rq03's table, rq00's scores, rq01's fits) and its per-L panels,
-`report_figures/make_figures.py`. Themes: A
-predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C generalisation
-(rq05–rq07), D benchmark improvement (rq08–rq09); `analysis/paths.py` is the
-one map from constant to folder. The
-canonical pool (`analysis/autodoc.CANONICAL_POOL = predictivity`) runs last so
-its README generators see every other pool's CSVs; generators no-op on other
-pools. Outputs: `analysis/<rq>/<stage>/<pool>/`.
+**Pipeline order** (`run_all_predictivity.sh`, reorganised 2026-09-23): the
+passes run in research-question order so the early questions' tables land
+first — the bBPB twins' table (`build_per_item_store.py --bench-bpb`, which
+rewrites `bench_bpb.csv` before any loader runs) → rq00 (`above_random.py`, the gate every later step reads; then
+`run_apertus.py`, `curves.py`, `panels.py`, the rf-twin comparison) → rq01
+(`analyze.py`, `panels.py`, `regimes.py`, `regimes_survivorship.py`,
+`scaling_law_error.py`, all on `predictivity_seeds`) → rq02 (`compute_da.py` per
+pool, `bench_bpb_da.py`, `da_per_benchmark.py`, `early_small.py`,
+`reliable_tasks.py`, `by_L.py`, `cross_task.py`, `scale_convergence.py`,
+`paper_rq2.py`, the `--axes mono-axis` twins, then
+the extensions: `scale_convergence.py --by L --langs L8 [--common-tasks]`,
+`by_language.py`, `agreement.py`, `seed_uncertainty.py`, `language_tier.py`,
+`pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per pool, which reads
+rq02's DA; `compare_seed_splits.py`; `panels.py`) → rq04 (the variant ranking,
+`analyze.py`, `finetasks_criteria.py`, then `catalogue.py` + `search.py`: ~210
+proxy-only surrogates from `literature.md` and the AllenAI signal × noise grid
+against every DA) → rq05 (+ rq03's
+`effect_vs_noise.py`, which reads rq05's table) → rq06 → rq07 (reads rq04's
+ranking) → the English-only check (`english_only.py`) → rq08 (`smooth_subtasks.py`,
+`panels.py`, `per_item_ladder.py`, `reference_solved.py`) → the above-chance
+items (`above_chance_items.py`) → rq09 → rq10 (`above_reference.py`, the 3B rung as the
+reference, the only reader of `above_reference=True`; filled since the
+2026-09-30 report holds the four 3B L8/L15 cells' evaluations) → rq11
+(`recipe.py`: per benchmark, which format and scoring to evaluate, from rq02's
+per-task table) → `report_figures/make_figures.py` →
+`check_rules.py`.
+Themes: A predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C
+generalisation (rq05–rq07), D benchmark improvement (rq08–rq09, rq12), E past the
+reference (rq10), F the recommendation (rq11), G checks on the ladder (rq13);
+`analysis/paths.py` is the one map from constant to folder. The canonical
+pool (`analysis/autodoc.CANONICAL_POOL = predictivity`) is the one whose README
+generators write; generators no-op on other pools. Outputs:
+`analysis/<rq>/<stage>/<pool>/`.
+
+**Regenerating one figure without the driver** (the normal way to iterate;
+the driver is ~2 h): from `src/signal-and-noise`,
+`export PATH=/users/mariagrandury/miniconda3/envs/snr/bin:$PATH; PYTHONPATH=$PWD:$PWD/../../src OPENBLAS_NUM_THREADS=4 OMP_NUM_THREADS=4 HF_HUB_OFFLINE=1 SOURCE_DATE_EPOCH=0 python analysis/rqNN_*/<script>.py --pool predictivity`.
+The thread caps are not optional: without them OpenBLAS spawns one thread
+per core and the login node's 1000-pid slice kills the process. Scripts that
+read `da_all_reliable_tasks_both_axes.csv` (everything with an `above_*` variant) need
+`reliable_tasks.py` to have run on the current DA tables first.
+
+**What the tables say (2026-09-30 snapshot, every cell of the grid evaluated except FWEB and the 3B L30/L50 rungs), so a session does not re-derive it.**
+The rq00–rq02 write-up lives in the three RQ READMEs (`analysis/rq00_gate_and_curves/README.md`, `rq01_scaling_predictability/README.md`, `rq02_decision_accuracy/README.md`), figures in storyline order with Key findings and Follow-ups after each; every snapshot moves the numbers, so re-read the CSVs: (1) on the full gated population DA-size is 0.54 (90M) → 0.56 (1B),
+jackknife ±0.02 (±0.03 at 1B) — the 0.64 → 0.76 of the `above_66_*` figures is a cut on DA
+itself and is quoted as conditional; the per-axis cuts (`above_66_size`,
+`above_66_ckpt`, `above_66_either`) are the ones to quote, never
+`above_66_both`. (2) DA-ckpt over design pairs (0.74–0.82 at 90 % of a run)
+sits near the seed null (two seeds of ONE design reach up to 0.75): it measures
+within-run persistence, and a checkpoint-axis figure is read against
+`seed_uncertainty_da_all_seed_null.png`'s null. (3) DA, Kendall τ and Spearman ρ are one
+statistic (r ≥ 0.96 over 1,883 cells; 2·DA − 1 = τ_a + (T_both − T_one)/n
+exactly), and the tie convention moves the reliable-task verdict on 2–7 % of
+cells. Restricting to the L8 languages, to common tasks, to one language or
+one language tier does not order the per-L lines, and a language's token
+share does not predict its benchmarks' reliability (ρ 0.02–0.27). The twins
+pass the gate (McNemar p < 0.001) but rank no better than the originals
+(`rq00_task_reformulation/reformulations_gate.py` carries every headline reading with
+and without them); English alone is a weak single-language proxy of the
+multilingual decision (0.61 at 1B against 0.62–0.67 for every other panel
+language but Japanese, 0.55) and the panel macro is the safest from
+350M up (`rq06_language_transfer/language_panel.py`).
+
+**README rules.** `analysis/RULES.md` ends with the README rules: one README
+per level (`analysis/README.md` for the RQs, one per `rqNN_*/`, none under a
+pool folder), the current sweep first and other sweeps in a final
+"Extensions from other sweeps" section, every rq02-family figure stating its
+DA kind / filter / pair set / gate pool, storyline order with cross-links,
+Key findings and Follow-ups bullets after every figure, a GitHub link on
+`main` after every figure, auto blocks untouched, the snapshot date stated.
+A session that edits a README follows them.
 
 **Shared helpers.** `analysis/utils.py` also carries the ladder-frame helpers
 the ladder-frame scripts (rq00 curves, rq01, rq03, rq05, rq06) use — `ladder_frame` (the pool plus `frac`), `finals`,
@@ -170,31 +253,29 @@ the `multi`-tagged aggregates (`include_base_44`), which are not parents.
 ## Models in scope
 
 `configs/models.json` is the registry (read via `src/evals/scripts/utils/configs.py`).
-`sync_models_json.py` writes one entry per grid cell — both archs, both
-schemes, every seed — with `params`, `n_non_emb`, `d_model`, `vocab_size`
+`sync_models_json.py` writes one entry per grid cell — every ladder, every
+scheme, every seed — with `params`, `n_non_emb`, `d_model`, `vocab_size`
 (the FLOPs convention) and the per-size save grid. The pools:
 
 ```
-predictivity               lm-{175M…1.7B}-L{1…50}[-schemeB]-{deep,shallow}-seed1904
-predictivity_seeds         … every seed (64/313 at the 175M/600M ×3 cells, 28/1797 at the 1B ×3 cells)
-predictivity_seeds_train   seeds 64, 313 at 175M/600M, L ∈ {1, 2, 50}, deep, scheme A (the only cells with replicates)
-predictivity_seeds_test    seed 1904 on the same six cells
-predictivity_schemes       every data-scheme cell, AT3/ES/ZH included, seed 1904
-predictivity_all           every trained cell: all seeds, all five schemes, both archs (rq01, rq03, rq05, rq06)
+predictivity               seed 1904, every ladder and data build: the grid seed, every design (headline; the gate)
+predictivity_seeds         every seed, every cell (64/313 at the 175M/600M ×3 cells, 28/1797 at the 1B ×3 cells)
+predictivity_seeds_train   the replicate seeds 64, 313, 28, 1797 (a seed filter only)
+predictivity_seeds_test    seed 1904 on exactly the train split's cells (`cells_of`, never a hand-kept list)
 seeds_*, custom_swissai_hf, external   the 36-sweep + externals (parquet loader)
 ```
 
-The four `predictivity*` pools above filter on `scheme ∈ {A, B}`. AT3, ES and
-ZH are a different intervention (a sampling temperature, a swapped second
-language), so letting them into the headline pool would widen every signal
-without widening the decision the pool exists to measure. They live in
-`predictivity_schemes` instead, which no driver runs — invoke a script with
-`--pool predictivity_schemes` when the scheme axis itself is the question.
+Four pools since 2026-10-05 (analysis/RULES.md, Definitions;
+plan/decision_accuracy.md §9). Until then the headline pool held schemes A/B
+only and two more pools carried the rest (every build at seed 1904, and every
+cell; their names are in §9); their output folders are orphans the refresh
+lists (`RETIRED_POOLS` in `scripts/refresh_analysis.sh`, rule 17). The
+headline pool keeps every build because L1, L2 and T = 3 have too few pairs
+without them, and every pool is gated with `predictivity`'s mask.
 
-The `snr` section of models.json is global: `small_sizes` 175M–1B,
+The `snr` section of models.json is global: `small_sizes` 90M–1B,
 `target_size` 1.7B (the reference of every question; rq07 alone pins 1B, the
-largest rung DataDecide has; the L2 ZH/ES settings stop at 1B for lack of
-source data and are the one labelled exception), `da_early_fracs` the nine
+largest rung DataDecide has; L2 ZH and ES reach 1.7B too since 2026-09-26), `da_early_fracs` the nine
 evaluated tenths before the final, `noise_window` 0.2, `noise_grid` 20,
 `min_pairs` 3, `min_lang_tasks` 3 (lowered from 5 on 2026-09-20: it was the
 binding constraint on rq04's per-language panel, 6 languages against 17, and
@@ -208,7 +289,7 @@ committed outputs are the 1B-reference ones and are not regenerated. Sizes and c
 `noise_window` / `noise_grid` / `min_pairs` / `min_lang_tasks`** (commit 56c806d dropped two of
 them, and `analysis/utils.py` fails at import without them).
 
-- **size** = `175M`…`1.7B` (the ladder; 90M trains but is dropped at load), `175M`…`1B` (36-sweep), native sizes
+- **size** = `90M`…`1.7B` (the ladder, each rung at its own batch), `175M`…`1B` (36-sweep), native sizes
   for externals; **bucket** = `size_bucket(size)`.
 - **family** = cross-size identity (`lm-L8-deep-seed1904` /
   `apertus-fwEdu30-fw270-seed1904`), attached at load; DA groups on it so the
@@ -237,11 +318,14 @@ strips the `-fwY` mix complement and numeric-size-sorts.
 ## Outputs
 
 Each RQ writes next to its script: `analysis/<rq>/<stage>/<pool>/`. The
-per-task tables are the persisted truth (`rq02/.../da_per_task.csv`,
+per-task tables are the persisted truth (`rq02/.../da_all_per_task_both_axes.csv`,
 `rq03/.../snr_variants_per_task.csv`); every figure and README block is
 derived from them. `*.csv` / `*.png` under this directory are git-LFS
 tracked (`.gitattributes`): commit regenerated results with `git lfs`
-installed, and never commit outputs produced from a fixture.
+installed, and never commit outputs produced from a fixture. Every CSV is
+written at twelve significant digits (`analysis/__init__.py` sets pandas'
+`to_csv` default), so a re-run on another machine no longer rewrites a
+table whose numbers did not change.
 
 ---
 
@@ -448,6 +532,25 @@ kernels apply `MIN_PAIRS`, and `analysis/check_rules.py` fails the pipeline
 when a table on disk breaks a rule. Add a new rule to `analysis/RULES.md`,
 implement it in the shared layer, and teach the checker — never in a single
 rqNN script.
+
+### 16. A figure drawn before its input is a stale figure with a fresh timestamp
+On 2026-09-23 the rq00 panels (`first_size_above_random`, `highlights`) were
+drawn at 02:32 and the gate mask rewritten at 02:41 by a later step: 649
+cells on disk against 775 recomputed, and nothing complained. The driver now
+runs each RQ's panels right after the table they read (RQ order), and
+`check_rules.py` cannot see this class of error — when a table is
+regenerated by hand, regenerate the panels that read it in the same breath.
+Same family: `scale_convergence.py --langs L8` once wrote its three `--by`
+groupings to ONE stem, so the per-L L8 figure on disk was the transformation
+figure; `stem_for` now carries `by`, and the driver passes `--by L`.
+
+### 17. Filtering on the quantity drawn
+Every `above_*` variant keeps the tasks whose DA cleared a cut and then
+plots DA on them; the rise it shows is partly the cut (passers 0.80 against
+0.55 for the rest at 1B). `reliable_tasks.py`'s `late` reduction chooses no
+cell by its value but still selects tasks by it. Quote the unfiltered
+figure (`scale_convergence_da_size_multi_axes.png`, `early_small_da_goal_multi_axes`) beside any filtered
+one, and never call a filtered figure "free of selection bias".
 ---
 
 ## Legacy code (upstream DataDecide / OLMo path)
@@ -466,13 +569,13 @@ masks), `snr/stats.py` (total variation / monotonicity of training curves),
 is quoted by rq08's docstring only), `snr/autobencher/`, `snr/scripts/`,
 `snr/constants/{datadecide,ladder,ladder_config.json,models,signal,smooth}.py`,
 `allenai_analysis/*.ipynb` (LFS pointers) and `allenai_analysis/plotting/scaling.py`,
-`analysis/PARALLEL_SESSIONS.md`, the `INSTRUCTIONS.md` files (pre-refactor
-`results/` layout), `analysis/ANALYSIS_new_vs_previous.md`,
 `analysis/rq08_subset_selection/per_sample/` (cluster-only per-item outputs
 of the 36-sweep), `posttraining.ipynb`, `notebook_guidelines.md`,
 `run_all_pretraining.sh` (36-sweep driver). See the root README's
 "Legacy code" for the removal proposal; nothing is deleted without the
-owner's call.
+owner's call. (The pre-refactor `INSTRUCTIONS.md` / `PARALLEL_SESSIONS.md` /
+`ANALYSIS_new_vs_previous.md` notes were folded into the RQ READMEs and
+removed on 2026-09-23.)
 
 ---
 

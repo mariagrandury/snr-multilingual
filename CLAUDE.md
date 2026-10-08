@@ -13,8 +13,10 @@
   table, figure and README number under `src/signal-and-noise/analysis/`
   obeys those rules (the above-random gate, trained languages only, ten
   checkpoints, one noise window, three pairs per decision, parent tasks only,
-  `multi` is not a language, one reference size, no 90M, no leakage, the
-  figure conventions). Read it before touching an `rqNN_*` script; implement
+  `multi` is not a language, one reference size, sizes 90M–1.7B at each
+  rung's own batch, no leakage, the figure conventions, names that say
+  which DA and which pairs, nothing generated outside the regeneration and
+  every orphan flagged). Read it before touching an `rqNN_*` script; implement
   a new rule in the shared layer (`analysis/utils.py`, the loader), never in
   one script; `python analysis/check_rules.py` must pass before a commit.
 
@@ -55,14 +57,20 @@ This project extends the Signal-and-Noise (SNR) framework (Heineman et al., 2025
 
 Two sweeps, in this order:
 
-1. **The finished 36-model sweep** (4 sizes × 3 data mixtures × 3 seeds,
-   `apertus-*`, W&B project `snr-experiments`) — done; its tooling evolved
-   in place into the predictivity scripts.
+1. **The finished 36-model sweep** (pre-July 2026: 4 sizes × 3 data mixtures ×
+   3 seeds, `apertus-*`, W&B project `snr-experiments`, results in the
+   `multilingual-snr/multilingual-snr-eval-results` parquet, pools
+   `custom_swissai_hf` / `seeds_*`) — done; its tooling evolved in place into
+   the predictivity scripts. Its numbers and the ladder's are two periods of
+   one project, not one table: the harness, task set and reference size (1B
+   against 1.7B) differ, so they are compared as replications of a finding,
+   never pooled. `plan/next_analyses.md` says what each period can still add.
 2. **The predictivity sweep** (current work): a 7-rung ladder
-   90M–3B × 7 language settings × deep/shallow × five data schemes
-   (A, AT3, B, ZH, ES — the `DATA_SCHEMES` registry in
+   90M–3B × 6 language settings × deep/shallow (+ the swiglu activation on deep at L 8/15/30) × seven data builds
+   (A, AT3, B, ZH, ES, DCLMP, FWEB — the `DATA_SCHEMES` registry in
    `src/pretrain/launch_trainings.py`, the single source of truth for the
-   grid), run across CSCS and Azure. Cells are named `lm-*` and log to W&B project
+   grid; the analysis reads a build as scheme A/B/C × temperature T, never by
+   its label — `src/signal-and-noise/analysis/RULES.md`, Definitions), run across CSCS and Azure. Cells are named `lm-*` and log to W&B project
    **`msnr`**. Design: [`plan/small-to-large-predictivity-training-plan.md`](plan/small-to-large-predictivity-training-plan.md).
 
 Read [`src/pretrain/CLAUDE.md`](src/pretrain/CLAUDE.md) and
@@ -76,7 +84,8 @@ configs/          # tasks.json, models.json, languages.json, hf_wandb.json
 documents/        # Slidev presentation (scholarly theme) + project documents
 plan/             # the sweep design + compute budget (the planning docs)
 scripts/          # build_configs.py, lint_models_json.py, grant_collaborator.sh,
-                  # reservation_drain.sh, preempt_drain.sh (queue drainers)
+                  # reservation_drain.sh, preempt_drain.sh (queue drainers),
+                  # nightly.sh {evals|ladder} (the two nightly passes, below)
 src/
   evals/          # evaluation harness wrapper (lm_eval integration)
   pretrain/       # the predictivity sweep: launchers, data build, auto-evals
@@ -127,7 +136,14 @@ Eval results are NOT in the repo: they live on the cluster at
   implemented in lm-evaluation-harness or lighteval (languages, framework,
   HF and paper links, items, categories, data source, format, options);
   hand-curated, read by the site's Benchmarks tab
-- Architectures live in `src/pretrain/hyperparams/hyperparams_{deep,shallow}.json`
+- Each trained model configuration (a **ladder**) lives in
+  `src/pretrain/hyperparams/hyperparams_<ladder>.json`: `deep` the baseline,
+  `shallow` the depth level, `swiglu` the activation level.
+  `launch_trainings.LADDERS` gives each ladder its levels on the three
+  intervention axes — `arch` ∈ {deep, shallow}, `activation` ∈ {xielu,
+  swiglu}, `optimizer` ∈ {ademamix} — so `swiglu` is a deep model with the
+  swiglu activation, not an architecture; muon would be an optimizer level
+  (needs Megatron work first)
 
 ## Development
 
@@ -174,7 +190,21 @@ cd documents && npx slidev build                # the deck the job skipped
 # 2c. only analysis/ — no figures, PDF, compendium or deck. It does NOT fetch,
 #     so refresh the cache first as in 2b.
 cd src/signal-and-noise && FORCE=1 HF_HUB_OFFLINE=1 bash run_all_predictivity.sh
+
+# 2d. unattended, every night. Arm once; $HOME is shared NFS so this enables
+#     the timers on EVERY login node, and nightly.sh's cross-node lock is what
+#     keeps that from meaning three concurrent runs.
+loginctl enable-linger                      # or they die with your session
+systemctl --user enable --now nightly-evals.timer nightly-ladder.timer
+systemctl --user list-timers 'nightly-*'    # 00:00 evals, 04:00 ladder
+cat /iopsstor/scratch/cscs/$USER/logs/nightly/last-run-{evals,ladder}.txt
 ```
+
+The current state of the analysis, in prose, is the RQ READMEs under
+`src/signal-and-noise/analysis/` (`README.md` there lists the RQs; each
+`rqNN_*/README.md` follows the README rules at the end of `analysis/RULES.md`);
+to regenerate one figure without the two-hour driver see "Regenerating one
+figure" in `src/signal-and-noise/CLAUDE.md`.
 
 `scripts/refresh_analysis.sh` is the only thing to run after new results:
 it fetches `ladder_report.csv` from the orphan branch `data/ladder-report`,
@@ -182,6 +212,31 @@ re-runs the analysis, the figures, the report PDF, the compendium and the
 deck, and fails if a slide points at a figure that no longer exists. Prose it
 cannot fix, so its last step (`documents/figures/facts.py`) diffs the headline
 numbers against `documents/ladder-facts.json` and prints the ones that moved.
+
+`scripts/nightly.sh {evals|ladder}` automates it. `evals` (00:00) queues the
+bpb chain and **restarts** the auto-eval watcher, so the running watcher always
+matches the code on disk — a watcher holds its constants from import time, and
+on 2026-09-21 one started before a path fix kept writing conversions to the old
+capstor tree for three hours after the fix landed. `ladder` (04:00) publishes,
+installs, then submits the analysis plus a separate `afterany` job for the
+`--curves` grids, so the hour they cost does not lengthen the main refresh.
+While the analysis code is mid-change, `touch
+/iopsstor/scratch/cscs/$USER/logs/nightly/PAUSE_REFRESH`: `ladder` still
+publishes but submits nothing (remove the file to resume).
+
+Two traps it exists for. `ladder_report.publish()` catches its own push
+failures and still exits 0, so after a failed `--push-git` the fetch *succeeds*
+and hands the analysis yesterday's report; the script reads publish()'s stderr,
+installs the fresh CSVs from disk when a push did not land, and proves with
+`cmp` that what the analysis will read is what was just generated. A
+`ladder_report.py` crash stops the run outright: `cmp` cannot catch that one,
+since the CSV it compares is then yesterday's on both sides. And `$HOME`
+is shared NFS, so an enabled timer fires on every login node at once — on
+2026-10-02 ln001, ln002 and ln003 each ran at 06:00, three `ladder-refresh`
+jobs and three concurrent `--push-git`. Hence the atomic lock (per mode, with a
+12 h `NIGHTLY_LOCK_TTL` takeover) and the `squeue` check before submitting.
+`nightly_ladder_setsid.sh <mode> start` is the fallback when `loginctl
+enable-linger` is refused, which on these nodes it keeps becoming.
 
 Three things it cannot guess:
 
@@ -214,15 +269,27 @@ are retired — do not carry them into new work):
 
 - Sizes: 90M, 175M, 350M, 600M, 1B, 1.7B, 3B non-embedding — every size trains
   at every language setting except 3B, the extrapolation check above the 1.7B
-  reference: deep only, L ∈ {8, 15}, schemes A and B ([`plan/3b_models.md`](plan/3b_models.md))
+  reference: deep only, seed 1904, L ∈ {8, 15} in schemes A and B (trained) plus
+  L ∈ {30, 50} added 2026-09-30 — A-L30, B-L30, A-L50, the cells that take the
+  3B reference over `MIN_PAIRS` on the `L` and `scheme` axes
+  ([`plan/3b_models.md`](plan/3b_models.md))
 - Data: fixed 50/50 English (DCLM) + FineWeb-2, with L ∈ {1, 2, 8, 15, 30, 50}
   languages; L=1 is 100% English. The mixture varies the language *count*,
   not the English ratio.
-- Data schemes (the data axis, `DATA_SCHEMES`): A (resource-ranked, T=1, the
+- Data builds (`DATA_SCHEMES`; the launcher calls them schemes, the analysis
+  reads each as its `letter` A/B/C and `temp` T — A and AT3 are scheme A,
+  B/ZH/DCLMP scheme B, ES/FWEB scheme C): A (resource-ranked, T=1, the
   unlabelled baseline), AT3 (A's lists at T=3 — L50 both architectures, L15 and L30 deep
-  only; L100 was planned and dropped, [`plan/l100_data_mixture.md`](plan/l100_data_mixture.md)), B (diversity-first, L ∈ {8, 15, 30}), ZH / ES (L2 with Chinese
-  / Spanish instead of Russian). "Variant" is the older, looser word for any
-  run configuration (seed × arch × scheme) — don't use it for the data axis.
+  only; L100 was planned and dropped, [`plan/l100_data_mixture.md`](plan/l100_data_mixture.md)), B (diversity-first, L ∈ {8, 15, 30}),
+  ZH / ES (L2 with Chinese / Spanish instead of Russian), DCLMP / FWEB (L1
+  with DCLM minus the edu filter / FineWeb as the English). BT3 (B's L30 list
+  at T=3) was registered 2026-09-21 and retired 2026-09-23 without training:
+  the AT3 L15/L30 evals gave the temperature axis four mono-axis pairs
+  against a MIN_PAIRS of three, so it would have added a fifth to a served
+  axis. Its 88.5B build stays on disk, unreferenced. "Variant" is the older, looser word for any
+  run configuration (seed × ladder × scheme) — don't use it for the data axis.
 - Cell name = Slurm job name = checkpoint dir = W&B run name:
-  `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES]-<deep|shallow>-seed<seed>`
+  `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu>-seed<seed>`
+  — the last token is the ladder, not the arch (`swiglu` = arch deep +
+  activation swiglu); names stay as trained
 - Each size trains its own budget D(N) = 100 × N tokens (5× Chinchilla)

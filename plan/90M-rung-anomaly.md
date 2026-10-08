@@ -928,7 +928,8 @@ training logs with the same rules for every row.
 - **Scope:** all rows are training loss on one cell (L2) and one seed. None of
   the diagnostic runs has been BPB-scored.
 
-### Choosing the 90M config (open, 2026-09-13)
+### Choosing the 90M config (RESOLVED 2026-09-23 — option 2; outcome at
+the end of this document)
 
 The 90M rung diverges because AdEMAMix's slow momentum averages over 10,000
 steps while the run lasts only 4,500. Four token-matched configurations fix it.
@@ -1046,3 +1047,85 @@ same batch and step count (rows 1 and 4) differed by 19%.
 For scale: the whole sweep has kept 9,007 node-hours so far, 546 of them at
 175M (`plan/compute-costs.md`, 2026-09-12). Retraining the trained part of the
 row is about as much again as the 175M rung has cost to date.
+
+---
+
+## Outcome: option 2, trained and verified (2026-09-30)
+
+Option 2 was chosen on 2026-09-23 and the two rungs were retrained at batch 84
+and 168, token-matched, with every optimizer constant unchanged. The cells
+carry a `-b<N>` part in their names (`lm-90M-L2-b84-deep-seed1904`), so the
+diverged batch-504 runs keep their own checkpoint dirs and are neither
+overwritten nor resumed. Mechanics: `plan/90M-175M-batch-retrain.md`.
+
+**58 cells, 56 complete** — the two FWEB cells wait on their data build.
+
+### The divergence is gone
+
+No cell diverges. Across all 56 finished runs the gap between the single best
+iteration and the median of the last 1% of iterations is **+0.07 to +0.14**,
+which is the ordinary noise of a WSD tail. The rung this document is about
+used to end **+1.384** above its own best.
+
+The two independent signals agree:
+
+| | 20% | 30% | 40% | 50% | grad norm > 1 |
+| --- | --: | --: | --: | --: | --: |
+| 90M-L2 batch 84 | 2.965 | 2.905 | 2.869 | — | **2.6%** |
+| 90M-L2 batch 504 | 7.052 | 6.406 | 6.044 | 6.046 | 83.6% |
+| 175M-L2 batch 168 | 2.788 | 2.730 | 2.692 | 2.678 | **2.5%** |
+| 175M-L2 batch 504 | 3.249 | 3.052 | 2.998 | 2.962 | 13.6% |
+
+Smoothed loss (median per 10% band) falls in every band of every cell — the
+old runs turned upward at 15–19% and never recovered.
+
+### The grid runs reproduce the diagnostics
+
+This was the open risk in the decision: the diagnostics took the `diag-` path
+and one seed on one cell, and the grid path is not the `diag-` path.
+
+| cell | predicted (row 14 / row 15) | trained |
+| --- | --: | --: |
+| `lm-90M-L2-b84-deep-seed1904` | 2.715 | **2.719** |
+| `lm-175M-L2-b168-deep-seed1904` | 2.565 | **2.567** |
+
+### The ladder is straight again
+
+Power law fitted on 350M–1.7B (scheme A, deep, L2, seed 1904), alpha = 0.1099,
+and each rung's residual against it:
+
+| rung | retrained | as it was |
+| --- | --: | --: |
+| 90M | **−0.138** | +2.918 |
+| 175M | **−0.089** | +0.255 |
+| 350M | +0.007 | — |
+| 600M | −0.010 | — |
+| 1.7B | +0.003 | — |
+
+The +0.26 at 175M that opened this investigation is gone. **State the residual
+honestly, though:** the two small rungs now sit 0.09–0.14 *below* the line the
+larger rungs fit to within ±0.01. The sign flipped from far-above to
+slightly-below rather than landing on it, so the bottom of the ladder is a
+better left anchor than it was but not an exact one, and any scaling fit that
+spans it should say so.
+
+### Evaluation
+
+`due_iters` returns **12** checkpoints at both rungs, at the same fractions of
+training as every other rung, and all 12 are evaluated for every cell — zero
+missing, zero entries in `auto_eval_errors.json`. This needed a fix of its
+own: three call sites read the target straight from the hyperparams file and
+so never saw the rescale, which would have given the 175M rung 3 checkpoints
+instead of 12 and called a 90M run complete at 4,500 of 27,000 iterations
+(`launch_trainings.cell_schedule`).
+
+### Cost, against the estimate
+
+The estimate above was +39–40% per run. Measured on the grid runs: **229
+ms/iter** at 90M/84 and **297 ms/iter** at 175M/168, i.e. full runs of 1.72 h
+and 2.11 h against 1.56 h and 2.02 h at batch 504 — **+10% and +4%**, far
+cheaper than the diagnostics suggested. The diagnostic timings were inflated
+by the 2026-09-13 filesystem stall, which is exactly the trap the capstor
+section of `src/pretrain/CLAUDE.md` warns about: a wide iteration-time
+distribution is a measurement of the filesystem, not of the arithmetic.
+

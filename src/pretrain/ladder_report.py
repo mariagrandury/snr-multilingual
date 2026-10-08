@@ -36,6 +36,7 @@ import argparse
 import itertools
 import json
 import math
+import os
 import re
 import sys
 from pathlib import Path
@@ -44,8 +45,9 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from pretrain_progress import CKPT_ROOT, SIZES, TRAIN_LOG_DIRS  # noqa: E402
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, cell_fineweb_subsets, exp_name, mix_label, run_interval,
-    save_interval)
+    BASELINE_LADDER, DATA_SCHEMES, GBS, HYPERPARAMS, LADDERS, cell_fineweb_subsets, cell_gbs,
+    exp_name, mix_label,
+    n_checkpoints, run_interval, save_interval)
 from auto_evals_cscs import (  # noqa: E402
     ALL_LANGUAGES_RUNS, auto_benchmarks, eval_languages, saved_valid_iters)
 from evals.scripts.utils.configs import metric_for, tasks_for_benchmarks  # noqa: E402
@@ -66,16 +68,20 @@ LOSS_RE = re.compile(r"iteration\s+(\d+)/\s*(\d+).*?lm loss: ([0-9.E+-]+)")
 SCHEME_OF = {v["label"]: k for k, v in DATA_SCHEMES.items()}
 _LABELS = "|".join(re.escape(lab) for lab in
                    sorted((lab for lab in SCHEME_OF if lab), key=len, reverse=True))
+# Same treatment for the ladder token: derived from the registry, never
+# spelled out, so a new ladder (swiglu, 2026-10-03) is matched without an edit
+# here. Longest first, so one name cannot shadow another's prefix.
+_LADDERS = "|".join(sorted(HYPERPARAMS, key=len, reverse=True))
 LOG_RE = re.compile(r"pretrain-(?P<size>[\d.]+[MB])-L(?P<L>\d+)"
-                    rf"(?P<scheme>{_LABELS})?-(?P<arch>deep|shallow)"
-                    r"-seed(?P<seed>\d+)-\d+\.out")
+                    rf"(?P<scheme>{_LABELS})?(?:-b(?P<gbs>\d+))?"
+                    rf"-(?P<ladder>{_LADDERS})-seed(?P<seed>\d+)-\d+\.out")
 # The same name without the job-id suffix — the checkpoint / eval-dir form.
 # Requiring `lm-` and a seed is load-bearing: it keeps the hyperparameter
 # diagnostics (`diag-90M-L2-deep-lr0.0006`) out of the ladder, where their
 # short runs would sit nats off every scaling fit.
 CELL_RE = re.compile(r"lm-(?P<size>[\d.]+[MB])-L(?P<L>\d+)"
-                     rf"(?P<scheme>{_LABELS})?-(?P<arch>deep|shallow)"
-                     r"-seed(?P<seed>\d+)")
+                     rf"(?P<scheme>{_LABELS})?(?:-b(?P<gbs>\d+))?"
+                     rf"-(?P<ladder>{_LADDERS})-seed(?P<seed>\d+)")
 
 # Non-embedding parameters — the x of the scaling fit. The ladder is defined by
 # these targets, so they are the right abscissa even though the realised counts
@@ -84,10 +90,25 @@ NON_EMB = {"90M": 9.0e7, "175M": 1.75e8, "350M": 3.5e8,
            "600M": 6.0e8, "1B": 1.0e9, "1.7B": 1.7e9, "3B": 3.0e9}
 
 
+def on_grid(m: re.Match) -> bool:
+    """Was this run trained at the batch its rung uses NOW?
+
+    The two smallest rungs were retrained at their own batch on 2026-09-23
+    (GBS_BY_SIZE), and the diverged batch-504 runs they replace are still on
+    disk — 90M ends 1.4 nats above its own best, 175M +0.26 off the power law.
+    Those are exactly the points that would wreck a scaling fit, and `_key`
+    does not separate them: it has no batch field, so both versions of a cell
+    land on one key and "newest log wins" would decide the ladder by job id.
+    Reading the batch back out of the name and comparing it against the grid
+    keeps the report on the current rung, and needs no new key field."""
+    return int(m["gbs"] or GBS) == cell_gbs(m["size"])
+
+
 def _key(m: re.Match) -> tuple:
-    """(size, L, arch, scheme, seed) from a LOG_RE/CELL_RE match — the tuple
-    every table in this file is keyed by."""
-    return (m["size"], int(m["L"]), m["arch"],
+    """(size, L, ladder, scheme, seed) from a LOG_RE/CELL_RE match — the tuple
+    every table in this file is keyed by. The batch is deliberately NOT in it
+    (see on_grid), so every call site MUST filter with on_grid first."""
+    return (m["size"], int(m["L"]), m["ladder"],
             SCHEME_OF[m["scheme"] or ""], int(m["seed"]))
 
 
@@ -97,7 +118,7 @@ def _train_logs() -> list[tuple[Path, str]]:
     newest segment win, and a path sort would make that depend on which user
     name sorts first."""
     logs = sorted((f for d in TRAIN_LOG_DIRS for f in d.glob("pretrain-*.out")
-                   if LOG_RE.match(f.name)),
+                   if LOG_RE.match(f.name) and on_grid(LOG_RE.match(f.name))),
                   key=lambda f: int(f.stem.rsplit("-", 1)[1]))
     out = []
     for f in logs:
@@ -109,7 +130,7 @@ def _train_logs() -> list[tuple[Path, str]]:
 
 
 def loss_curves() -> dict[tuple, list[tuple[int, float]]]:
-    """(size, L, arch, scheme, seed) -> [(iter, loss), ...], newest log wins."""
+    """(size, L, ladder, scheme, seed) -> [(iter, loss), ...], newest log wins."""
     runs: dict[tuple, dict[int, float]] = {}
     for f, text in _train_logs():
         # A resumed cell has several logs; later iterations supersede earlier
@@ -121,7 +142,7 @@ def loss_curves() -> dict[tuple, list[tuple[int, float]]]:
 
 
 def targets() -> dict[tuple, int]:
-    """(size, L, arch, scheme, seed) -> the run's own --train-iters, as its
+    """(size, L, ladder, scheme, seed) -> the run's own --train-iters, as its
     newest job logged it."""
     out = {}
     for f, text in _train_logs():
@@ -167,24 +188,24 @@ def check_loss(curves, tgts) -> list[str]:
               f"iter {last_it}/{target}  loss {last_loss:.3f}  (fell {drop:.2f}, "
               f"best {min_loss:.3f}@{min_it})")
 
-    # Ordering by size at fixed (L, arch, scheme): a bigger model that is
+    # Ordering by size at fixed (L, ladder, scheme): a bigger model that is
     # worse is a real signal, not noise, at these gaps. Per SCHEME because a
     # scheme is a different data build at the same L — its rungs are only
     # comparable with each other, and AT3 is its own build, so keying the
     # ladder on the baseline would leave that column unchecked.
-    for (L, arch, scheme) in sorted({(k[1], k[2], k[3]) for k in finished}):
-        row = [(s, finished[(s, L, arch, scheme, 1904)])
-               for s in SIZES if (s, L, arch, scheme, 1904) in finished]
+    for (L, ladder, scheme) in sorted({(k[1], k[2], k[3]) for k in finished}):
+        row = [(s, finished[(s, L, ladder, scheme, 1904)])
+               for s in SIZES if (s, L, ladder, scheme, 1904) in finished]
         for (s1, v1), (s2, v2) in zip(row, row[1:]):
             if v2 > v1:
                 problems.append(
-                    f"{mix_label(L, arch, scheme)}: {s2} loss {v2:.3f} WORSE "
+                    f"{mix_label(L, ladder, scheme)}: {s2} loss {v2:.3f} WORSE "
                     f"than {s1} {v1:.3f}")
     return problems
 
 
 def check_scaling(curves, tgts, tol: float) -> list[str]:
-    """Fit log L = log A - alpha log N per (L, arch, scheme) and flag rungs.
+    """Fit log L = log A - alpha log N per (L, ladder, scheme) and flag rungs.
 
     Fitted on the sizes that are ON the trend and predicted for the rest, so a
     single broken rung cannot drag the fit toward itself and hide.
@@ -195,9 +216,9 @@ def check_scaling(curves, tgts, tol: float) -> list[str]:
                 if pts and pts[-1][0] >= tgts.get(k, pts[-1][0])}
     # Per scheme, for the reason in check_loss: fitting a power law across two
     # different data builds is a line through two distributions.
-    for (L, arch, scheme) in sorted({(k[1], k[2], k[3]) for k in finished}):
-        pts = [(NON_EMB[s], finished[(s, L, arch, scheme, 1904)], s)
-               for s in SIZES if (s, L, arch, scheme, 1904) in finished]
+    for (L, ladder, scheme) in sorted({(k[1], k[2], k[3]) for k in finished}):
+        pts = [(NON_EMB[s], finished[(s, L, ladder, scheme, 1904)], s)
+               for s in SIZES if (s, L, ladder, scheme, 1904) in finished]
         if len(pts) < 3:
             continue
         # Fit on everything but the smallest rung, then predict it: with 3-4
@@ -211,7 +232,7 @@ def check_scaling(curves, tgts, tol: float) -> list[str]:
             continue
         slope = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / denom
         icpt = my - slope * mx
-        print(f"  {mix_label(L, arch, scheme):<20} alpha={-slope:.3f}  fitted on "
+        print(f"  {mix_label(L, ladder, scheme):<20} alpha={-slope:.3f}  fitted on "
               f"{','.join(s for _, _, s in fit)}")
         for n, v, s in pts:
             pred = math.exp(icpt + slope * math.log(n))
@@ -220,7 +241,7 @@ def check_scaling(curves, tgts, tol: float) -> list[str]:
             print(f"       {s:>5}  obs {v:.3f}  pred {pred:.3f}  "
                   f"resid {resid:+.3f}{flag}")
             if abs(resid) > tol:
-                problems.append(f"{mix_label(L, arch, scheme)} {s}: {resid:+.2f} "
+                problems.append(f"{mix_label(L, ladder, scheme)} {s}: {resid:+.2f} "
                                 f"off the scaling fit (obs {v:.2f}, pred {pred:.2f})")
     return problems
 
@@ -273,7 +294,8 @@ def check_benchmarks() -> list[str]:
     cells: dict[str, dict[int, dict]] = {}
     for d in sorted(EVAL_LOGS.glob("lm-*-iter*")):
         m = re.match(r"(.+)-iter(\d+)$", d.name)
-        if m:
+        c = m and CELL_RE.match(m.group(1))
+        if c and on_grid(c):          # the rung's current batch only, as the table itself
             cells.setdefault(m.group(1), {})[int(m.group(2))] = _scores(d)
     for cell, iters in sorted(cells.items()):
         # Only iters that carry harness scores. score_bpb.py writes
@@ -327,7 +349,7 @@ def check_bpb() -> list[str]:
 # also the hand-off to any analysis that does not live here.
 # ---------------------------------------------------------------------------
 
-# Size picks the HUE, the arch picks the SHADE within it, the data scheme
+# Size picks the HUE, the ladder picks the SHADE within it, the data scheme
 # picks the dash pattern. Widely separated hues because neighbouring rungs are
 # what the eye must tell apart (a viridis ramp makes 175M and 350M nearly
 # identical); shades within a hue because in the close-up the schemes of ONE
@@ -350,28 +372,30 @@ SIZE_PALETTE = {
 # Each scheme is a DIFFERENT data distribution at the same L, not a flavour of
 # the baseline, so its runs must never read as points on the baseline curve —
 # hence one dash pattern per scheme, keyed off the registry. The two channels
-# now carry one axis each: the old table paired (arch, scheme) on BOTH, which
-# only worked while there were four combinations. Five schemes x two arches is
-# ten, more than a six-step palette has readable steps, so the arch keeps the
+# now carry one axis each: the old table paired (ladder, scheme) on BOTH, which
+# only worked while there were four combinations. Five schemes x two ladders is
+# ten, more than a six-step palette has readable steps, so the ladder keeps the
 # shade and the scheme takes the dash. The list is indexed modulo its length
 # so an eleventh combination repeats a pattern rather than crashing.
 _DASHES = ["-", "--", ":", "-.", (0, (3, 1, 1, 1)), (0, (1, 1)), (0, (5, 1))]
 SCHEME_STYLE = {v: _DASHES[i % len(_DASHES)] for i, v in enumerate(DATA_SCHEMES)}
 # Palettes run pale -> very dark. Deep and shallow take the two most readable
 # steps (mid and dark); an earlier assignment gave shallow the palest step and
-# it was legible in the legend but not in the plot.
-ARCH_STEP = {"deep": 1, "shallow": 2}
+# it was legible in the legend but not in the plot. Swiglu takes the darkest:
+# it trains scheme A like deep, so with deep's shade it would share deep's dash
+# too and its curves would be indistinguishable from deep's.
+LADDER_STEP = {"deep": 1, "shallow": 2, "swiglu": 3}
 # The scaling panels put SIZE on the x axis, so colour is free to carry the
-# whole intervention there — one hue per (arch, scheme). Generated from the
+# whole intervention there — one hue per (ladder, scheme). Generated from the
 # registry rather than written out, for the same reason as SCHEME_STYLE: the
 # hand-written four-entry table silently greyed out (#555) every combination it
 # did not list. No red in the list — the off-trend ring owns #c0392b in these
 # panels and a red fit line next to it reads as a flag.
 _FIT_HUES = ["#2980b9", "#e67e22", "#8e44ad", "#27ae60", "#16a085",
              "#d35400", "#2c3e50", "#7f8c8d", "#b7950b", "#6c3483"]
-FIT_COLOUR = {(arch, v): _FIT_HUES[(2 * i + j) % len(_FIT_HUES)]
+FIT_COLOUR = {(ladder, v): _FIT_HUES[(len(HYPERPARAMS) * i + j) % len(_FIT_HUES)]
               for i, v in enumerate(DATA_SCHEMES)
-              for j, arch in enumerate(("deep", "shallow"))}
+              for j, ladder in enumerate(HYPERPARAMS)}
 CURVE_WINDOWS = 400
 CLOSEUP_YMAX = 3.5   # ceiling for the last-10% panels     # per run, emitting each window's min AND max
 
@@ -469,11 +493,23 @@ def _meta_for(task: str, meta: dict) -> dict:
 
 
 def _cell_parts(cell: str):
+    """The eval side's entry point — and it must apply `on_grid` too.
+
+    The loss side gets this for free in `_train_logs()`, but eval dirs are
+    globbed as `lm-*-iter*` and parsed here, so without the filter the
+    diverged batch-504 90M/175M runs reach `ladder_report_wide.csv` and both
+    plots. The worst of it is `plot_benchmarks`, which groups by
+    (size, ladder, scheme, L) — no batch — and then averages per iteration: the
+    old 175M checkpoints (427..8540) and the new -b168 ones (1281..25620)
+    would be averaged into ONE line. That is two incomparable model families
+    in one figure, not merely some extra rows.
+    """
     m = CELL_RE.match(cell)
-    if not m:
+    if not m or not on_grid(m):
         return None
-    size, L, arch, scheme, seed = _key(m)
-    return {"size": size, "L": L, "scheme": scheme, "arch": arch, "seed": seed}
+    size, L, ladder, scheme, seed = _key(m)
+    return {"size": size, "L": L, "scheme": scheme, "ladder": ladder,
+            **LADDERS[ladder], "seed": seed}
 
 
 def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
@@ -510,11 +546,12 @@ def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
     for k, pts in sorted(curves.items()):
         if not pts:
             continue
-        size, L, arch, scheme, seed = k
+        size, L, ladder, scheme, seed = k
         # The launcher owns the naming rule (it is what wrote these logs), so
         # the cell name is rebuilt with its own function rather than re-spelled.
-        cell = exp_name(size, L, arch, seed, scheme)
-        parts = {"size": size, "L": L, "arch": arch, "scheme": scheme, "seed": seed}
+        cell = exp_name(size, L, ladder, seed, scheme)
+        parts = {"size": size, "L": L, "ladder": ladder, **LADDERS[ladder],
+                 "scheme": scheme, "seed": seed}
         target = tgts.get(k, pts[-1][0]) or 1
         last_it, final = pts[-1]
         best_it, best = min(pts, key=lambda p: p[1])
@@ -522,8 +559,15 @@ def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
         # cells saved 20 checkpoints every 2287 iters, and every per-checkpoint
         # row below has to land on THOSE iters or the table plans 40 rows the
         # run can never fill. Carried as a summary so the wide table sees it.
+        # A run's own grid needs two saves to have a gap, and it counts only
+        # while it plans no more rows than twice the rung's checkpoint count:
+        # a run a few iterations old has one save at iter 1 (or a test save
+        # every 22), and read as the grid that planned 27,000 rows for one
+        # 90M cell, 79k bogus rows in all, which is what overflowed the
+        # benchmark melt in plot_benchmarks (2026-09-25).
         saved = saved_valid_iters(cell, CKPT_ROOT)
-        si = run_interval(saved) if saved else save_interval(target)
+        ri = run_interval(saved) if len(saved) >= 2 else 0
+        si = ri if ri and target // ri <= 2 * n_checkpoints(target) else save_interval(target)
         summaries[k] = {
             "cell": cell, "parts": parts, "n_params": NON_EMB[size],
             "target_iters": target, "last_iter": last_it, "save_interval": si,
@@ -555,19 +599,19 @@ def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
                     add(cell, parts, it, round(it / target, 5), "loss", "",
                         round(v, 4))
 
-    # --- scaling fit, per (L, arch, scheme) -------------------------------
+    # --- scaling fit, per (L, ladder, scheme) -----------------------------
     done = {(s["parts"]["size"], k[1], k[2], k[3]): s
             for k, s in summaries.items() if s["complete"] and k[4] == 1904}
-    for (L, arch, scheme) in {(k[1], k[2], k[3]) for k in done}:
-        ladder = [done[(s, L, arch, scheme)] for s in SIZES
-                  if (s, L, arch, scheme) in done]
-        if len(ladder) < 3:
+    for (L, ladder, scheme) in {(k[1], k[2], k[3]) for k in done}:
+        rungs = [done[(s, L, ladder, scheme)] for s in SIZES
+                 if (s, L, ladder, scheme) in done]
+        if len(rungs) < 3:
             continue
-        fit = _fit([(s["n_params"], s["final_loss"]) for s in ladder[1:]])
+        fit = _fit([(s["n_params"], s["final_loss"]) for s in rungs[1:]])
         if not fit:
             continue
         slope, icpt = fit
-        for s in ladder:
+        for s in rungs:
             pred = math.exp(icpt + slope * math.log(s["n_params"]))
             s["alpha"] = -slope
             s["pred_loss"] = pred
@@ -618,8 +662,7 @@ def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
     # The training curve is the ONE thing the wide table cannot hold: it is
     # per ITERATION, not per checkpoint. Everything else lives in the wide
     # file, so nothing is stored twice.
-    curve_cols = ["cell", "size", "L", "arch", "scheme", "seed", "iter",
-                  "frac", "loss"]
+    curve_cols = META_COLS + ["frac", "loss"]
     curve = out_dir / "ladder_report_curve.csv"
     with open(curve, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=curve_cols, extrasaction="ignore")
@@ -632,6 +675,13 @@ def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
                 n += 1
     print(f"[csv]  wrote {curve} ({n} curve points)", file=sys.stderr)
     return wide, curve
+
+
+# The columns that say which checkpoint a row is: the cell, its coordinates,
+# and its ladder both as the token (the trained configuration) and as the
+# levels it sets (launch_trainings.LADDERS) — `arch` is the depth level, so a
+# swiglu cell is arch "deep". The levels are what an intervention is read on.
+META_COLS = ["cell", "size", "L", "ladder", *LADDERS[BASELINE_LADDER], "scheme", "seed", "iter"]
 
 
 def write_wide_csv(rows: list[dict], out_dir: Path) -> Path:
@@ -661,7 +711,7 @@ def write_wide_csv(rows: list[dict], out_dir: Path) -> Path:
     """
     import csv
 
-    meta_cols = ["cell", "size", "L", "arch", "scheme", "seed", "iter"]
+    meta_cols = META_COLS
     wide: dict[tuple, dict] = {}
     summary: dict[str, dict] = {}
     for r in rows:
@@ -756,17 +806,21 @@ def _melt(wide_csv: Path, prefix: str, name: str):
     cols = [c for c in df.columns if c.startswith(prefix)]
     if not cols:
         return pd.DataFrame()
-    idv = ["cell", "size", "L", "arch", "scheme", "seed", "iter"]
-    out = df.melt(id_vars=idv, value_vars=cols, var_name=name, value_name="value")
-    out[name] = out[name].str.slice(len(prefix))
+    idv = META_COLS
+    # The prefix comes off the COLUMN names, not the melted key column: over
+    # 4,000 columns the latter is hundreds of millions of strings, past the
+    # 2 GiB limit of pyarrow's string offsets (ArrowInvalid: negative buffer
+    # resize, 2026-09-25).
+    out = (df[idv + cols].rename(columns={c: c[len(prefix):] for c in cols})
+           .melt(id_vars=idv, var_name=name, value_name="value"))
     return out.dropna(subset=["value"])
 
 
-def _style(size, arch, scheme):
-    """(colour, linestyle) — family from the size, shade from the arch, dash
+def _style(size, ladder, scheme):
+    """(colour, linestyle) — family from the size, shade from the ladder, dash
     pattern from the data scheme."""
     pal = SIZE_PALETTE.get(size)
-    colour = pal[ARCH_STEP.get(arch, 1)] if pal else "#555"
+    colour = pal[LADDER_STEP.get(ladder, 1)] if pal else "#555"
     return colour, SCHEME_STYLE.get(scheme, "-")
 
 
@@ -808,14 +862,14 @@ def plot_loss(csv_path: Path, out_dir: Path) -> Path | None:
                 continue
             for cell, g in win.groupby("cell"):
                 g = g.sort_values("frac")
-                size, arch, scheme = g.iloc[0][["size", "arch", "scheme"]]
-                colour, ls = _style(size, arch, scheme)
+                size, ladder, scheme = g.iloc[0][["size", "ladder", "scheme"]]
+                colour, ls = _style(size, ladder, scheme)
                 ax.plot(g["frac"], g["value"], color=colour, ls=ls,
                         lw=1.0 if col == 0 else 1.4)
             if col == 0:
                 for cell, g in win.groupby("cell"):
                     lo_r = g.loc[g["value"].idxmin()]
-                    colour, _ = _style(*lo_r[["size", "arch", "scheme"]])
+                    colour, _ = _style(*lo_r[["size", "ladder", "scheme"]])
                     ax.plot(lo_r["frac"], lo_r["value"], "o", ms=4,
                             color=colour, mec="black", mew=0.5)
                 ax.set_ylim(2, 8)
@@ -831,18 +885,18 @@ def plot_loss(csv_path: Path, out_dir: Path) -> Path | None:
             ax.tick_params(labelsize=6)
             ax.grid(alpha=0.25, lw=0.4)
 
-    present = sorted({(r["size"], r["arch"], r["scheme"])
-                      for _, r in df[["size", "arch", "scheme"]].drop_duplicates().iterrows()},
+    present = sorted({(r["size"], r["ladder"], r["scheme"])
+                      for _, r in df[["size", "ladder", "scheme"]].drop_duplicates().iterrows()},
                      key=lambda x: (SIZES.index(x[0]) if x[0] in SIZES else 9, x[1], x[2]))
     handles = []
-    for size, arch, scheme in present:
-        c, ls = _style(size, arch, scheme)
+    for size, ladder, scheme in present:
+        c, ls = _style(size, ladder, scheme)
         handles.append(Line2D([], [], color=c, ls=ls, lw=1.8,
-                              label=f"{size} {arch[:2]}/{scheme}"))
+                              label=f"{size} {ladder[:2]}/{scheme}"))
     fig.legend(handles=handles, fontsize=6.5, ncol=min(8, len(handles)),
                loc="lower center", frameon=False)
     fig.suptitle("Training loss — full run (dot = each run's best) and a "
-                 "close-up of the last 10%\nthe close-up drops diverged runs, so arch "
+                 "close-up of the last 10%\nthe close-up drops diverged runs, so ladder "
                  "and data scheme separate", y=1.0, fontsize=10)
     fig.tight_layout(rect=(0, 0.02, 1, 1))
     path = out_dir / "ladder_report_loss.png"
@@ -852,7 +906,7 @@ def plot_loss(csv_path: Path, out_dir: Path) -> Path | None:
 
 
 def plot_scaling(csv_path: Path, out_dir: Path) -> Path | None:
-    """Final loss vs parameters, one panel per L, every (arch, scheme) overlaid.
+    """Final loss vs parameters, one panel per L, every (ladder, scheme) overlaid.
 
     Overlaid rather than one panel each, because the question the ladder is
     for is whether depth or the language set changes the EXPONENT — and that
@@ -866,7 +920,7 @@ def plot_scaling(csv_path: Path, out_dir: Path) -> Path | None:
     wide = _read_wide(csv_path)
     if wide is None or "run__alpha" not in wide:
         return None
-    wide = (wide[["cell", "size", "L", "arch", "scheme"]
+    wide = (wide[["cell", "size", "L", "ladder", "scheme"]
                  + [c for c in wide.columns if c.startswith("run__")]]
             .drop_duplicates(subset="cell"))
     wide.columns = [c.replace("run__", "") for c in wide.columns]
@@ -876,11 +930,11 @@ def plot_scaling(csv_path: Path, out_dir: Path) -> Path | None:
     Ls = sorted(wide["L"].unique())
     fig, axes = _panels(len(Ls), 3.8, 3.2)
     for ax, L in zip(axes, Ls):
-        for (arch, scheme), g in wide[wide["L"] == L].groupby(["arch", "scheme"]):
+        for (ladder, scheme), g in wide[wide["L"] == L].groupby(["ladder", "scheme"]):
             g = g.sort_values("n_params")
-            c = FIT_COLOUR.get((arch, scheme), "#555")
+            c = FIT_COLOUR.get((ladder, scheme), "#555")
             ax.plot(g["n_params"], g["final_loss"], "o", ms=5, color=c, zorder=3,
-                    label=f"{arch}/{scheme} α={g.iloc[0]['alpha']:.3f}")
+                    label=f"{ladder}/{scheme} α={g.iloc[0]['alpha']:.3f}")
             ax.plot(g["n_params"], g["pred_loss"], "-", lw=1, color=c, alpha=0.6)
             off = g[g["off_trend"] == 1]
             ax.plot(off["n_params"], off["final_loss"], "o", ms=13, mfc="none",
@@ -899,7 +953,7 @@ def plot_scaling(csv_path: Path, out_dir: Path) -> Path | None:
         ax.tick_params(axis="y", labelsize=6)
         ax.legend(fontsize=6)
         ax.grid(alpha=0.25, lw=0.4, which="major")
-    fig.suptitle("Scaling fit per language setting — every architecture and "
+    fig.suptitle("Scaling fit per language setting — every ladder and "
                  "data scheme overlaid, each fitted separately\nline fitted WITHOUT "
                  "the smallest rung then predicting it; red ring = off trend",
                  y=1.0, fontsize=10)
@@ -982,11 +1036,23 @@ _TRAINED_TASKS: dict[tuple, frozenset] = {}
 
 def _trained_tasks(L, scheme: str) -> frozenset:
     """The tasks a cell is evaluated on in the languages it TRAINS on — the
-    watcher's default list, whatever extra languages the cell also carries."""
-    key = (int(L), scheme)
+    watcher's default list, whatever extra languages the cell also carries.
+
+    The list is drawn from the `auto` group, so a benchmark outside it (the
+    probe candidates, `auto_probe`) is "untrained" everywhere: rule 2 drops it
+    from every pool and the gate reads it on the wrong population. The probe
+    pass opts in by naming its groups in SNR_TRAINED_GROUPS (comma-separated,
+    default `auto`); nothing else sets it, so the populations of every other
+    RQ do not move until a candidate is promoted into `auto`."""
+    groups = os.environ.get("SNR_TRAINED_GROUPS", "auto")
+    # groups in the key: one process holds one setting, but a test may change it.
+    # eval_languages() is called by name, not `*key` — its third parameter is
+    # `all_languages`, and a truthy one returns every language of every task.
+    key = (int(L), scheme, groups)
     if key not in _TRAINED_TASKS:
+        benchmarks = [b for g in groups.split(",") for b in auto_benchmarks(g.strip())]
         _TRAINED_TASKS[key] = frozenset(
-            tasks_for_benchmarks(auto_benchmarks(), eval_languages(*key)))
+            tasks_for_benchmarks(benchmarks, eval_languages(int(L), scheme)))
     return _TRAINED_TASKS[key]
 
 
@@ -1001,7 +1067,7 @@ def plot_benchmarks(csv_path: Path, out_dir: Path,
     Two figures, because a mean over different task sets is not a comparison.
     By default every cell counts only the tasks in the languages it trains
     on (the deep scheme-A seed-1904 runs carry ~2,900 tasks, their siblings
-    74-155), and one line is drawn per (size, arch, scheme, L) so a line is
+    74-155), and one line is drawn per (size, ladder, scheme, L) so a line is
     always one task population. Within a line the mean is still over whatever
     tasks that checkpoint was scored on, which is a diagnostic curve, not a
     comparison — `transform_effects` is what differences two cells.
@@ -1014,8 +1080,8 @@ def plot_benchmarks(csv_path: Path, out_dir: Path,
     if df.empty:
         return None
     if all_languages:
-        scheme, arch, seed = ALL_LANGUAGES_RUNS
-        df = df[(df["scheme"] == scheme) & (df["arch"] == arch) & (df["seed"] == seed)]
+        scheme, ladder, seed = ALL_LANGUAGES_RUNS
+        df = df[(df["scheme"] == scheme) & (df["ladder"] == ladder) & (df["seed"] == seed)]
     else:
         df = df[[k in _trained_tasks(L, s)
                  for k, L, s in zip(df["key"], df["L"], df["scheme"])]]
@@ -1035,11 +1101,11 @@ def plot_benchmarks(csv_path: Path, out_dir: Path,
         g = df[df["benchmark"] == b]
         # L is part of the key: each language setting trains a different task
         # list, so pooling L averaged incomparable populations into one line.
-        for (size, arch, scheme, _L), gs in g.groupby(["size", "arch", "scheme", "L"]):
+        for (size, ladder, scheme, _L), gs in g.groupby(["size", "ladder", "scheme", "L"]):
             m = gs.groupby("iter")["value"].mean().sort_index()
             # x is the fraction of the run so rungs of different length are
             # comparable, as in the loss figure.
-            colour, ls = _style(size, arch, scheme)
+            colour, ls = _style(size, ladder, scheme)
             ax.plot(range(len(m)), m.values, lw=1.2, color=colour, ls=ls)
         ch = g["chance"].dropna()
         if not ch.empty:
@@ -1083,14 +1149,14 @@ def summary_table(csv_path: Path, tol: float) -> str:
     fin = _final_rows(full)
     latest = (dict(zip(fin["cell"], fin["macro_bpb"])) if "macro_bpb" in full else {})
     latest = {c: v for c, v in latest.items() if v == v}
-    w = (full[["cell", "size", "L", "arch", "scheme"]
+    w = (full[["cell", "size", "L", "ladder", "scheme"]
               + [c for c in full.columns if c.startswith("run__")]]
          .drop_duplicates(subset="cell"))
     w.columns = [c.replace("run__", "") for c in w.columns]
     w = w[w.get("complete") == 1] if "complete" in w else w
     if w.empty:
         return "_no completed runs_"
-    w = w.sort_values(["L", "n_params", "arch", "scheme"])
+    w = w.sort_values(["L", "n_params", "ladder", "scheme"])
     out = ["| cell | final loss | best (iter) | diverged | scaling resid | macro BPB |",
            "| ---- | ---------: | ----------: | :------: | ------------: | --------: |"]
     for _, r in w.iterrows():
@@ -1107,16 +1173,25 @@ def summary_table(csv_path: Path, tol: float) -> str:
     return "\n".join(out)
 
 
-# The intervention axes the sweep varies. SNR treats two runs as different
-# models only if the transformation between them actually moves the scores;
-# a transformation whose effect is the size of the SEED effect is not a
-# distinct model, it is a re-roll. Seed is therefore listed first: it is the
-# yardstick the other two are measured against, not just another axis.
-TRANSFORMS = {
-    "seed":   ("size", "L", "arch", "scheme"),
-    "arch":   ("size", "L", "scheme", "seed"),
-    "scheme": ("size", "L", "arch", "seed"),
-}
+# The intervention axes the sweep varies, each with what a pair must hold
+# fixed to differ in it alone. SNR treats two runs as different models only if
+# the transformation between them actually moves the scores; a transformation
+# whose effect is the size of the SEED effect is not a distinct model, it is a
+# re-roll. Seed is therefore listed first: it is the yardstick the others are
+# measured against, not just another axis.
+#
+# A ladder is not one axis: its `arch`, `activation` and `optimizer` levels
+# (launch_trainings.LADDERS) are one row each, the way analysis/utils.design_axes
+# reads them, so (deep, swiglu) is an activation pair and (shallow, swiglu),
+# which moves two levels, is in no row. A level the ladders never vary has no
+# pairs and no row.
+TRANSFORMS = {k: fixed for k, fixed in {
+    "seed":       ("size", "L", "ladder", "scheme"),
+    "arch":       ("size", "L", "activation", "optimizer", "scheme", "seed"),
+    "activation": ("size", "L", "arch", "optimizer", "scheme", "seed"),
+    "optimizer":  ("size", "L", "arch", "activation", "scheme", "seed"),
+    "scheme":     ("size", "L", "ladder", "seed"),
+}.items() if k not in LADDERS[BASELINE_LADDER] or len({v[k] for v in LADDERS.values()}) > 1}
 
 
 def transform_effects(csv_path: Path) -> str:
@@ -1172,12 +1247,14 @@ def transform_effects(csv_path: Path) -> str:
             # columns, and L2 carrying A/ZH/ES — and taking (first, last) threw
             # away the middle member, i.e. the ES intervention never appeared in
             # this table at all.
-            cells = sorted(cells, key=lambda c: str(keys[c][axis]))
+            # The baseline level first, then by name, so `a` is always the
+            # baseline (deep, xielu; scheme A sorts first by name).
+            base = LADDERS[BASELINE_LADDER].get(axis)
+            cells = sorted(cells, key=lambda c: (keys[c][axis] != base, str(keys[c][axis])))
             for a, b in itertools.combinations(cells, 2):
                 # A scheme is an intervention against the baseline, not against
                 # another intervention: ES->ZH or AT3->B would fold two changes
-                # into one delta. Seeds and archs have no baseline; every pair
-                # of those stands. Sorted by name, so A is always `a`.
+                # into one delta. Seeds have no baseline; every pair stands.
                 if axis == "scheme" and "A" not in (keys[a][axis], keys[b][axis]):
                     continue
                 npairs += 1
@@ -1243,7 +1320,7 @@ def write_artifacts(curves, tgts, out_dir: Path, tol: float) -> None:
         "on a single-epoch budget there is no overfitting to explain it, so "
         "the shipped checkpoint is worse than one already on disk. "
         "`scaling resid` is nats from a power law fitted on the LARGER rungs "
-        f"(bold beyond {tol}), per (L, arch, scheme).\n\n"
+        f"(bold beyond {tol}), per (L, ladder, scheme).\n\n"
         + summary_table(wide, tol)
         + "\n\n## Effect of each transformation\n\n"
         + transform_effects(wide) + "\n" + figs + "\n")

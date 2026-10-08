@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Predictivity-sweep pretraining progress on CSCS: per-cell status + plots.
 
-Prints one tab-separated status line per cell of the selected scheme
-(`--arch`/`--scheme`). Each cell's target is its size's own 5xC budget (the
-"predictivity" block in hyperparams/hyperparams_{deep,shallow}.json):
+Prints one tab-separated status line per cell of the selected ladder and
+scheme (`--arch`/`--activation`/`--optimizer` pick the ladder as in
+launch_trainings.py; `--scheme`). Each cell's target is its size's own 5xC
+budget (the "predictivity" block in hyperparams/hyperparams_<ladder>.json):
 
     <model>\tdone
     <model>\tfresh\t<target>
@@ -21,14 +22,14 @@ y = number of languages), aggregated over EVERY run found on disk regardless
 of scheme:
 
   pretrain_progress_plan.png      what the grid PLANS per (size, L): the data
-                                  scheme / architecture / seed(s) of every
+                                  scheme / ladder / seed(s) of every
                                   run, not just a count.
   pretrain_progress_simple.png    cell value = how many finished models exist
                                   at (size, L) across all variants (seeds,
-                                  deep/shallow, every data scheme, tokenizers).
+                                  ladders, every data scheme, tokenizers).
   pretrain_progress_detailed.png  one row of binary heatmaps per
                                   transformation — SEED (every seed the sweep
-                                  uses), ARCH (deep/shallow), DATA (the
+                                  uses), LADDER (deep/shallow/swiglu), DATA (the
                                   DATA_SCHEMES keys), TOKENIZER (v1) —
                                   yellow 0 / blue 1.
 
@@ -59,10 +60,11 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    CSCS_DEFAULT_DATA_DIR, DATA_SCHEMES, EVAL_SIZES, GBS, HYPERPARAMS, ITER_MS,
-    LADDER, LANG_SETTINGS, NODES_BY_SIZE, SEED_SINGLE, SEED_TRIPLES, SEQ_LEN,
-    SIZES_BY_ARCH, SIZE_LANG_SETTINGS, TIME_MAX_SEC, arches_for, exp_name,
-    fineweb_source, job_name,
+    BASELINE_LADDER, CSCS_DEFAULT_DATA_DIR, DATA_SCHEMES, EVAL_SIZES,
+    GBS, HYPERPARAMS, ITER_MS,
+    LADDER, LADDERS, LANG_SETTINGS, NODES_BY_SIZE, SEED_SINGLE, SEED_TRIPLES, SEQ_LEN,
+    SIZES_BY_LADDER, SIZE_LANG_SETTINGS, TIME_MAX_SEC, cell_gbs,
+    cell_schedule, exp_name, fineweb_source, iter_ms, job_name, ladder_of, ladders_for,
     predictivity_cells, schedule_for, seeds_for, scheme_sizes)
 
 # Megatron writes checkpoints under Meg-Runs/<PROJECT_NAME>/<EXP_NAME>/
@@ -87,12 +89,22 @@ ITER_RE = re.compile(r"^iter_(\d+)$")
 # alternation is ordered, and a short label that prefixes a longer one would
 # otherwise win and leave the remainder unmatched.
 SCHEME_OF_LABEL = {v["label"]: name for name, v in DATA_SCHEMES.items()}
+# The ladder token, derived from the registry rather than spelled out, so a
+# new ladder (swiglu, 2026-10-03) is matched without an edit here. Longest
+# first, so one name cannot shadow another's prefix.
+_LADDERS = "|".join(sorted(HYPERPARAMS, key=len, reverse=True))
 NAME_RE = re.compile(
     r"^lm-(?P<size>" + "|".join(re.escape(s) for s in LADDER) + r")-L(?P<L>\d+)"
     r"(?P<scheme>"
     + "|".join(re.escape(lab) for lab in
                sorted((lab for lab in SCHEME_OF_LABEL if lab), key=len, reverse=True))
-    + r")?-(?P<arch>deep|shallow)-seed(?P<seed>\d+)$"
+    # `-b<N>`: the rung's own global batch, present only where the grid gives
+    # one (GBS_BY_SIZE — 90M and 175M since 2026-09-23). Optional and captured
+    # rather than skipped, because the diverged batch-504 runs of those two
+    # rungs are still on disk under the name WITHOUT it: the group is what
+    # tells the two apart, and a pattern that merely tolerated the suffix
+    # would read both as the same cell.
+    + rf")?(?:-b(?P<gbs>\d+))?-(?P<ladder>{_LADDERS})-seed(?P<seed>\d+)$"
 )
 
 SIZES = list(SIZE_LANG_SETTINGS)  # 90M .. 1.7B, grid order
@@ -111,9 +123,12 @@ def cell_in_scheme(scheme: str, size: str, L: int) -> bool:
 
 
 def planned_seeds(size: str, L: int) -> set[int]:
-    """Every seed the grid plans at this (size, L), across all schemes."""
+    """Every seed the grid plans at this (size, L), across all schemes.
+
+    Read on the deep ladder, which is the union: replicate seeds are deep only
+    (seeds_for), so the shallow set is always the single seed 1904."""
     return {s for v in DATA_SCHEMES if cell_in_scheme(v, size, L)
-            for s in seeds_for(size, L, v)}
+            for s in seeds_for(size, L, v, "deep")}
 
 
 def is_valid_iter_dir(iter_dir: Path) -> bool:
@@ -186,25 +201,25 @@ def cell_action(model_dir: Path, target: int) -> tuple[str, int, int]:
     return ("resume", max_valid, target)
 
 
-def sweep_cells(arch: str, scheme: str = "A") -> list[tuple[str, int]]:
+def sweep_cells(ladder: str, scheme: str = "A") -> list[tuple[str, int]]:
     """(exp_name, target_iters) for every cell of one data scheme trained in
-    `arch`, in grid order. predictivity_cells() already restricts a scheme to
-    the settings and rungs it defines, and arches_for drops the cells this
-    arch does not train — a scheme not trained in `arch` yields nothing, and
-    so does a rung its hyperparams file has no config for (the 3B is deep
+    `ladder`, in grid order. predictivity_cells() already restricts a scheme to
+    the settings and rungs it defines, and ladders_for drops the cells this
+    ladder does not train — a scheme not trained in `ladder` yields nothing,
+    and so does a rung its hyperparams file has no config for (the 3B is deep
     only, and indexing `configs` with it would raise)."""
-    configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
+    configs = json.loads(HYPERPARAMS[ladder].read_text())["configs"]
     return [
-        (exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"]),
-         schedule_for(configs[c["size"]])[0])
-        for c in predictivity_cells([scheme])
-        if arch in arches_for(scheme, c["size"], c["L"])
+        (exp_name(c["size"], c["L"], ladder, c["seed"], c["scheme"]),
+         cell_schedule(configs[c["size"]], c["size"])[0])
+        for c in predictivity_cells([scheme], ladder)
+        if ladder in ladders_for(scheme, c["size"], c["L"])
     ]
 
 
-def emit_actions(arch: str, scheme: str, root: Path = CKPT_ROOT,
+def emit_actions(ladder: str, scheme: str, root: Path = CKPT_ROOT,
                  filter_substr: str | None = None) -> None:
-    for name, target in sweep_cells(arch, scheme):
+    for name, target in sweep_cells(ladder, scheme):
         if filter_substr and filter_substr not in name:
             continue
         action, a, b = cell_action(root / name, target)
@@ -220,16 +235,19 @@ def emit_actions(arch: str, scheme: str, root: Path = CKPT_ROOT,
 
 # ---------------------------------------------------------------------------
 # Plots: the sweep grid (x = size, y = number of languages), aggregated over
-# every run found on disk — any seed, arch, scheme, tokenizer.
+# every run found on disk — any seed, ladder, scheme, tokenizer.
 # ---------------------------------------------------------------------------
 
 def _targets() -> dict[tuple[str, str], int]:
-    """(arch, size) -> target iters, from both reviewed hyperparams files."""
+    """(ladder, size) -> target iters, from every reviewed hyperparams file."""
     out = {}
-    for arch, path in HYPERPARAMS.items():
+    for ladder, path in HYPERPARAMS.items():
         configs = json.loads(path.read_text())["configs"]
         for size, cfg in configs.items():
-            out[(arch, size)] = schedule_for(cfg)[0]
+            # cell_schedule, not schedule_for: the 90M/175M rungs train at
+            # their own batch, so the file's iters are 1/6 and 1/3 of the
+            # real target. scan_runs would call a 90M done at 4,500 of 27,000.
+            out[(ladder, size)] = cell_schedule(cfg, size)[0]
     return out
 
 
@@ -242,17 +260,17 @@ def scan_runs(root: Path) -> list[dict]:
     runs = []
     for entry in sorted(root.iterdir()):
         m = NAME_RE.match(entry.name)
-        if not m:
-            continue
-        arch = m["arch"]
-        target = targets[(arch, m["size"])]
+        if not m or int(m["gbs"] or GBS) != cell_gbs(m["size"]):
+            continue          # a retired batch-504 dir of a rung that now trains at its own batch
+        ladder = m["ladder"]
+        target = targets[(ladder, m["size"])]
         _, max_valid = model_progress(entry)
         runs.append({
             "name": entry.name,
             "size": m["size"],
             "L": int(m["L"]),
             "seed": int(m["seed"]),
-            "arch": arch,
+            "ladder": ladder,
             "scheme": SCHEME_OF_LABEL[m["scheme"] or ""],
             "tokenizer": "v1",
             "done": (max_valid or 0) >= target,
@@ -325,7 +343,7 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
     # --- detailed: one row of binary heatmaps per transformation ------------
     rows = [
         ("SEED", "seed", ALL_SEEDS),
-        ("ARCH", "arch", ["deep", "shallow"]),
+        ("LADDER", "ladder", list(HYPERPARAMS)),
         ("DATA", "scheme", list(DATA_SCHEMES)),
         ("TOKENIZER", "tokenizer", ["v1"]),
     ]
@@ -350,6 +368,14 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
                 # the rest out like off-grid cells rather than drawing a run
                 # that was never planned as permanently missing.
                 matrix = [[v if cell_in_scheme(value, size, L) else float("nan")
+                           for size, v in zip(SIZES, row)]
+                          for L, row in zip(LANG_SETTINGS, matrix)]
+            if key == "ladder":
+                # A ladder trains only the settings and rungs its schemes give
+                # it (swiglu: L8/L15/L30, no 3B; shallow: no 3B) — grey the rest.
+                matrix = [[v if any(value in ladders_for(s, size, L)
+                                    for s in DATA_SCHEMES if cell_in_scheme(s, size, L))
+                           else float("nan")
                            for size, v in zip(SIZES, row)]
                           for L, row in zip(LANG_SETTINGS, matrix)]
             if key == "seed":
@@ -387,8 +413,10 @@ def eval_counts(root: Path, logs_root: Path | None = None,
     Returns per cell:
       done      results actually on disk
       models    runs of this cell trained so far
-      planned   runs the grid plans for it (seeds x arch x scheme)
-      ckpts     due checkpoints per run (every 2nd save, plus the final one)
+      planned   runs the grid plans for it (per scheme, summed over the
+                ladders it trains in, each with its own seeds)
+      ckpts     due checkpoints per run (12 at every size: the ten tenths
+                of training plus 85 % and 95 % -- launch_trainings.due_iters)
       benches   benchmark entries per checkpoint at this L
 
     `benches` grows with L: the auto group expands to one entry per benchmark
@@ -423,16 +451,21 @@ def eval_counts(root: Path, logs_root: Path | None = None,
             # with no run yet, which is most of the grid.
             target = targets[("deep", size)]
             si = save_interval(target)
-            n_due = len({i for i in range(si, target + 1, si)
-                         if i % (2 * si) == 0} | {target})
+            # The watcher's own rule, not a copy of it: 12 at every size (the
+            # ten tenths plus 85 % and 95 %) whatever density the size saves at.
+            n_due = len(due_iters(list(range(si, target + 1, si)), target))
             schemes = [v for v in DATA_SCHEMES if cell_in_scheme(v, size, L)]
-            # Per scheme the grid plans seeds x the architectures that scheme
-            # is trained in — not always both: ZH and ES are deep only.
-            runs = {v: len(seeds_for(size, L, v)) * len(arches_for(v, size, L))
+            # Per scheme the grid plans, for each ladder that scheme is
+            # trained in, that ladder's own seeds — a SUM, not a product:
+            # not every scheme trains every ladder (ZH and ES are deep only) and
+            # the replicate seeds are deep only, so deep can plan 3 runs where
+            # shallow plans 1.
+            runs = {v: sum(len(seeds_for(size, L, v, a))
+                           for a in ladders_for(v, size, L))
                     for v in schemes}
             if all_languages:
-                s, _, seed = ae.ALL_LANGUAGES_RUNS
-                runs = {s: 1} if s in runs and seed in seeds_for(size, L, s) else {}
+                s, a, seed = ae.ALL_LANGUAGES_RUNS
+                runs = {s: 1} if s in runs and seed in seeds_for(size, L, s, a) else {}
                 if not runs:
                     continue
             cells[(size, L)] = {
@@ -453,8 +486,9 @@ def eval_counts(root: Path, logs_root: Path | None = None,
     # combination no triple covers) is work it will never do — counting it
     # here painted the cell as permanently under-evaluated.
     grid = {exp_name(c["size"], c["L"], a, c["seed"], c["scheme"])
-            for c in predictivity_cells() for a in arches_for(c["scheme"], c["size"], c["L"])
-            if c["size"] in EVAL_SIZES}     # 90M trains but is not evaluated
+            for a in HYPERPARAMS for c in predictivity_cells(ladder=a)
+            if a in ladders_for(c["scheme"], c["size"], c["L"])
+            and c["size"] in EVAL_SIZES}    # 90M trains but is not evaluated
     for entry in sorted(root.iterdir()) if root.is_dir() else []:
         m = NAME_RE.match(entry.name)
         if not m:
@@ -468,13 +502,13 @@ def eval_counts(root: Path, logs_root: Path | None = None,
         size, L = m["size"], int(m["L"])
         c = cells.get((size, L))
         scheme = SCHEME_OF_LABEL[m["scheme"] or ""]
-        if c is None or (all_languages and (scheme, m["arch"], int(m["seed"]))
+        if c is None or (all_languages and (scheme, m["ladder"], int(m["seed"]))
                          != ae.ALL_LANGUAGES_RUNS):
             continue
         saved = ae.saved_valid_iters(entry.name, root)
         if not saved:
             continue
-        target = targets[(m["arch"], size)]
+        target = targets[(m["ladder"], size)]
         due = due_iters(saved, target)   # on the run's own grid, like the watcher
         want = set(tasks_for_benchmarks(benchmarks,
                                         ae.eval_languages(L, scheme, all_languages)))
@@ -602,11 +636,11 @@ def planned_variants(size: str, L: int) -> list[str]:
     """Every run the grid plans for one (size, L) cell, as display lines.
 
     A cell is not one run: it multiplies out over seed (1 or 3, per seeds_for,
-    and the triple differs by size), architecture, and data scheme — each
+    and the triple differs by size), ladder, and data scheme — each
     scheme covering only the settings and rungs it defines, and only the
-    architectures it is trained in.
+    ladders it is trained in.
 
-    Seeds are collapsed onto one line per (scheme, arch) so a 12-run cell
+    Seeds are collapsed onto one line per (scheme, ladder) so a 12-run cell
     stays readable; the characteristics, not just the count, are what the
     table is for.
     """
@@ -614,9 +648,9 @@ def planned_variants(size: str, L: int) -> list[str]:
     for scheme in DATA_SCHEMES:
         if not cell_in_scheme(scheme, size, L):
             continue
-        seeds = "/".join(str(x) for x in seeds_for(size, L, scheme))
-        for arch in arches_for(scheme, size, L):
-            lines.append(f"{scheme} {arch} {seeds}")
+        for ladder in ladders_for(scheme, size, L):
+            seeds = "/".join(str(x) for x in seeds_for(size, L, scheme, ladder))
+            lines.append(f"{scheme} {ladder} {seeds}")
     return lines
 
 
@@ -658,7 +692,7 @@ def plan_table(out_dir: Path = SCRIPT_DIR) -> None:
             ax.text(j + 0.5, i + 0.5, "\n".join(lines), ha="center",
                     va="center", fontsize=6.5, linespacing=1.5)
 
-    ax.set_title(f"Planned runs per grid cell — scheme, architecture, seed(s)\n"
+    ax.set_title(f"Planned runs per grid cell — scheme, ladder, seed(s)\n"
                  f"{total} runs; grey = size not trained at that setting",
                  fontsize=11, pad=26)
     fig.tight_layout()
@@ -731,7 +765,7 @@ def _data_cell(c: dict, target: int, head: str) -> tuple[str, bool]:
         [f"{cell_dir}/fineweb_L{c['L']}"] if c["L"] > 1 else [])
     planned, why = None, "not staged"
     if all(Path(f"{p}.{ext}").is_file() for p in prefixes for ext in ("bin", "idx")):
-        fw_dir, why = fineweb_source(c, CSCS_DEFAULT_DATA_DIR, target * GBS * SEQ_LEN)
+        fw_dir, why = fineweb_source(c, CSCS_DEFAULT_DATA_DIR, target * cell_gbs(c["size"]) * SEQ_LEN)
         planned = prefixes[:1] + ([f"{fw_dir}/fineweb_L{c['L']}"] if c["L"] > 1 else [])
     m = DATA_PATH_RE.search(head)
     read = [p for p in re.findall(r"'([^']+)'", m[1]) if "/" in p] if m else None
@@ -766,17 +800,18 @@ def large_rung_status(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> Non
     sections, commands = [], []
     for size in STATUS_SIZES:
         rows, tally, node_h = [], Counter(), 0.0
-        groups: dict[tuple[str, str], dict] = {}  # (scheme, arch) -> its incomplete runs
-        for arch, path in HYPERPARAMS.items():
-            if size not in SIZES_BY_ARCH[arch]:   # the 3B rung is deep only
+        groups: dict[tuple[str, str], dict] = {}  # (scheme, ladder) -> its incomplete runs
+        for ladder, path in HYPERPARAMS.items():
+            if size not in SIZES_BY_LADDER[ladder]:   # the 3B rung is deep only
                 continue
-            target = schedule_for(json.loads(path.read_text())["configs"][size])[0]
-            ms = ITER_MS[arch][size]
+            target = cell_schedule(
+                json.loads(path.read_text())["configs"][size], size)[0]
+            ms = iter_ms(size, ladder, cell_gbs(size))
             per_job = JOB_TRAIN_SEC * 1000 // ms
-            for c in predictivity_cells():
-                if c["size"] != size or arch not in arches_for(c["scheme"], size, c["L"]):
+            for c in predictivity_cells(ladder=ladder):
+                if c["size"] != size or ladder not in ladders_for(c["scheme"], size, c["L"]):
                     continue
-                exp = exp_name(size, c["L"], arch, c["seed"], c["scheme"])
+                exp = exp_name(size, c["L"], ladder, c["seed"], c["scheme"])
                 jid, log = logs.get(exp, (None, None))
                 n_dirs, ckpt = model_progress(root / exp)
                 jobs = (queue or {}).get(job_name("pretrain", exp), [])
@@ -815,7 +850,7 @@ def large_rung_status(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> Non
                 tally[key] += 1
                 data, staged = _data_cell(c, target, _read(log, 400_000) if log else "")
                 if key != "done":
-                    g = groups.setdefault((c["scheme"], arch),
+                    g = groups.setdefault((c["scheme"], ladder),
                                           {"states": Counter(), "unstaged": []})
                     g["states"][key] += 1
                     if not staged:
@@ -832,10 +867,11 @@ def large_rung_status(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> Non
             f"of training left\n\n"
             "| run | data (FineWeb-2) | ckpt / target | % | state | jobs left |\n"
             "|---|---|---|---:|---|---:|\n" + "\n".join(rows))
-        # One launch per (scheme, arch) with anything left: the launcher's own
-        # filters, so each line covers exactly that group's runs of this size.
+        # One launch per (scheme, ladder) with anything left: the launcher's own
+        # filters, so each line covers exactly that group's runs of this size,
+        # the ladder picked by the levels it moves off the baseline's.
         lines = []
-        for (scheme, arch), g in groups.items():
+        for (scheme, ladder), g in groups.items():
             n = sum(g["states"].values())
             note = f"{n} incomplete: " + ", ".join(f"{v} {k}" for k, v in g["states"].items())
             if g["unstaged"]:
@@ -843,7 +879,8 @@ def large_rung_status(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> Non
             lines.append(("# " if len(g["unstaged"]) == n else "")
                          + f"python3.11 pretrain/launch_trainings.py cscs --size {size}"
                          + (f" --scheme {scheme}" if scheme != "A" else "")
-                         + (" --arch shallow" if arch == "shallow" else "")
+                         + "".join(f" --{k} {v}" for k, v in LADDERS[ladder].items()
+                                   if v != LADDERS[BASELINE_LADDER][k])
                          + f"  # {note}")
         if lines:
             commands.append(f"# {size}\n" + "\n".join(lines))
@@ -855,7 +892,7 @@ def large_rung_status(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> Non
 <!-- Generated by pretrain_progress.py (--plot, every `launch_trainings.py cscs`
 launch, every auto-eval watcher pass) — do not edit. -->
 
-Snapshot {now:%Y-%m-%d %H:%M}. One row per planned run, deep then shallow, of
+Snapshot {now:%Y-%m-%d %H:%M}. One row per planned run, ladder by ladder, of
 every account: the queue is read for all users, the training logs from both
 mariagrandury's and aromanou's log dirs, the checkpoints from the shared
 `Meg-Runs/msnr` tree.
@@ -877,7 +914,7 @@ mariagrandury's and aromanou's log dirs, the checkpoints from the shared
 
 ## Launch / resume
 
-One command per size × scheme × architecture with incomplete runs, derived
+One command per size × scheme × ladder with incomplete runs, derived
 from the tables above. Each launch is idempotent: it skips runs that are done
 or already queued or running (any account), resumes the rest from their latest
 valid checkpoint and starts the ones never trained. A commented-out line has
@@ -918,25 +955,39 @@ def _scheme_desc(name: str, d: dict) -> str:
     if d["max_size"]:
         bits.append(", ".join(f"L{L} stops at {s}"
                               for L, s in sorted(d["max_size"].items())))
-    if tuple(d["arches"]) != ("deep", "shallow"):
-        bits.append(" + ".join(d["arches"]) + " only")
-    # A scheme can also be single-architecture at only SOME of its settings
-    # (AT3 is deep only at L15 and L30, both architectures at L50), which the
+    if tuple(d["ladders"]) != ("deep", "shallow"):
+        bits.append(" + ".join(d["ladders"]) + " only")
+    # A scheme can also be single-ladder at only SOME of its settings
+    # (AT3 is deep only at L15 and L30, deep + shallow at L50), which the
     # scheme-wide list above cannot say.
-    for L, arches in sorted(d.get("arches_by_L", {}).items()):
-        if tuple(arches) != tuple(d["arches"]):
-            bits.append(f"L{L} is {' + '.join(arches)} only")
+    for L, ladders in sorted(d.get("ladders_by_L", {}).items()):
+        if tuple(ladders) == tuple(d["ladders"]):
+            continue
+        # The override can restrict (AT3 is deep only at L15/L30) or extend
+        # (scheme A adds swiglu at L8/L15/L30). "only" is wrong for the second,
+        # and the counts it sits beside make the difference matter.
+        extra = [a for a in ladders if a not in d["ladders"]]
+        bits.append(f"L{L} adds {' + '.join(extra)}" if extra
+                    else f"L{L} is {' + '.join(ladders)} only")
     return f"**{name}** ({'; '.join(bits)})"
 
 
 def grid_markdown(png_dir: str) -> str:
     """The sweep's axes, run counts and figures — derived, never hand-written."""
+    # One phrase per ladder, from the registry that defines them: the
+    # baseline first, then the level each of the others moves away from it.
+    base = LADDERS[BASELINE_LADDER]
+    ladder_row = ", ".join(
+        [f"{BASELINE_LADDER} (baseline)"]
+        + [f"{a} ({', '.join(f'{k} = {v}' for k, v in LADDERS[a].items() if v != base[k])})"
+           for a in HYPERPARAMS if a != BASELINE_LADDER])
     baseline = len(predictivity_cells(["A"]))
-    # Every run the grid plans: per scheme, its cells x the architectures that
-    # scheme is actually trained in (ZH and ES are deep only, so multiplying
-    # the whole grid by 2 would over-count them).
-    full = sum(len(arches_for(v, c["size"], c["L"]))
-               for v in DATA_SCHEMES for c in predictivity_cells([v]))
+    # Every run the grid plans, counted by enumerating rather than multiplying:
+    # not every scheme trains every ladder (ZH and ES are deep only)
+    # and the replicate seeds are deep only, so the two axes do not factor.
+    full = sum(1 for a in HYPERPARAMS for v in DATA_SCHEMES
+               for c in predictivity_cells([v], a)
+               if a in ladders_for(v, c["size"], c["L"]))
     # Sizes that do not train at every setting (the 3B extrapolation check).
     partial = "; ".join(f"{s} at L ∈ {{{_fmt(SIZE_LANG_SETTINGS[s])}}} only"
                         for s in SIZES if SIZE_LANG_SETTINGS[s] != LANG_SETTINGS)
@@ -950,10 +1001,10 @@ def grid_markdown(png_dir: str) -> str:
 | Language setting L | {_fmt(LANG_SETTINGS)} (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
 | Seed | {_fmt(SEED_SINGLE)} everywhere; ×3 on the marked columns — {seeds} |
 | Data scheme | {" · ".join(_scheme_desc(v, d) for v, d in DATA_SCHEMES.items())} |
-| Architecture | deep (baseline) and shallow (the model-depth intervention) |
+| Ladder (model) | {ladder_row} |
 
 **{baseline} runs** at one intervention level (scheme A, deep — the plan grid).
-Counting every scheme and the architectures each is trained in: **{full} runs**.
+Counting every scheme and the ladders each is trained in: **{full} runs**.
 
 ![Planned runs per grid cell]({png_dir}/pretrain_progress_plan.png)
 
@@ -992,18 +1043,25 @@ def main() -> None:
     )
     p.add_argument("--root", default=str(CKPT_ROOT),
                    help=f"Megatron run root (default: {CKPT_ROOT})")
-    p.add_argument("--arch", choices=["deep", "shallow"], default="deep",
-                   help="Which architecture family's cells to report")
+    # The ladder whose cells to report, picked by its levels as in
+    # launch_trainings.py.
+    for k, v in LADDERS[BASELINE_LADDER].items():
+        p.add_argument(f"--{k}", default=v,
+                       choices=list(dict.fromkeys(lv[k] for lv in LADDERS.values())))
     p.add_argument("--scheme", choices=list(DATA_SCHEMES), default="A",
                    help="Which data scheme's cells to report")
     p.add_argument("--filter", default=None, help="Substring filter on cell name.")
     p.add_argument("--plot", action="store_true",
                    help="Also render pretrain_progress_{simple,detailed}.png "
                         "(these aggregate over ALL schemes, not just "
-                        "--arch/--scheme)")
+                        "the ladder/--scheme)")
     args = p.parse_args()
+    try:
+        ladder = ladder_of(args.arch, args.activation, args.optimizer)
+    except ValueError as e:
+        p.error(str(e))
 
-    emit_actions(args.arch, args.scheme, root=Path(args.root),
+    emit_actions(ladder, args.scheme, root=Path(args.root),
                  filter_substr=args.filter)
     if args.plot:
         update_plots(root=Path(args.root))
@@ -1029,4 +1087,22 @@ if __name__ == "__main__":
             print("usage: pretrain_progress.py --is-valid <iter_dir>", file=sys.stderr)
             sys.exit(2)
         sys.exit(0 if is_valid_iter_dir(Path(sys.argv[2])) else 1)
+    # The same for the whole-cell decision:
+    #   python3.11 pretrain_progress.py --cell-action <model_dir> <target_iters>
+    # prints "<done|fresh|resume|corrupt> <latest valid iter, 0 if none>".
+    # launch_pretraining_cscs.sh reads the word to decide whether to queue a
+    # chain successor and the iteration to tell a chain that is surviving
+    # preemptions from one that is retrying a failure. It reads the WORD, not
+    # the exit status: an ImportError and a legitimate "not done" both exit
+    # non-zero, and the difference decides between ending a chain and burning
+    # its whole budget on links that allocate 21 nodes and die.
+    if len(sys.argv) >= 2 and sys.argv[1] == "--cell-action":
+        if len(sys.argv) != 4:
+            print("usage: pretrain_progress.py --cell-action <model_dir> "
+                  "<target_iters>", file=sys.stderr)
+            sys.exit(2)
+        model_dir = Path(sys.argv[2])
+        print(cell_action(model_dir, int(sys.argv[3]))[0],
+              model_progress(model_dir)[1] or 0)
+        sys.exit(0)
     main()

@@ -1,0 +1,127 @@
+{
+  "global": {
+    "vocab_size": 131072,
+    "seq_len": 4096,
+    "desired_tokens": 100000000000,
+    "global_batch_size": 504,
+    "head_dim": 64,
+    "predictivity_schedule": "D = 100 x n_non_emb_params tokens (5x Chinchilla) at global_batch_size x seq_len tokens/iter; train_iters rounded to the checkpoint grid (20 evenly spaced checkpoints per run, 40 once train_iters >= 30000 (the 1B rung) and 60 once train_iters >= 60000 (1.7B and 3B) \u2014 save_interval = train_iters/n divides exactly, 1xC = train_iters/5 on-grid; the EVALUATED set is 12 at every size, see launch_trainings.due_iters); lr_warmup_iters ~4% and lr_wsd_decay_iters ~20% of train_iters, rounded to 100; lr from the 6ND law at the run's own budget (C = 6 x N x 100N = 600 N^2)",
+    "activation": "swiglu"
+  },
+  "configs": {
+    "90M": {
+      "n_layers": 15,
+      "hidden_size": 768,
+      "ffn_hidden_size": 2048,
+      "num_attention_heads": 12,
+      "num_query_groups": 3,
+      "n_non_emb_params": 92897280.0,
+      "micro_batch_size": 7,
+      "global_batch_size": 504,
+      "seq_len": 4096,
+      "train_iters": 50000,
+      "lr": 0.0014276,
+      "predictivity": {
+        "train_tokens": 9289728000,
+        "train_iters": 4500,
+        "lr_warmup_iters": 200,
+        "lr_wsd_decay_iters": 900
+      }
+    },
+    "175M": {
+      "n_layers": 16,
+      "hidden_size": 1024,
+      "ffn_hidden_size": 2752,
+      "num_attention_heads": 16,
+      "num_query_groups": 4,
+      "n_non_emb_params": 177209344.0,
+      "micro_batch_size": 7,
+      "global_batch_size": 504,
+      "seq_len": 4096,
+      "train_iters": 50000,
+      "lr": 0.00121475,
+      "predictivity": {
+        "train_tokens": 17720934400,
+        "train_iters": 8580,
+        "lr_warmup_iters": 300,
+        "lr_wsd_decay_iters": 1700
+      }
+    },
+    "350M": {
+      "n_layers": 20,
+      "hidden_size": 1280,
+      "ffn_hidden_size": 3392,
+      "num_attention_heads": 20,
+      "num_query_groups": 5,
+      "n_non_emb_params": 342425600.0,
+      "micro_batch_size": 3,
+      "global_batch_size": 504,
+      "seq_len": 4096,
+      "train_iters": 50000,
+      "lr": 0.0010303,
+      "predictivity": {
+        "train_tokens": 34242560000,
+        "train_iters": 16580,
+        "lr_warmup_iters": 700,
+        "lr_wsd_decay_iters": 3300
+      }
+    },
+    "600M": {
+      "n_layers": 24,
+      "hidden_size": 1536,
+      "ffn_hidden_size": 4096,
+      "num_attention_heads": 24,
+      "num_query_groups": 6,
+      "n_non_emb_params": 594542592.0,
+      "micro_batch_size": 6,
+      "global_batch_size": 504,
+      "seq_len": 4096,
+      "train_iters": 50000,
+      "lr": 0.00089756,
+      "predictivity": {
+        "train_tokens": 59454259200,
+        "train_iters": 28800,
+        "lr_warmup_iters": 1200,
+        "lr_wsd_decay_iters": 5800
+      }
+    },
+    "1B": {
+      "n_layers": 28,
+      "hidden_size": 1792,
+      "ffn_hidden_size": 4800,
+      "num_attention_heads": 28,
+      "num_query_groups": 7,
+      "n_non_emb_params": 947322880.0,
+      "micro_batch_size": 6,
+      "global_batch_size": 504,
+      "seq_len": 4096,
+      "train_iters": 50000,
+      "lr": 0.00079888,
+      "predictivity": {
+        "train_tokens": 94732288000,
+        "train_iters": 45880,
+        "lr_warmup_iters": 1800,
+        "lr_wsd_decay_iters": 9200
+      }
+    },
+    "1.7B": {
+      "n_layers": 30,
+      "hidden_size": 2304,
+      "ffn_hidden_size": 6144,
+      "num_attention_heads": 36,
+      "num_query_groups": 9,
+      "n_non_emb_params": 1672151040.0,
+      "micro_batch_size": 2,
+      "global_batch_size": 504,
+      "seq_len": 4096,
+      "train_iters": 50000,
+      "lr": 0.00069309,
+      "predictivity": {
+        "train_tokens": 167215104000,
+        "train_iters": 81000,
+        "lr_warmup_iters": 3200,
+        "lr_wsd_decay_iters": 16200
+      }
+    }
+  }
+}

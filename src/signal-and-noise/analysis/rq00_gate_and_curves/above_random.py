@@ -86,34 +86,68 @@ MIN_SHARE = 0.5     # a cell is above random when at least this share of its run
 # result. Together they are the ONLY source of the random baseline
 # (= 1 / n_options); the gate depends only on raw eval scores + these counts,
 # so the RQs depend on the gate and never the other way around. Families in
-# `_APPROX` have a variable number of options per item, so their baseline is
-# an approximation. A task with no option count anywhere (per-language BPB,
-# generative tasks) has no chance level and is never gated.
+# `_APPROX` have a variable number of options per item; their N_OPTIONS entry
+# is the nominal (rounded mean) count the option-count features read, and
+# their chance level is CHANCE, the exact E[1/n_i] over the items — not
+# 1/mean (TruthfulQA mc1: 817 items with 2–13 options, mean 5.06, E[1/n] =
+# 0.2253, the same items in every language; measured on the harness samples
+# of lm-1B-L50-deep-seed1904 on 2026-09-23). `task_chance` is the ONE reader
+# of both tables. A task with no option count anywhere (per-language BPB, the
+# loss, generative tasks) has no chance level and is never gated.
+# The chance level is UNIFORM guessing. With unbalanced gold labels a constant
+# answer scores the majority label's share, which can exceed 1/n (hellaswag_ta:
+# 2,175 of 8,413 golds are option 2, 0.2585 against 0.25); the gate does not
+# test for that, and rule 1 says so.
 N_OPTIONS = {
     # multilingual families (cf. lm-eval task specs)
     "arc": 4, "belebele": 4, "global_mmlu": 4, "global_mmlu_full": 4,
     "global_piqa_completions": 2, "global_piqa_parallel_cloze": 4,  # solution0..3 in the harness template
     "global_piqa_nonparallel_cloze": 2, "hellaswag": 4, "multiblimp": 2, "paws": 2,
     "xcopa": 2, "xnli": 3, "xstorycloze": 2, "xwinograd": 2,
-    "afrimmlu": 4, "afrixnli": 3, "include_base_44": 4, "truthfulqa-multi_mc1": 4,
+    "afrimmlu": 4, "afrixnli": 3, "include_base_44": 4,
+    "truthfulqa-multi_mc1": 5,   # nominal (the mean of 2–13 options is 5.06); the chance level is CHANCE's
     # standalone-English + extra MCQA families
     "mmlu": 4, "piqa": 2, "openbookqa": 4, "commonsense_qa": 5, "social_iqa": 3,
     "winogrande": 2, "ai2_arc": 4, "m_arc": 4, "m_hellaswag": 4,
     "include_base_44": 4,
     "agieval": 4, "agieval_logiqa": 4, "agieval_sat": 4, "agieval_lsat": 5,
-    "truthfulqa": 4, "truthfulqa_mc1": 4,
+    "truthfulqa": 5, "truthfulqa_mc1": 5,   # the same 817 items as the multilingual mc1; chance in CHANCE
+    "truthfulqa_mc2": 7,                    # nominal (mean 7.2 options); chance = the mean true-option share, CHANCE
     "arabic_leaderboard_alghafa_mcq_exams_test": 4,
 }
 _APPROX = {"truthfulqa", "truthfulqa_mc1", "truthfulqa-multi_mc1", "agieval",
            "agieval_logiqa", "agieval_sat", "agieval_lsat",
-           "arabic_leaderboard_alghafa_mcq_exams_test"}
+           "arabic_leaderboard_alghafa_mcq_exams_test",
+           # mc2 is in here for a second reason: its score is the probability
+           # mass on ALL true answers, not a pick-one accuracy, so its chance
+           # level is the mean share of true options per item (CHANCE, 0.449)
+           # and not 1/n. Without this line the count derive_task_options reads
+           # off the samples (4, or 5 for the vi/zh siblings) would become a
+           # 0.25 chance level that every model clears at once. The Wilson
+           # bound still applies: a [0, 1]-valued per-item score has variance
+           # at most p(1 - p), so the binomial bound is conservative for it.
+           "truthfulqa_mc2"}
+
+
+# Chance level of the variable-option families: E[1/n_i] over the items.
+# mc2: the mean share of true options per item (uniform probability mass
+# scores exactly that): en 0.4484 (817 items), vi 0.4500 (785), zh 0.4488 (788).
+CHANCE = {"truthfulqa": 0.2253, "truthfulqa_mc1": 0.2253, "truthfulqa-multi_mc1": 0.2253, "truthfulqa_mc2": 0.449}
+
+
+def task_chance(task: str) -> float:
+    """The chance level of uniform guessing: CHANCE for a variable-option family,
+    else 1 / task_n_options, NaN when the task has no option count."""
+    c = CHANCE.get(benchmark_family(task))
+    return float(c) if c is not None else 1 / task_n_options(task)
 
 
 def task_n_options(task: str) -> float:
     """Option count of a task: tasks.json's derived value, else the family
     table, else NaN (no chance level). An `_APPROX` family keeps the table:
-    its items have different option counts (TruthfulQA mc1 4–13), and the
-    derived value is one item's count, not the mean the chance level needs."""
+    its items have different option counts (TruthfulQA mc1 2–13), and the
+    derived value is one item's count. The chance level is `task_chance`,
+    never 1 / this value for an `_APPROX` family."""
     fam = benchmark_family(task)
     n = None if fam in _APPROX else load_tasks().get(task, {}).get("n_options")
     return float(n) if n else float(N_OPTIONS.get(fam, float("nan")))
@@ -136,17 +170,20 @@ def wilson_lcb(score, n_items):
     return lcb
 
 
-def above_chance(score, task) -> pd.Series:
+def above_chance(score, task, n_items=None) -> pd.Series:
     """Per element: 1.0 when the run's one-sided 95 % LCB clears chance, 0.0 when it
-    does not, NaN when the task has no chance level or no item count."""
+    does not, NaN when the task has no chance level or no item count. `n_items`
+    (per element) replaces the task's item count, for a score read on a subset
+    of the task's items."""
     task = pd.Series(task)
-    chance = 1 / task.map(task_n_options).astype(float)
-    lcb = wilson_lcb(score, task.map(task_n_items))
+    chance = task.map(task_chance).astype(float)
+    lcb = wilson_lcb(score, task.map(task_n_items) if n_items is None else n_items)
     out = pd.Series((lcb > chance.to_numpy()).astype(float), index=task.index)
     return out.mask(~np.isfinite(lcb) | chance.isna())
 
 
-def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool = False):
+def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool = False,
+                    n_items: dict | None = None):
     """Core, reused by run() and by the SNR pipeline.
 
     `df` is the raw per-row eval frame for the models in scope. Rows are
@@ -160,7 +197,12 @@ def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool
     option counts and the item counts. A mask cell is 1 (at least MIN_SHARE
     of the runs confidently above chance), 0 (at chance) or NA (no score, or
     no chance level / item count for the task).
+
+    `n_items` (task -> item count) replaces the count of `configs/tasks.json`
+    for scores read on a subset of each task's items (the above-chance items
+    analysis); the chance level and the rule are the task's own.
     """
+    count = task_n_items if n_items is None else (lambda t: float(n_items.get(t, np.nan)))
     df = df[df["task"].apply(_is_parent_task)].copy()
     df["family"] = df["task"].apply(benchmark_family)
     df["language"] = df["task"].apply(assign_language)
@@ -178,17 +220,18 @@ def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool
     # language, and an English-only cell averaged into `arc_th` drags the mean
     # to chance whatever a cell that trained Thai can do. A task no cell
     # trained keeps the plain mean.
-    finals = finals.assign(above=above_chance(finals["primary_score"].to_numpy(), finals["task"].to_numpy()).to_numpy(),
-                           n_items=finals["task"].map(task_n_items).to_numpy())
+    n_of = finals["task"].map(count).to_numpy(dtype=float)
+    finals = finals.assign(above=above_chance(finals["primary_score"].to_numpy(), finals["task"].to_numpy(), n_of).to_numpy(),
+                           n_items=n_of)
     finals["lcb"] = wilson_lcb(finals["primary_score"], finals["n_items"])
     share_of = lambda f: (f.pivot_table(index="task", columns="bucket", values="above", aggfunc="mean")
                           .reindex(index=scores.index, columns=sizes))
     share = share_of(finals)
-    if {"L", "scheme"} <= set(finals.columns):
+    if {"L", "data"} <= set(finals.columns):
         from pretrain.ladder_report import _trained_tasks
         keep = pd.Series(False, index=finals.index)
-        for (L, scheme), g in finals.groupby(["L", "scheme"]):
-            keep.loc[g.index] = g["task"].isin(_trained_tasks(int(L), scheme))
+        for (L, data), g in finals.groupby(["L", "data"]):
+            keep.loc[g.index] = g["task"].isin(_trained_tasks(int(L), data))
         trained = (finals[keep].pivot_table(index="task", columns="bucket",
                                             values="primary_score", aggfunc="mean")
                    .reindex(index=scores.index, columns=sizes))
@@ -203,12 +246,12 @@ def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool
     fam = df.groupby("task")["family"].first()
     lang = df.groupby("task")["language"].first()
     n_opt = pd.Series({t: task_n_options(t) for t in fam.index})   # NaN if unknown
-    base_s = (1.0 / n_opt).round(3)
+    base_s = pd.Series({t: task_chance(t) for t in fam.index}).round(4)
 
     mask = share.ge(MIN_SHARE).where(share.notna()).astype("Int64")  # 1 = above chance
     meta = pd.DataFrame({"family": fam, "language": lang,
                          "n_options": n_opt.astype("Int64"), "random_baseline": base_s,
-                         "n_items": pd.Series({t: task_n_items(t) for t in fam.index}).astype("Int64"),
+                         "n_items": pd.Series({t: count(t) for t in fam.index}).astype("Int64"),
                          "options_exact": ~fam.isin(_APPROX)})
     if runs:
         cols = ["task", "model", "bucket", "primary_score", "n_items", "lcb", "above"] + (["trained"] if "trained" in finals else [])
@@ -233,7 +276,7 @@ def load_mask(pool: str) -> pd.DataFrame | None:
 #   custom_swissai_hf   = custom + a06 + distill + Swiss-AI/HF refs (full ladder)
 #   external            = every non-custom model (all parquets, incl posttraining)
 REPORTS = [
-    ("predictivity", "Predictivity ladder (175M–1.7B, seed 1904)"),
+    ("predictivity", "Predictivity ladder (90M–1.7B, seed 1904)"),
     ("seeds_28_1797_1904", "Custom Apertus pretrains only"),
     ("custom_swissai_hf", "All models (custom + Swiss-AI/HF refs)"),
     ("external", "All non-custom models (refs + a06 + distill + posttraining)"),

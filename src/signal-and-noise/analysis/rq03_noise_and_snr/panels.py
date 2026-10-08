@@ -8,10 +8,10 @@ a design effect against seed noise.
 
 SNR reads `snr_variants_per_task.csv` of the pool (the paper's definition,
 `rel_std`; cells the above-random gate puts at chance are grey, rule 1). The
-effect reads `effect_vs_noise.csv` of `predictivity_all`, the pool with seed
+effect reads `effect_vs_noise.csv` of `predictivity_seeds`, the pool with seed
 replicates, gated cells included and drawn grey: 0 means the depth effect
 equals the seed noise (zero effects have no log and are left out). The effect
-figures are written next to their source, in `predictivity_all`, whatever
+figures are written next to their source, in `predictivity_seeds`, whatever
 `--pool` is. The size axis is EVAL_SIZES (175M–1.7B, rule 10), never a column
 the table happens to carry.
 
@@ -45,7 +45,7 @@ from analysis.utils import EVAL_SIZES  # noqa: E402
 
 OUT_ROOT = NOISE_AND_SNR
 CANONICAL = "predictivity"
-NOISE_POOL = "predictivity_all"
+NOISE_POOL = "predictivity_seeds"
 VARIANT = "rel_std"
 mpl.rcParams.update(S.RC)
 

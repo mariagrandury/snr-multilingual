@@ -1,6 +1,14 @@
 {
+  "benchmark_tasks": 1379,
+  "compute_charged": {
+    "as_of": "2026-10-07",
+    "gpu_hours": 192000,
+    "other_node_hours": 8900,
+    "pretrain_node_hours": 39100
+  },
   "constants": {
     "ANALYSIS_SIZES": [
+      "90M",
       "175M",
       "350M",
       "600M",
@@ -11,22 +19,26 @@
     "MIN_PAIRS": 3,
     "TARGET_SIZE": "1.7B"
   },
-  "da_rows": 28212,
+  "da_rows": 163720,
+  "evaluated_checkpoints": 3972,
   "generated_by": "documents/paper/sections/verify_paper_results.py (reshape, no re-derivation)",
-  "headline_seed1904_A_B_runs": 79,
-  "healthy_175M_to_1_7B": 113,
+  "grid_seed1904_runs": 171,
+  "headline_seed1904_A_B_runs": 123,
+  "healthy_175M_to_1_7B": 191,
   "sizes": {
-    "1.7B": 19,
-    "175M": 24,
-    "1B": 28,
-    "350M": 18,
-    "600M": 24
+    "1.7B": 27,
+    "175M": 35,
+    "1B": 36,
+    "350M": 29,
+    "600M": 34,
+    "90M": 30
   },
   "sources": {
-    "src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv": "197cf3120d02e6e487ca1478d810ccdcb9c39ffff12d298785de59e54863bc65",
-    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_ckpt_by_family.csv": "43966a59144eaaa98afc3f5b842841d79d2592b494113a2ff64cbad5de16d170",
-    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_size_by_family.csv": "0e0f3199626beed4dd3a0fa0fbdf4b145b30cf4a8b15a1b57160b89d061371ec",
-    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_pooled_per_task.csv": "f5df9b4e334c6ce4cc6c4efc7ab710b87d96680eb7bb09ed65d654f3dd619d71",
-    "src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr_variants_per_task.csv": "e058c018af35f98c5516fdec54e1ec48c44e81bc7f227654dde1c61de0ff4858"
+    "plan/compute-costs.json": "1eee70a6b343260ef1597c58b6c845e56124940525f37cee1f98dc981e8f2bbe",
+    "src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv": "ee0c24402c0be72d55836c825550546022348a49484aec7e1cb613dcc77333c8",
+    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_ckpt_by_family_multi_axes.csv": "b694a01ca802006ca8df8f08d80aec00419da823a2115347e6acddc8184221af",
+    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_size_by_family_multi_axes.csv": "65ae53880dbc2469e0dea207063100b9688f43b6bed7c997f563fc464c05809d",
+    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_all_pooled_per_task_multi_axes.csv": "a4e7875d3116f17f0e0b673dcbba3068847437498690c2b5481d364b274c9e6f",
+    "src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr_variants_per_task.csv": "feded1eeb4a4c3edbce7631189054753650bb624b7ab7a6b36cfe3c797d05911"
   }
 }

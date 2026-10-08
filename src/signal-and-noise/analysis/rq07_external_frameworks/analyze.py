@@ -9,7 +9,11 @@ Outputs (all in this directory):
   pearson_r_per_variant.csv
   snr_apertus_vs_snr_allenai_<best_variant>.png
   snr_apertus_vs_snr_allenai_grid.png
+  snr_apertus_vs_snr_allenai_paper.png/.svg/.csv   the headline scatter for the paper, one named point per shared task
   top_apertus.csv  top_allenai.csv  agreement.md
+
+    python analysis/rq07_external_frameworks/analyze.py --pool predictivity
+    python analysis/rq07_external_frameworks/analyze.py --pool predictivity --paper   # the paper scatter alone
 """
 
 from __future__ import annotations
@@ -243,6 +247,28 @@ def _plot_scatter(xy: pd.DataFrame, variant: str, r: float, n: int, path: Path) 
     plt.close(fig)
 
 
+_PAPER_TASKS = {"arc_easy": "ARC Easy", "arc_challenge": "ARC Challenge", "csqa": "CommonsenseQA", "piqa": "PIQA",
+                "openbookqa": "OpenBookQA", "mmlu": "MMLU"}
+
+
+def _plot_scatter_paper(xy: pd.DataFrame, variant: str, path: Path) -> None:
+    """The headline scatter for the paper: each shared task named, no title."""
+    from analysis import grids as G
+    from analysis import style as S
+    plt.rcParams.update(S.RC)
+    fig, ax = plt.subplots(figsize=(3.4, 3.2))
+    ax.scatter(xy["apertus"], xy["allenai"], s=24, color=S.SERIES[0], zorder=3)
+    names = [_PAPER_TASKS.get(t, G.paper_name(t)) for t in xy.index]
+    for name, x, y in zip(names, xy["apertus"], xy["allenai"]):
+        ax.annotate(name, (x, y), textcoords="offset points", xytext=(4, -3), fontsize=7, color=S.INK)
+    ax.margins(0.25)   # each corpus on its own scale: the claim is the order, not the values
+    ax.set_xlabel(f"Ladder SNR at {APERTUS_SIZE} (log10)"); ax.set_ylabel(f"DataDecide SNR at {ALLENAI_SIZE} (log10)")
+    ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    fig.tight_layout()
+    xy.rename_axis("task").reset_index().assign(name=names, variant=variant).to_csv(path.with_suffix(".csv"), index=False)
+    S.save_paper(fig, path.with_suffix(""))
+
+
 def _plot_grid(
     per_variant_xy: dict[str, pd.DataFrame],
     summary: pd.DataFrame,
@@ -458,6 +484,7 @@ def run(stage: str, pool: str, apertus_dir: Path, out_dir: Path) -> None:
     headline_path = out_dir / f"snr_apertus_vs_snr_allenai_{best_variant}.png"
     _plot_scatter(per_variant_xy[best_variant], best_variant, best_r, best_n, headline_path)
     print(f"\nHeadline scatter ({best_variant}, r={best_r:.3f}) → {headline_path.name}")
+    _plot_scatter_paper(per_variant_xy[best_variant], best_variant, out_dir / "snr_apertus_vs_snr_allenai_paper.png")
 
     # Per-variant grid.
     grid_path = out_dir / "snr_apertus_vs_snr_allenai_grid.png"
@@ -594,11 +621,21 @@ def main():
                    help="Apertus pool name (from configs/models.json). "
                         "Reads results/snr_definition/<pool>/, writes "
                         "analysis/rq07_external_frameworks/<pool>/.")
+    p.add_argument("--paper", action="store_true", help="only the paper scatter, from the two SNR tables on disk")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; "
                 f"available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
+    if args.paper:
+        out_dir = ROOT_OUT / stage / args.pool
+        ap_df = _load_apertus_with_alias(SNR_DEFINITION_ROOT / stage / args.pool / "snr_variants_per_task.csv")
+        al_df = pd.read_csv(ALLENAI_CSV, index_col="task")
+        overlap = _build_task_overlap(set(ap_df.index), set(al_df.index))
+        summary, xy = _per_variant_pearson(ap_df, al_df, overlap[overlap["shared"]].index.tolist())
+        v = _rq04_variant(stage, args.pool, summary)
+        _plot_scatter_paper(xy[v], v, out_dir / "snr_apertus_vs_snr_allenai_paper.png")
+        return
     run(stage=stage, pool=args.pool,
         apertus_dir=SNR_DEFINITION_ROOT / stage / args.pool,
         out_dir=ROOT_OUT / stage / args.pool)

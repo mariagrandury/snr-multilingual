@@ -1,19 +1,19 @@
 """rq05: the grid's transformations side by side — language count, sampling
-temperature, model depth and language lists — read as decisions a proxy size
+temperature, model depth and data scheme (A vs B, A vs C) — read as decisions a proxy size
 makes for the reference, on ONE item set, so their predictability can be
 compared. analyze.py reads each intervention on its own items; pooled over
 different task mixes those numbers are not comparable (a pair whose 1.7B has
 no reformulated evals yet pools only the predictable families).
 
-    transformation_da.csv   per transformation, pair (the two cells' L / level), proxy size and population:
+    transformation_da_size_mono_axis.csv   per transformation, pair (the two cells' L / level), proxy size and population:
                             DA on the pair's own items the reference decides (`decision_acc_own`, `n_own`)
                             and on the items every transformation decides somewhere (`decision_acc_shared`,
                             `n_shared`); benchmarks are gated by rq00's above-random mask at the proxy and
                             at the reference; `mean_abs_delta_ref` is the reference's effect on the own items
-    transformation_da.png   mean over a transformation's pairs of the shared-item DA vs proxy size;
+    transformation_da_size_mono_axis.png   mean over a transformation's pairs of the shared-item DA vs proxy size;
                             solid benchmarks, dashed per-language BPB (all 100 validation languages)
 
-    python analysis/rq05_design_decisions/transformations.py --pool predictivity_all
+    python analysis/rq05_design_decisions/transformations.py --pool predictivity_seeds
 """
 
 from __future__ import annotations
@@ -37,23 +37,28 @@ if str(_SRC) not in sys.path:
 
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
-from analysis.rq05_design_decisions.analyze import CANONICAL, COLOUR, MIN_ITEMS, OUT_ROOT  # noqa: E402
-from analysis.utils import GRID_SEED, finals, ladder_frame, passes_gate, size_order  # noqa: E402
-from pretrain.launch_trainings import DATA_SCHEMES  # noqa: E402
+from analysis.rq05_design_decisions.analyze import CANONICAL, COLOUR, MIN_ITEMS, OUT_ROOT, gate_mask  # noqa: E402
+from analysis.utils import GRID_SEED, TARGET_SIZE, data_build, finals, ladder_frame, passes_gate, size_order  # noqa: E402
+from pretrain.launch_trainings import DATA_SCHEMES, exp_name, mix_label  # noqa: E402
 
 mpl.rcParams.update(S.RC)
-# key -> (label, pairs); a pair is two cells as (L, scheme, arch), first = baseline
-_A = sorted(DATA_SCHEMES["A"]["langs"])
+# key -> (label, pairs); a pair is two cells as (L, scheme, T, ladder) on the
+# design axes (analysis/RULES.md, Definitions), first = baseline; `data_build`
+# names the build that implements each. A scheme pair holds T=1 and is one pair
+# per L: A vs B is A vs DCLMP at L1, A vs ZH at L2, A vs B at L8-L30.
+_LS = sorted({L for v in DATA_SCHEMES.values() for L in v["langs"]})
+_A = [L for L in _LS if data_build(L, "A", 1)]
 TRANSFORMATIONS = {
     "langs":       ("language count (L vs next L)",
-                    [((a, "A", "deep"), (b, "A", "deep")) for a, b in zip(_A, _A[1:])]),
+                    [((a, "A", 1, "deep"), (b, "A", 1, "deep")) for a, b in zip(_A, _A[1:])]),
     "temperature": ("temperature (T=1 vs T=3)",
-                    [((L, "A", "deep"), (L, "AT3", "deep")) for L in sorted(DATA_SCHEMES["AT3"]["langs"])]),
+                    [((L, "A", 1, "deep"), (L, "A", 3, "deep")) for L in _LS if data_build(L, "A", 3)]),
     "arch":        ("depth (deep vs shallow)",
-                    [((L, "A", "deep"), (L, "A", "shallow")) for L in _A]),
-    "scheme":      ("language lists (A vs B)",
-                    [((L, "A", "deep"), (L, "B", "deep")) for L in sorted(DATA_SCHEMES["B"]["langs"])]),
+                    [((L, "A", 1, "deep"), (L, "A", 1, "shallow")) for L in _A]),
+    "scheme_B":    ("data scheme (A vs B)",
+                    [((L, "A", 1, "deep"), (L, "B", 1, "deep")) for L in _LS if data_build(L, "B", 1)]),
+    "scheme_C":    ("data scheme (A vs C)",
+                    [((L, "A", 1, "deep"), (L, "C", 1, "deep")) for L in _LS if data_build(L, "C", 1)]),
 }
 COLOUR = {**COLOUR, "langs": S.RAMP[2]}
 # BPB is read on ALL validation languages, not on the languages both cells
@@ -62,15 +67,24 @@ COLOUR = {**COLOUR, "langs": S.RAMP[2]}
 # compare transformations on. `bpb_all` is every per-language BPB row the
 # loader delivers, i.e. the languages the cell trains (RULES.md rule 2).
 POPULATIONS = ("benchmark", "bpb_all")
-# rq00 computes the above-random gate on the grid-seed pool; the all-seeds
-# pool has no mask of its own, so fall back to that one rather than leave the
-# benchmarks ungated (a task at chance in both cells decides nothing).
-GATE_POOL = "predictivity"
 
 
 def _cell(size: str, c: tuple) -> str:
-    L, scheme, arch = c
-    return f"lm-{size}-L{L}{DATA_SCHEMES[scheme]['label']}-{arch}-seed{GRID_SEED}"
+    """The cell name, built by the launcher rather than re-spelled here.
+
+    Re-spelling the format silently dropped the `-b<N>` part the 90M and 175M
+    rungs carry since 2026-09-23, so at 175M this looked up the name of the
+    DIVERGED batch-504 run instead of its replacement — a comparison against a
+    model that ends 0.26 nats off the power law, with nothing to show it had
+    happened."""
+    L, scheme, T, ladder = c
+    return exp_name(size, L, ladder, GRID_SEED, data_build(L, scheme, T))
+
+
+def _mix(c: tuple) -> str:
+    """`L2-ZH-deep`: the family's design variant, as the launcher spells it."""
+    L, scheme, T, ladder = c
+    return mix_label(L, ladder, data_build(L, scheme, T))
 
 
 def _items(fin: dict, kind: dict, size: str, x: tuple, y: tuple, pop: str) -> pd.Series | None:
@@ -94,6 +108,10 @@ def transformation_da(df: pd.DataFrame, mask: pd.DataFrame | None) -> pd.DataFra
     for key, (label, pairs) in TRANSFORMATIONS.items():
         for x, y in pairs:
             sizes = [s for s in size_order(grid["size"].unique()) if _cell(s, x) in fin and _cell(s, y) in fin]
+            # rule 9: the TARGET_SIZE final is the reference, the sizes below it the proxies
+            if TARGET_SIZE not in sizes:
+                continue
+            sizes = sizes[:sizes.index(TARGET_SIZE) + 1]
             if len(sizes) < 2:
                 continue
             ref = sizes[-1]
@@ -110,7 +128,7 @@ def transformation_da(df: pd.DataFrame, mask: pd.DataFrame | None) -> pd.DataFra
                         # has no chance level, from this population.
                         items = items[passes_gate(gate, items, s, ref).to_numpy()]
                     rows.append({"transformation": key, "label": label, "population": pop,
-                                 "pair": f"L{x[0]}{DATA_SCHEMES[x[1]]['label']}-{x[2]} vs L{y[0]}{DATA_SCHEMES[y[1]]['label']}-{y[2]}",
+                                 "pair": f"{_mix(x)} vs {_mix(y)}",
                                  "proxy_size": s, "reference_size": ref,
                                  "_agree": (np.sign(d[items]) == np.sign(d_ref[items])),
                                  "mean_abs_delta_ref": float(d_ref[items].abs().mean()) if len(items) else np.nan})
@@ -163,7 +181,7 @@ def plot(sm: pd.DataFrame, out_dir: Path) -> None:
           Line2D([], [], color=S.INK, ls="--", marker="o", ms=4, label="per-language BPB")]
     ax.legend(handles=h, frameon=False, loc="lower right", fontsize=6.8)
     ax.grid(color=S.GRID, lw=.6); ax.set_axisbelow(True); S.clean(ax)
-    S.save_figure(fig, out_dir, "transformation_da")
+    S.save_figure(fig, out_dir, "transformation_da_size_mono_axis")
 
 
 def generate_readme(pool: str, out_dir: Path, sm: pd.DataFrame) -> None:
@@ -173,7 +191,7 @@ def generate_readme(pool: str, out_dir: Path, sm: pd.DataFrame) -> None:
     blocks = ["## Transformations on one item set",
               f"Mean decision accuracy over each transformation's pairs, on the items every transformation "
               f"decides somewhere (benchmarks gated by rq00's above-random mask at the proxy and the reference); "
-              f"`transformation_da.csv` has every pair. Regenerate with "
+              f"`transformation_da_size_mono_axis.csv` has every pair. Regenerate with "
               f"`python analysis/rq05_design_decisions/transformations.py --pool {pool}`."]
     for pop, title in (("benchmark", "benchmarks"), ("bpb_all", "per-language BPB (trained languages)")):
         g = sm[sm["population"] == pop]
@@ -188,23 +206,20 @@ def generate_readme(pool: str, out_dir: Path, sm: pd.DataFrame) -> None:
                    md_table(["transformation", "pairs (with data)", "items"] + cols,
                             [[lab, f"{int(pairs[lab])} ({int(withdata[lab])})", int(items[lab])]
                              + [fmt(grid.loc[lab, c]) for c in cols] for lab in grid.index])]
-    blocks.append(f"![Transformations]({rel}/transformation_da.png)")
+    blocks.append(f"![Transformations]({rel}/transformation_da_size_mono_axis.png)")
     replace_block(OUT_ROOT / "README.md", "transformations", "\n\n".join(blocks), f"transformations.py --pool {pool}")
 
 
 def main(pool: str) -> None:
     out_dir = OUT_ROOT / "pretraining" / pool
     out_dir.mkdir(parents=True, exist_ok=True)
-    mask = load_mask(pool)
-    if mask is None:
-        mask = load_mask(GATE_POOL)
-    da = transformation_da(ladder_frame(pool), mask)
-    da.to_csv(out_dir / "transformation_da.csv", index=False)
+    da = transformation_da(ladder_frame(pool), gate_mask(pool))
+    da.to_csv(out_dir / "transformation_da_size_mono_axis.csv", index=False)
     sm = summary(da)
     print(sm[sm["population"] == "benchmark"].pivot_table(index="label", columns="proxy_size", values="decision_acc_shared").round(2).to_string())
     plot(sm, out_dir)
     generate_readme(pool, out_dir, sm)
-    print(f"Wrote → {out_dir / 'transformation_da.csv'} ({len(da)} rows)")
+    print(f"Wrote → {out_dir / 'transformation_da_size_mono_axis.csv'} ({len(da)} rows)")
 
 
 if __name__ == "__main__":

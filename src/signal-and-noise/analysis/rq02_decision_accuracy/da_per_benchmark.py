@@ -4,8 +4,8 @@ One step *back* from rq04's analyze_snr_variants.py (which correlates SNR
 variants with DA): this script exposes the raw decision-accuracy values so you
 can read off, per language, which benchmarks are most predictive across sizes.
 
-It reads the `decision_acc_*` columns of rq02's `da_per_task.csv` (compute_da.py,
-with the pair counts in `da_n_pairs_per_task.csv`) and reshapes them to long
+It reads the `decision_acc_*` columns of rq02's `da_all_per_task_both_axes.csv` (compute_da.py,
+with the pair counts in `da_all_n_pairs_per_task_both_axes.csv`) and reshapes them to long
 form. Two DA definitions live there:
 
   DA-size  — small-bucket ranking @last vs the reference's ranking @last
@@ -23,7 +23,7 @@ without a chance level passes), and over the per-language BPB tasks; the two
 whole-mixture aggregates (`bpb_macro`, `train_loss`) are reported on their own
 line and never enter a mean (rule 7).
 
-Outputs, next to `da_per_task.csv`: the long table, the per-family grids and
+Outputs, next to `da_all_per_task_both_axes.csv`: the long table, the per-family grids and
 the README block.
 """
 
@@ -48,7 +48,7 @@ from evals.scripts.utils.configs import (  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import (  # noqa: E402
     TABLE_STYLE, above_random_slides, fmt_cell, md_table)
 from analysis.autodoc import CANONICAL_POOL  # noqa: E402
-from analysis.utils import (LANGUAGE_AGGREGATES, passes_gate,  # noqa: E402
+from analysis.utils import (LANGUAGE_AGGREGATES, RELIABLE_DA, one_axes, passes_gate,  # noqa: E402
     _BUCKET_RE, TARGET_SIZE, assign_language, benchmark_family)
 from snr.constants import PLOT_DIR  # noqa: E402
 from analysis.paths import DECISION_ACCURACY
@@ -106,15 +106,15 @@ def _pivot(long: pd.DataFrame, da_def: str) -> pd.DataFrame:
 
 
 def run(pool: str, out_dir: Path) -> None:
-    csv_path = out_dir / "da_per_task.csv"
-    df = pd.read_csv(csv_path, index_col="task")
+    csv_path = out_dir / "da_all_per_task_both_axes.csv"
+    df = one_axes(pd.read_csv(csv_path)).set_index("task")
     long = melt_da(df)
     long = long.sort_values(["da_def", "language", "benchmark", "comparison"])
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    long.to_csv(out_dir / "da_per_benchmark.csv", index=False)
-    _pivot(long, "DA-size").to_csv(out_dir / "da_per_benchmark_size.csv", index=False)
-    _pivot(long, "DA-ckpt").to_csv(out_dir / "da_per_benchmark_ckpt.csv", index=False)
+    long.to_csv(out_dir / "da_all_per_benchmark_multi_axes.csv", index=False)
+    _pivot(long, "DA-size").to_csv(out_dir / "da_size_per_benchmark_multi_axes.csv", index=False)
+    _pivot(long, "DA-ckpt").to_csv(out_dir / "da_ckpt_per_benchmark_multi_axes.csv", index=False)
 
     n_size = (long["da_def"] == "DA-size").sum()
     n_ckpt = (long["da_def"] == "DA-ckpt").sum()
@@ -123,7 +123,7 @@ def run(pool: str, out_dir: Path) -> None:
           f"{long['language'].nunique()} languages × {long['benchmark'].nunique()} benchmarks")
     print(f"  DA-size comparisons present: {sorted(long.loc[long.da_def=='DA-size','comparison'].unique())}")
     print(f"  DA-ckpt comparisons present: {sorted(long.loc[long.da_def=='DA-ckpt','comparison'].unique())}")
-    print(f"Wrote {out_dir/'da_per_benchmark.csv'} (+ _size / _ckpt pivots)")
+    print(f"Wrote {out_dir/'da_all_per_benchmark_multi_axes.csv'} (+ _size / _ckpt pivots)")
 
     generate_slides(long, pool)
     generate_readme(df, pool, out_dir)
@@ -133,7 +133,7 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
     """Highlight + results blocks of the rq02 README (canonical pool only):
     mean DA-size per proxy over the above-random benchmark tasks and over the
     per-language BPB tasks, a family x proxy heatmap, and DA-ckpt per bucket
-    and fraction. Pair counts come from da_n_pairs_per_task.csv."""
+    and fraction. Pair counts come from da_all_n_pairs_per_task_both_axes.csv."""
     if pool != CANONICAL_POOL:
         return
     import matplotlib
@@ -144,8 +144,8 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
     from analysis.autodoc import fmt, md_table as md_tbl, replace_block
     from analysis.rq00_gate_and_curves.above_random import load_mask
     stage = load_pools()[pool].get("stage", "pretraining")
-    npairs_path = out_dir / "da_n_pairs_per_task.csv"
-    npairs = pd.read_csv(npairs_path, index_col="task") if npairs_path.is_file() else None
+    npairs_path = out_dir / "da_all_n_pairs_per_task_both_axes.csv"
+    npairs = one_axes(pd.read_csv(npairs_path)).set_index("task") if npairs_path.is_file() else None
     mask = load_mask(pool)
     # the two aggregates are DA proxies of their own, not members of a mean
     is_bench = ~df.index.str.startswith("bpb_") & (df.index != "train_loss")
@@ -211,9 +211,9 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
             ax.set_title("DA-size per family, mean over its above-random tasks", loc="left")
             S.clean(ax, spines=()); ax.tick_params(length=0)
             fig.colorbar(im, ax=ax, fraction=0.04, label="decision accuracy")
-            pd.DataFrame(mat, index=fams, columns=sizes).rename_axis("family").to_csv(out_dir / "da_size_by_family.csv")
-            S.save(fig, out_dir / "da_size_by_family.png", dpi=150)
-            blocks.append(f"![DA-size by family]({stage}/{pool}/da_size_by_family.png)")
+            pd.DataFrame(mat, index=fams, columns=sizes).rename_axis("family").to_csv(out_dir / "da_size_by_family_multi_axes.csv")
+            S.save(fig, out_dir / "da_size_by_family_multi_axes.png", dpi=150)
+            blocks.append(f"![DA-size by family]({stage}/{pool}/da_size_by_family_multi_axes.png)")
     if ck_rows:
         blocks += ["**DA-ckpt by bucket and fraction of the run** (mean over the above-random benchmark tasks):",
                    md_tbl(["bucket"] + [f"{int(f[1:])} %" for f in fracs], ck_rows)]
@@ -221,7 +221,7 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
     gen = f"da_per_benchmark.py --pool {pool}"
     replace_block(readme, "highlight", "## Highlighted result\n\n" + "\n".join(bullets), gen)
     replace_block(readme, "results", "## Results\n\n"
-                  + f"Numbers from the `{pool}` pool (`da_per_task.csv`, pairs from `da_n_pairs_per_task.csv`, "
+                  + f"Numbers from the `{pool}` pool (`da_all_per_task_both_axes.csv`, pairs from `da_all_n_pairs_per_task_both_axes.csv`, "
                   f"gate from rq00). Regenerate with `python analysis/rq02_decision_accuracy/da_per_benchmark.py --pool {pool}`.\n\n"
                   + "\n\n".join(blocks), gen)
     print(f"Wrote auto README blocks → {readme}")
@@ -231,7 +231,7 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
 # The above-random slides live in above_random.py (imported above); this module
 # owns the per-language decision-accuracy slides and stitches the full block.
 
-_DA_BOLD = 0.75         # bold decision-accuracy cells at/above this
+_DA_BOLD = RELIABLE_DA  # bold decision-accuracy cells at/above this (tau)
 _BEGIN = "<!-- BEGIN generated signal slides (analysis/rq02_decision_accuracy/da_per_benchmark.py) -->"
 _END = "<!-- END generated signal slides -->"
 

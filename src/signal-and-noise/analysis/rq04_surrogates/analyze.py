@@ -14,8 +14,10 @@ populations; `bpb_macro` and `train_loss` are in neither (rule 7).
 
     rq3_surrogates.csv        ρ, p and n per (proxy size, kind, metric)
     rq3_surrogates.png/.pdf
+    rq3_surrogates_paper.png/.svg/.csv   the same for the paper: bare (rule 18), no title or caption
 
     python analysis/rq04_surrogates/analyze.py --pool predictivity
+    python analysis/rq04_surrogates/analyze.py --paper    # the _paper figure alone, from the CSV
 """
 
 from __future__ import annotations
@@ -43,7 +45,7 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import GATE_AND_CURVES, NOISE_AND_SNR, SURROGATES  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import load_mask, task_n_options  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import load_mask, task_chance  # noqa: E402
 from analysis.rq01_scaling_predictability.analyze import MIN_RUNGS, fit_table  # noqa: E402
 from analysis.rq02_decision_accuracy.compute_da import _frac_label  # noqa: E402
 from analysis.utils import (  # noqa: E402
@@ -52,7 +54,7 @@ from analysis.utils import (  # noqa: E402
 
 OUT_ROOT = SURROGATES
 CANONICAL = CANONICAL_POOL                 # rq03's headline table
-FITS_POOL = "predictivity_all"             # the pool rq01 fits on
+FITS_POOL = "predictivity_seeds"             # the pool rq01 fits on
 MIN_TASKS = 8
 KINDS = ("benchmark tasks", "per-language bits per byte")
 R2_NAME = "scaling-fit R² (proxy rungs only)"
@@ -89,7 +91,7 @@ def candidates(v: pd.DataFrame, s: str, scores: pd.DataFrame, fits_r2: pd.DataFr
         R2_NAME: v["task"].map(fits_r2[s]) if s in fits_r2.columns else None,
     }
     if s in scores.columns:
-        margin = scores[s] - 1 / scores["task"].map(task_n_options)
+        margin = scores[s] - scores["task"].map(task_chance)
         margin.index = scores["task"]
         c["margin above chance"] = v["task"].map(margin)
     return c
@@ -121,7 +123,8 @@ def surrogates(v: pd.DataFrame, scores: pd.DataFrame, fits_r2: pd.DataFrame,
     return pd.DataFrame(rows)
 
 
-def plot(t: pd.DataFrame, out_dir: Path) -> None:
+def plot(t: pd.DataFrame, out_dir: Path, paper: bool = False) -> None:
+    """`paper`: rq3_surrogates_paper, the bare rule-18 version (style.save_paper)."""
     proxies = [s for s in SMALL_SIZES if s in set(t["proxy"])]
     order = t[t["kind"] == KINDS[0]].groupby("metric")["rho"].mean().sort_values().index.tolist()
     order += [m for m in t["metric"].unique() if m not in order]
@@ -141,9 +144,15 @@ def plot(t: pd.DataFrame, out_dir: Path) -> None:
         ax.set_yticks(y); ax.set_yticklabels(order, fontsize=7.5)
         ax.set_xlim(min(-0.6, t["rho"].min() - 0.1), max(0.9, t["rho"].max() + 0.1))   # from the data: no point clipped
         ax.set_xlabel("Spearman ρ with decision accuracy (proxy vs reference)")
-        ax.set_title(kind, loc="left"); ax.grid(axis="x", color=S.GRID, lw=.6); ax.set_axisbelow(True)
+        ax.set_title(kind[0].upper() + kind[1:] if paper else kind, loc="left")
+        ax.grid(axis="x", color=S.GRID, lw=.6); ax.set_axisbelow(True)
         S.clean(ax); ax.tick_params(length=0)
     axes[0].legend(frameon=False, loc="lower right")
+    if paper:
+        fig.tight_layout()
+        t.to_csv(out_dir / "rq3_surrogates_paper.csv", index=False)
+        S.save_paper(fig, out_dir / "rq3_surrogates_paper")
+        return
     top = G._header(fig, "Which statistic of the proxy alone predicts decision accuracy?",
                     f"point = Spearman ρ, over the tasks above chance at the proxy and at {TARGET_SIZE} where the statistic has a "
                     f"value (n next to it; ≥ {MIN_TASKS}), between the statistic read on the proxy and the task's DA-size "
@@ -203,6 +212,7 @@ def main(pool: str, out_dir: Path) -> None:
     print(f"Wrote → {out_dir / 'rq3_surrogates.csv'} ({len(t)} rows)")
     if not t.empty:
         plot(t, out_dir)
+        plot(t, out_dir, paper=True)
     (out_dir / "facts.json").write_text(json.dumps({"rq3": t.round(3).to_dict("records")}, indent=1, default=str))
     generate_readme(pool, out_dir, t)
 
@@ -211,7 +221,13 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL,
                    help=f"Pool whose rq03 table to read (default: {CANONICAL})")
+    p.add_argument("--paper", action="store_true",
+                   help="only rq3_surrogates_paper, the paper's bare figure, from rq3_surrogates.csv on disk")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; available: {sorted(load_pools())}")
-    main(args.pool, OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool)
+    out = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
+    if args.paper:
+        plot(pd.read_csv(out / "rq3_surrogates.csv"), out, paper=True)
+    else:
+        main(args.pool, out)

@@ -27,6 +27,11 @@ are not included.
     python3.11 compute_cost.py                                # since 2026-08-01
     python3.11 compute_cost.py --since 2026-09-01 --users mariagrandury
     python3.11 compute_cost.py --out /tmp/costs.md            # not the plan doc
+
+Next to the markdown it writes the same per-task totals as JSON (`--out` with
+a .json suffix, plan/compute-costs.json by default), which
+documents/paper/sections/verify_paper_results.py turns into the paper's
+node-hour and GPU-hour macros. scripts/refresh_analysis.sh runs both.
 """
 from __future__ import annotations
 
@@ -43,7 +48,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, LADDER, arches_for, exp_name, predictivity_cells)
+    DATA_SCHEMES, HYPERPARAMS, LADDER, exp_name, ladders_for, predictivity_cells)
 from ladder_report import EVAL_LOGS  # noqa: E402
 from pretrain_progress import TRAIN_LOGS  # noqa: E402
 from auto_evals_cscs import (  # noqa: E402
@@ -110,8 +115,9 @@ def kind_of(name: str) -> tuple[str, str | None]:
     if name.startswith("apertus-"):
         return "pretrain", None
     if name.startswith("eval-"):
-        # `-rf` / `-rfgm`: the reformulated-task evals (auto_evals_cscs.py --reformulated)
-        return "eval", "lm-" + re.sub(r"-iter\d+(-rf|-rfgm)?$", "", name.removeprefix("eval-"))
+        # a group suffix: `-probe` (auto_evals_cscs.py --group), or `-rf` / `-rfgm`
+        # from the reformulated groups retired on 2026-09-23
+        return "eval", "lm-" + re.sub(r"-iter\d+(-[a-z]+)?$", "", name.removeprefix("eval-"))
     if name.startswith("bpb-"):
         return "bpb", name.removeprefix("bpb-")
     if name in ("convert-snr", "convert-snr-models"):
@@ -171,8 +177,11 @@ def main() -> None:
     args = p.parse_args()
     users = args.users.split(",")
 
-    grid = {exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"]): {**c, "arch": arch}
-            for c in predictivity_cells() for arch in arches_for(c["scheme"], c["size"], c["L"])}
+    # ladder OUTSIDE the cell loop: replicate seeds are deep only, so the
+    # shallow pass must enumerate its own (single-seed) cells.
+    grid = {exp_name(c["size"], c["L"], ladder, c["seed"], c["scheme"]): {**c, "ladder": ladder}
+            for ladder in HYPERPARAMS for c in predictivity_cells(ladder=ladder)
+            if ladder in ladders_for(c["scheme"], c["size"], c["L"])}
     # evaluate.sbatch writes every user's results into ONE tree, but each
     # user's Slurm logs go under their own scratch (`%u` in --output).
     log_dirs = [Path(str(TRAIN_LOGS).replace("/mariagrandury/", f"/{u}/")) for u in users]
@@ -183,7 +192,7 @@ def main() -> None:
         # or every language for ALL_LANGUAGES_RUNS, whose extra tasks are
         # deliberate work, not work outside the auto list.
         g = grid[cell]
-        key = (g["L"], g["scheme"], (g["scheme"], g["arch"], g["seed"]) == ALL_LANGUAGES_RUNS)
+        key = (g["L"], g["scheme"], (g["scheme"], g["ladder"], g["seed"]) == ALL_LANGUAGES_RUNS)
         if key not in auto_cache:
             auto_cache[key] = set(tasks_for_benchmarks(benchmarks, eval_languages(*key)))
         return auto_cache[key]
@@ -345,6 +354,13 @@ def main() -> None:
     print(report)
     args.out.write_text(report)
     print(f"wrote {args.out}")
+    summary = {"date": str(datetime.date.today()), "since": args.since, "users": users,
+               "gpus_per_node": GPUS_PER_NODE,
+               "node_hours": {task: {"charged": round(sum(cost[task].values()), 1),
+                                     "kept": round(cost[task]["kept"], 1)}
+                              for task in SWEEP_TASKS}}
+    args.out.with_suffix(".json").write_text(json.dumps(summary, indent=2) + "\n")
+    print(f"wrote {args.out.with_suffix('.json')}")
 
 
 if __name__ == "__main__":

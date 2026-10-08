@@ -164,6 +164,15 @@ def main() -> None:
     if missing:
         sys.exit(f"not in manifest: {missing}")
 
+    # Apertus' MLP is ungated (down(act(up x))). A swiglu checkpoint written
+    # as Apertus has lost its gate_proj, and the snapshot then loads with no
+    # warning and scores a model missing half of every MLP (16 nats/token at
+    # 90M). Refuse it rather than commit a bpb.json nothing re-scores.
+    cfg = json.loads((Path(args.model) / "config.json").read_text())
+    if cfg.get("model_type") == "apertus" and cfg.get("hidden_act") != "xielu":
+        sys.exit(f"{args.model}: Apertus config with hidden_act="
+                 f"{cfg.get('hidden_act')!r} has no gated MLP — not scoring")
+
     print(f"loading {args.model}", flush=True)
     model = AutoModelForCausalLM.from_pretrained(
         args.model, dtype=torch.bfloat16, trust_remote_code=True).to(args.device).eval()

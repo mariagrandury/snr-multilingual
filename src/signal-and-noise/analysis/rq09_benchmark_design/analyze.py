@@ -15,6 +15,10 @@ Writes (this dir):
   - snr_by_curation_per_task.png   per-task strip plot (catches the xnli_eu
                                    heterogeneity that family-level smears)
   - group_stats.csv                per-group n, mean, median, kruskal H, p
+  - snr_per_family_ranked_paper.png/.svg/.csv
+                                   the family ranking for the paper, one
+                                   colour per answer-option count
+                                   (`--paper`: alone, from per_family_snr.csv)
 
 Q1's headline pick is `mpd` (mean pairwise distance, dispersion cluster);
 SNR signal here is `snr_mpd_<reference size>` (snr_col(): the configured
@@ -76,6 +80,53 @@ def snr_col(csv_path: Path) -> str:
 # `passage` is True iff the prompt contains a substantial passage / long
 # context (a heuristic, formalised quantitatively in Phase B).
 FAMILY_META: dict[str, dict] = {
+    # The reformulated twins are separate benchmarks, not aliases: same items,
+    # same curation, but the format is the thing rq09 measures and it is what
+    # the reformulation changed. `rf_` drops the A-D letters and scores the
+    # answer strings; `rfgm_` is a Gemini rewrite into a statement stem with
+    # four short continuations. n_options stays 4 (chance is unchanged).
+    "rf_belebele": {
+        "data_source": "FLORES-200 passages, custom MRC questions",
+        "curation_process": "human translation by bilingual experts",
+        "curation_category": "human_translation",
+        "source_origin": "english_translated",
+        "format": "cloze_completion", "n_options": 4, "passage": True,
+    },
+    "rf_global_mmlu_full": {
+        "data_source": "MMLU (Hendrycks et al. 2021), Cohere Full",
+        "curation_process": "machine translation + crowd / expert post-editing",
+        "curation_category": "mt_post_edited",
+        "source_origin": "english_translated",
+        "format": "cloze_completion", "n_options": 4, "passage": False,
+    },
+    "rf_include_base_44": {
+        "data_source": "INCLUDE base-44 (Romanou et al. 2025), regional exams",
+        "curation_process": "natively sourced exam questions (no translation)",
+        "curation_category": "originally_multilingual",
+        "source_origin": "originally_multilingual",
+        "format": "cloze_completion", "n_options": 4, "passage": False,
+    },
+    "rfgm_belebele": {
+        "data_source": "FLORES-200 passages, custom MRC questions",
+        "curation_process": "human translation, then LLM rewrite to a statement stem",
+        "curation_category": "human_translation",
+        "source_origin": "english_translated",
+        "format": "statement_continuation", "n_options": 4, "passage": True,
+    },
+    "rfgm_global_mmlu_full": {
+        "data_source": "MMLU (Hendrycks et al. 2021), Cohere Full",
+        "curation_process": "MT post-editing, then LLM rewrite to a statement stem",
+        "curation_category": "mt_post_edited",
+        "source_origin": "english_translated",
+        "format": "statement_continuation", "n_options": 4, "passage": False,
+    },
+    "rfgm_include_base_44": {
+        "data_source": "INCLUDE base-44 (Romanou et al. 2025), regional exams",
+        "curation_process": "natively sourced exams, then LLM rewrite to a statement stem",
+        "curation_category": "originally_multilingual",
+        "source_origin": "originally_multilingual",
+        "format": "statement_continuation", "n_options": 4, "passage": False,
+    },
     "arc": {
         "data_source": "ARC (Clark et al. 2018), Okapi-translated",
         "curation_process": "machine translation by ChatGPT",
@@ -456,6 +507,33 @@ def _ranked_bar(per_family: pd.DataFrame, out_path: Path) -> None:
     plt.close(fig)
 
 
+def ranked_bar_paper(per_family: pd.DataFrame, out_path: Path) -> None:
+    """`_ranked_bar` for the paper: the bars coloured by answer-option count,
+    the axis whose family-level test is the only one under 0.05."""
+    import matplotlib.ticker as mticker
+    from analysis import grids as G
+    from analysis import style as S
+    plt.rcParams.update(S.RC)
+    df = per_family.sort_values("snr_median", ascending=True)
+    opts = sorted(df["n_options"].astype(int).unique())
+    colour = dict(zip(opts, S.RAMP[len(S.RAMP) - len(opts):]))   # the darkest steps, light = fewest options
+    fig, ax = plt.subplots(figsize=(4.8, 0.2 * len(df) + 0.9))
+    y = np.arange(len(df))
+    ax.barh(y, df["snr_median"], color=[colour[int(n)] for n in df["n_options"]], height=0.7)
+    ax.set_yticks(y); ax.set_yticklabels([G.paper_name(f) for f in df["family"]], fontsize=7)
+    ax.set_xscale("log")
+    ax.xaxis.set_major_locator(mticker.LogLocator(subs=(1, 2, 3, 5)))
+    ax.xaxis.set_major_formatter(mticker.FormatStrFormatter("%g")); ax.xaxis.set_minor_locator(mticker.NullLocator())
+    ax.set_xlabel(f"Median SNR at {SNR_COL.rsplit('_', 1)[1]} over the family's languages")
+    ax.grid(axis="x", color=S.GRID, lw=.6); ax.set_axisbelow(True); S.clean(ax)
+    ax.legend(handles=[plt.Rectangle((0, 0), 1, 1, color=colour[n], label=f"{n} options") for n in opts],
+              fontsize=6.5, frameon=False, ncol=len(opts), loc="lower center", bbox_to_anchor=(0.5, 1.0))
+    fig.tight_layout()
+    df[["family", "n_tasks", "snr_median", "n_options"]].assign(name=[G.paper_name(f) for f in df["family"]]) \
+        .to_csv(out_path.with_suffix(".csv"), index=False)
+    S.save_paper(fig, out_path.with_suffix(""))
+
+
 # --- auto-generated README block (canonical pool only) ----------------------
 # Rewrites the marker-delimited "Highlighted result" / "Results" blocks of
 # analysis/rq09_benchmark_design/README.md. RQ / setup / TODO prose lives outside
@@ -642,6 +720,7 @@ def main(snr_dir: Path, out_dir: Path, stage: str, pool: str) -> None:
     # 4) Headline: ranked bar chart of family medians, colored by curation.
     _ranked_bar(per_family, out_dir / "snr_per_family_ranked.png")
     print("Wrote snr_per_family_ranked.png")
+    ranked_bar_paper(per_family, out_dir / "snr_per_family_ranked_paper.png")
 
     # --- Task-format axes (Phase A) ----------------------------------------
     print("\nFamily-level Kruskal-Wallis by n_options:")
@@ -730,10 +809,15 @@ if __name__ == "__main__":
                    help="Pool name from configs/models.json. Reads "
                         "results/snr_definition/<pool>/snr_variants_per_task.csv, "
                         "writes analysis/rq09_benchmark_design/<pool>/.")
+    p.add_argument("--paper", action="store_true", help="only the paper figure, from per_family_snr.csv on disk")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; "
                 f"available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
+    if args.paper:
+        out = HERE / stage / args.pool
+        ranked_bar_paper(pd.read_csv(out / "per_family_snr.csv"), out / "snr_per_family_ranked_paper.png")
+        sys.exit(0)
     main(snr_dir=SNR_DEFINITION_ROOT / stage / args.pool,
          out_dir=HERE / stage / args.pool, stage=stage, pool=args.pool)

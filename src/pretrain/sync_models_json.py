@@ -13,12 +13,14 @@ Normally you never run this by hand: **both auto-eval watchers call sync()
 at the start of every pass**, so the registry follows the grid
 automatically. The CLI exists for explicit use after editing the grid
 (commit the resulting models.json diff). Idempotent; entries outside the
---arch/--scheme filter (e.g. the shallow cells under --arch deep) are left
-untouched.
+ladder/--scheme filter (e.g. the shallow cells under the default deep ladder)
+are left untouched. --arch/--activation/--optimizer pick the ladder exactly as
+in launch_trainings.py.
 
 Usage:
     python sync_models_json.py                 # every deep cell, all schemes
     python sync_models_json.py --arch shallow  # + the shallow ladder's cells
+    python sync_models_json.py --activation swiglu  # + the swiglu ladder's
     python sync_models_json.py --dry-run       # show what would change
     python sync_models_json.py --prune         # drop entries the grid lost
 
@@ -41,13 +43,13 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, HYPERPARAMS, arches_for, exp_name, mix_label, predictivity_cells,
-    save_interval, schedule_for)
+    BASELINE_LADDER, DATA_SCHEMES, HYPERPARAMS, LADDERS, SEQ_LEN, cell_gbs, exp_name,
+    ladder_of, ladders_for, mix_label, predictivity_cells, save_interval, scale_for_gbs,
+    schedule_for)
 
 MODELS_JSON = SCRIPT_DIR.parent.parent / "configs" / "models.json"
 
 SOURCE = "snr-pretraining-predictivity"
-TOKENS_PER_ITER = 504 * 4096
 VOCAB_SIZE = 131072
 
 # Where the CSCS artifacts live (Azure cells keep the same entry shape; their
@@ -70,13 +72,22 @@ def save_points(target: int) -> list[int]:
     return pts
 
 
-def cell_entry(cfg: dict, c: dict, arch: str, scheme: str) -> tuple[str, dict]:
-    name = exp_name(c["size"], c["L"], arch, c["seed"], scheme)
+def cell_entry(cfg: dict, c: dict, ladder: str, scheme: str) -> tuple[str, dict]:
+    name = exp_name(c["size"], c["L"], ladder, c["seed"], scheme)
+    # The two smallest rungs train at their own batch, so their schedule is
+    # not the hyperparams file's: read it through the same scaling the
+    # launcher applies, or models.json records a step count and a checkpoint
+    # list the run never had. `tokens` is invariant — that is what holding
+    # D = 100 x N means — but num_iters, tokens_per_iter and every entry of
+    # `all` change.
+    gbs = cell_gbs(c["size"])
+    cfg = scale_for_gbs(cfg, gbs)
+    tokens_per_iter = gbs * SEQ_LEN
     target = schedule_for(cfg)[0]
     return name, {
         "source": SOURCE,
         # Cross-size identity (the size token is what varies along the ladder).
-        "family": f"lm-{mix_label(c['L'], arch, scheme)}-seed{c['seed']}",
+        "family": f"lm-{mix_label(c['L'], ladder, scheme)}-seed{c['seed']}",
         "size": c["size"],
         # Total parameters = non-embedding + the tied embedding matrix — which
         # is exactly the count the FLOPs convention wants
@@ -88,7 +99,11 @@ def cell_entry(cfg: dict, c: dict, arch: str, scheme: str) -> tuple[str, dict]:
         "vocab_size": VOCAB_SIZE,
         "hyperparams_key": c["size"],
         "L": c["L"],
-        "arch": arch,
+        # The ladder is the trained configuration (the name's token); `arch`,
+        # `activation` and `optimizer` are its design levels, so a swiglu cell
+        # is arch "deep" (launch_trainings.LADDERS).
+        "ladder": ladder,
+        **LADDERS[ladder],
         # Kept under the historical key `scheme`, which now holds the data
         # SCHEME (A / AT3 / B / ZH / ES). `temperature` is broken out beside
         # it because AT3 differs from A by allocation alone — its language list
@@ -104,9 +119,9 @@ def cell_entry(cfg: dict, c: dict, arch: str, scheme: str) -> tuple[str, dict]:
         },
         "stages": {
             "pretraining": {
-                "tokens": target * TOKENS_PER_ITER,
+                "tokens": target * tokens_per_iter,
                 "num_iters": target,
-                "tokens_per_iter": TOKENS_PER_ITER,
+                "tokens_per_iter": tokens_per_iter,
                 "checkpoints": {"final": target, "all": save_points(target)},
             },
         },
@@ -115,12 +130,12 @@ def cell_entry(cfg: dict, c: dict, arch: str, scheme: str) -> tuple[str, dict]:
 
 def grid_names() -> set[str]:
     """Every cell name the current grid can produce, over every data scheme
-    and the architectures each is trained in — the keep-set for --prune. A
+    and the ladders each is trained in — the keep-set for --prune. A
     scheme absent from this set gets its models.json entries deleted, so it
     must enumerate the whole grid, not one slice of it."""
-    return {exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"])
-            for c in predictivity_cells()
-            for arch in arches_for(c["scheme"], c["size"], c["L"])}
+    return {exp_name(c["size"], c["L"], ladder, c["seed"], c["scheme"])
+            for ladder in HYPERPARAMS for c in predictivity_cells(ladder=ladder)
+            if ladder in ladders_for(c["scheme"], c["size"], c["L"])}
 
 
 def prune(write: bool = True) -> list[str]:
@@ -138,21 +153,21 @@ def prune(write: bool = True) -> list[str]:
     return stale
 
 
-def sync(arch: str = "deep", scheme: str | None = None,
+def sync(ladder: str = BASELINE_LADDER, scheme: str | None = None,
          write: bool = True) -> tuple[list[str], list[str]]:
-    """Upsert cell entries for one architecture; returns (added, updated)
+    """Upsert cell entries for one ladder; returns (added, updated)
     names. `scheme` narrows to a single data scheme, otherwise every scheme
-    trained in this arch is upserted — the watchers want all of them, and
+    trained in this ladder is upserted — the watchers want all of them, and
     entries that do not exist are cells the conversion and W&B push cannot
     resolve. A no-op (and no write) when models.json already matches."""
     data = json.loads(MODELS_JSON.read_text())
-    configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
+    configs = json.loads(HYPERPARAMS[ladder].read_text())["configs"]
 
     added, updated = [], []
-    for c in predictivity_cells([scheme] if scheme else None):
-        if arch not in arches_for(c["scheme"], c["size"], c["L"]):
+    for c in predictivity_cells([scheme] if scheme else None, ladder):
+        if ladder not in ladders_for(c["scheme"], c["size"], c["L"]):
             continue
-        name, entry = cell_entry(configs[c["size"]], c, arch, c["scheme"])
+        name, entry = cell_entry(configs[c["size"]], c, ladder, c["scheme"])
         old = data["models"].get(name)
         if old == entry:
             continue
@@ -171,23 +186,30 @@ def main() -> None:
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    p.add_argument("--arch", choices=["deep", "shallow"], default="deep")
+    # The ladder, picked by its levels as in launch_trainings.py.
+    for k, v in LADDERS[BASELINE_LADDER].items():
+        p.add_argument(f"--{k}", default=v,
+                       choices=list(dict.fromkeys(lv[k] for lv in LADDERS.values())))
     p.add_argument("--scheme", choices=list(DATA_SCHEMES), default=None,
                    help="Only this data scheme (default: every scheme "
-                        "trained in --arch)")
+                        "trained in the ladder)")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--prune", action="store_true",
                    help="also remove predictivity entries the grid no longer "
-                        "defines (any arch/scheme) — check they have no "
+                        "defines (any ladder/scheme) — check they have no "
                         "artifacts first")
     args = p.parse_args()
+    try:
+        ladder = ladder_of(args.arch, args.activation, args.optimizer)
+    except ValueError as e:
+        p.error(str(e))
 
     if args.prune:
         for n in prune(write=not args.dry_run):
             print(f"  - {n} (not in the current grid)")
-    added, updated = sync(args.arch, args.scheme, write=not args.dry_run)
+    added, updated = sync(ladder, args.scheme, write=not args.dry_run)
     print(f"added {len(added)}, updated {len(updated)} "
-          f"(of {len(predictivity_cells())} cells, arch={args.arch} "
+          f"(of {len(predictivity_cells(ladder=ladder))} cells, ladder={ladder} "
           f"scheme={args.scheme})")
     for n in added:
         print(f"  + {n}")

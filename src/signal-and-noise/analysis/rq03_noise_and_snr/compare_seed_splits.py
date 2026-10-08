@@ -1,7 +1,7 @@
 """Test framework generalization across seed splits.
 
 Reads two pools' ``snr_variants_per_task.csv`` (``predictivity_seeds_train``,
-the replicate seeds 64/313, as the "train" split and ``predictivity_seeds_test``,
+the replicate seeds 64/313/28/1797, as the "train" split and ``predictivity_seeds_test``,
 seed 1904 on the same cells, as the "test" split) and asks:
 
   1. Does the per-language best variant agree between the two splits?
@@ -13,13 +13,13 @@ seed 1904 on the same cells, as the "test" split) and asks:
 The per-language r is rq04's ``_per_language_pearson_table``: a language needs
 MIN_LANG_TASKS (3) distinct tasks with a value, fewer is NaN (rule 8), and
 ``multi`` / ``??`` are never a language (rule 7, `utils.languages_only`). The
-two pools must hold the same cells (size × L × arch × scheme); the script
+two pools must hold the same cells (size × L × ladder × data build, `utils.CELL_KEYS`); the script
 checks that on the loaded pools and says so in the README block.
 
 Outputs land under ``<rq03>/<stage>/<train_pool>__vs__<test_pool>/``:
-  - ``per_language_agreement_da_<size|ckpt>.csv`` — for each language, the
+  - ``per_language_agreement_da_<size|ckpt>_multi_axes.csv`` — for each language, the
     train-best variant and its r in both splits, plus the test-split's own best.
-  - ``per_language_agreement_da_<size|ckpt>.png`` — bar chart of train-vs-test
+  - ``per_language_agreement_da_<size|ckpt>_multi_axes.png`` — bar chart of train-vs-test
     r per language under the train-best variant.
   - ``variant_r_train_vs_test.csv`` — long table of (language, variant,
     r_train, r_test) for every (lang, variant) cell.
@@ -60,7 +60,7 @@ from analysis.rq04_surrogates.analyze_snr_variants import (  # noqa: E402
 )
 from analysis.rq04_surrogates.snr_definition_postprocess import _VARIANT_FAMILY  # noqa: E402
 from analysis.paths import NOISE_AND_SNR  # noqa: E402
-from analysis.utils import MIN_LANG_TASKS, assign_language, build_snr_pool, languages_only  # noqa: E402
+from analysis.utils import CELL_KEYS, MIN_LANG_TASKS, assign_language, build_snr_pool, languages_only  # noqa: E402
 
 OUT_ROOT = NOISE_AND_SNR
 
@@ -405,13 +405,13 @@ def main():
     agreements = {}
     for kind in ("size", "ckpt"):
         agreement = per_language_agreement(df_train, df_test, kind)
-        agreement_path = out_dir / f"per_language_agreement_da_{kind}.csv"
+        agreement_path = out_dir / f"per_language_agreement_da_{kind}_multi_axes.csv"
         agreement.to_csv(agreement_path, index=False)
         print(f"Wrote → {agreement_path}")
 
         render_per_language(
             agreement,
-            out_dir / f"per_language_agreement_da_{kind}.png",
+            out_dir / f"per_language_agreement_da_{kind}_multi_axes.png",
             title=f"Train-best variant: r on train vs test (DA-{kind})",
         )
         agreements[kind] = agreement
@@ -470,9 +470,9 @@ def main():
 
 
 def pool_cells(pool: str) -> tuple[set, list]:
-    """The (size, L, arch, scheme) cells a pool holds, and its seeds."""
+    """The (size, L, ladder, data build) cells a pool holds, and its seeds."""
     df = build_snr_pool(pool)
-    return set(map(tuple, df[["size", "L", "arch", "scheme"]].drop_duplicates().to_numpy())), sorted(df["seed"].unique())
+    return set(map(tuple, df[CELL_KEYS].drop_duplicates().to_numpy())), sorted(df["seed"].unique())
 
 
 def generate_readme(train_pool: str, test_pool: str, out_dir: Path, agreements: dict, rank_corrs: dict,
@@ -485,7 +485,7 @@ def generate_readme(train_pool: str, test_pool: str, out_dir: Path, agreements: 
         print(f"!!! the holdout pools hold different cells: train only {sorted(cells_train - cells_test)}, "
               f"test only {sorted(cells_test - cells_train)}")
     def _cells(cells):
-        return ", ".join(f"{s} L{L} {a} scheme {sc}" for s, L, a, sc in sorted(cells, key=lambda c: (c[1], c[0], c[2], c[3])))
+        return ", ".join(f"{s} L{L} {a} data {d}" for s, L, a, d in sorted(cells, key=lambda c: (c[1], c[0], c[2], c[3])))
     rows = []
     for kind in ("size", "ckpt"):
         a = agreements[kind].replace({"train_best_variant": {"": None}, "test_best_variant": {"": None}}) \

@@ -1,0 +1,48 @@
+\section{Terminology}
+
+\textit{Scaling predictability}: "evaluation results from small-scale models reliably predict ablation effects in their larger-scale counterparts".
+
+\begin{table*}[t]
+    \centering
+    \begin{tabular}{lll}
+        \toprule
+        \textbf{Symbol} & \textbf{Meaning} & \textbf{Options} \\
+        \hline
+        \(N\) & Non-embedding parameter count & 90M, 175M, 350M, 600M, 1B, 1.7B, 3B \\
+        \hline
+        \(A\) & Architecture & deep or shallow \\
+        \hline
+        \(O\) & Optimizer & AdEMAMix \\
+        \hline
+        \(A_f\) & Activation function & xielu or swiglu \\
+        \hline
+        \(K\) & Number of training languages & 1, 2, 8, 15, 30, 50 \\
+        \hline
+        \(M\) & Language-selection scheme & scheme A, B, or C \\
+        \hline
+        \(T\) & Sampling temperature & 1 or 3 \\
+        \hline
+        \(S\) & Random seed & 1904 (default), 64 and 313 (175M, 600M), 28 and 1797 (1B) \\
+        \hline
+        \(f\) & Fraction of training completed & 0.10, 0.20, ..., 0.70, 0.80, 0.85, 0.90, 0.95, 1.00 \\
+        \bottomrule
+        \toprule
+        \textbf{Symbol} & \textbf{Meaning} & \textbf{Example} \\
+        \hline
+        \(b\) & Benchmark & HellaSwag \\
+        \hline
+        \(\ell\) & Evaluation language & Spanish \\
+        \hline
+        \(b_\ell\) & Language task & HellaSwag-es \\
+        \hline
+        \({b_\ell}_i\) & Sample/example & One instance inside HellaSwag-es \\
+        \hline
+        \(Y_{b_\ell}\) & Raw task score & accuracy or BPB \\
+        \hline
+        \(B\) & Evaluation suite & Complete collection of benchmarks \\
+        \bottomrule
+    \end{tabular}
+    \caption{Notation symbols}
+    \label{tab:notation-symbols}
+\end{table*}
+

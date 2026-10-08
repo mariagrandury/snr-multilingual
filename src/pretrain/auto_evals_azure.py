@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-Auto-eval watcher: every N checkpoints of the size's save grid (default 2),
-read on the grid the run actually saved at, plus the run's final checkpoint
+Auto-eval watcher: twelve checkpoints per run — the ten tenths of training
+plus 85 % and 95 %, the grid the analysis reads — expressed on the grid the
+run actually saved at, plus the run's final checkpoint
 (launch_trainings.due_iters), evaluate on the "auto" benchmark group and
 push to W&B (msnr) — progress signal beyond the loss curve while a training
 runs on Azure.
 
 Idempotent, like the cluster's eval launchers: each pass lists the blob
-storage, finds due checkpoints (every Nth save on the run's own grid),
+storage, finds due checkpoints (the tenths on the run's own grid),
 and per due iter submits at most one missing step — jobs/convert.yml when
 the HF snapshot doesn't exist yet, else jobs/eval.yml (TASKS=auto) while any
 of the cell's tasks is still missing a result (task-level, so adding a
@@ -201,9 +202,10 @@ def one_pass(names: list[str], auth: list[str], every: int,
         iters = saved_iters(auth, name)
         if not iters:
             continue
-        # Every Nth checkpoint of the size's grid, read on the grid the run
-        # actually saved at, PLUS the run's final checkpoint whatever its
-        # number — the CSCS watcher's rule (launch_trainings.due_iters).
+        # The ten tenths of training plus the 85 % / 95 % noise points, read
+        # on the grid the run actually saved at, PLUS the run's final
+        # checkpoint whatever its number — the CSCS watcher's rule
+        # (launch_trainings.due_iters): 12 checkpoints at every size.
         ck = stages_of(name)["pretraining"]["checkpoints"]
         due = due_iters(iters, ck["final"], every)
         m = get_model(name)
@@ -271,9 +273,11 @@ def main() -> None:
     p.add_argument("--size")
     p.add_argument("--seed", type=int)
     p.add_argument("--name", help="watch a single cell (a configs/models.json key)")
-    p.add_argument("--every", type=int, default=2,
-                   help="evaluate every N saved checkpoints (the final "
-                        "checkpoint is always evaluated on top)")
+    p.add_argument("--every", type=int, default=1,
+                   help="coarsen the evaluated grid: every Nth of the ten "
+                        "tenths of training. The default 1 is the grid the "
+                        "analysis reads (12 checkpoints/run: the tenths plus "
+                        "85%% and 95%%); raise it only for one-off passes")
     p.add_argument("--tasks", default="auto")
     p.add_argument("--watch", type=int, metavar="SECONDS",
                    help="keep running, one pass every SECONDS")

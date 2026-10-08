@@ -1,6 +1,6 @@
 #!/bin/bash
 # Azure ML conversion entrypoint: Megatron torch_dist checkpoint -> HF
-# (ApertusForCausalLM). Same two steps as ../conversion/convert-snr.sh mode 1,
+# (ApertusForCausalLM; the swiglu ladder as Qwen3ForCausalLM). Same two steps as ../conversion/convert-snr.sh mode 1,
 # without the SLURM/plan-file machinery. Runs on 1 GPU in the apertus-nemo
 # container (jobs/convert.yml).
 #
@@ -29,6 +29,9 @@ python "$MEGATRON_LM_DIR/tools/checkpoint/convert.py" \
     --load-dir "$TMP_TORCH/torch" --save-dir "$HF_OUT" \
     --hf-tokenizer "$HF_TOKENIZER"
 
+# convert.py exits 0 even when the saver (a child process) raised: no
+# config.json means the saver died before save_pretrained.
+[[ -f "$HF_OUT/config.json" ]] || { echo "ERROR: the saver wrote no config.json to $HF_OUT (traceback above) - not marking it complete" >&2; exit 1; }
 echo "Converted iter $CKPT_STEP -> $HF_OUT"
 ls -la "$HF_OUT"
 

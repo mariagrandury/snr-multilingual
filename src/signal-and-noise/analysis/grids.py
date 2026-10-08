@@ -28,6 +28,7 @@ under the title that says how a cell is computed.
 
 from __future__ import annotations
 
+import re
 import textwrap
 from pathlib import Path
 
@@ -39,6 +40,52 @@ from matplotlib.colors import BoundaryNorm, ListedColormap, TwoSlopeNorm
 from analysis import style as S
 
 FIRST = ("bpb", "loss")          # panels drawn before the alphabetical benchmarks
+# The reformulated twins are ordinary benchmarks (`rf_belebele`), but reading
+# them as `belebele-rf` keeps a twin next to its original instead of stranding
+# every one of them under "r", and says which of the sets a panel is. `bbpb_`
+# is the benchmark's gold-answer BPB (utils.BBPB), its third member.
+_TWIN = re.compile(r"^(rfgm|rf|bbpb)_(.+)$")
+
+
+def display(key) -> str:
+    """A benchmark family as a figure reads it: `rf_belebele` -> `belebele-rf`,
+    `bbpb_rf_belebele` -> `belebele-rf-bbpb`."""
+    m = _TWIN.match(str(key))
+    return f"{display(m.group(2))}-{m.group(1)}" if m else str(key)
+
+
+def base(key) -> str:
+    """The benchmark a twin rewrites, every twin prefix stripped:
+    `bbpb_rf_belebele` -> `belebele`. One cluster per original."""
+    m = _TWIN.match(str(key))
+    return base(m.group(2)) if m else str(key)
+
+
+# The paper's names for the benchmark families; a family not listed reads its
+# key with the underscores as spaces. `paper_name` is what every `_paper`
+# figure labels a benchmark with, the twins as `Belebele RF` / `INCLUDE LLM-RF`.
+PAPER_NAMES = {
+    "hellaswag": "HellaSwag", "belebele": "Belebele", "global_mmlu_full": "Global-MMLU", "global_mmlu": "Global-MMLU",
+    "include_base_44": "INCLUDE", "include_v2_en": "INCLUDE v2 (EN)", "include_v2_og": "INCLUDE v2 (OG)",
+    "xnli": "XNLI", "xcopa": "XCOPA", "xstorycloze": "XStoryCloze", "xwinograd": "XWinograd", "paws": "PAWS-X",
+    "multiblimp": "MultiBLiMP", "arc": "ARC", "arc_mt": "ARC (MT)", "lambada_openai_mt": "LAMBADA",
+    "global_piqa_parallel_cloze": "Global PIQA (parallel)", "global_piqa_nonparallel_cloze": "Global PIQA (non-parallel)",
+    "truthfulqa-multi_mc1": "TruthfulQA-Multi", "truthfulqa_mc2": "TruthfulQA (mc2)", "mmlu": "MMLU",
+    "commonsense_qa": "CommonsenseQA", "bbh_mcq": "BBH (MCQ)", "bbh_cloze": "BBH (cloze)",
+    "acp_bench_mcq": "ACP-Bench (MCQ)", "acp_bench_cloze": "ACP-Bench (cloze)", "cultural_bench_easy": "CulturalBench-easy",
+    "cultural_bench_hard": "CulturalBench-hard", "blend_sample": "BLEnD", "mathqa": "MathQA", "openbookqa": "OpenBookQA",
+    "toxigen": "ToxiGen", "bbq": "BBQ", "bpb": "BPB", "loss": "training loss",
+}
+_TWIN_NAMES = {"rf": "RF", "rfgm": "LLM-RF", "bbpb": "bBPB"}
+
+
+def paper_name(key) -> str:
+    """`rf_belebele` -> `Belebele RF`, `rfgm_include_base_44` -> `INCLUDE LLM-RF`,
+    `bbpb_rf_belebele` -> `Belebele RF bBPB`."""
+    m = _TWIN.match(str(key))
+    if m:
+        return f"{paper_name(m.group(2))} {_TWIN_NAMES[m.group(1)]}"
+    return PAPER_NAMES.get(str(key), str(key).replace("_", " "))
 NEVER = "#d6a29e"                # a level map's "never reached" (grey is kept for "filtered out")
 GATED, NEVER_CODE = -2.0, -1.0   # a level map's codes below the levels' own indices
 # Every run trains D(N) = 100 N tokens, five times the Chinchilla-optimal 20 N:
@@ -50,15 +97,17 @@ def chinchilla(frac: float) -> str:
     return f"{frac * CHINCHILLA_AT_FULL:g}C"
 
 
-def mark_gated(df: pd.DataFrame, pool: str, size_col: str, value: str, reference: str | None = None) -> pd.DataFrame:
+def mark_gated(df: pd.DataFrame, pool: str, size_col: str, value: str, reference: str | None = None,
+               mask: pd.DataFrame | None = None) -> pd.DataFrame:
     """Blank `value` and set `gated` where the above-random gate filters the
     row out: the task is at chance at its own size, or at `reference` (the
     size it is ranked against). Tasks without a chance level (BPB) and sizes
-    the gate has no column for are never gated."""
+    the gate has no column for are never gated. `mask` replaces the pool's
+    committed one (a gate recomputed on other scores, `scores_and_mask`)."""
     from analysis.autodoc import CANONICAL_POOL
     from analysis.rq00_gate_and_curves.above_random import load_mask
     df = df.copy()
-    mask = load_mask(pool)
+    mask = load_mask(pool) if mask is None else mask
     if mask is None:            # only the canonical pool has a gate report: same tasks and sizes, its seed
         print(f"  ({pool}: no above-random mask of its own, gating with {CANONICAL_POOL}'s)")
         mask = load_mask(CANONICAL_POOL)
@@ -84,7 +133,7 @@ def add_meta(df: pd.DataFrame, task_col: str = "task") -> pd.DataFrame:
 def panel_order(keys, first=FIRST) -> list:
     keys = [k for k in pd.unique(pd.Series(list(keys))) if k not in ("??", "", None) and k == k]
     head = [k for k in first if k in keys]
-    return head + sorted((k for k in keys if k not in head), key=str)
+    return head + sorted((k for k in keys if k not in head), key=display)
 
 
 def _draw(ax, mat: pd.DataFrame, cnt: pd.DataFrame | None, *, vmin, vmax, cmap, fmt, fontsize, center=None,
@@ -116,17 +165,16 @@ def _draw(ax, mat: pd.DataFrame, cnt: pd.DataFrame | None, *, vmin, vmax, cmap, 
                     color="white" if _dark(v) else S.INK)
     ax.set_xticks(range(mat.shape[1]))
     ax.set_xticklabels([str(c) for c in mat.columns], fontsize=fontsize + .5, rotation=90 if rotate else 0)
-    ax.set_yticks(range(mat.shape[0])); ax.set_yticklabels([str(r) for r in mat.index], fontsize=fontsize + .5)
+    ax.set_yticks(range(mat.shape[0])); ax.set_yticklabels([display(r) for r in mat.index], fontsize=fontsize + .5)
     S.clean(ax, spines=()); ax.tick_params(length=0)
     return im
 
 
 def _csv_path(png: Path) -> Path:
-    """`<name>.csv` for `<name>.png`, `<name>_by_benchmark.png` and `<name>_by_language.png`."""
-    stem = png.stem
-    for suffix in ("_by_benchmark", "_by_language"):
-        stem = stem.removesuffix(suffix)
-    return png.with_name(stem + ".csv")
+    """The table a facet pair shares: `<name>[_<pair set>].csv` for `<name>.png`,
+    `<name>_by_benchmark[_<pair set>].png` and `<name>_by_language[_<pair set>].png`
+    (rule 16 puts the pair set last, so the facet token is not always the suffix)."""
+    return png.with_name(re.sub(r"_by_(benchmark|language)(?=_|$)", "", png.stem, count=1) + ".csv")
 
 
 def _header(fig, title: str, note: str) -> float:
@@ -180,7 +228,8 @@ def panel_grid(cells: pd.DataFrame, path: Path, *, by: str, row: str, col: str, 
         mat.columns = [col_label(c) for c in mat.columns]
         im = _draw(ax, mat, cnt, vmin=vmin, vmax=vmax, cmap=cmap or S.SEQ, fmt=fmt, fontsize=5.5 if cell_w >= 0.5 else 4.6,
                    rotate=cell_w < 0.5, center=center, gated=gated)
-        ax.set_title(f"{key}  ({have['task'].nunique()} tasks)" if "task" in g else str(key), loc="left", fontsize=8)
+        ax.set_title(f"{display(key)}  ({have['task'].nunique()} tasks)" if "task" in g else display(key),
+                     loc="left", fontsize=8)
     for ax in flat[:len(keys)]:
         ax.set_xlabel(xlabel, fontsize=7); ax.set_ylabel(ylabel, fontsize=7)
     legend = "white = no value" + (", grey = filtered out by the above-random gate" if cells["gated"].any() else "")
@@ -209,7 +258,9 @@ def benchmark_and_language_panels(cells: pd.DataFrame, out_dir: Path, name: str,
 
 def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "", cbar: str = "",
                   level_label=str, never: str = "—", xlabel: str = "language", ylabel: str = "benchmark",
-                  rows: list | None = None, cols: list | None = None, separators: list = ()) -> None:
+                  rows: list | None = None, cols: list | None = None, separators: list = (),
+                  names: tuple = ("family", "language"), also: tuple = (), name=display,
+                  cell_text: bool = True, cell_w: float = 0.30) -> None:
     """Language x benchmark maps whose cell is a *level* (the smallest size,
     Chinchilla multiple or compute at which something holds). `mats` is one
     frame or a dict label -> frame (stacked subplots, e.g. one per model
@@ -217,7 +268,13 @@ def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "",
     level reaches it, GATED where the gate filtered every level out (grey),
     NaN where there is no value (white). Rows follow the panel order, bits
     per byte first; every subplot keeps the same rows and columns. Writes
-    `<name>.csv` next to the figure."""
+    `<name>.csv` next to the figure, its row and column keys under `names`;
+    `also` adds formats (".svg") beside the PNG; `name` labels the ticks,
+    `cell_text` writes the level into every cell, `cell_w` is a column's
+    width in inches; an empty `xlabel` / `ylabel` is not drawn. A path whose
+    stem ends in `_paper` is a paper figure (rule 18): capitalized legend
+    entries, no dash glyph, written through `S.save_paper`, which lints it."""
+    paper = path.stem.endswith("_paper")
     if isinstance(mats, pd.DataFrame):
         mats = {"": mats}
     mats = {k: m for k, m in mats.items() if m is not None and not m.empty}
@@ -230,7 +287,7 @@ def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "",
     colours = [S.SEQ(x) for x in np.linspace(0.15, 0.95, len(levels))]
     cmap = ListedColormap([S.NODATA, NEVER] + colours); cmap.set_bad(S.SURFACE)
     norm = BoundaryNorm(np.arange(-2.5, len(levels) + 0.5, 1), cmap.N)
-    fig, axes = plt.subplots(len(mats), 1, figsize=(0.30 * len(cols) + 3.4, (0.30 * len(rows) + 1.3) * len(mats) + 0.9),
+    fig, axes = plt.subplots(len(mats), 1, figsize=(cell_w * len(cols) + 3.4, (0.30 * len(rows) + 1.3) * len(mats) + 0.9),
                              squeeze=False)
     long = []
     for ax, (label, mat) in zip(axes[:, 0], mats.items()):
@@ -239,32 +296,37 @@ def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "",
         ax.imshow(np.ma.masked_invalid(vals), cmap=cmap, norm=norm, aspect="auto")
         for k in separators:            # a square map's block boundaries, drawn on both axes
             ax.axhline(k - 0.5, color=S.INK, lw=0.6); ax.axvline(k - 0.5, color=S.INK, lw=0.6)
-        for i in range(vals.shape[0]):
+        for i in range(vals.shape[0] if cell_text else 0):
             for j in range(vals.shape[1]):
                 v = vals[i, j]
                 if np.isfinite(v) and v > GATED:
                     ax.text(j, i, never if v < 0 else level_label(levels[int(v)]), ha="center", va="center",
                             fontsize=4.4, rotation=90, color="white" if v >= 0.6 * len(levels) else S.INK)
-        ax.set_xticks(range(len(cols))); ax.set_xticklabels(cols, fontsize=6, rotation=90)
-        ax.set_yticks(range(len(rows))); ax.set_yticklabels(rows, fontsize=6.5)
+        ax.set_xticks(range(len(cols))); ax.set_xticklabels([name(c) for c in cols], fontsize=6, rotation=90)
+        ax.set_yticks(range(len(rows))); ax.set_yticklabels([name(r) for r in rows], fontsize=6.5)
         ax.set_xlabel(xlabel, fontsize=7); ax.set_ylabel(ylabel, fontsize=7)
         if label:
             ax.set_title(str(label), loc="left", fontsize=9)
         S.clean(ax, spines=()); ax.tick_params(length=0)
-        t = mat.rename_axis(index="family", columns="language").stack().dropna().rename("level_index").reset_index()
+        t = mat.rename_axis(index=names[0], columns=names[1]).stack().dropna().rename("level_index").reset_index()
         t["level"] = ["filtered out" if i == GATED else "never" if i < 0 else level_label(levels[int(i)]) for i in t["level_index"]]
         long.append(t.assign(panel=str(label)))
     any_gated = any((m == GATED).any().any() for m in mats.values())
     handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in colours + [NEVER] + ([S.NODATA] if any_gated else [])]
     handles.append(plt.Rectangle((0, 0), 1, 1, facecolor=S.SURFACE, edgecolor=S.GRID))
-    axes[0, 0].legend(handles, [level_label(l) for l in levels] + [f"{never} never"]
-                      + (["filtered out by the gate"] if any_gated else []) + ["no value"],
+    tail = [f"{never} never"] + (["filtered out by the gate"] if any_gated else []) + ["no value"]
+    if paper:                       # the cells carry no glyph there, and rule 18 bans the dash
+        tail = [t.replace(f"{never} ", "").capitalize() for t in tail]
+    axes[0, 0].legend(handles, [level_label(l) for l in levels] + tail,
                       title=cbar, fontsize=6.5, title_fontsize=7, frameon=False, loc="upper left", bbox_to_anchor=(1.005, 1.0))
     top = _header(fig, title, note)
     fig.tight_layout(rect=(0, 0, 1, top))
     path.parent.mkdir(parents=True, exist_ok=True)
-    pd.concat(long)[["panel", "family", "language", "level_index", "level"]].to_csv(path.with_suffix(".csv"), index=False)
-    S.save(fig, path, dpi=130)
+    pd.concat(long)[["panel", *names, "level_index", "level"]].to_csv(path.with_suffix(".csv"), index=False)
+    if paper:
+        S.save_paper(fig, path.with_suffix(""), exts=("png", *(e.lstrip(".") for e in also)), dpi=130)
+    else:
+        S.save(fig, path, dpi=130, also=also)
     print(f"Wrote {path.name} ({len(mats)} panel(s), {len(rows)} benchmarks x {len(cols)} languages)")
 
 
@@ -317,13 +379,17 @@ def matrix_ax(ax, mat: pd.DataFrame, title: str, *, cnt: pd.DataFrame | None = N
     return t.assign(panel=title)
 
 
-def stack_ax(ax, level: pd.DataFrame, title: str, *, levels: list, level_label=str, xlabel: str = "share of languages") -> pd.DataFrame:
+def stack_ax(ax, level: pd.DataFrame, title: str, *, levels: list, level_label=str, xlabel: str = "share of languages",
+             rows: list | None = None, name=display, legend_cols: int = 4) -> pd.DataFrame:
     """A level map condensed: per benchmark, the share of its languages at
-    each level (never in red, filtered out by the gate in grey)."""
-    level = level.reindex(index=panel_order(level.index))
-    codes = [float(i) for i in range(len(levels))] + [NEVER_CODE, GATED]
-    names = [level_label(l) for l in levels] + ["never", "filtered out"]
-    colours = [S.SEQ(x) for x in np.linspace(0.15, 0.95, len(levels))] + [NEVER, S.NODATA]
+    each level (never in red, filtered out by the gate in grey, only where
+    the map has such cells). `rows` is the benchmark order (default: the
+    panel order), `name` labels the bars."""
+    level = level.reindex(index=rows if rows is not None else panel_order(level.index))
+    gated = bool((level == GATED).any().any())
+    codes = [float(i) for i in range(len(levels))] + [NEVER_CODE] + ([GATED] if gated else [])
+    names = [level_label(l) for l in levels] + ["never"] + (["filtered out"] if gated else [])
+    colours = [S.SEQ(x) for x in np.linspace(0.15, 0.95, len(levels))] + [NEVER] + ([S.NODATA] if gated else [])
     share = pd.DataFrame({n: (level == c).sum(axis=1) for n, c in zip(names, codes)})
     total = share.sum(axis=1)
     share = share.div(total.where(total > 0), axis=0)
@@ -331,10 +397,10 @@ def stack_ax(ax, level: pd.DataFrame, title: str, *, levels: list, level_label=s
     for n, c in zip(names, colours):
         ax.barh(range(len(share)), share[n].fillna(0), left=left, color=c, label=n, height=0.8)
         left += share[n].fillna(0).to_numpy()
-    ax.set_yticks(range(len(share))); ax.set_yticklabels([f"{f} ({int(n)})" for f, n in zip(share.index, total)], fontsize=6.5)
+    ax.set_yticks(range(len(share))); ax.set_yticklabels([f"{name(f)} ({int(n)})" for f, n in zip(share.index, total)], fontsize=6.5)
     ax.invert_yaxis(); ax.set_xlim(0, 1); ax.set_xlabel(xlabel, fontsize=7.5)
     ax.set_title(title, loc="left", fontsize=8.5); S.clean(ax); ax.tick_params(axis="y", length=0)
-    ax.legend(fontsize=6, frameon=False, ncol=4, loc="upper left", bbox_to_anchor=(0, -0.12))
+    ax.legend(fontsize=6, frameon=False, ncol=legend_cols, loc="upper left", bbox_to_anchor=(0, -0.12))
     t = share.rename_axis(index="row", columns="col").stack().dropna().rename("value").reset_index()
     return t.assign(panel=title)
 

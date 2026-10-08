@@ -5,7 +5,7 @@
     "desired_tokens": 100000000000,
     "global_batch_size": 504,
     "head_dim": 64,
-    "predictivity_schedule": "D = 100 x n_non_emb_params tokens (5x Chinchilla) at global_batch_size x seq_len tokens/iter; train_iters rounded to the checkpoint grid (20 evenly spaced checkpoints per run, 40 for 1.7B \u2014 save_interval = train_iters/n divides exactly, 1xC = train_iters/5 on-grid); lr_warmup_iters ~4% and lr_wsd_decay_iters ~20% of train_iters, rounded to 100; lr from the 6ND law at the run's own budget (C = 6 x N x 100N = 600 N^2)"
+    "predictivity_schedule": "D = 100 x n_non_emb_params tokens (5x Chinchilla) at global_batch_size x seq_len tokens/iter; train_iters rounded to the checkpoint grid (20 evenly spaced checkpoints per run, 40 once train_iters >= 30000 (the 1B rung) and 60 once train_iters >= 60000 (1.7B and 3B) \u2014 save_interval = train_iters/n divides exactly, 1xC = train_iters/5 on-grid; the EVALUATED set is 12 at every size, see launch_trainings.due_iters); lr_warmup_iters ~4% and lr_wsd_decay_iters ~20% of train_iters, rounded to 100; lr from the 6ND law at the run's own budget (C = 6 x N x 100N = 600 N^2)"
   },
   "configs": {
     "175M": {

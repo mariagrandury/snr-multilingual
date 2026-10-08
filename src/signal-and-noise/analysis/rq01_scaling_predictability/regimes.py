@@ -3,7 +3,7 @@ across model size and along a training run.
 
 One point per task (a benchmark in one language, or one language's BPB; the
 training loss is not one language's and is left out, rule 7), aggregated over
-the deep, scheme-A, seed-1904 cells; the loader keeps parent
+the deep, data-A, seed-1904 cells; the loader keeps parent
 tasks and trained languages (rules 6 and 2) and the above-random gate (rule 1,
 `grids.mark_gated`) keeps a (task, size) only where the task is above chance,
 so a task at chance at a size contributes nothing at that size and a task at
@@ -23,6 +23,7 @@ chance at every size does not appear:
 
     scaling_regimes.png / .csv             the figure and its per-task table (medians, counts, the regime)
     scaling_regimes_families.png / .csv    the same, one label per benchmark family at its median point (no legend)
+    scaling_regimes_families_paper.png/pdf/svg  the families figure for the paper: bare and square as the outliers one
     scaling_regimes_outliers.png / .csv    the family labels plus the tasks that break their family's regime
                                            (another quadrant than the family's majority and > OUTLIER_DIST from
                                            its median point), named family:language
@@ -36,7 +37,7 @@ chance at every size does not appear:
     scaling_regimes.html                   the two panels with hover names and a click-to-highlight legend
                                            (Vega-Lite from a CDN, for the project site; not for the paper)
 
-    python analysis/rq01_scaling_predictability/regimes.py --pool predictivity_all
+    python analysis/rq01_scaling_predictability/regimes.py --pool predictivity_seeds
 """
 
 from __future__ import annotations
@@ -65,10 +66,10 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.paths import SCALING_PREDICTABILITY  # noqa: E402
 from analysis.rq01_scaling_predictability.analyze import _grid  # noqa: E402
-from analysis.utils import assign_language, benchmark_family, ladder_frame, languages_only  # noqa: E402
+from analysis.utils import assign_language, benchmark_family, ladder_frame, languages_only, lower_is_better  # noqa: E402
 
 OUT_ROOT = SCALING_PREDICTABILITY
-CANONICAL = "predictivity_all"
+CANONICAL = "predictivity_seeds"
 R2_SPLIT = 0.5          # the heuristic boundary between "predictable" and "weak" on both R² axes
 MIN_POINTS = 5          # checkpoints a trajectory fit needs
 MIN_FITS = 2            # fits (L's, or cells) a task needs for a median
@@ -89,7 +90,7 @@ def size_medians(fits: pd.DataFrame) -> pd.DataFrame:
     """Per task: median R² and oriented median ρ of the gated log-N fits of
     rq1_fits.csv (a (task, L) the gate left without a fit has NaN there)."""
     f = fits.dropna(subset=["r2"]).copy()
-    f["rho"] = np.where(f["kind"] == "benchmark", f["rho"], -f["rho"])
+    f["rho"] = np.where(f["task"].map(lower_is_better), -f["rho"], f["rho"])
     g = f.groupby("task").agg(r2_size=("r2", "median"), rho_size=("rho", "median"), n_size_fits=("r2", "count"))
     return g[g["n_size_fits"] >= MIN_FITS]
 
@@ -219,7 +220,7 @@ def _labels(ax, xs, ys, names, colours, *, fontsize, weight="normal", avoid=None
     _adjust(ax, texts, avoid if avoid is not None else (xs, ys))
 
 
-NOTE = ("point = one task, medians over the deep scheme-A seed-1904 cells (parent tasks, trained languages) at the sizes where the "
+NOTE = ("point = one task, medians over the deep data-A seed-1904 cells (parent tasks, trained languages) at the sizes where the "
         "task is above chance (rule 1 gate; a task at chance at every size is left out): (a) R² and Spearman ρ of the final score ~ "
         "log N fit, one fit per L (ρ of BPB and the loss negated so improving is positive); (b) the same R² against the R² of "
         f"score ~ log tokens over each run's checkpoints, one fit per (L, size); shaded quadrants split at R² = {R2_SPLIT}, a "
@@ -368,10 +369,12 @@ def main(pool: str) -> None:
     t.to_csv(out_dir / "scaling_regimes.csv", index=False)
     fam, out = family_table(t), outliers(t, family_table(t))
     fam.to_csv(out_dir / "scaling_regimes_families.csv", index=False)
+    fam.to_csv(out_dir / "scaling_regimes_families_paper.csv", index=False)
     out.to_csv(out_dir / "scaling_regimes_outliers.csv", index=False)
     out.to_csv(out_dir / "scaling_regimes_outliers_paper.csv", index=False)
     figure(t, out_dir)
     figure(t, out_dir, fam=fam, name="scaling_regimes_families")
+    figure(t, out_dir, fam=fam, name="scaling_regimes_families_paper", paper=True, dark=LABEL_DARK)
     figure(t, out_dir, fam=fam, out=out, name="scaling_regimes_outliers")
     figure(t, out_dir, fam=fam, out=out, name="scaling_regimes_outliers_paper", paper=True, dark=LABEL_DARK)
     figure_by_family(t, fam, out_dir)
@@ -384,7 +387,7 @@ def main(pool: str) -> None:
     if pool == CANONICAL:
         body = "\n\n".join([
             "## Scaling regimes per benchmark-language pair",
-            f"`regimes.py`: one point per task, medians over the deep scheme-A seed-1904 cells (parent tasks, trained languages) — the R² and "
+            f"`regimes.py`: one point per task, medians over the deep data-A seed-1904 cells (parent tasks, trained languages) — the R² and "
             f"(oriented) Spearman ρ of the gated log-N fits of `rq1_fits.csv`, one per L, and the R² of the training-trajectory fit "
             f"(score ~ log tokens over a run's checkpoints, ≥ {MIN_POINTS} points), one per (L, size). Both use only the sizes where the "
             f"task is above chance (rule 1, rq00's mask): {len(t)} tasks have a point; the gate removed {len(gated_out)} tasks that are at "
@@ -394,7 +397,7 @@ def main(pool: str) -> None:
             f"Regenerate with `python analysis/rq01_scaling_predictability/regimes.py --pool {pool}`.",
             f"![Scaling regimes]({stage}/{pool}/scaling_regimes.png)",
             f"Named variants of the same points: `scaling_regimes_families.png` (one label per family at its median point, "
-            f"`scaling_regimes_families.csv`), `scaling_regimes_outliers.png` (plus the tasks in another quadrant than their family's "
+            f"`scaling_regimes_families.csv`; `scaling_regimes_families_paper.png/.pdf/.svg` its bare, square version for the paper), `scaling_regimes_outliers.png` (plus the tasks in another quadrant than their family's "
             f"majority and > {OUTLIER_DIST} from its median point, `scaling_regimes_outliers.csv`; `scaling_regimes_outliers_paper.png/.pdf/.svg` is its bare, square-panel version "
             f"for the paper, the label text pulled {LABEL_DARK:.0%} towards the ink), `scaling_regimes_by_family.png` "
             f"(panel (b) per family, tasks named by language, its per-task table with the labels next to it; `_paper.png/.pdf/.svg/.csv` is its bare version for the paper's appendix) and `scaling_regimes.html` (hover names, click-to-highlight legend; "

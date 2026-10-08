@@ -1,19 +1,21 @@
 """rq06 per language: the leave-one-language-out prediction error.
 
     transfer_error_by_L.png   |relative error| of the transferred prediction, language x rungs used, one subplot per L
-    transfer_da_lines.png     the list decision (scheme A vs B) read on per-language BPB, DA-size (x = proxy size) and
+    transfer_da_all_lines_mono_axis.png     the list decision (scheme A vs B on the L8-L30 lists, `analyze.by_recipe`) read on per-language BPB, DA-size (x = proxy size) and
                               DA-ckpt (x = the reference's checkpoint), one line per language group: both levels'
                               lists train the language, only one does, neither does but one trains its script, or
                               neither trains even the script (mean over L); the last two are the transfer test
-    transfer_da_by_L.png      the same agreement per language count, one panel per intervention, one line per group
+    transfer_da_all_by_L_mono_axis.png      the same agreement per language count, one panel per intervention, one line per group
                               (DA-size, mean over the proxy sizes)
+    transfer_da_all_lines_mono_axis_paper.png/.svg/.csv   transfer_da_all_lines_mono_axis for the paper, no title
 
 Reads `rq5_transfer.csv`. There is no per-benchmark view: the transfer test
 is on per-language bits per byte only.
-The decision lines read rq05's `intervention_da_by_group_ckpt10.csv` (every
-evaluated checkpoint).
+The decision lines read analyze.py's `transfer_da_all_by_group_mono_axis.csv`
+(every evaluated checkpoint, every language: rule 2's exception).
 
-    python analysis/rq06_language_transfer/panels.py --pool predictivity_all
+    python analysis/rq06_language_transfer/panels.py --pool predictivity_seeds
+    python analysis/rq06_language_transfer/panels.py --paper    # the paper figure alone, from transfer_da_all_by_group_mono_axis.csv
 """
 
 from __future__ import annotations
@@ -38,32 +40,42 @@ from evals.scripts.utils.configs import bucket_order, load_pools  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
-from analysis.paths import DESIGN_DECISIONS, LANGUAGE_TRANSFER  # noqa: E402
-from analysis.rq05_design_decisions.analyze import INTERVENTIONS, LANGUAGE_GROUPS  # noqa: E402
+from analysis.paths import LANGUAGE_TRANSFER  # noqa: E402
+from analysis.rq05_design_decisions.analyze import INTERVENTIONS, LANGUAGE_GROUPS, RECIPES, by_recipe  # noqa: E402
 from analysis.rq05_design_decisions.panels import da_lines  # noqa: E402
+from analysis.utils import RELIABLE_DA  # noqa: E402
 
 OUT_ROOT = LANGUAGE_TRANSFER
-CANONICAL = "predictivity_all"
+CANONICAL = "predictivity_seeds"
 GROUP_COLOUR = dict(zip(LANGUAGE_GROUPS, [S.RAMP[3], S.MUTED, S.RAMP[1], S.SERIES[1]]))
 mpl.rcParams.update(S.RC)
 
 
-def decision_lines(out_dir: Path, stage: str) -> None:
-    src = DESIGN_DECISIONS / stage / "predictivity_all" / "intervention_da_by_group_ckpt10.csv"
+def paper_figure(lists: pd.DataFrame, out_dir: Path) -> None:
+    """transfer_da_all_lines_mono_axis for the paper: the list decision per language group, no title."""
+    da_lines(lists[lists["intervention"] == "scheme_B"], out_dir, name="transfer_da_all_lines_mono_axis_paper", series="group",
+             colours=GROUP_COLOUR, populations=(("bpb", "-", "BPB"),), title="", note="", paper=True)
+
+
+def decision_lines(out_dir: Path) -> bool:
+    """Draw the two transfer-decision figures; False when there is nothing to draw."""
+    src = out_dir / "transfer_da_all_by_group_mono_axis.csv"
     if not src.is_file():
-        return
+        return False
     g = pd.read_csv(src).assign(population="bpb")
     if g.empty:
-        print("!!! RULE 2: rq05's per-group table is empty (its pool holds trained languages only); the transfer decision "
-              "lines need the untrained groups, which only this folder's analyze.py may read — skipped")
-        return
-    da_lines(g[g["intervention"] == "scheme"], out_dir, name="transfer_da_lines", series="group", colours=GROUP_COLOUR,
-             populations=(("bpb", "-", "per-language BPB"),),
-             title="Does a proxy read the list decision (scheme A vs B) for languages it did not train?",
+        print(f"no rows in {src.name} — the transfer decision lines are skipped")
+        return False
+    # averaged over L, so one recipe: the language lists (A vs B at L8-L30), not A vs ZH or A vs DCLMP
+    lists = by_recipe(g)
+    da_lines(lists[lists["intervention"] == "scheme_B"], out_dir, name="transfer_da_all_lines_mono_axis", series="group",
+             colours=GROUP_COLOUR, populations=(("bpb", "-", "per-language BPB"),),
+             title=f"Does a proxy read the list decision ({RECIPES['scheme_B'][0]}) for languages it did not train?",
              note="DA = share of a group's languages on which the proxy prefers the list the reference prefers at its final "
                   "checkpoint (per-language BPB), mean over L; group = what the two levels' lists do with the language: both train "
                   "it, only one does (a decision the language's inclusion makes by itself), neither does but a list trains its "
-                  "script, or neither trains even the script; dotted line = 0.75")
+                  f"script, or neither trains even the script; dotted line = {RELIABLE_DA:g}")
+    paper_figure(lists, out_dir)
     fin = g[g["frac"] == 1.0].groupby(["intervention", "label", "L", "group"])["decision_acc"].mean().reset_index()
     keys = [k for k in INTERVENTIONS if k in set(fin["intervention"])]
     Ls = sorted(fin["L"].unique())
@@ -75,7 +87,7 @@ def decision_lines(out_dir: Path, stage: str) -> None:
             r = sub[sub["group"] == grp].set_index("L")["decision_acc"].reindex(Ls)
             ax.plot(range(len(Ls)), r, color=c, marker="o", ms=3.5, lw=1.3, label=grp)
         ax.set_xticks(range(len(Ls))); ax.set_xticklabels([f"L{L}" for L in Ls])
-        ax.axhline(0.75, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(0.0, 1.02)
+        ax.axhline(RELIABLE_DA, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(0.0, 1.02)
         ax.set_title(INTERVENTIONS[k][0], loc="left", fontsize=8.5); ax.set_xlabel("language count"); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
         tables.append(sub.rename(columns={"group": "row", "L": "col", "decision_acc": "value"}).assign(panel=INTERVENTIONS[k][0])
                       [["panel", "row", "col", "value"]])
@@ -85,9 +97,10 @@ def decision_lines(out_dir: Path, stage: str) -> None:
                       "DA-size = share of the group's languages on which the proxy's final ranking of the two levels matches the "
                       "reference's (the largest size trained at both levels at that L, so the reference changes along x), mean over "
                       "the proxy sizes with a value (a proxy that flips and one that agrees average to 0.5; the per-size values are "
-                      "in the CSV of transfer_da_lines); a group is empty where the lists leave it no language — \"trained by one "
+                      "in the CSV of transfer_da_all_lines_mono_axis); a group is empty where the lists leave it no language — \"trained by one "
                       "level\" exists only where the two levels' lists differ",
-                      tables, name="transfer_da_by_L")
+                      tables, name="transfer_da_all_by_L_mono_axis")
+    return True
 
 
 def main(pool: str) -> None:
@@ -116,18 +129,26 @@ def main(pool: str) -> None:
                             fmt="{:.3f}"))
     G.save_highlights(fig, out_dir, "rq06 in one figure: does a scaling law transfer to a language it has not seen?",
                       "error of the reference-size BPB predicted from the k smallest rungs with the exponent of the other languages", tables)
-    decision_lines(out_dir, stage)
+    drawn = decision_lines(out_dir)
     if pool != CANONICAL:
         return
     body = "\n\n".join([
         "## Per benchmark and per language",
         f"The summary above, per language (`{pool}` pool). Regenerate with `python analysis/rq06_language_transfer/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\"; each figure's table sits next to it under the same name.",
         f"![rq06 in one figure]({stage}/{pool}/highlights.png)"]
-        + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('Transfer error per language and L', 'transfer_error_by_L.png'), ('The list decision on untrained languages, by proxy size and checkpoint', 'transfer_da_lines.png'), ('The decisions on untrained languages, by language count', 'transfer_da_by_L.png')]])
+        + [f"![Transfer error per language and L]({stage}/{pool}/transfer_error_by_L.png)"]
+        + ([f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('The list decision (scheme A vs B at L8–L30) on untrained languages, by proxy size and checkpoint', 'transfer_da_all_lines_mono_axis.png'), ('The decisions on untrained languages, by language count', 'transfer_da_all_by_L_mono_axis.png')]]
+           if drawn else ["The transfer-decision figures are not drawn: `transfer_da_all_by_group_mono_axis.csv` has no rows."]))
     replace_block(OUT_ROOT / "README.md", "panels", body, f"panels.py --pool {pool}")
 
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL)
-    main(p.parse_args().pool)
+    p.add_argument("--paper", action="store_true", help="only the paper figure, from transfer_da_all_by_group_mono_axis.csv on disk")
+    args = p.parse_args()
+    if args.paper:
+        d = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
+        paper_figure(by_recipe(pd.read_csv(d / "transfer_da_all_by_group_mono_axis.csv").assign(population="bpb")), d)
+    else:
+        main(args.pool)

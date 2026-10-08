@@ -9,7 +9,7 @@ Reads `rq1_fits.csv` (one row per (task, L) of the deep, scheme-A,
 seed-1904 cells; the fit uses the rungs where the task is above chance, and a
 row the gate left without a fit carries `gated`, drawn grey).
 
-    python analysis/rq01_scaling_predictability/panels.py --pool predictivity_all
+    python analysis/rq01_scaling_predictability/panels.py --pool predictivity_seeds
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ from analysis.autodoc import replace_block  # noqa: E402
 from analysis.paths import SCALING_PREDICTABILITY  # noqa: E402
 
 OUT_ROOT = SCALING_PREDICTABILITY
-CANONICAL = "predictivity_all"
+CANONICAL = "predictivity_seeds"
 mpl.rcParams.update(S.RC)
 
 
@@ -47,7 +47,7 @@ def main(pool: str) -> None:
     Ls = sorted(fits["L"].unique())
     fits["setting"] = "L" + fits["L"].astype(str)
     note = ("cell = R² of a straight line of the final score against log(parameters), over the rungs trained at that language "
-            "setting where the task is above chance (rule 1 gate; deep, scheme A, seed 1904); 1 = the score moves with size exactly "
+            "setting where the task is above chance (rule 1 gate; deep, data A, seed 1904); 1 = the score moves with size exactly "
             "as the line says; grey = the gate left fewer than 3 rungs")
     G.panel_grid(fits, out_dir / "fit_r2_by_benchmark.png", by="family", row="setting", row_order=[f"L{L}" for L in Ls],
                  col="language", value="r2", ncols=1, cell_w=0.3, counts=False, cbar="R² of score ~ log N", note=note,

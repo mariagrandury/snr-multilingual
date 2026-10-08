@@ -1,9 +1,10 @@
 site_name: SNR Multilingual
 site_description: Signal-Aware Framework for Multilingual LM Evaluation
 site_url: https://snr-multilingual.netlify.app/
-repo_url: https://github.com/swiss-ai/snr-multilingual
 docs_dir: docs
 site_dir: site
+exclude_docs: |
+  CLAUDE.md
 
 theme:
   name: material
@@ -33,8 +34,6 @@ theme:
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
-  icon:
-    repo: fontawesome/brands/github
 
 nav:
   - Home: index.md
@@ -55,31 +54,42 @@ nav:
       - "D · Can benchmarks be improved?":
           - "RQ8 · Subsets": findings/subsets.md
           - "RQ9 · Benchmark design": findings/benchmark-design.md
+          - "RQ12 · Above-chance items": findings/above-chance-items.md
+      - "E · Past the reference":
+          - "RQ10 · 3B": findings/size-generalisation.md
+      - "F · The recommendation":
+          - "RQ11 · Evaluation recipe": findings/recipe.md
+      - "Sanity check":
+          - "RQ13 · English only": findings/english-only.md
   - Benchmarks: benchmarks.md
   - Recommender: recommend.md
-  - Docs:
-      - Overview: repo.md
-      - Pretraining:
-          - Overview: pretraining.md
-          - Conversion: pretraining/conversion.md
-          - Azure: pretraining/azure.md
-      - Evaluation:
-          - Overview: evaluation/index.md
-          - Signal-to-Ratio Configs: evaluation/configs.md
-      - Signal & Noise:
-          - Overview: signal-noise/index.md
-          - "RQ0 · Gate & curves": signal-noise/gate_and_curves.md
-          - "RQ1 · Scaling predictability": signal-noise/scaling_predictability.md
-          - "RQ2 · Decision accuracy": signal-noise/decision_accuracy.md
-          - "RQ3 · Noise & SNR": signal-noise/noise_and_snr.md
-          - "RQ4 · Surrogates": signal-noise/surrogates.md
-          - "RQ5 · Design decisions": signal-noise/design_decisions.md
-          - "RQ6 · Language transfer": signal-noise/language_transfer.md
-          - "RQ7 · External frameworks": signal-noise/external_frameworks.md
-          - "RQ8 · Subset selection": signal-noise/subset_selection.md
-          - "RQ9 · Benchmark design": signal-noise/benchmark_design.md
-      - Documents: documents.md
-      - Slides: /slides/
+  # Docs tab hidden for the double-blind review (uncomment to restore):
+#   - Docs:
+#       - Overview: repo.md
+#       - Pretraining:
+#           - Overview: pretraining.md
+#           - Conversion: pretraining/conversion.md
+#           - Azure: pretraining/azure.md
+#       - Evaluation:
+#           - Overview: evaluation/index.md
+#           - Signal-to-Ratio Configs: evaluation/configs.md
+#       - Signal & Noise:
+#           - Overview: signal-noise/index.md
+#           - Analysis: signal-noise/analysis.md
+#           - "RQ0 · Gate & curves": signal-noise/gate_and_curves.md
+#           - "RQ0 · Task reformulation": signal-noise/task_reformulation.md
+#           - "RQ1 · Scaling predictability": signal-noise/scaling_predictability.md
+#           - "RQ2 · Decision accuracy": signal-noise/decision_accuracy.md
+#           - "RQ3 · Noise & SNR": signal-noise/noise_and_snr.md
+#           - "RQ4 · Surrogates": signal-noise/surrogates.md
+#           - "RQ5 · Design decisions": signal-noise/design_decisions.md
+#           - "RQ6 · Language transfer": signal-noise/language_transfer.md
+#           - "RQ7 · External frameworks": signal-noise/external_frameworks.md
+#           - "RQ8 · Subset selection": signal-noise/subset_selection.md
+#           - "RQ9 · Benchmark design": signal-noise/benchmark_design.md
+#       - Documents: documents.md
+#       # Slides: /slides/ hidden during double-blind review (the deck names the
+#       # affiliation and authors); build.sh builds it only with BUILD_SLIDES=1.
 
 markdown_extensions:
   - admonition
@@ -108,6 +118,12 @@ markdown_extensions:
 
 plugins:
   - search
+
+# Double-blind review: the site must not link or name our HF orgs, W&B,
+# GitHub, personal pages, authors or cluster paths. Every such link shows
+# the sentence anonymity.py REMOVED_LINK holds (its one copy) — write
+# `{{ anonymity_notice }}` in a page, read it in JS from
+# <meta name="anonymity-notice">; mkdocs_hooks.py redacts the rest.
 
 hooks:
   - mkdocs_hooks.py

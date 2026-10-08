@@ -277,12 +277,12 @@ appear in W&B under `mariagrandury-epflnlp/msnr`.
 `/capstor` — and tokenized *there*; nothing is downloaded from the HF Hub.
 Two scripts under `data/` own the pipeline:
 
-- [`data/create_data_mixture.py`](data/create_data_mixture.py) — the worker:
+- [`data/create_data_mixture.py`](../data/create_data_mixture.py) — the worker:
   streams the parquet sources, tokenizes with `swiss-ai/Apertus-70B-2509`,
   writes Megatron `.bin`/`.idx`, builds the fixed validation set, and
   excludes its rows from training via a manifest. Resumable after
   preemption.
-- [`data/build_data_mixtures.py`](data/build_data_mixtures.py) — the driver:
+- [`data/build_data_mixtures.py`](../data/build_data_mixtures.py) — the driver:
   turns the language schemes (`data/language_sets_scheme{A,B}.json`) into
   per-build `create_data_mixture.py` calls with the right token targets.
 
@@ -461,7 +461,8 @@ permissions Read+Add+Create+Write+List.)
 ## 6. Convert and evaluate a checkpoint
 
 **Convert** a Megatron checkpoint to a Hugging Face snapshot
-(`ApertusForCausalLM`) — a few minutes on one node. The defaults in the YAML
+(`ApertusForCausalLM`; the swiglu ladder as `Qwen3ForCausalLM`) — a few
+minutes on one node. The defaults in the YAML
 are placeholders; point them at a real cell with `--set`:
 
 ```bash
@@ -533,8 +534,9 @@ gets every listed benchmark's tasks in the languages it trains on (an L2
 cell gets `hellaswag` + `hellaswag_ru` + …, an L1 cell only the English
 variants) — and pushed to the same W&B project (`msnr`) as the training
 runs. Due are
-**every 2nd saved checkpoint plus the run's final one** whatever its iter
-(predictivity targets end off the save grid, e.g. 4500 or 81000);
+**the ten tenths of training on the run's own save grid, the 85 % and 95 %
+noise-window points and the run's final one** whatever its iter (predictivity
+targets end off the save grid, e.g. 27000 or 81000), 12 per run;
 `--every N` changes the cadence. Edit the `auto` benchmark group in
 `configs/tasks.json` to change what runs.
 
@@ -584,12 +586,15 @@ python launch_trainings.py azure                        # everything
 python launch_trainings.py azure --arch shallow         # the depth-intervention variant
 ```
 
-`--arch` picks the reviewed architecture family — `deep` (default baseline,
-`hyperparams/hyperparams_deep.json`) or `shallow`
-(`hyperparams/hyperparams_shallow.json`, same non-embedding sizes at
-width/depth 128); the D(N) = 100 × N schedule comes from each config's
-`predictivity` block. Runs are named `lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>`
-and log to `mariagrandury-epflnlp/msnr`. Micro-batch sizes tuned for the
+`--arch`, `--activation` and `--optimizer` pick the ladder — the reviewed
+model configuration, one hyperparams file each: `deep` (the default
+baseline, `hyperparams/hyperparams_deep.json`), `shallow` (`--arch shallow`,
+`hyperparams/hyperparams_shallow.json`, same non-embedding sizes at
+width/depth 128) or `swiglu` (`--activation swiglu`, the deep model with the
+swiglu activation, `hyperparams/hyperparams_swiglu.json`); the
+D(N) = 100 × N schedule comes from each config's `predictivity` block. Runs
+are named `lm-<size>-L<L>[-schemeB]-<deep|shallow|swiglu>-seed<seed>` (the
+last token is the ladder) and log to `mariagrandury-epflnlp/msnr`. Micro-batch sizes tuned for the
 cluster are auto-shrunk per node (`launch_pretraining_azure.sh`) so the
 global batch of 504 always divides; the 1.7B resolves to MBS 1 on the 8-GPU
 nodes — override with `--set environment_variables.MBS=3` if it fits.

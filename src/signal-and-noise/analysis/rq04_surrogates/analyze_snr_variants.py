@@ -28,7 +28,7 @@ CSV of the same name (rule 12):
   <da_def>/snr_vs_decision_accuracy.png       — top-3 variants only
   <da_def>/heatmap_pearson_r.png              — all variants × language
   variant_correlation_matrix.png
-  da_size_vs_da_ckpt.png
+  da_size_vs_da_ckpt_multi_axes.png
 
 The CSV at rq03_noise_and_snr/<stage>/<pool>/snr_variants_per_task.csv stays the
 single source of truth for the raw per-task SNR/DA values.
@@ -554,8 +554,8 @@ def main(table_dir: Path, out_dir: Path):
 
     # Per-variant scatter: r(SNR, DA-size) vs r(SNR, DA-ckpt).
     if _draw_da_size_vs_da_ckpt(df, variants,
-                                out_dir / "da_size_vs_da_ckpt.png"):
-        print(f"Wrote → {out_dir / 'da_size_vs_da_ckpt.png'}")
+                                out_dir / "da_size_vs_da_ckpt_multi_axes.png"):
+        print(f"Wrote → {out_dir / 'da_size_vs_da_ckpt_multi_axes.png'}")
 
 
 if __name__ == "__main__":

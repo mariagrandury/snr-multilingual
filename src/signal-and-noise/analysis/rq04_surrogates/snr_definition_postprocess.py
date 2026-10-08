@@ -10,6 +10,8 @@ Q2 (within-cluster similarities) — language groups by best variant.
 Q3 (across languages) — top variants by mean Pearson r over the languages
     with a value (≥ MIN_LANG_TASKS tasks each, rule 8).
     → top_variants_overall.csv  +  top_variants_overall.png
+      (+ top_variants_overall_paper.png/.svg/.csv, the bare rule-18 copy the paper's
+      appendix shows; `--paper` redraws it alone from the CSV)
 Q4 (top benchmarks per language) — under the overall-best variant (Q3's
     mean over DA-size and DA-ckpt), rank benchmarks per language with both
     DA-size and DA-ckpt values.
@@ -39,6 +41,7 @@ if str(_SRC) not in sys.path:
 
 from evals.scripts.utils.configs import load_languages, load_pools  # noqa: E402
 from analysis import grids as G  # noqa: E402
+from analysis import style as S  # noqa: E402
 from analysis.rq04_surrogates.analyze_snr_variants import (  # noqa: E402
     _per_language_pearson_table, buckets_in_df, da_ckpt_pairs, da_size_pairs, list_variants,
 )
@@ -264,11 +267,13 @@ def top_variants_overall(df: pd.DataFrame) -> pd.DataFrame:
     return out.sort_values("mean_r_overall", ascending=False).reset_index(drop=True)
 
 
-def render_top_variants_overall(tv_df: pd.DataFrame, save_path: Path):
-    """Horizontal lollipop: per variant, mean r under DA-size and DA-ckpt."""
+def render_top_variants_overall(tv_df: pd.DataFrame, save_path: Path, paper: bool = False):
+    """Horizontal lollipop: per variant, mean r under DA-size and DA-ckpt.
+    `paper`: the bare rule-18 version, `save_path` without its suffix, through
+    style.save_paper with the table it draws."""
     tv_df = tv_df.sort_values("mean_r_overall", ascending=True)
     y = np.arange(len(tv_df))
-    fig, ax = plt.subplots(figsize=(8, max(4, 0.32 * len(tv_df))))
+    fig, ax = plt.subplots(figsize=(5, max(3, 0.2 * len(tv_df))) if paper else (8, max(4, 0.32 * len(tv_df))))
     ax.hlines(y - 0.15, 0, tv_df["mean_r_da_size"], color="#1f77b4", linewidth=2)
     ax.scatter(tv_df["mean_r_da_size"], y - 0.15, color="#1f77b4",
                s=40, label="DA-size")
@@ -276,11 +281,16 @@ def render_top_variants_overall(tv_df: pd.DataFrame, save_path: Path):
     ax.scatter(tv_df["mean_r_da_ckpt"], y + 0.15, color="#ff7f0e",
                s=40, label="DA-ckpt")
     ax.set_yticks(y)
-    ax.set_yticklabels(tv_df["variant"], fontsize=9)
+    ax.set_yticklabels(tv_df["variant"], fontsize=7 if paper else 9)
     ax.set_xlabel("Mean Pearson r across languages (log10 SNR ↔ DA)")
     ax.axvline(0, color="black", linewidth=0.5)
     ax.grid(True, axis="x", alpha=0.3)
-    ax.legend(loc="lower right")
+    ax.legend(loc="lower right", fontsize=7 if paper else None)
+    if paper:
+        fig.tight_layout()
+        tv_df.to_csv(save_path.with_suffix(".csv"), index=False)
+        S.save_paper(fig, save_path.with_suffix(""))
+        return
     fig.tight_layout(rect=(0, 0, 1, G._header(
         fig, "SNR variants ranked by cross-language correlation with DA",
         f"point = mean over the languages of the Pearson r, over the language's gated tasks, between log10 SNR and DA; {DA_NOTE}; "
@@ -379,10 +389,10 @@ def render_top_benchmarks_grid(top_df: pd.DataFrame, variant: str,
 # statistical-power table). RQ / setup / TODO prose lives outside the markers.
 
 _POOL_TIERS = [
-    ("predictivity", "grid, seed 1904"),
-    ("predictivity_seeds", "all seeds"),
-    ("predictivity_seeds_train", "holdout train (seeds 64/313)"),
-    ("predictivity_seeds_test", "holdout test (seed 1904)"),
+    ("predictivity", "grid, seed 1904, every design"),
+    ("predictivity_seeds", "every seed"),
+    ("predictivity_seeds_train", "holdout train (replicate seeds 64/313/28/1797)"),
+    ("predictivity_seeds_test", "holdout test (seed 1904 on the same cells)"),
 ]
 
 
@@ -633,6 +643,7 @@ def main(stage: str, pool: str, out_dir: Path):
 
     render_top_variants_overall(tv_df, out_dir / "top_variants_overall.png")
     print(f"Wrote → {out_dir / 'top_variants_overall.png'}")
+    render_top_variants_overall(tv_df, out_dir / "top_variants_overall_paper.png", paper=True)
 
     g_best = tv_df.iloc[0]["variant"]
     print(f"\nGlobal best variant (mean Pearson r across languages, DA-size and DA-ckpt): {g_best}")
@@ -659,10 +670,16 @@ if __name__ == "__main__":
                    help="Pool name from configs/models.json (tiers: 1seed, "
                         "2seeds, 3seeds, 3seeds_swissai_hf). Reads "
                         "rq03's <stage>/<pool>/snr_variants_per_task.csv; writes next to this script.")
+    p.add_argument("--paper", action="store_true",
+                   help="only top_variants_overall_paper, the paper's bare figure, from top_variants_overall.csv on disk")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; "
                 f"available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
-    main(stage=stage, pool=args.pool,
-         out_dir=SURROGATES / stage / args.pool)
+    out = SURROGATES / stage / args.pool
+    if args.paper:
+        render_top_variants_overall(pd.read_csv(out / "top_variants_overall.csv"),
+                                    out / "top_variants_overall_paper.png", paper=True)
+    else:
+        main(stage=stage, pool=args.pool, out_dir=out)

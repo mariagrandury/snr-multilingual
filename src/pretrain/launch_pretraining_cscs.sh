@@ -11,11 +11,10 @@
 #SBATCH --mem=460000
 #SBATCH --signal=SIGUSR2@3600	# Send SIGUSR2 1h before hitting the time limit
 #SBATCH --no-requeue	# Don't requeue on node failure so we don't lose the logs
-#SBATCH --open-mode=append	# A requeue keeps the jobid, so %x-%j would be
-				# reopened: append, or the first attempt's log is
-				# truncated. (launch_trainings.py --partition
-				# preemptable passes --requeue, which outranks
-				# the directive above.)
+#SBATCH --open-mode=append	# Belt and braces: nothing requeues these any more
+				# (preemptable self-chains instead, one new jobid
+				# per link), but a requeue would keep the jobid and
+				# reopen %x-%j, truncating the first attempt's log.
 
 # CSCS wrapper of the predictivity training pair — the SLURM half
 # (launch_pretraining_azure.sh is the Azure half). Every Megatron argument
@@ -60,6 +59,133 @@ LOGGING_DIR=$EXP_DIR/logging
 TENSORBOARD_DIR=$LOGGING_DIR/tensorboard
 
 mkdir -p $CKPT_DIR $TRIGGER_DIR $DEBUG_DIR $LOGGING_DIR $DATA_CACHE_DIR
+
+################ Self-chain ################
+# Clariden's MaxBatchRequeue is 5 and a preemption spends one, so a --requeue'd
+# run on `preemptable` is HELD on its sixth — reported, misleadingly, as
+# "launch failure limit exceeded requeued held" even when every attempt ended
+# in a clean preemption (three runs stopped that way on 2026-09-21). A chain
+# never meets that cap, because each link is a NEW jobid. This is the shape
+# data/submit_build_one.sh has always used, and it is proven at length:
+# build-a-L8-165b took 29 links over 36h (24 PREEMPTED, 3 FAILED, 1 CANCELLED,
+# 1 COMPLETED) to finish one 165B mixture.
+#
+# The successor is queued UP FRONT, before training starts, with
+# --dependency=singleton — same job name, so only one link of a cell ever runs.
+# Queuing it first is what makes it preemption-safe: a killed attempt leaves
+# its successor already pending (holding a queue position, which a resubmit
+# would forfeit), and the idempotent resume picks up from the checkpoint the
+# patched signal handler wrote on the way out.
+#
+# Opt-in via PRETRAIN_CHAIN, which launch_trainings.py sets for
+# --partition preemptable: a manual `sbatch` of this wrapper must never
+# silently queue a second 21-node job.
+CHAIN_SCRIPT=$SCRIPT_DIR/launch_pretraining_cscs.sh
+# Where THIS job's %x-%j.out actually lands, asked of the controller rather
+# than assumed: counting attempts in a directory that holds none reads 0 every
+# time, so the cap never fires and the chain runs unbounded at 21 nodes a link.
+# The #SBATCH --output above does pin every user's logs to this one tree today
+# (8 of aromanou's are in it), but a chain that cannot find its own bound must
+# not guess at one.
+if [ -z "${CHAIN_LOGDIR:-}" ]; then
+	CHAIN_LOGDIR=$(scontrol show job "$SLURM_JOB_ID" 2>/dev/null \
+	               | sed -n 's/.*StdOut=\([^[:space:]]*\).*/\1/p' | head -1)
+	CHAIN_LOGDIR=${CHAIN_LOGDIR%/*}
+fi
+
+# done | fresh | resume | corrupt for this cell, or EMPTY when the check could
+# not run at all. Empty is NOT "not done": chaining on a state we cannot read
+# would spend the whole attempt budget on links that allocate nodes and exit,
+# which is why pretrain_progress.py --cell-action prints the word instead of
+# encoding it in an exit status an ImportError could forge. python3.11 first —
+# the system python3 is 3.6 and cannot parse launch_trainings.py, which
+# pretrain_progress imports (scripts/preempt_drain.sh has the same note).
+cell_action() {
+	local py
+	# No positive target, no verdict: against a target of 0 cell_action calls
+	# every cell with a checkpoint "done", and the wrapper would skip training
+	# and cancel the chain. -gt, not -n: `[ -n "0" ]` is true.
+	[ "${TRAINING_STEPS:-0}" -gt 0 ] 2>/dev/null || return 0
+	py=$(command -v python3.11 || command -v python) || return 0
+	"$py" "$SCRIPT_DIR/pretrain_progress.py" --cell-action \
+	      "$EXP_DIR" "$TRAINING_STEPS" 2>/dev/null
+}
+# "<word> <latest valid iter>", or both empty when the check could not run.
+read -r CELL_ACTION CELL_ITER <<<"$(cell_action)"
+
+# Cancelling the successor is a chain operation: a plain `normal` or manual run
+# must not scancel jobs it never queued. Empty name guarded too — scancel with
+# no name filter is not a mistake worth risking.
+cancel_successor() {
+	[ -n "${PRETRAIN_CHAIN:-}" ] && [ -n "${SLURM_JOB_NAME:-}" ] \
+		&& scancel --state=PENDING --name="$SLURM_JOB_NAME"
+	return 0
+}
+
+# Already at the target: end the chain rather than start Megatron on a finished
+# cell. The successor this link would otherwise inherit has nothing to do.
+if [ "$CELL_ACTION" = done ]; then
+	echo "[$(date)] $EXP_NAME is already at its target of ${TRAINING_STEPS:-?} iters — nothing to train; ending the chain."
+	cancel_successor
+	exit 0
+fi
+
+if [ -n "${PRETRAIN_CHAIN:-}" ]; then
+	# The successor inherits the partition this attempt actually ran in (a
+	# drainer may have moved it) and its walltime — a limit cannot be raised
+	# after submission, so it has to be asked for here.
+	CHAIN_PART=${CHAIN_PARTITION:-$SLURM_JOB_PARTITION}
+	CHAIN_TIME=${CHAIN_WALLTIME:-$(squeue -h -j "$SLURM_JOB_ID" -O TimeLimit 2>/dev/null | tr -d ' ')}
+	[ -n "$CHAIN_TIME" ] || CHAIN_TIME=11:59:59
+	# The no-progress guard, and the real bound on this chain. Each link records
+	# the iteration it STARTED from; when that has not moved, the link before it
+	# achieved nothing, and a chain that achieves nothing four times running is
+	# retrying a failure, not surviving preemption. On 2026-09-22 one cell burned
+	# 17 links x 21 nodes this way: its logging/tensorboard belonged to a
+	# collaborator, so rank 83 died of PermissionError ~70s in, every time, and
+	# Slurm killed the step for TASK FAILURE while the wrapper still exited 0.
+	# Progress resets the counter, so a genuinely preempted run is never capped.
+	# Per-USER filename. This directory carries a default ACL granting each
+	# collaborator rwx, but a file one of them creates belongs to them and group
+	# a139 gets only r-x — and the dir is sticky, so nobody can replace it. A
+	# shared name would let whoever chained first freeze everyone else's counter
+	# at its value forever.
+	PROGRESS_FILE=$CHAIN_LOGDIR/.chain-$SLURM_JOB_NAME-${USER:-$(id -un)}.progress
+	stalls=0; progress_recorded=
+	if [ -n "$CELL_ACTION" ] && [ -d "$CHAIN_LOGDIR" ]; then
+		read -r prev_iter prev_stalls 2>/dev/null < "$PROGRESS_FILE" || prev_iter=
+		# Anything but digits restarts the count rather than poisoning `-ge`.
+		case ${prev_stalls:-} in ''|*[!0-9]*) prev_stalls=0 ;; esac
+		if [ "$CELL_ITER" = "$prev_iter" ]; then stalls=$((prev_stalls + 1)); fi
+		echo "$CELL_ITER $stalls" > "$PROGRESS_FILE" 2>/dev/null && progress_recorded=1
+	fi
+	# The attempt cap is now only a backstop against something the stall counter
+	# cannot see, so it is generous: a 3-day 3B at the observed ~1 preemption/hour
+	# needs 30-70 links, and build-a-L8-165b needed 29 for a ONE-node build.
+	# One %x-%j.out per attempt — each link is its own jobid, so nothing appends.
+	n_attempts=$(find "$CHAIN_LOGDIR" -maxdepth 1 -name "${SLURM_JOB_NAME}-[0-9]*.out" 2>/dev/null | wc -l)
+	if [ ! -r "$CHAIN_SCRIPT" ]; then
+		echo "[$(date)] WARN: no chain successor — $CHAIN_SCRIPT unreadable (PRETRAIN_DIR wrong?)"
+	elif [ -z "$CELL_ACTION" ]; then
+		echo "[$(date)] WARN: no chain successor — could not read this cell's state; re-run launch_trainings.py to resume it"
+	elif [ ! -d "$CHAIN_LOGDIR" ]; then
+		echo "[$(date)] WARN: no chain successor — cannot count attempts in '$CHAIN_LOGDIR'; an uncountable chain is an unbounded one"
+	elif [ "$CELL_ACTION" = corrupt ]; then
+		echo "[$(date)] WARN: no chain successor — cell is corrupt (iter dirs on disk, none loadable); launch_trainings.py refuses these too, they want manual review"
+	elif [ -z "$progress_recorded" ]; then
+		echo "[$(date)] WARN: no chain successor — cannot record progress in $PROGRESS_FILE; a chain whose progress cannot be recorded cannot be stopped by one"
+	elif [ "$stalls" -ge "${CHAIN_MAX_STALLS:-4}" ]; then
+		echo "[$(date)] WARN: no chain successor — $stalls links in a row started at iter $CELL_ITER without advancing; this is a failing run, not a preempted one. Read $SLURM_JOB_NAME-$SLURM_JOB_ID.err, fix it, then re-run launch_trainings.py."
+	elif [ "$n_attempts" -ge "${CHAIN_MAX_ATTEMPTS:-200}" ]; then
+		echo "[$(date)] WARN: no chain successor — $n_attempts attempts already (raise CHAIN_MAX_ATTEMPTS, default 200)"
+	else
+		echo "[$(date)] queuing singleton successor (attempt $n_attempts, $CHAIN_PART, $CHAIN_TIME, $SLURM_JOB_NUM_NODES nodes)"
+		sbatch --dependency=singleton --job-name="$SLURM_JOB_NAME" \
+		       --partition="$CHAIN_PART" --time="$CHAIN_TIME" \
+		       --nodes="$SLURM_JOB_NUM_NODES" --account="$SLURM_JOB_ACCOUNT" \
+		       --comment=selfchain --export=ALL "$CHAIN_SCRIPT"
+	fi
+fi
 
 # Set up ENV
 export TORCH_NCCL_AVOID_RECORD_STREAMS=1
@@ -143,10 +269,10 @@ cp $SCRIPT_PATH $DEBUG_DIR
 # launch_trainings.py --partition preemptable) becomes MEGATRON_EXIT_ON_SIGTERM
 # on the srun line below, and the patched DistributedSignalHandler then adds
 # SIGTERM to what --exit-signal-handler catches, so Megatron checkpoints at the
-# next iteration boundary and exits. With --requeue the job comes back with the
-# same jobid and partition and resumes from that save, which is off the
-# checkpoint grid — `run_interval`/`due_iters` already expect that from the
-# walltime SIGUSR2, and an off-grid save is never due for eval.
+# next iteration boundary and exits. The singleton successor queued at the top
+# then starts and resumes from that save, which is off the checkpoint grid —
+# `run_interval`/`due_iters` already expect that from the walltime SIGUSR2, and
+# an off-grid save is never due for eval.
 #
 # This trap is NOT that mechanism, and on its own it does not work: SLURM
 # signals the step's tasks directly, so by the time a batch-shell trap runs the
@@ -178,6 +304,16 @@ done
 echo "srun exited $SRUN_RC"
 
 echo "END TIME: $(date)"
+
+# Reached the target: the successor queued before training has nothing left to
+# do, and letting it start would allocate $SLURM_JOB_NUM_NODES nodes to print
+# one line and exit. A preempted or failed attempt deliberately leaves it
+# pending — that is the whole point of queuing it up front.
+read -r CELL_ACTION CELL_ITER <<<"$(cell_action)"
+if [ "$CELL_ACTION" = done ]; then
+	echo "[$(date)] $EXP_NAME reached ${TRAINING_STEPS:-?} iters — cancelling the pending chain successor"
+	cancel_successor
+fi
 
 if [ -f $TRIGGER_DIR/exit ]; then
    echo "[$(date)] Detected exit trigger in $TRIGGER_DIR/exit, cancelling pending jobs"

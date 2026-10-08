@@ -67,6 +67,9 @@ echo "report: $(wc -l < "$LADDER") rows, $(date -r "$LADDER" '+%Y-%m-%d %H:%M')"
 
 # 2. The analysis. Its own cache re-runs whatever is older than the report, so
 #    a refreshed report invalidates every table below it.
+# The orphan check below (rule 17) asks which artifacts this refresh did not write.
+STARTED=$(mktemp)
+trap 'rm -f "$STARTED"' EXIT
 step "analysis pipeline"
 ( cd src/signal-and-noise && HF_HUB_OFFLINE=1 CURVES=$CURVES bash run_all_predictivity.sh ) \
   || FAILED+=("run_all_predictivity.sh")
@@ -75,11 +78,24 @@ step "analysis pipeline"
 #     only copied here, so the paper can never be newer than the tables.
 step "paper figures"
 ( cd documents/paper/figures && $PY make_rq_figures.py ) || FAILED+=("make_rq_figures.py")
+# The appendix's one page per analysis folder: question and key finding read
+# from each README, the figure copied just above.
+( cd documents/paper/figures && $PY make_rq_appendix.py ) || FAILED+=("make_rq_appendix.py")
 
 # 2c. The paper's audit tables: a reshape of the same rqNN tables, so the
 #     numbers section 4 quotes cannot drift from the ones the figures show.
 step "paper tables"
+# The compute the sweep was charged, from sacct (read-only; ~15 min):
+# plan/compute-costs.{md,json}, whose JSON verify_paper_results.py turns into
+# the paper's node-hour and GPU-hour macros.
+( cd src/pretrain && $PY compute_cost.py | tail -n 2 ) || FAILED+=("compute_cost.py")
 ( cd documents/paper/sections && $PY verify_paper_results.py ) || FAILED+=("verify_paper_results.py")
+# 2d. The paper's generated blocks (rule 17): the setup appendices' tables (the
+#     training grid, seeds, per-ladder hyperparameters, evaluated benchmarks and
+#     languages, read from DATA_SCHEMES / hyperparams / tasks.json and the ladder
+#     report), and the surrogate correlation tables of app_snr_new.tex.
+( cd documents/paper/figures && $PY make_appendix_tables.py ) || FAILED+=("make_appendix_tables.py")
+( cd documents/paper/sections && $PY make_surrogate_tables.py ) || FAILED+=("make_surrogate_tables.py")
 
 # 3. The deck figures, then the two report figures the deck reuses.
 step "figures"
@@ -117,6 +133,45 @@ run $PY scripts/inline_artifact.py
 
 # 6. Checks that catch a stale or missing figure before anyone presents it.
 step "checks"
+# Orphans (rule 17): under FORCE=1 every generator rewrites its outputs, so an
+# artifact of the current sweep older than this refresh has no generator left —
+# a renamed figure's old twin, a script dropped from the driver. Flagged, not
+# failed: deleting is the user's call. The frozen 36-sweep pools (their seed
+# holdout and rq08's per_sample/ included) are not ours to regenerate, rq08's
+# git-ignored per_item_store/ is data the store sbatch builds, not an artifact,
+# and the rq00 viewer grids are only redrawn with --curves.
+# Pool folders no generator writes any more, whatever FORCE says: the pools
+# collapsed to four on 2026-10-05 (analysis/RULES.md, Definitions) and their
+# outputs moved with the pool (old -> new). Listed per folder and kept out of the
+# per-file list below so they do not bury it; the removal command is offered only
+# once every file has its twin under the new pool (a step that has not rewritten
+# its tables there yet, e.g. bench_bpb_da without its store, keeps the old copy).
+RETIRED_POOLS="predictivity_all:predictivity_seeds predictivity_schemes:predictivity"
+RETIRED_RE=$(printf '%s\n' $RETIRED_POOLS | cut -d: -f1 | paste -sd'|')
+for r in $RETIRED_POOLS; do
+  for d in src/signal-and-noise/analysis/rq*/pretraining/"${r%%:*}"; do
+    [ -d "$d" ] || continue
+    new="$(dirname "$d")/${r##*:}"
+    left=$(cd "$d" && find . -type f | while IFS= read -r f; do [ -e "../${r##*:}/$f" ] || echo "${f#./}"; done)
+    nl=$(printf '%s' "$left" | grep -c . || true)
+    if [ "$nl" -eq 0 ]; then
+      echo "  ORPHAN $d/ ($(find "$d" -type f | wc -l) files; pool retired 2026-10-05, now ${r##*:}) — remove with: git rm -r $d"
+    else
+      echo "  ORPHAN $d/ ($(find "$d" -type f | wc -l) files; pool retired 2026-10-05, now ${r##*:}) — keep: $nl have no twin under $new/ yet, e.g. $(printf '%s\n' "$left" | head -1)"
+    fi
+  done
+done
+if [ "${FORCE:-0}" = 1 ]; then
+  ORPHANS=$(find src/signal-and-noise/analysis/rq*/ documents/paper/figures -type f \
+      \( -name '*.png' -o -name '*.csv' -o -name '*.svg' -o -name '*.pdf' -o -name '*.json' \) ! -newer "$STARTED" \
+    | grep -vE '/(all|custom_swissai_hf|external|seeds_[0-9_]+(__vs__seeds_[0-9_]+)?|per_sample|per_item_store)/' \
+    | grep -vE "/($RETIRED_RE)/" \
+    | { [ "$CURVES" = 1 ] && cat || grep -vE '/(score_curves|per_benchmark|per_language)/'; } | sort)
+  n=$(printf '%s' "$ORPHANS" | grep -c . || true)
+  echo "orphans: $n artifacts no generator wrote in this refresh"
+  [ "$n" -eq 0 ] || printf '%s\n' "$ORPHANS" | sed 's/^/  ORPHAN /' | head -60
+  [ "$n" -gt 60 ] && echo "  ... and $((n - 60)) more"
+fi
 $PY - "$LADDER" <<'EOF' || FAILED+=("figure check")
 import re, pathlib, sys
 root = pathlib.Path("documents")

@@ -22,6 +22,20 @@ loss, the generative tasks) read as gated, wrong on 620 rows.
 
 Run it after `refresh_analysis.sh`; it is cheap and reads only committed CSVs.
 
+It also rewrites the constants block of main.tex (`% BEGIN generated:
+constants`): the release counts \nmodels, \nckpts and \nbenchmarktasks (see
+`provenance`), and the compute the sweep was charged on CSCS, read from
+plan/compute-costs.json, which src/pretrain/compute_cost.py writes from sacct:
+
+    \npretrainnodehours  pretrain node-hours charged, every allocation
+    \nothernodehours     eval + BPB + convert + data node-hours charged
+    \ngpuhours           4 GH200 per node x the two above
+
+Charged, not kept: the methodology sentence says what pretraining "consumed",
+and charged is what the allocations used, failed and requeued work included.
+Node-hours are rounded to the nearest 100 and GPU-hours derived from the
+rounded values, so the three macros add up for a reader.
+
     python3 verify_paper_results.py            # rewrite the five tables
     python3 verify_paper_results.py --check    # exit 1 if any would change
 """
@@ -41,10 +55,12 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "src" / "signal-and-noise"))
 
 from analysis.utils import (  # noqa: E402
-    ANALYSIS_SIZES, MIN_LANG_TASKS, MIN_PAIRS, TARGET_SIZE, passes_gate)
+    ANALYSIS_SIZES, LANGUAGE_AGGREGATES, MIN_LANG_TASKS, MIN_PAIRS, TARGET_SIZE,
+    assign_language, parents_only, passes_gate)
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.rq04_surrogates.snr_definition_postprocess import _table  # noqa: E402
 
+COMPUTE_COSTS = ROOT / "plan" / "compute-costs.json"   # src/pretrain/compute_cost.py
 POOL = "predictivity"
 P = f"pretraining/{POOL}"
 RQ00 = ANALYSIS / "rq00_gate_and_curves" / P
@@ -64,20 +80,20 @@ def read(path: Path) -> pd.DataFrame:
 def da_ten_checkpoints() -> pd.DataFrame:
     """Per-task DA on the ten checkpoints, melted from rq02's live table.
 
-    `da_pooled_per_task.csv` carries both flavours side by side — `da_ref` /
+    `da_all_pooled_per_task_multi_axes.csv` carries both flavours side by side — `da_ref` /
     `n_pairs_ref` against the reference, `da_own` / `n_pairs_own` within the
     proxy's own size — so the two `kind` values of this table are one melt of
     it, not a second computation.
 
     NOT read: `ten_checkpoints.csv`, which this script used until 2026-09-21.
     Nothing has written that file since 2026-09-19 (`paper_ten_checkpoints.py`
-    writes rq2.csv/png/svg; no code path produces it), so it is an orphan
+    writes rq2_da_goal_ten_checkpoints_multi_axes.csv/png/svg; no code path produces it), so it is an orphan
     under rule 14, and `documents/paper/figures/ten_checkpoints.csv` is a
     3.3 MB copy of the same orphan. Its gate column disagreed with
     `utils.passes_gate` in both directions on 320 rows, which is what an
     output frozen two days behind its code looks like.
     """
-    d = read(RQ02 / "da_pooled_per_task.csv")
+    d = read(RQ02 / "da_all_pooled_per_task_multi_axes.csv")
     SOURCES.append(RQ00 / "above_random_mask.csv")
     parts = []
     for kind, da, n in (("reference", "da_ref", "n_pairs_ref"),
@@ -117,8 +133,8 @@ def cross_task_summary() -> pd.DataFrame:
     shares are multiplied back out here rather than counted a second time.
     """
     rows = []
-    for kind, name in (("size", "cross_task_size_by_family"),
-                       ("checkpoint", "cross_task_ckpt_by_family")):
+    for kind, name in (("size", "cross_task_da_size_by_family_multi_axes"),
+                       ("checkpoint", "cross_task_da_ckpt_by_family_multi_axes")):
         d = read(RQ02 / f"{name}.csv")
         for proxy, target in (CROSS_PAIR, CROSS_PAIR[::-1]):
             cell = d[(d["proxy"] == proxy) & (d["target"] == target)]
@@ -157,13 +173,28 @@ def surrogates_by_language() -> pd.DataFrame:
     return out.sort_values(["language", "kind", "variant"])
 
 
+def compute_hours() -> dict:
+    """Charged node-hours (pretrain / everything else) and GPU-hours, rounded."""
+    SOURCES.append(COMPUTE_COSTS)
+    c = json.loads(COMPUTE_COSTS.read_text())
+    nh = {task: v["charged"] for task, v in c["node_hours"].items()}
+    pretrain = round(nh.pop("pretrain"), -2)
+    other = round(sum(nh.values()), -2)
+    return {"as_of": c["date"], "pretrain_node_hours": int(pretrain),
+            "other_node_hours": int(other),
+            "gpu_hours": int(c["gpus_per_node"] * (pretrain + other))}
+
+
 def provenance(ten: pd.DataFrame) -> dict:
     """What was read, and the population the paper's prose must quote."""
+    compute = compute_hours()
     from snr.download.ladder import load_predictivity_eval_results
     d = load_predictivity_eval_results()
     d = d[d["size"].isin(ANALYSIS_SIZES)]
-    head = d[(d["seed"] == 1904) & (d["scheme"].isin(["A", "B"]))]
+    head = d[(d["seed"] == 1904) & (d["data"].isin(["A", "B"]))]
+    bench = parents_only(d.loc[d["kind"] == "benchmark", ["task"]].drop_duplicates())
     return {
+        "compute_charged": compute,
         "generated_by": "documents/paper/sections/verify_paper_results.py (reshape, no re-derivation)",
         "sources": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
                     for p in sorted(set(SOURCES))},
@@ -171,9 +202,31 @@ def provenance(ten: pd.DataFrame) -> dict:
                       "TARGET_SIZE": TARGET_SIZE, "ANALYSIS_SIZES": list(ANALYSIS_SIZES)},
         "healthy_175M_to_1_7B": int(d["model"].nunique()),
         "headline_seed1904_A_B_runs": int(head["model"].nunique()),
+        "grid_seed1904_runs": int(d.loc[d["seed"] == 1904, "model"].nunique()),   # the `predictivity` pool
         "sizes": {k: int(v) for k, v in d.groupby("size")["model"].nunique().items()},
         "da_rows": int(len(ten)),
+        # The release counts main.tex's \nmodels / \nckpts / \nbenchmarktasks quote:
+        # every evaluated (run, checkpoint) and every per-language parent benchmark task
+        # (rule 6, twins included; BPB, the loss and the cross-language aggregates are not).
+        "evaluated_checkpoints": int(len(d[["model", "step"]].drop_duplicates())),
+        "benchmark_tasks": int((~bench["task"].map(assign_language).isin(LANGUAGE_AGGREGATES)).sum()),
     }
+
+
+def write_constants(p: dict) -> None:
+    """Rewrite the counts block of main.tex from the provenance record."""
+    tex = HERE / "main.tex"
+    t = tex.read_text()
+    B, E = "% BEGIN generated: constants (verify_paper_results.py)", "% END generated: constants"
+    i, j = t.index(B), t.index(E)
+    c = p["compute_charged"]
+    block = (f"\\newcommand{{\\nmodels}}{{{p['healthy_175M_to_1_7B']} }}\n"
+             f"\\newcommand{{\\nckpts}}{{{p['evaluated_checkpoints']:,} }}\n"
+             f"\\newcommand{{\\nbenchmarktasks}}{{{p['benchmark_tasks']:,} }}\n"
+             f"\\newcommand{{\\npretrainnodehours}}{{{c['pretrain_node_hours']:,} }}\n"
+             f"\\newcommand{{\\nothernodehours}}{{{c['other_node_hours']:,} }}\n"
+             f"\\newcommand{{\\ngpuhours}}{{{c['gpu_hours']:,} }}\n")
+    tex.write_text(t[:i] + B + "\n" + block + t[j:])
 
 
 def main(check: bool) -> int:
@@ -196,12 +249,14 @@ def main(check: bool) -> int:
         print(f"{'would change' if check and stale else 'wrote':>12}  {name}  ({len(df)} rows)")
     text = json.dumps(provenance(ten), indent=2, sort_keys=True) + "\n"
     prov = HERE / "verified_results_provenance.json"
+    p = json.loads(text)
     if not check:
         prov.write_text(text)
-    p = json.loads(text)
+        write_constants(p)
     print(f"{'wrote':>12}  {prov.name}")
     print(f"\npopulation: {p['healthy_175M_to_1_7B']} healthy runs 175M-{TARGET_SIZE}, "
-          f"{p['headline_seed1904_A_B_runs']} headline (seed 1904, schemes A/B)")
+          f"{p['grid_seed1904_runs']} in the grid pool (seed 1904, every data build), "
+          f"{p['headline_seed1904_A_B_runs']} of them on data A/B")
     print(f"            per size {p['sizes']}")
     print("            the same two counts live in documents/ladder-facts.json, which\n"
           "            facts.py diffs on every refresh — the paper's prose quotes them.")

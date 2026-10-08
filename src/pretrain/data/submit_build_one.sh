@@ -16,8 +16,10 @@
 # Build ONE data mixture (english, or one FineWeb-2 setting of one scheme),
 # then self-chain past the 12h wall. Driven by --export vars so a single script
 # backs every per-mix job launched by launch_builds.sh:
-#   BUILD_SCHEME  one of launch_trainings.DATA_SCHEMES (A|AT3|B|ZH|ES) —
-#                 it carries the language lists, the temperature and the subdir
+#   BUILD_SCHEME  one of launch_trainings.DATA_SCHEMES
+#                 (A|AT3|B|ZH|ES|DCLMP|FWEB) — it carries the language
+#                 lists, the temperature, the subdir and, for DCLMP/FWEB, the
+#                 English corpus
 #   BUILD_STAGE   english|fineweb
 #   BUILD_SETTING L value (fineweb only)
 #   BUILD_OUT     output --data_dir (the scheme's dir, i.e. <root>/<subdir>)
@@ -87,7 +89,10 @@ if [ -n "${BUILD_DST:-}" ]; then export DST="$BUILD_DST"; fi
 # rebuilds: their english link points outside SRC, where the stager would copy
 # the 736 GB target instead of linking it.
 TO_STAGE=("${PREFIX#$DATA_ROOT/}")
-if [ -n "$SUBDIR" ] && [ -z "${BUILD_DST:-}" ]; then TO_STAGE+=("$SUBDIR/english_dclm"); fi
+# (not for an english build: its own PREFIX is already that path)
+if [ -n "$SUBDIR" ] && [ -z "${BUILD_DST:-}" ] && [ "$BUILD_STAGE" != english ]; then
+  TO_STAGE+=("$SUBDIR/english_dclm")
+fi
 
 # Complete already? (.idx present, checkpoint gone.) Skip and DON'T requeue —
 # this ends the singleton chain and prevents rebuilding a finished dataset.
@@ -114,9 +119,17 @@ CHAIN_TIME=${BUILD_TIME:-11:59:59}
 n_attempts=$(find "$LOGDIR" -name "${SLURM_JOB_NAME}-[0-9]*.out" 2>/dev/null | wc -l)
 if [ "$n_attempts" -lt "${BUILD_MAX_ATTEMPTS:-25}" ]; then
   echo "[$(date)] queuing singleton successor (attempt $n_attempts, $CHAIN_PART, $CHAIN_TIME)"
-  sbatch --dependency=singleton --job-name="$SLURM_JOB_NAME" \
-         --partition="$CHAIN_PART" --time="$CHAIN_TIME" \
-         ${BUILD_EXCLUSIVE:---exclusive} --export=ALL "$SCRIPT"
+  # set -e would abort the attempt here, BEFORE the build runs, on a transient
+  # sbatch refusal -- and with the successor unqueued the whole chain dies.
+  # That happened on 2026-09-30 20:57 to three chains at once ("invalid
+  # partition 'preemptable' requested", cli_filter), costing a manual
+  # relaunch. Retry once, then build anyway and say the chain ends here.
+  chain=(sbatch --dependency=singleton --job-name="$SLURM_JOB_NAME"
+         --partition="$CHAIN_PART" --time="$CHAIN_TIME"
+         ${BUILD_EXCLUSIVE:---exclusive} --export=ALL "$SCRIPT")
+  "${chain[@]}" || { sleep 30; "${chain[@]}" || echo \
+    "WARNING: sbatch refused the successor twice — this is the LAST attempt of" \
+    "the chain; the build below still runs, then relaunch with ./launch_builds.sh" >&2; }
 fi
 
 python build_data_mixtures.py --scheme "$BUILD_SCHEME" --output_dir "$BUILD_OUT" "${STAGE_ARGS[@]}"

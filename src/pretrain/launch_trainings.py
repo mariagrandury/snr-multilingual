@@ -5,10 +5,14 @@ Launch predictivity-sweep training jobs on CSCS (sbatch) or Azure ML (az ml).
 The grid (see plan/small-to-large-predictivity-training-plan.md):
 
   * size — the 7-rung ladder (90M..3B) shared by the reviewed hyperparams
-           files; --arch picks deep (hyperparams/hyperparams_deep.json, the
-           baseline) or shallow (hyperparams/hyperparams_shallow.json, the
-           model-depth intervention level). A rung is trained in an arch only
-           if that arch's file defines it (arches_for): 3B is deep only.
+           files; --arch / --activation / --optimizer pick the ladder, one
+           reviewed hyperparams file each: deep (the baseline), shallow
+           (--arch shallow, the model-depth level) or swiglu (--activation
+           swiglu, scheme A at L in {8, 15, 30} — deep's shape at a matched
+           parameter count). A rung is trained in a ladder only if that
+           ladder's file defines it AND the scheme plans it there
+           (ladders_for): 3B is deep only, and swiglu runs at three
+           settings, not six.
   * L    — language setting in {1, 2, 8, 15, 30, 50, 100}: English + L-1
            FineWeb-2 languages. Every size trains at every setting except 3B,
            the extrapolation check, which trains at L in {8, 15} only
@@ -16,12 +20,12 @@ The grid (see plan/small-to-large-predictivity-training-plan.md):
   * scheme — the data build (DATA_SCHEMES, selected with --scheme): A is the
            resource-ranked T=1 baseline; AT3 is the same lists at T=3 and
            supplies the temperature intervention at L15, L30 and L50, which
-           exists ONLY at T=3; B is diversity-first at L in {8, 15, 30}; ZH
-           and ES swap L2's Russian for Chinese / Spanish.
+           exists ONLY at T=3; B is diversity-first at L in {8, 15, 30};
+           ZH and ES swap L2's Russian for Chinese / Spanish.
   * seed — 1904 by default; three seeds on the columns the plan marks x3, and
            the triple differs by size — (64, 313, 1904) at 175M and 600M for
-           L in {1, 2, 50}, (28, 1797, 1904) at 1B for L in {1, 2, 30, 50}
-           (see SEED_TRIPLES).
+           L in {1, 2, 50}, (28, 1797, 1904) at 1B for L in {1, 2, 30}
+           (see SEED_TRIPLES), and deep only.
 
 Each run trains its size's own budget D(N) = 5 x Chinchilla = 100 x N on the
 fixed 50/50 English (DCLM) + FineWeb-2 mix (L=1 is 100% English), blended at
@@ -53,8 +57,9 @@ Usage:
                                      [--training-steps N] [--test] [filters]
     python launch_trainings.py azure [filters]        # `source azure/env.sh` first
 
-Filters (both platforms): --arch {deep,shallow}, --scheme {A,AT3,B,ZH,ES},
---size 350M[,175M,...], --langs L, --seed N, --dry-run.
+Filters (both platforms): --arch {deep,shallow}, --activation {xielu,swiglu},
+--optimizer {ademamix}, --scheme {A,AT3,B,ZH,ES}, --size 350M[,175M,...],
+--langs L, --seed N, --dry-run.
 
 Diagnostic overrides (CSCS only). Each needs a --size/--langs/--seed filter,
 turns the auto-eval watcher off and forces a diag- run name, so no grid cell
@@ -79,6 +84,8 @@ Examples:
     python3.11 pretrain/launch_trainings.py azure --langs 1
     # depth intervention
     python3.11 pretrain/launch_trainings.py cscs --arch shallow --dry-run
+    # activation intervention
+    python3.11 pretrain/launch_trainings.py cscs --activation swiglu --dry-run
     # diversity-first lists
     python3.11 pretrain/launch_trainings.py cscs --scheme B --langs 8
     # T=3: L15, L30 and L50
@@ -104,13 +111,50 @@ from typing import Optional
 # fails with a path that looks nothing like the mistake.
 SCRIPT_DIR = Path(__file__).resolve().parent
 
-# The two reviewed architecture families cover the same six non-embedding
-# sizes; "shallow vs deep" (width/depth 128 vs 64) is the model-depth level of
-# the intervention axis. Deep is the baseline.
+# The ladders: one trained model configuration each — one reviewed
+# hyperparams file, and the token its cells carry in their names (kept as
+# named on disk: checkpoints, W&B runs, models.json keys and HF dirs all exist
+# under `lm-...-swiglu-seed1904`). Deep is the baseline; the others each move
+# exactly ONE design level away from it: shallow the depth (width/depth 128 vs
+# 64), swiglu the activation (2026-10-03, deep's shape at a matched parameter
+# count — hyperparams/find_hyperparams_swiglu.py).
+#
+# A ladder is therefore not one axis: a (deep, shallow) pair is an ARCH decision
+# and a (deep, swiglu) pair an ACTIVATION one, so the analysis reads the levels
+# (LADDERS below, analysis/utils.design_axes), never the token. Pooling them
+# would report a depth decision three times over and call it an architecture
+# effect.
 HYPERPARAMS = {
     "deep": SCRIPT_DIR / "hyperparams" / "hyperparams_deep.json",
     "shallow": SCRIPT_DIR / "hyperparams" / "hyperparams_shallow.json",
+    "swiglu": SCRIPT_DIR / "hyperparams" / "hyperparams_swiglu.json",
 }
+
+# Each ladder's design levels, one intervention axis each: `arch` is the depth
+# its hyperparams file describes; `activation` and `optimizer` are what
+# megatron_args.sh must be told, and are emitted into the cell env ONLY when
+# they differ from the baseline, so a deep or shallow cell's env dict stays
+# byte-identical to what the trained cells used.
+#
+# Adding an OPTIMIZER level (muon) needs Megatron work first: `--optimizer`
+# accepts only adam|sgd|ademamix (megatron/training/arguments.py), with no Muon
+# implementation in the checkout.
+LADDERS = {
+    "deep":    dict(arch="deep",    activation="xielu",  optimizer="ademamix"),
+    "shallow": dict(arch="shallow", activation="xielu",  optimizer="ademamix"),
+    "swiglu":  dict(arch="deep",    activation="swiglu", optimizer="ademamix"),
+}
+BASELINE_LADDER = "deep"
+
+
+def ladder_of(arch: str, activation: str, optimizer: str) -> str:
+    """The ladder that trains these levels; ValueError when none does."""
+    levels = dict(arch=arch, activation=activation, optimizer=optimizer)
+    for ladder, v in LADDERS.items():
+        if v == levels:
+            return ladder
+    raise ValueError(f"no ladder trains {arch} + {activation} + {optimizer} "
+                     f"(ladders: {', '.join(LADDERS)})")
 
 # W&B project for this sweep — single source of truth is configs/hf_wandb.json.
 # The entity is the constant "mariagrandury-epflnlp", hardcoded in
@@ -170,21 +214,30 @@ EN_SHARE = 50  # fixed English share for the multilingual (L >= 2) settings
 # The ladder, small -> large. The order is load-bearing: a scheme's
 # per-setting size cap below means "this rung and every rung under it".
 LADDER = ["90M", "175M", "350M", "600M", "1B", "1.7B", "3B"]
-# The sizes the eval watcher and the eval-progress views cover. 90M trains
-# (its checkpoints stay on disk) but is not on the ladder: nine of its ten
-# runs diverge (plan/90M-rung-anomaly.md) and the report drops the rung, so
-# evaluating it buys nothing (2026-09-18). `--name` still reaches a 90M cell.
-EVAL_SIZES = [s for s in LADDER if s != "90M"]
+# The sizes the eval watcher and the eval-progress views cover: the whole
+# ladder. 90M was off it from 2026-09-18 (nine of its ten batch-504 runs
+# diverged, plan/90M-rung-anomaly.md) until the rung was retrained at its own
+# batch (GBS_BY_SIZE, 2026-09-23); the old runs stay on disk and `on_grid`
+# keeps them out of the report and the analyses (2026-09-25).
+EVAL_SIZES = list(LADDER)
 
 # Which language settings each size trains at. Every size covers every
 # setting — the 1.7B row gained L=15 and L=50 on 2026-09-10 — except the 3B,
 # added 2026-09-19 as the extrapolation check above the 1.7B reference: the
-# paper's DA-across-size question is asked on benchmarks, and at 3B only the
-# settings whose pairs are still unresolved at 1.7B are worth ~1,900
-# node-hours each (plan/3b_models.md). L8 and L15 in schemes A
-# and B, deep only (arches_for), seed 1904 only (SEED_TRIPLES has no 3B).
+# paper's DA-across-size question is asked on benchmarks, and a 3B cell costs
+# ~1,630 node-hours (measured 2026-09-22), so the rung covers only the
+# settings that earn it (plan/3b_models.md). Deep only (ladders_for), seed
+# 1904 only (SEED_TRIPLES has no 3B).
 SIZE_LANG_SETTINGS = {size: LANG_SETTINGS for size in LADDER}
-SIZE_LANG_SETTINGS["3B"] = [8, 15]
+# The 3B rung: L8 and L15 since 2026-09-19, L30 and L50 added 2026-09-30.
+# WHY the extra two: the finished 2x2 (A/B at L8/L15) yields only 2 mono-axis
+# pairs on `L` and 2 on `list`, and rule 5 needs 3 — so NO design axis is
+# reportable at the 3B reference, and rq10 cannot answer its own question.
+# A-L30 + B-L30 take `L` to 6 and `list` to 3, the minimum that clears both;
+# A-L50 takes `L` to 9 and gives the top rung the full language range.
+# A 165B T=1 build exhausts no language at either setting (the allocation is
+# proportional: every language draws ~47% of its capacity). plan/3b_models.md.
+SIZE_LANG_SETTINGS["3B"] = [8, 15, 30, 50]
 
 # --- Data schemes -----------------------------------------------------------
 #
@@ -199,9 +252,27 @@ SIZE_LANG_SETTINGS["3B"] = [8, 15]
 #   langs     the L settings where the scheme defines data at all
 #   max_size  per-setting cap on the ladder; absent = the full ladder
 #   temp      sampling temperature for the per-language allocation (T = 1/alpha)
+#   letter    the ANALYSIS's data scheme: the recipe the build implements at
+#             its L (A the resource-ranked baseline, B and C the alternatives
+#             at that L), with `temp` as the separate T axis. The build label
+#             names cells and data dirs; analysis/RULES.md reads (letter, temp)
+#             as the design levels: A and AT3 are A at T=1 and T=3; B, ZH (L2)
+#             and DCLMP (L1) are B; ES (L2) and FWEB (L1) are C
 #   sets      which language_sets_scheme<X>.json supplies its language lists
 #   seeds     "grid" follows SEED_TRIPLES, "single" is seed 1904 only
-#   arches    architecture families the scheme is trained in
+#   ladders   the ladders (HYPERPARAMS) the scheme is trained in
+#   english   the corpus the ENGLISH half is built from, when the scheme
+#             varies it (the edu-filter axis at L=1). Absent = the DCLM-edu
+#             corpus every other cell reads; data/launch_builds.sh gives a
+#             scheme that sets it its own english build instead of a symlink
+#             to the shared one
+#   english_max_year  for an English corpus laid out one directory per Common
+#             Crawl snapshot: ignore the crawls after this year
+#   allow_undersized  cells that deliberately train on a build smaller than
+#             the grid sizes, repeating data (see the ZH note below). Full
+#             cell names, never a wildcard — the launcher is re-run to drive
+#             the sweep, so an exception that lives only in a command line is
+#             an exception that is re-decided by memory on every pass.
 #
 # L=100 is not in the grid (dropped 2026-09-20, plan/l100_data_mixture.md;
 # it was planned as AT3 only). At T=1 the 99-language allocation gives the
@@ -214,9 +285,17 @@ SIZE_LANG_SETTINGS["3B"] = [8, 15]
 # at L50 (built both ways, calibrating T=3 against the T=1 curve) and
 # replicated at L15 and L30 where nothing is starved.
 DATA_SCHEMES = {
+    # The activation axis rides scheme A's data at three settings: L8, L15 and
+    # L30, whose language lists nest, so every language L8 trains has the three
+    # mono-axis pairs rule 5 needs. L1 was the first choice (2026-10-03) and was
+    # dropped on 2026-10-05: English only, it left every non-English task with
+    # two pairs, i.e. no activation reading at all (its 90M run stays on disk,
+    # off the grid). `ladders_by_L` and not `ladders`, so no other setting
+    # plans a swiglu cell; the replicate seeds stay deep-only via seeds_for.
     "A": dict(label="", subdir="", langs={1, 2, 8, 15, 30, 50},
-              max_size={}, temp=1.0, sets="A", seeds="grid",
-              arches=("deep", "shallow")),
+              max_size={}, temp=1.0, letter="A", sets="A", seeds="grid",
+              ladders=("deep", "shallow"),
+              ladders_by_L={L: ("deep", "shallow", "swiglu") for L in (8, 15, 30)}),
     # AT3 runs the whole ladder at both settings: on the filtered subset a 92B
     # L50 build at T=3 realizes 87.1B (13 of 49 languages exhausted), enough
     # for the 83.6B a 1.7B draws (0.96 epochs) — decided 2026-09-10.
@@ -224,11 +303,16 @@ DATA_SCHEMES = {
     # pair replicated where no language is starved (T=1 floors 1.2B / 343M
     # tokens) — deep only, 1.7B reference (no 3B), launched 1B and 1.7B first.
     "AT3": dict(label="-AT3", subdir="AT3", langs={15, 30, 50},
-                max_size={15: "1.7B", 30: "1.7B"}, temp=3.0, sets="A", seeds="single",
-                arches=("deep", "shallow"), arches_by_L={15: ("deep",), 30: ("deep",)}),
+                # L50 capped 2026-09-30 with the same reason the other two
+                # carry: AT3 is the temperature intervention read against the
+                # 1.7B reference, and it was never planned above it. The cap is
+                # explicit because the 3B rung now covers L50 — without it,
+                # opening that setting would create an AT3 3B cell by accident.
+                max_size={15: "1.7B", 30: "1.7B", 50: "1.7B"}, temp=3.0, letter="A", sets="A", seeds="single",
+                ladders=("deep", "shallow"), ladders_by_L={15: ("deep",), 30: ("deep",)}),
     "B": dict(label="-schemeB", subdir="schemeB", langs={8, 15, 30},
-              max_size={}, temp=1.0, sets="B", seeds="grid",
-              arches=("deep", "shallow")),
+              max_size={}, temp=1.0, letter="B", sets="B", seeds="grid",
+              ladders=("deep", "shallow")),
     # ZH and ES are the second-language intervention at L=2. Their ceiling is
     # the SOURCE, not the budget: the swiss-ai filtered subset holds 71.8B
     # tokens of Russian (scheme A's L2), 59.9B of Chinese and 23.4B of Spanish,
@@ -239,21 +323,80 @@ DATA_SCHEMES = {
     # from two families to three — one DA pair to three, the minimum rule 5
     # accepts (analysis/RULES.md). Its build holds 52.0B, not the 59.9B of
     # Chinese there is (it was sized when ZH stopped at 1B), so the 1.7B cell
-    # repeats 1.61x against the baseline's 1.15x and is launched with
-    # --allow-undersized: every other ZH rung reads that same 52.0B file, and
-    # a 59.9B rebuild for the top rung alone would break its own ladder.
+    # repeats 1.61x against the baseline's 1.15x and carries its own
+    # `allow_undersized` entry (2026-09-21 — it had been a --allow-undersized
+    # flag the operator retyped on every launcher pass, so the cell was
+    # skipped on every pass anyone forgot): every other ZH rung reads that
+    # same 52.0B file, and a 59.9B rebuild for the top rung alone would break
+    # its own ladder.
     # ZH stops at the 1.7B reference: a 3B would draw 150B of Chinese against
     # the 59.9B there is (2.5 epochs), and nothing above the reference is read.
     "ZH": dict(label="-ZH", subdir="ZH", langs={2},
-               max_size={2: "1.7B"}, temp=1.0, sets="ZH", seeds="single",
-               arches=("deep",)),
-    # Spanish is clean only through 350M and repeats 2.0x at 1B and 3.6x at
-    # 1.7B; capped at 1B (decided 2026-09-10) because that swing across the
-    # ladder would confound a rank flip with the repetition itself — record
-    # the epoch count wherever L2-ES is compared against the other L2 schemes.
+               max_size={2: "1.7B"}, temp=1.0, letter="B", sets="ZH", seeds="single",
+               ladders=("deep",),
+               allow_undersized=("lm-1.7B-L2-ZH-deep-seed1904",)),
+    # BT3 — the scheme x temperature interaction — was registered 2026-09-21
+    # and RETIRED 2026-09-23 without ever being trained. Its gate (the AT3
+    # L15/L30 evals) opened on 09-22 and opened AGAINST it: with AT3 L15-deep
+    # and L30-deep at the 1.7B reference the temperature axis already has four
+    # mono-axis pairs (A vs AT3 at L15-deep, L30-deep, L50-deep, L50-shallow)
+    # where MIN_PAIRS is three, so BT3 would have added a fifth pair to a
+    # served axis rather than unblock anything — at 28.8 h on 21 nodes for its
+    # 1.7B alone. Removed from the registry rather than left deferred, because
+    # a registered-but-unlaunched scheme is 6 cells of permanent "not started"
+    # in every progress view and 6 models.json entries for runs that will
+    # never exist.
+    # ITS DATA BUILD IS NOT DELETED: BT3/fineweb_L30 (88.5B, built 2026-09-22
+    # and staged) stays on disk. Nothing references it any more — build_status.sh
+    # reads DATA_SCHEMES, so it stops listing it — and re-adding the entry
+    # above is all that is needed to bring both back.
+    # Spanish is the thinnest L2 source by far: the build realizes 23.9B, so
+    # the 1.7B draws 83.6B = 3.51 epochs, against Russian's 1.15 and Chinese's
+    # 1.61. Capped at the 1B rung on 2026-09-10 for exactly that reason;
+    # UNCAPPED 2026-09-23. Two things changed the answer. The repetition sits
+    # under the ~4-epoch point where the data-constrained scaling results find
+    # repeated tokens still worth close to fresh ones, so the 1.7B's SCORE —
+    # which is all decision accuracy reads — should land where a less-repeated
+    # run would. And the cell buys the whole second-language axis: with ES at
+    # the reference, L2 holds A, ZH and ES there, and the L2 data axis (`lang2` then, the scheme axis since 2026-10-05) goes from ONE
+    # mono-axis pair to the three rule 5 needs, so that axis becomes
+    # reportable for the first time.
+    # The three epoch counts are NOT comparable, and that is the cost: record
+    # 3.51x wherever L2-ES is compared with the other L2 schemes, because it is
+    # the one cell in the grid whose data a reader is entitled to ask about.
+    # No `allow_undersized` here, unlike ZH: this build already holds all the
+    # Spanish the source has, so `undersized_build` never fires on it and an
+    # entry would be dead — and worse, would mask the refusal if ES were ever
+    # rebuilt SHORT of its source. The repetition is reported by
+    # `fineweb_epochs` instead, which is a different question.
     "ES": dict(label="-ES", subdir="ES", langs={2},
-               max_size={2: "1B"}, temp=1.0, sets="ES", seeds="single",
-               arches=("deep",)),
+               max_size={2: "1.7B"}, temp=1.0, letter="C", sets="ES", seeds="single",
+               ladders=("deep",)),
+    # The L=1 rung has no language axis, so its only family contrast is depth —
+    # one pair, where rule 5 needs three. These two schemes are the third and
+    # fourth families, and what they vary is the EDUCATIONAL-QUALITY FILTER:
+    # the English every other cell trains on is DCLM put through an edu
+    # classifier, so the contrast worth measuring is the same web text without
+    # it (plan/l1_third_family.md, 2026-09-22).
+    #   DCLMP  dclm_processed — the same pipeline minus the classifier. Its
+    #          per-document metadata is the edu corpus's minus exactly
+    #          edu_int_score and edu_score, so the filter is the only knob.
+    #          ~3,282B tokens available against a 184B target.
+    #   FWEB   plain FineWeb, crawls <= 2022 (DCLM's own Common Crawl window,
+    #          so recency is not a second difference). ~10,105B tokens over 89
+    #          crawl directories, read one file per crawl in rotation.
+    # temp/sets are inert here: L=1 has no FineWeb-2 half.
+    "DCLMP": dict(label="-dclmP", subdir="DCLMP", langs={1},
+                  max_size={}, temp=1.0, letter="B", sets="A", seeds="single",
+                  ladders=("deep",),
+                  english="/capstor/store/cscs/swissai/infra01/datasets/"
+                          "dclm_processed/output"),
+    "FWEB": dict(label="-fweb", subdir="FWEB", langs={1},
+                 max_size={}, temp=1.0, letter="C", sets="A", seeds="single",
+                 ladders=("deep",),
+                 english="/capstor/store/cscs/swissai/infra01/datasets/"
+                         "HuggingFaceFW/fineweb/data",
+                 english_max_year=2022),
 }
 
 # Seeds. Every cell runs 1904; the columns below run three. The triple is
@@ -262,22 +405,24 @@ DATA_SCHEMES = {
 # (28, 1797, 1904) at L in {1, 2, 30}. The grid has to name the seeds that
 # EXIST — under the wrong triple the launcher submits two more runs per cell
 # and the watcher never evaluates the ones already trained. L50 was added to
-# the 1B triple on 2026-09-10 to match the other x3 columns; those two cells
-# are new and train under the 40-checkpoint regime, unlike aromanou's runs
+# the 1B triple on 2026-09-10 to match the other x3 columns and REMOVED again
+# on 2026-09-21: it was never launched, it is 502 node-h, and the measured
+# seed noise is near size-invariant (0.0066 at 175M, 0.0055 at 600M, 0.0054 at
+# 1B), so a fourth 1B setting buys no precision the other three do not already
+# give — see plan/seed_replicates.md. aromanou's 1B runs keep their own grid
 # (20 saves, every 2287 iters to 45740 — see pretrain/CLAUDE.md).
 SEED_SINGLE = [1904]
 SEED_TRIPLES = {
     "175M": ([64, 313, 1904], {1, 2, 50}),
     "600M": ([64, 313, 1904], {1, 2, 50}),
-    "1B": ([28, 1797, 1904], {1, 2, 30, 50}),
+    "1B": ([28, 1797, 1904], {1, 2, 30}),
 }
 
 
 def scheme_sizes(scheme: str, L: int) -> list[str]:
     """Ladder rungs a scheme trains at one setting — everything up to its
-    per-setting cap. ES stops at 1B: its 23.4B Spanish source cannot feed a
-    1.7B without repeating ~3.5x (see DATA_SCHEMES), so its reference is the
-    1B rung. ZH runs to 1.7B on its existing build (2026-09-20)."""
+    per-setting cap. ZH and ES stop at the 1.7B reference; ES's 1.7B repeats
+    its 23.9B build 3.51x (see DATA_SCHEMES)."""
     sizes = [s for s in LADDER if L in SIZE_LANG_SETTINGS[s]]
     cap = DATA_SCHEMES[scheme]["max_size"].get(L)
     return sizes[: sizes.index(cap) + 1] if cap else sizes
@@ -297,23 +442,23 @@ def cell_fineweb_subsets(L: int, scheme: str = "A") -> list[str]:
     return list(sets_[f"FW_L{L}"])
 
 
-# The sizes each reviewed hyperparams file defines. A rung exists in an
-# architecture iff its file has a config for it — the file is the only place
-# the architecture is described, so nothing else could train it anyway.
-SIZES_BY_ARCH = {arch: tuple(json.loads(p.read_text())["configs"])
-                 for arch, p in HYPERPARAMS.items()}
+# The sizes each reviewed hyperparams file defines. A rung exists in a
+# ladder iff its file has a config for it — the file is the only place the
+# model is described, so nothing else could train it anyway.
+SIZES_BY_LADDER = {ladder: tuple(json.loads(p.read_text())["configs"])
+                   for ladder, p in HYPERPARAMS.items()}
 
 
-def arches_for(scheme: str, size: str, L: int) -> tuple[str, ...]:
-    """Architectures a scheme trains at one cell: the scheme's arches (or its
-    `arches_by_L` override at that setting — AT3 is deep only at L15/L30),
+def ladders_for(scheme: str, size: str, L: int) -> tuple[str, ...]:
+    """Ladders a scheme trains at one cell: the scheme's ladders (or its
+    `ladders_by_L` override at that setting — AT3 is deep only at L15/L30),
     minus any whose hyperparams file has no config for the size (the 3B rung
     is deep only: hyperparams_shallow.json stops at 1.7B). Every tool that
-    fans a cell out over architectures must read this rather than the
-    scheme's list, or it plans cells the grid never trains."""
+    fans a cell out over ladders must read this rather than the scheme's
+    list, or it plans cells the grid never trains."""
     cfg = DATA_SCHEMES[scheme]
-    return tuple(a for a in cfg.get("arches_by_L", {}).get(L, cfg["arches"])
-                 if size in SIZES_BY_ARCH[a])
+    return tuple(a for a in cfg.get("ladders_by_L", {}).get(L, cfg["ladders"])
+                 if size in SIZES_BY_LADDER[a])
 
 
 def cell_languages(L: int, scheme: str = "A") -> set[str]:
@@ -342,28 +487,44 @@ TEST_WARMUP = 10
 TEST_DECAY = 20
 
 
-def seeds_for(size: str, L: int, scheme: str = "A") -> list[int]:
+def seeds_for(size: str, L: int, scheme: str = "A", ladder: str = "deep") -> list[int]:
     """Seeds for one cell: three on the columns the plan marks x3, one
     everywhere else. The extra data schemes run a single seed — they are
-    intervention levels, not part of the seed-noise estimate."""
-    if DATA_SCHEMES[scheme]["seeds"] == "single":
+    intervention levels, not part of the seed-noise estimate.
+
+    **Deep only** (2026-09-21). The seed axis is read as the noise denominator
+    of the interventions, and every one of those is measured against a DEEP
+    baseline: INTERVENTIONS["arch"] holds scheme A at T=1 with `deep` as the
+    baseline level, and the seed-holdout pools take the replicate seeds
+    wherever they exist. No analysis reads a shallow seed std, so a shallow replicate
+    is 3,281 node-h nothing would load. Every replicate ever trained is in
+    fact deep; this makes the grid say so."""
+    if ladder != "deep" or DATA_SCHEMES[scheme]["seeds"] == "single":
         return SEED_SINGLE
     triple, langs = SEED_TRIPLES.get(size, (SEED_SINGLE, set()))
     return triple if L in langs else SEED_SINGLE
 
 
-def predictivity_cells(schemes: Optional[list] = None) -> list[dict]:
+def predictivity_cells(schemes: Optional[list] = None,
+                       ladder: str = "deep") -> list[dict]:
     """Every run in the grid as {size, L, seed, scheme}, in
     scheme -> size -> L -> seed order. Defaults to EVERY scheme so the
     progress, models.json and auto-eval tools see the whole sweep; the
-    launcher narrows it with --scheme."""
+    launcher narrows it with --scheme.
+
+    `ladder` selects the SEED set, not the schemes: replicate seeds are deep
+    only (see seeds_for), so a caller that fans a cell out over ladders must
+    loop `ladder` OUTSIDE this call and pass it, or it plans shallow
+    replicates the grid does not train. The cells themselves are still
+    ladder-free — `ladders_for()` remains the filter for which ladder trains
+    them."""
     cells = []
     for scheme in (schemes or list(DATA_SCHEMES)):
         for size in LADDER:
             for L in sorted(DATA_SCHEMES[scheme]["langs"]):
                 if size not in scheme_sizes(scheme, L):
                     continue
-                for seed in seeds_for(size, L, scheme):
+                for seed in seeds_for(size, L, scheme, ladder):
                     cells.append({"size": size, "L": L, "seed": seed,
                                   "scheme": scheme})
     return cells
@@ -414,38 +575,60 @@ def run_interval(saved: list[int]) -> int:
 # rule 4) and the grid it is read on. Checkpoint noise is the spread over the
 # k/20 points in the last NOISE_WINDOW of a run, so those points have to be
 # evaluated at EVERY size, not only where the size's own grid happens to hit
-# them. Keep these two in step with `configs/models.json` -> `snr`.
+# them. Keep these two in step with `configs/models.json` -> `snr`; EVAL_GRID
+# below has no models.json counterpart -- its analysis-side twin is the
+# hardcoded utils.SHARED_FRACS (k/10), so moving one means moving the other.
 NOISE_WINDOW = 0.2
 NOISE_GRID = 20
+# The grid the ANALYSIS reads benchmarks on (rule 3): the ten tenths of
+# training, which carry the Chinchilla (k/5) and half-Chinchilla points.
+# ladder._on_shared_grid discards every benchmark row off it, so evaluating
+# past it is spend nothing reads — this is why the due set is pinned to the
+# tenths instead of scaling with how densely a size happens to SAVE.
+EVAL_GRID = 10
 
 
-def due_iters(saved: list[int], target: int, every: int = 2) -> list[int]:
-    """The saved iters to evaluate: every `every`-th checkpoint of the SIZE's
-    grid, expressed on the run's OWN grid so the evaluated fractions of
-    training are the same whatever density the run saved at, plus the k/20
-    points of the noise window and its final save. A 40-save 1B run yields
-    every 2nd save and a 20-save 1B run every save — the same k/20 points,
-    comparable checkpoint for checkpoint. Saves off the run's grid (a SIGUSR2
-    exit) are never due; the final save is, whatever its iter (aromanou's runs
-    end at 45740, the grid at 45720).
+def due_iters(saved: list[int], target: int, every: int = 1) -> list[int]:
+    """The saved iters to evaluate: the ten tenths of training (every
+    `every`-th of them), expressed on the run's OWN grid so the evaluated
+    fractions are the same whatever density the run saved at, plus the k/20
+    points of the noise window and its final save. Saves off the run's grid
+    (a SIGUSR2 exit) are never due; the final save is, whatever its iter
+    (aromanou's runs end at 45740, the grid at 45720).
 
-    The noise window is why the rule is not `every` alone: at `every` = 2 a
-    20-save size lands on the tenths and a 60-save size on the thirtieths, and
-    neither hits 85 % or 95 %. Those two points are added here for every size,
-    which is what makes the window five checkpoints deep instead of three."""
+    **Twelve checkpoints at every size**, by construction: the ten tenths plus
+    85 % and 95 %. That is exactly the benchmark set ladder._on_shared_grid
+    keeps, so nothing evaluated is discarded and nothing read is missing. The
+    due set deliberately does NOT scale with n_checkpoints(): 1B saves 40 and
+    1.7B/3B save 60, but the analysis reads tenths at every size, and pinning
+    the two together is what stops the surplus. Measured over the planned grid
+    2026-09-22: 824 checkpoint-evals, of which 577 had already been computed
+    and discarded (sunk) and 247 were still to come -- 128 at 1B, 71 at 3B,
+    48 at 1.7B, none at 600M or below, which were always on the tenths.
+
+    The noise window is why the rule is not the tenths alone: no size's tenths
+    hit 85 % or 95 %, so those two points are added here for every size, which
+    is what makes the window five checkpoints deep instead of three.
+
+    `every` coarsens the TENTHS only; the noise-window clause ignores it, so
+    85/90/95/100 % stay due whatever it is set to. `--every 2` therefore gives
+    8 checkpoints (the fifths plus the window) and `--every 1000` gives 5 (the
+    window alone), not the final save on its own -- which is what the rq00
+    reformulation passes actually ran. Not a knob the steady state uses, and
+    `--every 0` is a caller error: it divides."""
     if not saved:
         return []
     step = run_interval(saved)
     n_run = max(1, round(target / step))    # saves the run makes over the budget
-    n_size = n_checkpoints(target)          # saves the size's grid makes
     # Save j of the run sits at fraction j/n_run; it is due when that is a
-    # multiple of every/n_size, i.e. when j*n_size is divisible by n_run*every.
-    # Exact for any `every` (no rounding, no division by zero), and identical
-    # to the old i % (every*save_interval) rule whenever n_run == n_size.
+    # multiple of every/EVAL_GRID, i.e. when j*EVAL_GRID is divisible by
+    # n_run*every. Exact at any save density, no rounding (n_run is >= 1, and
+    # `every` >= 1): n_run = 20 -> every 2nd save, 40 -> every 4th, 60 -> 6th,
+    # and aromanou's 20-save 1B -> every 2nd. All ten tenths, in every case.
     # It is due as well when j/n_run is one of the k/NOISE_GRID points inside
     # the window — j*NOISE_GRID divisible by n_run, at or past the window's
     # start. Integer arithmetic throughout: a 20-save run adds j = 17 and 19,
-    # a 60-save run j = 51 and 57, and a 40-save run already had both.
+    # a 40-save run j = 34 and 38, a 60-save run j = 51 and 57.
     # The final save: the target itself when the run saved it; otherwise the
     # first save past it (a run on the old 45740 schedule never writes 45720),
     # and nothing while the run is still short of the target.
@@ -458,27 +641,42 @@ def due_iters(saved: list[int], target: int, every: int = 2) -> list[int]:
         if i % step:                        # off the run's own grid
             return False
         j = i // step
-        if j * n_size % (n_run * every) == 0:
+        if j * EVAL_GRID % (n_run * every) == 0:
             return True
         return j * NOISE_GRID % n_run == 0 and j >= window_start
 
     return [i for i in saved if _due(i)]
 
 
-def mix_label(L: int, arch: str = "deep", scheme: str = "A") -> str:
+def mix_label(L: int, ladder: str = "deep", scheme: str = "A",
+              size: Optional[str] = None) -> str:
     """Scheme label for EXP_NAME: language setting, data scheme (empty for
-    the scheme-A baseline) and the arch — always explicit, e.g. `L8-deep`,
-    `L8-schemeB-deep`, `L50-AT3-shallow`, `L2-ZH-deep`."""
-    return f"L{L}{DATA_SCHEMES[scheme]['label']}-{arch}"
+    the scheme-A baseline), the batch when the rung has its own, and the
+    ladder — always explicit, e.g. `L8-deep`, `L8-schemeB-deep`, `L50-AT3-shallow`,
+    `L2-ZH-deep`, `L2-b168-deep`.
+
+    `size` is optional only so the callers that label a FAMILY rather than a
+    cell (sync_models_json, ladder_report) can keep asking for the size-free
+    form; a cell must always pass it, or two runs with different batches —
+    and different losses — collide on one name."""
+    batch = "" if size is None or cell_gbs(size) == GBS else f"-b{cell_gbs(size)}"
+    return f"L{L}{DATA_SCHEMES[scheme]['label']}{batch}-{ladder}"
 
 
-def exp_name(size: str, L: int, arch: str, seed: int, scheme: str = "A") -> str:
-    """Canonical model/cell name (e.g. `lm-90M-L8-deep-seed1904`) — the
+def exp_name(size: str, L: int, ladder: str, seed: int, scheme: str = "A") -> str:
+    """Canonical model/cell name (e.g. `lm-90M-L8-b84-deep-seed1904`) — the
     checkpoint dir under Meg-Runs/<project>/, the W&B run id/name, and the
     prefix of eval result ids. `lm` not `apertus`: the architecture has
     diverged from Apertus. pretrain_progress.py parses this format; job
-    names derive from it via job_name()."""
-    return f"lm-{size}-{mix_label(L, arch, scheme)}-seed{seed}"
+    names derive from it via job_name().
+
+    The `-b<N>` part is what keeps the 2026-09-23 retrains of the two smallest
+    rungs off the diverged runs already on disk: a new name means a new
+    checkpoint dir, so the launcher can neither overwrite them nor — the real
+    hazard — RESUME one, which it would otherwise do, silently continuing a
+    batch-504 checkpoint into a batch-84 run (iters go 4,500 -> 27,000, so the
+    old final checkpoint reads as a mid-run one)."""
+    return f"lm-{size}-{mix_label(L, ladder, scheme, size)}-seed{seed}"
 
 
 def job_name(kind: str, exp: str) -> str:
@@ -487,6 +685,37 @@ def job_name(kind: str, exp: str) -> str:
     The model name keeps its `lm-` prefix everywhere else (dirs, W&B,
     models.json); jobs drop it for the kind prefix instead."""
     return f"{kind}-{exp.removeprefix('lm-')}"
+
+
+def fineweb_epochs(prefix: str, run_tokens: int) -> float:
+    """How many times a cell reads its multilingual build, or 0 if unreadable.
+
+    `undersized_build` asks whether a build is smaller than its SOURCE could
+    give — a build-completeness question. It says nothing about repetition: a
+    cell that exhausts a thin source passes it in silence, which is exactly
+    L2-ES (3.51 epochs from all the Spanish that exists). This is the number a
+    reader asks about, so the launcher prints it.
+    """
+    try:
+        have = Path(f"{prefix}.bin").stat().st_size // BYTES_PER_TOKEN
+    except OSError:
+        return 0.0
+    draw = run_tokens * (100 - EN_SHARE) // 100
+    return draw / have if have else 0.0
+
+
+def cell_schedule(cfg: dict, size: str) -> tuple[int, int, int]:
+    """`schedule_for` at the rung's OWN batch — the schedule the cell trains.
+
+    `schedule_for(cfg)` reads the hyperparams file, which is written for GBS
+    504. Any caller that asks "how many iterations does this cell run?" and
+    does not go through here gets 4,500 for a 90M that actually runs 27,000:
+    the run reads as complete at 17% of training, and `due_iters` returns 7
+    checkpoints instead of 12, quietly breaking the ten-checkpoints rule
+    (RULES.md). Use this everywhere a TARGET is needed; `schedule_for` alone
+    is only correct for a rung with no batch of its own.
+    """
+    return schedule_for(scale_for_gbs(cfg, cell_gbs(size)))
 
 
 def data_blend(english: str, fineweb: str, L: int) -> str:
@@ -557,8 +786,7 @@ def undersized_build(prefix: str, L: int, scheme: str, run_tokens: int) -> Optio
     if have >= 0.98 * can:
         return None
     return (f"draws {draw / 1e9:.1f}B ({draw / have:.2f} epochs) from a "
-            f"{have / 1e9:.1f}B build the grid now sizes at {can / 1e9:.1f}B — "
-            f"stage the full build first")
+            f"{have / 1e9:.1f}B build the grid now sizes at {can / 1e9:.1f}B")
 
 
 def fineweb_source(c: dict, data_dir: str, run_tokens: int) -> tuple[str, Optional[str]]:
@@ -594,7 +822,7 @@ def fineweb_source(c: dict, data_dir: str, run_tokens: int) -> tuple[str, Option
 
 # Width-scaled init anchor: 1/sqrt(hidden_size) scaling that keeps the
 # reviewed 0.008944 exactly at the 1B width (d=1792), so the init is
-# consistent across the 768..3072 ladder instead of one fixed value.
+# consistent across the 768..2816 ladder instead of one fixed value.
 INIT_STD_ANCHOR = 0.008944
 INIT_STD_ANCHOR_WIDTH = 1792
 
@@ -609,6 +837,7 @@ def cell_env(
     seed: int,
     exp: str,
     blend: str,
+    ladder: str = BASELINE_LADDER,
     training_steps: Optional[int] = None,
     lr_warmup_iters: Optional[int] = None,
     lr_wsd_decay_iters: Optional[int] = None,
@@ -620,10 +849,17 @@ def cell_env(
     """The env-var dict megatron_args.sh consumes — the platform-independent
     description of one run. Identical on CSCS and Azure by construction.
 
-    `lr`, `beta3_factor` and `gbs` are DIAGNOSTIC overrides and default to None, in
+    `lr` and `beta3_factor` are DIAGNOSTIC overrides and default to None, in
     which case this returns exactly what the already-pretrained cells used —
     the ladder's comparability rests on that. Callers that pass either get a
-    `diag-` run name forced on them (see main())."""
+    `diag-` run name forced on them (see main()).
+
+    `gbs` is no longer purely diagnostic: since 2026-09-23 the 90M and 175M
+    rungs carry their own grid batch (GBS_BY_SIZE), and those cells pass it
+    here and are named `-b<N>` rather than `diag-`. It still defaults to None,
+    so a default-batch cell's dict stays byte-identical to what the trained
+    cells used — which is what makes "unchanged by default" checkable with a
+    diff."""
     iters, warmup, decay = schedule_for(cfg)
     # Out-of-range factors do not fail loudly, they train garbage for hours:
     # F * iters <= 1 gives beta3 <= 0, and a negative F gives beta3 > 1.
@@ -662,6 +898,13 @@ def cell_env(
         # normal launch's dict stays byte-identical to what the trained
         # cells used and megatron_args.sh keeps its own GBS=504.
         **({"GBS": gbs} if gbs is not None else {}),
+        # The model knobs megatron_args.sh reads, emitted ONLY where the
+        # ladder differs from the deep baseline — same rule as ADEMAMIX_BETA3
+        # and GBS above, and what keeps `deep`/`shallow` dicts byte-identical
+        # to the ones the trained cells used. `arch` is not a knob: the
+        # hyperparams file already describes the shape.
+        **{k.upper(): v for k, v in LADDERS[ladder].items()
+           if k != "arch" and v != LADDERS[BASELINE_LADDER][k]},
         "SAVE_INTERVAL": save_interval(iters),
         "INIT_STD": init_std(cfg["hidden_size"]),
         "SEED": seed,
@@ -674,7 +917,62 @@ def cell_env(
 
 # --- CSCS (sbatch) -----------------------------------------------------------
 
-GBS = 504  # global batch size (megatron_args.sh) — fixed across the sweep
+GBS = 504  # global batch size (megatron_args.sh) — the ladder's default
+
+# The two smallest rungs train at their own batch, and it is not a tuning
+# choice: at GBS 504 they DIVERGE. AdEMAMix's slow EMA averages over a fixed
+# 1/(1-beta3) = 10,000 optimizer steps, while a rung's length scales with its
+# own token budget — 4,500 steps at 90M, 8,540 at 175M. Below ~1x the run the
+# slow average never leaves its warmup regime and the run degrades
+# monotonically after ~17% of training (90M ends 1.4 nats above its own best;
+# 175M takes a recovered spike and lands +0.26 off the 350M-1.7B power law).
+#
+# Holding the TOKEN budget and cutting the batch multiplies the step count by
+# the same factor, which shrinks that fixed 10,000-step memory to a fraction
+# of the run and removes the divergence without touching a single optimizer
+# constant: 90M reaches 0.37x its run at batch 84 (27,000 steps, final 2.715
+# against 5.781) and 175M 0.39x at batch 168 (25,620 steps, final 2.565
+# against 2.912). Note it is the STEPS that fix it, not the smaller batch per
+# se — the step-MATCHED batch cuts (`diag-90M-gbs252`/`-gbs84`, same 4,500
+# steps) diverge exactly like the original. See plan/90M-rung-anomaly.md.
+#
+# 168, not 84, at 175M: it runs on 6 nodes (DP 24) and Megatron needs
+# GBS % DP == 0, so 84 is not a valid layout there. 168 is the nearest.
+GBS_BY_SIZE = {"90M": 84, "175M": 168}
+
+
+def cell_gbs(size: str) -> int:
+    """The global batch this rung trains at. Everything downstream — the step
+    count, warmup, decay, save interval, micro-batch, walltime and the cell's
+    own name — is derived from this, so it is the only place the exception
+    lives."""
+    return GBS_BY_SIZE.get(size, GBS)
+
+
+def scale_for_gbs(cfg: dict, gbs: int) -> dict:
+    """`cfg` with its predictivity schedule rescaled to `gbs`, holding the
+    token budget D = 100 x N: a batch k times smaller takes k times the steps.
+
+    Scaling the predictivity block itself carries the change to everything
+    derived from it — the target and the done-check, ADEMAMIX_WARMUP,
+    save_interval (20 saves at 90M; n_checkpoints reads the SCALED iters, so a
+    rung can cross its 30k/60k thresholds and get 40 or 60), a beta3 factor,
+    the walltime and the undersized-data check.
+
+    Both the launcher and sync_models_json call this, and they must: the
+    schedule is what models.json records as num_iters and the checkpoint list,
+    and a cell whose recorded schedule disagrees with what it trained is a
+    cell the eval watcher looks for checkpoints of at iterations that do not
+    exist. (The first --gbs pair, 2026-09-09, kept 4,500 steps instead and so
+    saw 1/2 and 1/6 of the tokens — the bug this holds the budget against.)
+    """
+    if gbs == GBS:
+        return cfg
+    k = GBS // gbs
+    p = cfg["predictivity"]
+    return {**cfg, "predictivity": {**p, **{
+        key: p[key] * k for key in
+        ("train_iters", "lr_warmup_iters", "lr_wsd_decay_iters")}}}
 
 # Cluster scale (nodes) lives in the deep hyperparams file; the shallow ladder
 # shares the same non-embedding sizes, so it uses the same node counts.
@@ -682,6 +980,17 @@ NODES_BY_SIZE = {
     size: cfg["nodes"]
     for size, cfg in json.loads(HYPERPARAMS["deep"].read_text())["configs"].items()
 }
+
+# The same two constraints --gbs is checked against, applied to the grid's own
+# batches at import: GBS % gbs == 0 or the scaled warmup/decay/save_interval
+# stop being integers, and gbs % DP == 0 or Megatron rejects the layout after
+# the nodes are allocated. A typo here would otherwise surface as 60 failed
+# jobs rather than a traceback.
+for _size, _gbs in GBS_BY_SIZE.items():
+    assert GBS % _gbs == 0, f"GBS_BY_SIZE[{_size}]={_gbs} must divide {GBS}"
+    assert _gbs % (4 * NODES_BY_SIZE[_size]) == 0, (
+        f"GBS_BY_SIZE[{_size}]={_gbs} is not a multiple of DP="
+        f"{4 * NODES_BY_SIZE[_size]} ({_size} runs on {NODES_BY_SIZE[_size]} nodes)")
 
 
 def cscs_mbs(nodes: int, mbs: int, gbs: int = GBS) -> int:
@@ -700,7 +1009,7 @@ def cscs_mbs(nodes: int, mbs: int, gbs: int = GBS) -> int:
     return mbs
 
 
-# Per-size steady-state iter time (ms), for walltime sizing, keyed by arch
+# Per-size steady-state iter time (ms), for walltime sizing, keyed by ladder
 # then size. Values carry ~20% over the measurement: under-estimating walls a
 # job and costs a whole queue cycle, over-estimating only lengthens the
 # request. (At 600M and above the 11:59:59 cap dominates anyway.)
@@ -728,6 +1037,13 @@ def cscs_mbs(nodes: int, mbs: int, gbs: int = GBS) -> int:
 # 12h segments, which clamp to the cap anyway, but a run's final segment was
 # requested hours too long. Shallow 1B has no run yet and takes deep's value
 # (shallow is 2-8% faster at every measured rung).
+#
+# 3B measured 2026-09-22 the same way, over all 8 jobs of the four live cells:
+# 1840-2034 ms wall, median 1924. Do NOT read this rung off the LOGGED time
+# (1814-1832, near-identical across the four): at 60 saves of 57 GB the saves
+# are most of the gap, which is exactly why the reference rungs are timed on
+# wall-clock. The 2300 guess it replaced was only 20% high, not the ~26% a
+# logged-time reading suggests.
 ITER_MS = {
     "deep":    {"90M": 1500,   # [m] 1248
                 "175M": 1000,  # [m]  844
@@ -735,7 +1051,7 @@ ITER_MS = {
                 "600M": 660,   # [m]  548
                 "1B": 940,     # [w]  849, 4 jobs
                 "1.7B": 1280,  # [w] 1155, 11 jobs
-                "3B": 2300},   # not measured: 1.7B x (3.0/1.67) params; clamps to the cap anyway
+                "3B": 2120},   # [w] 1924, 8 jobs (range 1840-2034)
     "shallow": {"90M": 1400,   # [m] 1154
                 "175M": 1000,  # [m]  810
                 "350M": 700,   # [m]  567
@@ -743,6 +1059,14 @@ ITER_MS = {
                 "1B": 940,     # no shallow 1B run yet: deep's value
                 "1.7B": 1230}, # [w] 1113, 1 job
 }
+# The swiglu ladder has not run yet, so it borrows deep's walltime sizing — the
+# same stand-in the shallow 1B uses. It is the right starting guess: the FLOPs
+# per token are matched by construction (same N, same tokens/iter), and the
+# gated MLP trades one wide GEMM for two at 2/3 the width plus an elementwise
+# multiply. Re-measure from a clean run and replace these, as the [m]/[w] marks
+# above record for every other rung.
+ITER_MS["swiglu"] = {s: ms for s, ms in ITER_MS["deep"].items()
+                     if s in SIZES_BY_LADDER["swiglu"]}
 TIME_MARGIN_SEC = 9000   # 2h30m: 1h SIGUSR2 grace + cold-start + buffer
 TIME_MIN_SEC = 5400      # 1h30m
 TIME_MAX_SEC = 43199     # 11:59:59 (slurm normal queue cap)
@@ -755,10 +1079,43 @@ TIME_MAX_PREEMPT_SEC = 86340   # 23:59:00
 PREEMPT_PARTITION = "preemptable"
 
 
-def auto_time(size: str, remaining_iters: int, arch: str = "deep",
-              cap: int = TIME_MAX_SEC) -> str:
+def iter_ms(size: str, ladder: str, gbs: int = GBS) -> int:
+    """Steady-state ms per iteration at a given global batch.
+
+    ITER_MS is measured at GBS 504. A smaller batch does NOT scale the step
+    time down proportionally: a fixed per-step cost (optimizer, all-reduce,
+    the dataloader's own floor) survives it, so the form is
+    t(gbs) = t(504) * (gbs/504 + C).
+
+    C = 0.02 is REFITTED (2026-09-23) from the grid runs themselves, and it
+    replaces a 0.20 fitted from two diagnostics at batch 252 and 168 — the
+    only data there was before the retrain launched, and an extrapolation to
+    batch 84 that missed by 3.5x:
+
+        rung            measured        gbs/504   implied C vs ITER_MS's [m]
+        90M  @ gbs 84   229 ms/iter     0.1667    0.017   (median 1248)
+        175M @ gbs 168  297 ms/iter     0.3333    0.019   (median  844)
+
+    C multiplies ITER_MS, which already carries ~20% over its measured median,
+    so the requests land ~20% long — 90M 2.1h against a real 1.72h, 175M 2.5h
+    against 2.11h — which is the margin ITER_MS's own convention asks for. The
+    old 0.20 asked for 6:45 and 6:30 for those jobs: safe, but 3.5x the real
+    runtime, and across 58 jobs that is queue latency bought for nothing.
+
+    Normalised by (1 + C) so that a default-batch rung returns ITER_MS
+    EXACTLY. Without that the factor is 1.02 at gbs 504 and every rung the
+    retrain never touched silently asks for a longer wall than it did before
+    this function existed — 350M, 600M and 1B all moved when C was 0.20.
+    """
+    per_iter = ITER_MS[ladder].get(size, 2400)
+    return per_iter if gbs == GBS else round(
+        per_iter * (gbs / GBS + 0.02) / 1.02)
+
+
+def auto_time(size: str, remaining_iters: int, ladder: str = "deep",
+              cap: int = TIME_MAX_SEC, gbs: int = GBS) -> str:
     """Walltime for a run with `remaining_iters` to go, rounded up to 15 min."""
-    total = remaining_iters * ITER_MS[arch].get(size, 2400) // 1000 + TIME_MARGIN_SEC
+    total = remaining_iters * iter_ms(size, ladder, gbs) // 1000 + TIME_MARGIN_SEC
     total = (total + 899) // 900 * 900
     total = min(max(total, TIME_MIN_SEC), cap)
     return f"{total // 3600:02d}:{total % 3600 // 60:02d}:{total % 60:02d}"
@@ -818,12 +1175,19 @@ def submit_cscs(env: dict, dry_run: bool, nodes: Optional[int] = None,
                 dependency: Optional[str] = None,
                 partition: Optional[str] = None) -> None:
     if partition == PREEMPT_PARTITION:
-        # The wrapper turns this into MEGATRON_EXIT_ON_SIGTERM on the srun
-        # line, and the patched DistributedSignalHandler then checkpoints on
-        # the preemption signal instead of dying on it. Only here: it also
-        # makes `scancel` save before stopping, which is not what you want on
-        # a job you are killing.
-        env = {**env, "EXIT_ON_SIGTERM": "1"}
+        # EXIT_ON_SIGTERM: the wrapper turns this into MEGATRON_EXIT_ON_SIGTERM
+        # on the srun line, and the patched DistributedSignalHandler then
+        # checkpoints on the preemption signal instead of dying on it. Only
+        # here: it also makes `scancel` save before stopping, which is not what
+        # you want on a job you are killing.
+        #
+        # PRETRAIN_CHAIN: the wrapper queues a singleton successor before it
+        # starts training, so a preempted run comes back as a NEW job. Not
+        # --requeue, which is what this used to pass: Clariden caps a job at
+        # MaxBatchRequeue=5 requeues and a preemption spends one, so on the
+        # sixth Slurm holds the run and calls it a launch failure. A chain has
+        # no such cap (data/submit_build_one.sh has always worked this way).
+        env = {**env, "EXIT_ON_SIGTERM": "1", "PRETRAIN_CHAIN": "1"}
     export_vars = ",".join(f"{k}={v}" for k, v in env.items())
     # PRETRAIN_DIR: sbatch spools the wrapper, so it can't find megatron_args.sh
     # from $0 — pass the real checkout dir here.
@@ -840,13 +1204,12 @@ def submit_cscs(env: dict, dry_run: bool, nodes: Optional[int] = None,
     if partition is not None:
         cmd.append(f"--partition={partition}")
         if partition == PREEMPT_PARTITION:
-            # The wrapper's #SBATCH --no-requeue exists so a node failure does
-            # not overwrite the logs; on `preemptable` coming back is the whole
-            # point, and the command line outranks the directive. A requeued
-            # job keeps its jobid AND its partition, so it returns straight to
-            # `preemptable` — see the wrapper's SIGTERM trap for the
-            # checkpoint it saves on the way out.
-            cmd.append("--requeue")
+            # The wrapper's #SBATCH --no-requeue stands: coming back is the
+            # chain's job, not Slurm's. --comment is how a job advertises that
+            # it chains — the env that carries PRETRAIN_CHAIN is invisible to
+            # squeue, and scripts/preempt_drain.sh has to know before it moves
+            # a 21-node run onto a partition that will preempt it.
+            cmd.append("--comment=selfchain")
     cmd.append(str(CSCS_SUBMIT_SCRIPT))
 
     print(f"  job:    {job_name('pretrain', env['EXP_NAME'])}"
@@ -936,14 +1299,14 @@ def submit_azure(env: dict, cell: dict, dry_run: bool,
 
 # --- Driver ------------------------------------------------------------------
 
-def run_test(data: dict, arch: str, data_dir: str, dry_run: bool) -> None:
+def run_test(data: dict, ladder: str, data_dir: str, dry_run: bool) -> None:
     cfg = data["configs"][TEST_SIZE]
-    exp = f"lm-test-{TEST_SIZE.lower()}-{mix_label(TEST_LANGS, arch)}"
+    exp = f"lm-test-{TEST_SIZE.lower()}-{mix_label(TEST_LANGS, ladder)}"
     blend = data_blend(f"{data_dir}/english_dclm",
                        f"{data_dir}/fineweb_L{TEST_LANGS}", TEST_LANGS)
-    print(f"=== Test run: {TEST_SIZE} | {mix_label(TEST_LANGS, arch)} | "
+    print(f"=== Test run: {TEST_SIZE} | {mix_label(TEST_LANGS, ladder)} | "
           f"seed {TEST_SEED} | {TEST_STEPS} steps ===\n")
-    env = cell_env(cfg, TEST_SIZE, TEST_SEED, exp, blend,
+    env = cell_env(cfg, TEST_SIZE, TEST_SEED, exp, blend, ladder,
                    training_steps=TEST_STEPS,
                    lr_warmup_iters=TEST_WARMUP, lr_wsd_decay_iters=TEST_DECAY)
     # Save twice inside the short run. cell_env sizes SAVE_INTERVAL for the
@@ -962,14 +1325,27 @@ def main() -> None:
                         help="Where to submit: cscs (sbatch) or azure (az ml)")
     parser.add_argument("--no-auto-evals", action="store_true",
                         help="CSCS only: do NOT start the auto-eval watcher. "
-                             "By default a launch also starts it for the arch "
-                             "being submitted, so trained cells get converted "
-                             "and evaluated without a separate step.")
+                             "By default a launch also starts it, so trained "
+                             "cells get converted and evaluated without a "
+                             "separate step.")
     parser.add_argument("--dry-run", action="store_true",
                         help="Print submit commands without running them")
-    parser.add_argument("--arch", choices=["deep", "shallow"], default="deep",
-                        help="Architecture family: deep (baseline) or shallow "
-                             "(the model-depth intervention level)")
+    # The three levels pick the ladder (ladder_of); each defaults to the
+    # baseline's, so `--arch shallow` is the shallow ladder and
+    # `--activation swiglu` the swiglu one.
+    base = LADDERS[BASELINE_LADDER]
+    parser.add_argument("--arch", default=base["arch"],
+                        choices=list(dict.fromkeys(v["arch"] for v in LADDERS.values())),
+                        help="Model depth: deep (baseline) or shallow (the "
+                             "model-depth level)")
+    parser.add_argument("--activation", default=base["activation"],
+                        choices=list(dict.fromkeys(v["activation"] for v in LADDERS.values())),
+                        help="MLP activation: xielu (baseline) or swiglu (the "
+                             "activation level, scheme A at L in {8, 15, 30})")
+    parser.add_argument("--optimizer", default=base["optimizer"],
+                        choices=list(dict.fromkeys(v["optimizer"] for v in LADDERS.values())),
+                        help="Optimizer: ademamix (baseline; the only level "
+                             "trained so far)")
     parser.add_argument("--scheme", choices=list(DATA_SCHEMES), default="A",
                         help="Data scheme to submit: A (resource-ranked, "
                              "T=1 — the baseline), AT3 (same lists at T=3; "
@@ -997,10 +1373,11 @@ def main() -> None:
                         help=f"CSCS only: submit to this partition. "
                              f"`{PREEMPT_PARTITION}` starts immediately "
                              f"instead of queueing behind the 480-node cap on "
-                             f"`normal`, and also adds --requeue and lets the "
+                             f"`normal`, and also self-chains and lets the "
                              f"auto walltime reach 23:59:00 — the run "
-                             f"checkpoints on preemption and resumes when it "
-                             f"is requeued (../pretrain/CLAUDE.md)")
+                             f"checkpoints on preemption and a successor "
+                             f"queued before it started resumes from that "
+                             f"save (../pretrain/CLAUDE.md)")
     parser.add_argument("--dependency", metavar="DEP",
                         help="CSCS only: pass-through to sbatch --dependency")
     parser.add_argument("--training-steps", metavar="N", type=int,
@@ -1024,9 +1401,11 @@ def main() -> None:
     parser.add_argument("--allow-undersized", metavar="CELL",
                         help="train CELL although its FineWeb-2 build is smaller than the "
                              "grid sizes it, repeating data rather than waiting for a "
-                             "rebuild. Takes the ONE full cell name it applies to "
-                             "(e.g. lm-1.7B-L2-ZH-deep-seed1904), never a blanket opt-out: "
-                             "every other undersized cell is still skipped in the same pass. "
+                             "rebuild. Takes the ONE full cell name it applies to, "
+                             "never a blanket opt-out: every other undersized cell is "
+                             "still skipped in the same pass. For a standing decision "
+                             "use the scheme's `allow_undersized` instead (L2-ZH at 1.7B "
+                             "is there) — this flag is for one-off passes. "
                              "Prints what it repeats; record the epoch count wherever the "
                              "cell is compared (signal-and-noise/analysis/RULES.md rule 9).")
     # Diagnostic overrides. Every grid cell must keep the config the trained
@@ -1048,6 +1427,10 @@ def main() -> None:
                              "504 and be a multiple of DP = 4 x nodes. Forces a "
                              "diag- run name — never a grid cell.")
     args = parser.parse_args()
+    try:
+        ladder = ladder_of(args.arch, args.activation, args.optimizer)
+    except ValueError as e:
+        parser.error(str(e))
 
     if args.platform != "cscs":
         # not-in-(None, False), not truthiness: --lr 0 is a mistake worth
@@ -1104,24 +1487,30 @@ def main() -> None:
                   or args.compute.startswith("azureml:")
                   else f"azureml:{args.compute}")
 
-    config = HYPERPARAMS[args.arch]
+    config = HYPERPARAMS[ladder]
     data = json.loads(config.read_text())
-    print(f"Platform: {args.platform} | Config: {config.name} (arch: {args.arch})")
+    print(f"Platform: {args.platform} | Config: {config.name} (ladder: {ladder})")
     if args.dry_run:
         print("(dry-run — submit commands will be printed but not executed)")
     print()
 
     if args.test:
-        run_test(data, args.arch, args.data_dir, args.dry_run)
+        run_test(data, ladder, args.data_dir, args.dry_run)
         return
 
-    if args.arch not in DATA_SCHEMES[args.scheme]["arches"]:
-        print(f"Scheme {args.scheme} is not trained in the {args.arch} "
-              f"architecture (only {', '.join(DATA_SCHEMES[args.scheme]['arches'])}).")
+    # ladders_for, not the scheme's `ladders` list: a ladder can be defined at
+    # SOME of a scheme's settings only (swiglu at L in {8, 15, 30}, AT3 deep-only
+    # at L15/L30), and reading the list directly refused those outright.
+    trained_in = {a for L in DATA_SCHEMES[args.scheme]["langs"]
+                  for size in scheme_sizes(args.scheme, L)
+                  for a in ladders_for(args.scheme, size, L)}
+    if ladder not in trained_in:
+        print(f"Scheme {args.scheme} is not trained in the {ladder} "
+              f"ladder (only {', '.join(sorted(trained_in))}).")
         return
     cells = [
-        c for c in predictivity_cells([args.scheme])
-        if args.arch in arches_for(c["scheme"], c["size"], c["L"])
+        c for c in predictivity_cells([args.scheme], ladder)
+        if ladder in ladders_for(c["scheme"], c["size"], c["L"])
         and (size_filter is None or c["size"] in size_filter)
         and (args.langs is None or c["L"] == args.langs)
         and (args.seed is None or c["seed"] == args.seed)
@@ -1145,20 +1534,11 @@ def main() -> None:
 
     for c in cells:
         cfg = data["configs"][c["size"]]
-        if args.gbs:
-            # Hold D = 100 x N: a smaller batch takes proportionally more steps.
-            # Scaling the predictivity block itself carries the change to
-            # everything derived from it — target/done-check, ADEMAMIX_WARMUP,
-            # save_interval (20 saves at 90M — n_checkpoints reads the scaled
-            # iters, so a larger size can cross its 30k/60k thresholds and
-            # get 40 or 60), a beta3 factor, the walltime and
-            # the undersized-data check. The first --gbs pair (2026-09-09) kept
-            # 4500 steps and so saw 1/2 and 1/6 of the tokens.
-            k = GBS // args.gbs
-            p = cfg["predictivity"]
-            cfg = {**cfg, "predictivity": {**p, **{
-                key: p[key] * k for key in
-                ("train_iters", "lr_warmup_iters", "lr_wsd_decay_iters")}}}
+        # The cell's own batch, unless a diagnostic --gbs overrides it. Both
+        # go through the same scaling below, so a rung with a grid batch and
+        # a one-off --gbs run are described identically.
+        gbs = args.gbs or cell_gbs(c["size"])
+        cfg = scale_for_gbs(cfg, gbs)
         # Every non-baseline scheme keeps its FineWeb-2 build in its own
         # subdir of the same layout (the english build and the validation
         # manifest are symlinked in — see data/launch_builds.sh).
@@ -1167,7 +1547,7 @@ def main() -> None:
         # A" case to guess at here: a cell's scheme IS its data.
         subdir = DATA_SCHEMES[c["scheme"]]["subdir"]
         cell_dir = args.data_dir + (f"/{subdir}" if subdir else "")
-        exp = exp_name(c["size"], c["L"], args.arch, c["seed"], c["scheme"])
+        exp = exp_name(c["size"], c["L"], ladder, c["seed"], c["scheme"])
         if diag:
             # Rename BEFORE anything keys off it. `diag-...` matches neither
             # pretrain_progress.NAME_RE nor ladder_report.LOG_RE, and
@@ -1214,18 +1594,38 @@ def main() -> None:
             # settings) must not feed a cell that draws more than it holds:
             # Megatron silently repeats it. fineweb_source() reads such a cell's
             # FineWeb-2 half from the 92B rebuild stage instead, when it can.
-            fineweb_dir, short = fineweb_source(c, args.data_dir,
-                                                target * (args.gbs or GBS) * SEQ_LEN)
-            if short and args.allow_undersized != exp:
-                print(f"  skip [data undersized]: {exp} — {short}")
+            run_tokens = target * gbs * SEQ_LEN        # `target` is already at the rung's own batch
+            fineweb_dir, short = fineweb_source(c, args.data_dir, run_tokens)
+            # The exception is the registry's or the flag's, never a wildcard:
+            # a filter that happens to match several undersized cells must not
+            # train them all on repeated data.
+            allowed = (exp in DATA_SCHEMES[c["scheme"]].get("allow_undersized", ())
+                       or args.allow_undersized == exp)
+            if short and not allowed:
+                # Both ways out, because neither is always right: rebuilding
+                # is wrong when the rest of the cell's own ladder reads the
+                # small build (the ZH case), and repeating is wrong when it
+                # does not.
+                print(f"  skip [data undersized]: {exp} — {short}. Stage the "
+                      f"full build, or — if repeating is the deliberate choice "
+                      f"for this cell — add it to the scheme's "
+                      f"`allow_undersized` (--allow-undersized for a one-off)")
                 continue
+            # Repetition is worth saying out loud even when nothing is wrong:
+            # it is the one property of a cell's data that differs across the
+            # L2 schemes (1.15x for Russian, 1.61x Chinese, 3.51x Spanish) and
+            # the one a reader is entitled to ask about.
+            if c["L"] > 1:
+                ep = fineweb_epochs(f"{fineweb_dir}/fineweb_L{c['L']}", run_tokens)
+                if ep > 1.0:
+                    print(f"  repeats its multilingual half {ep:.2f}x: {exp}")
             if short:
-                # --allow-undersized: the cell trains on the build it has and
-                # repeats what it repeats. Deliberate for L2-ZH at 1.7B, where
-                # the alternative is worse: every other ZH rung reads this same
-                # 52B file (no rebuild root holds ZH), so a 59.9B rebuild would
-                # put the top of the ZH ladder on data the rest of its own
-                # ladder never saw — the hazard fineweb_source() documents.
+                # The cell trains on the build it has and repeats what it
+                # repeats. Deliberate for L2-ZH at 1.7B, where the alternative
+                # is worse: every other ZH rung reads this same 52B file (no
+                # rebuild root holds ZH), so a 59.9B rebuild would put the top
+                # of the ZH ladder on data the rest of its own ladder never
+                # saw — the hazard fineweb_source() documents.
                 print(f"  ALLOWING UNDERSIZED BUILD: {exp} — {short}")
             # A run started on another checkpoint grid (aromanou's 1B cells: every
             # 2287 to 45740) must not be resumed from this checkout, which would
@@ -1263,17 +1663,20 @@ def main() -> None:
                   + (f"  (FineWeb-2 from {fineweb_dir})" if fineweb_dir != cell_dir else ""))
             nodes = cfg.get("nodes", NODES_BY_SIZE[c["size"]])
             submit_cscs(
-                cell_env(cfg, c["size"], c["seed"], exp, blend,
+                cell_env(cfg, c["size"], c["seed"], exp, blend, ladder,
                          training_steps=args.training_steps or tgt,
-                         mbs=cscs_mbs(nodes, cfg["micro_batch_size"],
-                                      args.gbs or GBS),
+                         mbs=cscs_mbs(nodes, cfg["micro_batch_size"], gbs),
                          lr=args.lr, beta3_factor=args.ademamix_beta3_factor,
-                         gbs=args.gbs),
+                         # Emit GBS whenever it is not the ladder default,
+                         # whether that came from the grid or from --gbs; a
+                         # default-batch cell still emits nothing, so its env
+                         # stays byte-identical to what the trained cells used.
+                         gbs=None if gbs == GBS else gbs),
                 dry_run=args.dry_run, nodes=nodes,
                 time=args.time or auto_time(
-                    c["size"], tgt - load_iter, args.arch,
+                    c["size"], tgt - load_iter, ladder,
                     TIME_MAX_PREEMPT_SEC if args.partition == PREEMPT_PARTITION
-                    else TIME_MAX_SEC),
+                    else TIME_MAX_SEC, gbs),
                 account=args.account, dependency=args.dependency,
                 partition=args.partition,
             )
@@ -1285,15 +1688,16 @@ def main() -> None:
             blend = data_blend("$ENGLISH_DIR/english_dclm",
                                f"$FINEWEB_DIR/fineweb_L{c['L']}", c["L"])
             submit_azure(
-                cell_env(cfg, c["size"], c["seed"], exp, blend),
+                cell_env(cfg, c["size"], c["seed"], exp, blend, ladder,
+                         gbs=None if gbs == GBS else gbs),
                 cell=c, dry_run=args.dry_run,
                 data_root=(f"{DATASTORE}/data/{subdir}" if subdir else None),
                 compute=az_compute,
             )
 
     if args.platform == "cscs" and not args.no_auto_evals and not args.dry_run:
-        # ONE watcher for the whole grid, not one per --arch. The watcher
-        # covers every arch and scheme in a pass, so a launch of the deep
+        # ONE watcher for the whole grid, not one per ladder. The watcher
+        # covers every ladder and scheme in a pass, so a launch of the deep
         # ladder no longer leaves the shallow and scheme-B cells waiting for
         # a watcher nobody remembered to start.
         watcher = "auto_evals_cscs.py --watch"
@@ -1303,7 +1707,7 @@ def main() -> None:
             subprocess.Popen([sys.executable, "auto_evals_cscs.py",
                               "--watch", "1800"], cwd=str(SCRIPT_DIR),
                              stdout=log, stderr=log, start_new_session=True)
-            print("started auto-evals (all archs/schemes); opt out with "
+            print("started auto-evals (all ladders/schemes); opt out with "
                   "--no-auto-evals")
         else:
             print("(auto-evals already watching)")

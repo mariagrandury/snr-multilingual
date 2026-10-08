@@ -3,17 +3,19 @@
 Reads the intervention decision table `analyze.py` writes next to it (one
 row per intervention, L, population, proxy size, fraction of the proxy's run)
 and answers the paper's question for the two planned decisions, depth and
-language lists: at which proxy size, and how early in that proxy's run, does
+the language lists (data scheme A vs B at L8-L30; `analyze.by_recipe` keeps
+A vs ZH at L2 and A vs DCLMP at L1, the other recipes the letter B names, out
+of it): at which proxy size, and how early in that proxy's run, does
 the decision match the reference's final one? The heat map is the mean over
 language settings of the per-setting agreement, so a setting with thousands
 of benchmark tasks does not outweigh one with hundreds.
 
-    rq2_decisions.csv     the decision-table rows of the two planned decisions
-    rq2_early_small.csv   agreement per (decision, population, proxy size, fraction)
-    rq2_early_small.png/.pdf
+    rq2_da_all_decisions_mono_axis.csv     the decision-table rows of the two planned decisions
+    rq2_da_goal_early_small_mono_axis.csv   agreement per (decision, population, proxy size, fraction)
+    rq2_da_goal_early_small_mono_axis.png/.pdf
     early_decision_facts.json
 
-    python analysis/rq05_design_decisions/early_decision.py --pool predictivity_all
+    python analysis/rq05_design_decisions/early_decision.py --pool predictivity_seeds
 """
 
 from __future__ import annotations
@@ -40,17 +42,19 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
-from analysis.utils import size_order  # noqa: E402
+from analysis.rq05_design_decisions.analyze import by_recipe  # noqa: E402
+from analysis.utils import RELIABLE_DA, size_order  # noqa: E402
 
 OUT_ROOT = DESIGN_DECISIONS
-CANONICAL = "predictivity_all"
-DECISIONS = ["arch", "scheme"]                       # the two planned axes (analyze.py keys)
+CANONICAL = "predictivity_seeds"
+DECISIONS = ["arch", "scheme_B"]                     # the two planned decisions (analyze.by_recipe keys: scheme_B = the L8-L30 lists)
 POPULATIONS = [("bpb_trained", "per-language bits per byte"), ("benchmark", "benchmark tasks")]
 mpl.rcParams.update(S.RC)
 
 
 def early_small(dt: pd.DataFrame) -> pd.DataFrame:
-    core = dt[dt["intervention"].isin(DECISIONS)]
+    core = by_recipe(dt)
+    core = core[core["intervention"].isin(DECISIONS)]
     return (core.groupby(["intervention", "label", "population", "proxy_size", "frac"])
             .agg(da=("decision_acc", "mean"), cells=("decision_acc", "size"),
                  items=("n_items", "sum"), refs=("reference_size", lambda s: "/".join(sorted(set(s)))))
@@ -91,7 +95,7 @@ def plot(agg: pd.DataFrame, out_dir: Path) -> None:
         cb = fig.colorbar(im, ax=axes.ravel().tolist(), fraction=.025, pad=.02)
         cb.set_label("agreement with the reference's final decision (mean over L; settings in brackets)")
         cb.outline.set_visible(False)
-    S.save_figure(fig, out_dir, "rq2_early_small")
+    S.save_figure(fig, out_dir, "rq2_da_goal_early_small_mono_axis")
 
 
 def generate_readme(pool: str, out_dir: Path, agg: pd.DataFrame) -> None:
@@ -107,21 +111,21 @@ def generate_readme(pool: str, out_dir: Path, agg: pd.DataFrame) -> None:
             label = g["label"].iloc[0]
             final = g[g["frac"] == 1.0].set_index("proxy_size")["da"]
             sizes = size_order(final.index)
-            first = next((s for s in sizes if final[s] >= 0.75), None)
+            first = next((s for s in sizes if final[s] >= RELIABLE_DA), None)
             early = g[(g["proxy_size"] == (first or sizes[-1]))].sort_values("frac")
-            e_first = next((G.chinchilla(r.frac) for r in early.itertuples() if r.da >= 0.75), "never")
+            e_first = next((G.chinchilla(r.frac) for r in early.itertuples() if r.da >= RELIABLE_DA), "never")
             bullets.append(
                 f"- **{label}, {title}** — final-checkpoint agreement by proxy: "
                 + ", ".join(f"{s} {fmt(final[s])}" for s in sizes)
-                + (f"; smallest proxy at ≥ 0.75: **{first}**, which reaches it at {e_first} of training (5C = the full run)."
-                   if first else "; no proxy reaches 0.75."))
+                + (f"; smallest proxy at ≥ {RELIABLE_DA:g}: **{first}**, which reaches it at {e_first} of training (5C = the full run)."
+                   if first else f"; no proxy reaches {RELIABLE_DA:g}."))
             piv = g.pivot_table(index="proxy_size", columns="frac", values="da")
             piv = piv.reindex(size_order(piv.index))
             blocks += [f"**{label} — {title}** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; "
                        "mean over L of the per-L agreement):",
                        md_table(["proxy"] + [G.chinchilla(f) for f in piv.columns],
                                 [[s] + [fmt(piv.loc[s, f]) for f in piv.columns] for s in piv.index])]
-    blocks.append(f"![Early and small]({stage}/{pool}/rq2_early_small.png)")
+    blocks.append(f"![Early and small]({stage}/{pool}/rq2_da_goal_early_small_mono_axis.png)")
     readme = OUT_ROOT / "README.md"
     body = "\n\n".join([
         "## How small, and how early (paper RQ2)",
@@ -134,16 +138,17 @@ def generate_readme(pool: str, out_dir: Path, agg: pd.DataFrame) -> None:
 
 def main(pool: str, out_dir: Path) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
-    src = DESIGN_DECISIONS / stage / pool / "intervention_da.csv"
+    src = DESIGN_DECISIONS / stage / pool / "intervention_da_all_mono_axis.csv"
     if not src.is_file():
         sys.exit(f"missing {src} — run analysis/rq05_design_decisions/analyze.py --pool {pool} first")
     dt = pd.read_csv(src)
     out_dir.mkdir(parents=True, exist_ok=True)
-    core = dt[dt["intervention"].isin(DECISIONS)]
-    core.to_csv(out_dir / "rq2_decisions.csv", index=False)
+    core = by_recipe(dt)
+    core = core[core["intervention"].isin(DECISIONS)]
+    core.to_csv(out_dir / "rq2_da_all_decisions_mono_axis.csv", index=False)
     agg = early_small(dt)
-    agg.to_csv(out_dir / "rq2_early_small.csv", index=False)
-    print(f"Wrote → {out_dir / 'rq2_early_small.csv'} ({len(agg)} cells from {len(core)} rows)")
+    agg.to_csv(out_dir / "rq2_da_goal_early_small_mono_axis.csv", index=False)
+    print(f"Wrote → {out_dir / 'rq2_da_goal_early_small_mono_axis.csv'} ({len(agg)} cells from {len(core)} rows)")
     if not agg.empty:
         plot(agg, out_dir)
     refs = {f"{d}|{p}|L{int(L)}": r for (d, p, L), r in

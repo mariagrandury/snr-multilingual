@@ -14,11 +14,12 @@ from matplotlib.patches import Patch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import style as S
 from predictivity import min_predictive_size, kind
+from analysis.utils import data_build  # noqa: E402  (predictivity puts src/signal-and-noise on the path)
 
 REPO = Path(__file__).resolve().parents[2]
 OUT = REPO / "documents" / "public" / "ladder"
 IV = (REPO / "src" / "signal-and-noise" / "analysis" / "rq05_design_decisions"
-      / "pretraining" / "predictivity_seeds" / "intervention_da.csv")
+      / "pretraining" / "predictivity_seeds" / "intervention_da_all_mono_axis.csv")
 BPB, BENCH = S.RAMP[3], S.SERIES[1]
 
 
@@ -26,7 +27,11 @@ def agreement(ax):
     """Both proxy rungs, so the recovery at 350M is visible and the missing
     benchmark rung is visible too."""
     iv = pd.read_csv(IV)
-    iv = iv[iv.intervention == "scheme"]
+    # analyze.py INTERVENTIONS: data scheme A vs B, at the L's where B is the
+    # diversity-first list (L8-L30; at L1/L2 the letter names DCLMP/ZH, another
+    # decision, analyze.by_recipe); one row per fraction of the proxy's run: its final
+    iv = iv[(iv.intervention == "scheme_B") & (iv.frac == 1.0)]
+    iv = iv[[data_build(int(L), "B", 1) == "B" for L in iv.L]]
     b = iv[iv.population == "benchmark"].set_index(["L", "proxy_size"])
     p = iv[iv.population == "bpb_trained"].set_index(["L", "proxy_size"])
     Ls = sorted({L for L, _ in b.index})
@@ -55,7 +60,8 @@ def agreement(ax):
     ax.annotate("coin flip", (len(Ls) - .45, .5), xytext=(0, 4), ha="right",
                 textcoords="offset points", fontsize=8, color=S.MUTED)
     ax.set_xticks(x)
-    ax.set_xticklabels([f"{L} languages\n{int(b.loc[(L,'175M'),'n_items']):,} benchmark tasks"
+    n_bench = b["n_items"].to_dict()
+    ax.set_xticklabels([f"{L} languages" + (f"\n{int(n_bench[(L, '175M')]):,} benchmark tasks" if (L, "175M") in n_bench else "")
                         for L in Ls], fontsize=9)
     ax.set_ylim(0, 1.2); ax.set_yticks([0, .25, .5, .75, 1])
     ax.set_xlim(-.6, len(Ls) - .4)

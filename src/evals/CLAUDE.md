@@ -169,7 +169,8 @@ more chance (first pass only, even under `--watch`).
 
 **Reformulated twins** (2026-09-18). `scripts/make_rf_tasks.py` writes
 `tasks/rf/<family>/rf_<task>.yaml` for belebele / global_mmlu_full /
-include_base_44 — the letter-MCF families — as cloze tasks (answer strings
+include_base_44 — the letter-MCF families — (and, since 2026-09-23, the
+lettered probe families, see below) as cloze tasks (answer strings
 as choices, no letters), and registers them in tasks.json with an `rf_`
 PREFIX: `tasks_for_benchmarks` matches `<benchmark>_…`, so a `_rf` suffix
 would be swept into the original family. They ship via
@@ -178,11 +179,20 @@ would be swept into the original family. They ship via
 tasks.json entries carry `metric: acc_norm`, which `results_io.flatten`
 honours through `configs.metric_for` — the W&B series is
 `rf_<task>/acc_norm`, next to the original `<task>/acc`. Watcher side:
-`auto_evals_cscs.py --reformulated` swaps the `auto` group for `auto_rf`
-and names the jobs `eval-<cell>-iter<N>-rf`, so the original and the rf
-watcher never mistake each other's in-flight job for their own. The
-`rfgm_*` twins (2026-09-19, `make_rf_tasks.py --set rfgm`, group
-`auto_rfgm`, `--reformulated rfgm`, `-rfgm` jobs) are the same three
+**Since 2026-09-22 the twins are in the `auto` group itself** — the eight
+`rf_*` benchmarks (the first three plus five promoted from `auto_probe`
+on 2026-09-23) and `rfgm_include_base_44` — so an ordinary watcher pass
+evaluates them alongside the originals and tops up every existing
+checkpoint with the tasks it is missing (the watcher is per-task
+idempotent, and walltime is priced from the missing tasks). That also
+resolves rule 2 for them: `utils.trained_only` asks `auto_benchmarks()`
+whether a task is trained, so before this every `rf_*` row was "untrained"
+and the analysis pool came back without a single twin.
+**`auto_rf` and `auto_rfgm` were retired on 2026-09-23**: every twin is in
+`auto`, the candidates are in `auto_probe`, and those are the only two
+groups a run may name; the watcher's `--reformulated` flag, which chose
+the retired groups, was removed on 2026-10-03. The
+`rfgm_*` twins (2026-09-19, `make_rf_tasks.py --set rfgm`) are the same three
 families rewritten by Gemini into statement stems: `dataset_path: json`
 YAMLs over `rf-data/rfgm/<task>.jsonl` on capstor (gold labels — never
 published), produced by `scripts/rewrite_items_gemini.py` on the login
@@ -200,11 +210,97 @@ outside `request`, so the request lines carry no `key` and `fetch` matches
 answers to items on the echoed prompt text; `GOOGLE_GENAI_USE_VERTEXAI`
 therefore decides the file format and the driver refuses to run when the
 SDK resolves the other backend. a task whose JSONL is missing gets no YAML and no tasks.json entry,
-so the watcher's `auto_rfgm` group is absent until the first `--set rfgm`
-run (KeyError). The rewritten set drops a few more items than `rf_`
+so a benchmark named in `auto` before its first `--set rfgm` run resolves
+to no tasks. The rewritten set drops a few more items than `rf_`
 (rejected rewrites), so `derive_task_options.py` must run before the
 significance test reads `n_items`
 (`compute_cost.kind_of` strips the suffix).
+
+**Probe benchmarks and mixed families** (2026-09-23). `groups.auto_probe`
+screens candidate benchmarks — INCLUDE v2 included; one group, because a
+second group is a second job per cell — at the last checkpoint only
+(`auto_evals_cscs.py --group auto_probe --final-only`); it is deliberately
+separate from `auto`, whose benchmarks are topped up on every checkpoint of
+every cell. The verdict comes from
+`analysis/rq00_task_reformulation/probe.sh` (gate per language, original vs
+`rf_` on the pairs); a candidate that passes is promoted into `auto`. Twenty
+of the twenty-one were promoted on 2026-09-23; `bbq` was not, because it is
+23 min per checkpoint (20x any other task, `TASK_WEIGHT` in
+`auto_evals_cscs.submit_eval`) and clears its 1/12 chance trivially, and it
+left `auto_probe` on 2026-10-01. A
+promoted benchmark stays listed in `auto_probe` as the record of what was
+screened, which costs nothing: the watcher's idempotency is per task, so a
+later `--group auto_probe` pass finds the work done and submits only gaps.
+
+**A running watcher does not see a tasks.json edit.** `auto_evals_cscs.py`
+reads the group once, before the `--watch` loop (`benchmarks =
+auto_benchmarks(group)`), and `configs.load_tasks` is `lru_cache`d, so a
+process started yesterday holds yesterday's benchmark list *and* yesterday's
+task table. Promoting a benchmark into `auto` therefore takes effect only
+when the watcher is restarted (or a one-shot pass is run alongside it) — the
+restart is the launch, and it is what submits the top-ups.
+
+BBH and ACP-Bench are *mixed*: `scripts/make_cloze_tasks.py` measures each
+subtask against the cached data and splits them by what they actually are.
+Of BBH's 27, seventeen print an `(A)`–`(R)` option block, six are two-way
+(True/False, Yes/No, valid/invalid) and four are free-form and are not
+written at all. One benchmark name per arm, because `results.json` carries
+task names and nothing else — the arm a task belongs to lives only in the
+`benchmark` field, which is what both `tasks_for_benchmarks` and
+`benchmark_family` read:
+
+| benchmark | what it is |
+|---|---|
+| `bbh` / `acp_bench` | unchanged: the published `generate_until` benchmark, posttraining |
+| `bbh_mcq`, `acp_bench_mcq` | the lettered subtasks, published formulation, scored over the letters |
+| `rf_bbh_mcq`, `rf_acp_bench_mcq` | their cloze twins — **this is the pair that measures reformulation** |
+| `bbh_cloze`, `acp_bench_cloze` | the two-way subtasks; already cloze, so **no twin exists** — a twin would be the identical task |
+
+Since the `benchmark` field is matched by prefix, a group listing plain
+`bbh` at the pretraining stage selects `bbh_mcq` + `bbh_cloze` and not the
+posttraining original, which is the intended reading. The same prefix rule
+let `arc` pull the probe candidate `arc_mt` into `auto` unscreened (0f9781ad);
+it is kept there deliberately and has been listed by name since 2026-10-03,
+so a reader of the group sees everything the watcher evaluates.
+
+Three things that only fail inside the eval job, all found by loading every
+task through a real `TaskManager` before launching — do that:
+
+- **Option counts are measured, never assumed.** `cultural_bench_hard` was
+  registered 4-way; the harness scores it over `["False", "True"]`, so the
+  gate would have passed all 19 tasks on coin-flip scores. Several BBH
+  subtasks vary the count per item (`reasoning_about_colored_objects` runs
+  2 to 18), so `n_options` is the item-weighted `round(1 / mean(1/n_i))` —
+  the integer whose `1/n` is the real chance level — and `n_items` is
+  written at generation time so the gate has both inputs immediately.
+- **A twin cannot be built by copying a few keys** from the original's
+  YAML. `process_docs` copied that way becomes the literal string
+  `utils.process_argentina` (`TypeError: 'str' object is not callable`),
+  and a family scored on `validation_split` (commonsense_qa) loses its
+  split. The probe families' twins `include:` the original leaf YAML by
+  **absolute path** instead: `load_yaml` accepts an absolute include and
+  builds its loader per file, so a `!function` inside the included file
+  resolves against the harness's own directory. The three original
+  families keep the copied-keys form on purpose — their YAMLs are already
+  evaluated on a thousand-odd checkpoints. Where the twin must also filter
+  rows (cultural_bench_easy has one `None` option), it *replaces* the
+  inherited `process_docs` rather than adding one, or the 19 countries
+  merge into a single task.
+- **INCLUDE v2 reads its parquet directly.** `include-results/include-128`
+  has four cached revisions here, two of them partial; the hub resolves to
+  one revision while the prepared dataset cache sits under another, so all
+  154 tasks died offline on `FileNotFoundError: .../dataset_info.json`, and
+  `revision=` does not help because the offline path ignores it.
+  `make_include_v2_tasks.py` picks the most complete snapshot and writes
+  `dataset_path: parquet` + absolute `data_files`, which skips hub
+  resolution and pins the data version.
+
+**Never run two task generators at once.** Each reads all of tasks.json and
+writes all of it back, so an overlap silently drops one's work — a
+background `make_rf_tasks.py` pass did exactly that to all 154 INCLUDE v2
+registrations, leaving their YAMLs on disk with nothing pointing at them.
+`utils.configs.read_tasks_json` / `write_tasks_json` now refuse a write when
+the file changed underneath; use them in any new generator.
 
 ---
 
@@ -975,10 +1071,10 @@ The 36-sweep checkpoint dirs live at
 `/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/<EXP_NAME>/checkpoints/`
 (EXP_NAME `apertus-${MODEL_SIZE}-fwEdu${FW_EDU_RATIO}-fw2${FW2_RATIO}-seed${SEED}`);
 predictivity-sweep runs land under `.../Meg-Runs/msnr/` with EXP_NAME
-`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES]-<deep|shallow>-seed<seed>` — the
-optional label is the cell's data scheme (`DATA_SCHEMES` in
-`launch_trainings.py`; A is the unlabelled baseline, and L=100 exists only
-as AT3). The eval side never needs to parse it: which tasks a cell is
+`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu>-seed<seed>`
+— the optional label is the cell's data scheme (`DATA_SCHEMES` in
+`launch_trainings.py`; A is the unlabelled baseline) and the last token is the
+ladder. The eval side never needs to parse it: which tasks a cell is
 evaluated on comes from its scheme's language list via
 `launch_trainings.cell_languages()`.
 

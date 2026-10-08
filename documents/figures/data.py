@@ -19,7 +19,7 @@ def wide():
 
 def cells(w):
     """One row per cell: axes plus the run-level flags."""
-    return w.groupby("cell")[["size", "L", "arch", "scheme", "seed", "run__complete",
+    return w.groupby("cell")[["size", "L", "ladder", "scheme", "seed", "run__complete",
                               "run__diverged", "run__off_trend", "run__final_loss"]].first()
 
 
@@ -33,7 +33,7 @@ def healthy(w):
     return c[(c["run__complete"] == 1) & (c["run__diverged"] != 1) & (c["run__off_trend"] != 1)]
 
 
-def bpb_matrix(w, arch="deep", scheme="A", seed=1904):
+def bpb_matrix(w, ladder="deep", scheme="A", seed=1904):
     """(size, L) -> BPB at the final checkpoint, one column per FineWeb-2 subset.
 
     Columns stay subset codes (`rus_Cyrl`, `dclm`) rather than language tags:
@@ -41,7 +41,7 @@ def bpb_matrix(w, arch="deep", scheme="A", seed=1904):
     collapsing them would hide which one a number belongs to.
     """
     h = healthy(w)
-    h = h[(h["arch"] == arch) & (h["scheme"] == scheme) & (h["seed"] == seed)]
+    h = h[(h["ladder"] == ladder) & (h["scheme"] == scheme) & (h["seed"] == seed)]
     f = finals(w)
     cols = [c for c in w.columns if c.startswith("bpb__")]
     rows = {}

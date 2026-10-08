@@ -1,0 +1,22 @@
+task: acp_bench_cloze_val
+dataset_path: ibm-research/acp_bench
+dataset_name: acp_val_bool
+test_split: test
+output_type: multiple_choice
+num_fewshot: 0
+doc_to_text: '{{context}} {{question}}
+
+  Answer:'
+doc_to_choice:
+- 'yes'
+- 'no'
+doc_to_target: '{{["yes", "no"].index(answer.strip().lower())}}'
+metric_list:
+- metric: acc
+  aggregation: mean
+  higher_is_better: true
+- metric: acc_norm
+  aggregation: mean
+  higher_is_better: true
+metadata:
+  version: 0.0

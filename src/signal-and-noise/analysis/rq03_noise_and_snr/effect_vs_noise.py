@@ -22,8 +22,10 @@ only (the loader, rules 6 and 2).
 
     effect_vs_noise.csv   per (size, L, task): |Δ| per intervention, seed noise, raw and detrended checkpoint noise, ratios
     effect_vs_noise.png
+    effect_vs_noise_paper.png/.svg/.csv   the same medians for the paper: bare (rule 18), a row per noise
 
-    python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_all
+    python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_seeds
+    python analysis/rq03_noise_and_snr/effect_vs_noise.py --paper    # the _paper figure alone, from the CSV
 """
 
 from __future__ import annotations
@@ -49,12 +51,12 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.grids import mark_gated  # noqa: E402
 from analysis.paths import NOISE_AND_SNR  # noqa: E402
-from analysis.rq05_design_decisions.analyze import INTERVENTIONS  # noqa: E402
+from analysis.rq05_design_decisions.analyze import INTERVENTIONS, at_baseline  # noqa: E402
 from analysis.utils import (  # noqa: E402
     GRID_SEED, NOISE_WINDOW, benchmark_family, finals, ladder_frame, noise_checkpoints, size_order)
 
 OUT_ROOT = NOISE_AND_SNR
-CANONICAL = "predictivity_all"      # every seed: the seed-noise column needs the replicates
+CANONICAL = "predictivity_seeds"      # every seed: the seed-noise column needs the replicates
 mpl.rcParams.update(S.RC)
 
 
@@ -79,20 +81,20 @@ def effect_vs_noise(df: pd.DataFrame, fin: pd.DataFrame, pool: str) -> pd.DataFr
     key = ["size", "L", "task"]
     grid = fin[fin["seed"] == GRID_SEED]
     out = None
-    for k, (_label, axis, levels, (hcol, hval)) in INTERVENTIONS.items():
-        piv = grid[grid[hcol] == hval].pivot_table(index=key, columns=axis, values="primary_score")
+    for k, (_label, axis, levels, held) in INTERVENTIONS.items():
+        piv = at_baseline(grid, held).pivot_table(index=key, columns=axis, values="primary_score")
         if set(levels) <= set(piv.columns):
             eff = (piv[levels[0]] - piv[levels[1]]).abs().rename(f"effect_{k}")
             out = eff.to_frame() if out is None else out.join(eff, how="outer")
     if out is None:
         return pd.DataFrame()
     # seed noise: the baseline cell's finals across seeds (sample std, n >= 2)
-    base = fin[(fin["arch"] == "deep") & (fin["scheme"] == "A")]
+    base = fin[(fin["ladder"] == "deep") & (fin["data"] == "A")]
     seed = base.groupby(key)["primary_score"].agg(["std", "count"])
     out["seed_noise"] = seed.loc[seed["count"] >= 2, "std"]
     out["n_seeds"] = seed["count"]
     # checkpoint noise: the grid seed's baseline cell over the noise window (rule 4)
-    curve = noise_checkpoints(df[(df["seed"] == GRID_SEED) & (df["arch"] == "deep") & (df["scheme"] == "A")])
+    curve = noise_checkpoints(df[(df["seed"] == GRID_SEED) & (df["ladder"] == "deep") & (df["data"] == "A")])
     curve = curve.sort_values("step").groupby(key)["primary_score"].apply(np.asarray)
     out["ckpt_noise"] = curve.map(lambda s: _late_std(s, detrend=False))
     out["ckpt_noise_detrended"] = curve.map(lambda s: _late_std(s, detrend=True))
@@ -115,21 +117,46 @@ def effect_vs_noise(df: pd.DataFrame, fin: pd.DataFrame, pool: str) -> pd.DataFr
 
 
 
-def plot_effect_vs_noise(evn: pd.DataFrame, path: Path) -> None:
+PAPER_POPULATION = {"benchmark": "Benchmarks", "bpb": "BPB per language", "bpb_macro": "BPB macro", "loss": "Training loss"}
+PAPER_NOISE = {"seed": "seed noise", "ckpt": "checkpoint noise"}
+
+
+def plot_effect_vs_noise(evn: pd.DataFrame, path: Path, paper: bool = False) -> None:
+    """`paper`: the bare rule-18 version, one row per noise and one column per
+    intervention, written through style.save_paper with the medians it draws."""
     cols = [c for c in evn.columns if c.startswith("effect_") and ("_over_seed" in c or "_over_ckpt" in c)
             and evn[c].notna().any()]
     if not cols:
         return
-    fig, axes = plt.subplots(1, len(cols), figsize=(3.4 * len(cols), 3.2), squeeze=False)
-    for ax, col in zip(axes[0], cols):
+    if paper:                              # one row per noise, one column per intervention
+        cols = sorted(cols, key=lambda c: c.endswith("_over_ckpt"))
+        fig, axes = plt.subplots(2, len(cols) // 2, figsize=(1.9 * len(cols), 4.6), squeeze=False)
+    else:
+        fig, axes = plt.subplots(1, len(cols), figsize=(3.4 * len(cols), 3.2), squeeze=False)
+    rows = []
+    for ax, col in zip(axes.ravel(), cols):
         for pop, g in evn.groupby("population"):
             med = g.groupby("size")[col].median().dropna()
             sizes = size_order(med.index)
             if sizes:
-                ax.plot(sizes, [med[s] for s in sizes], marker="o", label=pop)
+                ax.plot(sizes, [med[s] for s in sizes], marker="o", ms=3.5 if paper else 6,
+                        label=PAPER_POPULATION.get(pop, pop) if paper else pop)
+                rows += [{"panel": col, "population": pop, "size": s, "median": med[s]} for s in sizes]
         ax.axhline(1, ls="--", lw=0.8, color=S.MUTED)
-        ax.set_yscale("log"); ax.set_title(col.replace("effect_", "").replace("_over_", " / "), loc="left", fontsize=8)
-        ax.grid(color=S.GRID, lw=.6); ax.set_xlabel("size"); S.clean(ax)
+        k, noise = col.removeprefix("effect_").split("_over_")
+        ax.set_yscale("log")
+        ax.set_title(f"{INTERVENTIONS[k][0][0].upper()}{INTERVENTIONS[k][0][1:]}\nover {PAPER_NOISE[noise]}" if paper
+                     else f"{k} / {noise}", loc="left", fontsize=7.5 if paper else 8)
+        ax.grid(color=S.GRID, lw=.6); ax.set_xlabel("Model size" if paper else "size"); S.clean(ax)
+    if paper:
+        for row in axes:
+            row[0].set_ylabel("Median |effect| / noise")
+        fig.legend(*axes[0][0].get_legend_handles_labels(), fontsize=7, frameon=False, ncol=4,
+                   loc="upper center", bbox_to_anchor=(0.5, 0.0))
+        fig.tight_layout()
+        pd.DataFrame(rows).to_csv(path.with_suffix(".csv"), index=False)
+        S.save_paper(fig, path.with_suffix(""))
+        return
     axes[0][0].set_ylabel("median |effect| / noise")
     axes[0][0].legend(fontsize=7, frameon=False)
     fig.suptitle("Intervention effect against seed and late-checkpoint noise (1 = the same model)\n"
@@ -147,7 +174,7 @@ def generate_readme(pool: str, out_dir: Path, evn: pd.DataFrame) -> None:
     rel = f"{stage}/{pool}"
     bullets, rows = [], []
     bullets.append(f"- **Noise definitions.** Seed noise = sample std (n−1) of the final score across the replicate seeds "
-                   f"of the deep scheme-A cell; checkpoint noise = std of the grid seed's run over the noise window, "
+                   f"of the deep data-A cell; checkpoint noise = std of the grid seed's run over the noise window, "
                    f"the k/20 points in the last {NOISE_WINDOW:.0%} of the run (80/85/90/95/100 %, the same for BPB and "
                    f"benchmarks), raw (n−1) and detrended by a line (n−2). Every std divides by its residual degrees "
                    f"of freedom. The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter "
@@ -192,6 +219,7 @@ def main(pool: str, out_dir: Path) -> None:
     print(f"Wrote → {out_dir / 'effect_vs_noise.csv'} ({len(evn)} cells)")
     if not evn.empty:
         plot_effect_vs_noise(evn, out_dir / "effect_vs_noise.png")
+        plot_effect_vs_noise(evn, out_dir / "effect_vs_noise_paper.png", paper=True)
     generate_readme(pool, out_dir, evn)
 
 
@@ -200,8 +228,14 @@ if __name__ == "__main__":
     p.add_argument("--pool", default=CANONICAL,
                    help=f"Ladder pool from configs/models.json (default: {CANONICAL}; the seed "
                         "replicates are what the seed-noise column is made of).")
+    p.add_argument("--paper", action="store_true",
+                   help="only effect_vs_noise_paper, the paper's bare figure, from effect_vs_noise.csv on disk")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; available: {sorted(load_pools())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
-    main(args.pool, OUT_ROOT / stage / args.pool)
+    out = OUT_ROOT / stage / args.pool
+    if args.paper:
+        plot_effect_vs_noise(pd.read_csv(out / "effect_vs_noise.csv"), out / "effect_vs_noise_paper.png", paper=True)
+    else:
+        main(args.pool, out)

@@ -35,10 +35,10 @@ for t in "${TIERS[@]}"; do
   st=$(stage_of "$t")
   DA="analysis/rq02_decision_accuracy/$st"
   SNR="analysis/rq03_noise_and_snr/$st"
-  if [ ! -f "$DA/$t/da_per_task.csv" ]; then
+  if [ ! -f "$DA/$t/da_all_per_task_both_axes.csv" ]; then
     run $PY analysis/rq02_decision_accuracy/compute_da.py --pool "$t"
   else
-    echo "  (DA cached: $DA/$t/da_per_task.csv)"
+    echo "  (DA cached: $DA/$t/da_all_per_task_both_axes.csv)"
   fi
   if [ ! -f "$SNR/$t/snr_variants_per_task.csv" ]; then
     run $PY analysis/rq03_noise_and_snr/run_apertus_snr_variants.py --pool "$t"

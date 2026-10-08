@@ -11,7 +11,7 @@ Two generations of models have gone through it:
 | grid | models | languages | status |
 |---|---|---|---|
 | **36-model sweep** (2026-04…06) | 4 sizes (175M–1B) × 3 FineWeb-Edu/FineWeb2 mixtures × 3 seeds, 86 tasks, plus a06 / HF references to 70B | 12 | complete; results kept as history in the RQ READMEs |
-| **Predictivity ladder** (current) | 7 sizes (90M–3B non-embedding; 3B at L8/L15 only) × 7 language settings (L = 1 … 100) × deep/shallow × data scheme A/B × seeds, each size at 5× Chinchilla, per-language BPB + the `auto` benchmark group (16 benchmarks, 494 registered tasks; each cell is evaluated on the tasks in the languages it trains on) | 100 | ≤ 600M trained and evaluated; 1B/1.7B training ([`plan/`](plan/)) |
+| **Predictivity ladder** (current) | 7 sizes (90M–3B non-embedding; 3B at L8/L15 only) × 6 language settings (L = 1 … 50) × deep/shallow × seven data schemes (A, AT3, B, ZH, ES, DCLMP, FWEB) × seeds, each size at 5× Chinchilla, per-language BPB + the `auto` benchmark group (16 benchmarks, 494 registered tasks; each cell is evaluated on the tasks in the languages it trains on) | 50 | ≤ 600M trained and evaluated; 1B/1.7B training ([`plan/`](plan/)) |
 
 ## The question, in the ladder's terms
 
@@ -56,7 +56,7 @@ report is published — the results.
 | RQ2 | [`rq02_decision_accuracy/`](src/signal-and-noise/analysis/rq02_decision_accuracy/) | A | Does a benchmark rank the design variants at a small size, or an early checkpoint, the way the reference does? |
 | RQ3 | [`rq03_noise_and_snr/`](src/signal-and-noise/analysis/rq03_noise_and_snr/) | B | Seed vs checkpoint noise, the effect of a design decision against it, the 22 SNR definitions per task, the seed holdout |
 | RQ4 | [`rq04_surrogates/`](src/signal-and-noise/analysis/rq04_surrogates/) | B | Which cheap statistic — an SNR definition, its parts, early agreement, fit quality, margin above chance — predicts decision accuracy (paper RQ3) |
-| RQ5 | [`rq05_design_decisions/`](src/signal-and-noise/analysis/rq05_design_decisions/) | C | Which proxy sizes, and how early in their run, rank the five design decisions like the reference at each L (paper RQ2, RQ4) |
+| RQ5 | [`rq05_design_decisions/`](src/signal-and-noise/analysis/rq05_design_decisions/) | C | Which proxy sizes, and how early in their run, rank the four design decisions (depth, data scheme A vs B and A vs C, temperature) like the reference at each L (paper RQ2, RQ4) |
 | RQ6 | [`rq06_language_transfer/`](src/signal-and-noise/analysis/rq06_language_transfer/) | C | Does per-language scaling transfer to unmeasured and never-trained languages? (paper RQ5) |
 | RQ7 | [`rq07_external_frameworks/`](src/signal-and-noise/analysis/rq07_external_frameworks/) | C | Do our SNR values agree with AllenAI DataDecide on the shared English tasks? |
 | RQ8 | [`rq08_subset_selection/`](src/signal-and-noise/analysis/rq08_subset_selection/) | D | Can a language or subject subset of a benchmark beat the full set's SNR, beyond a random-subset null? |
@@ -70,7 +70,7 @@ research proposal.
 ## What is already known (cluster snapshots, 2026-09-01/03)
 
 Computed on the ≤ 600M ladder before this pipeline existed
-([`plan/status-09-01.md`](plan/status-09-01.md),
+([`plan/todos/status-09-01.md`](plan/todos/status-09-01.md),
 [`src/pretrain/ladder_report.md`](src/pretrain/ladder_report.md)):
 
 - **The 90M rung diverges** (9 of 10 runs peak at 15–19 % of training and
@@ -198,8 +198,9 @@ The fork carries the upstream DataDecide / OLMo path that nothing here runs:
 `allenai_analysis/` (notebooks, LFS pointers), `snr/ladder_wrapper.py`
 (needs `olmo-ladder`), `snr/metaanalysis.py`, `snr/mask_analysis.py`,
 `snr/stats.py`, `snr/snr_simple.py`, `snr/autobencher/`, `snr/scripts/`,
-most of `snr/constants/`; the pre-refactor `INSTRUCTIONS.md` /
-`PARALLEL_SESSIONS.md` / `ANALYSIS_new_vs_previous.md` notes; the 36-sweep
+most of `snr/constants/` (the pre-refactor `INSTRUCTIONS.md` /
+`PARALLEL_SESSIONS.md` / `ANALYSIS_new_vs_previous.md` notes were folded into
+the RQ READMEs and removed on 2026-09-23); the 36-sweep
 per-sample outputs (`rq08_subset_selection/per_sample/`), `posttraining.ipynb`
 and `notebook_guidelines.md`; the 36-sweep eval runners under
 `src/evals/configs/signal_to_ratio/` and `src/evals/runners/`; and

@@ -33,8 +33,8 @@ benchmarks of our suite per language and proxy size.
 | Data source | how the non-English items were produced: `crawled` (collected from existing text, e.g. exams), `manual annotation` (written or annotated by humans), `human translation` (an existing dataset translated by people), `machine translation reviewed` (MT checked or post-edited by humans), `machine translation`, `synthetic` (templates or model-generated) |
 
 The table is read from
-[`configs/multilingual_benchmarks.csv`](https://github.com/swiss-ai/snr-multilingual/blob/main/configs/multilingual_benchmarks.csv).
+`configs/multilingual_benchmarks.csv` ([download](interactive/data/benchmarks.csv)).
 To add or correct a benchmark, edit that file (same columns) and open a pull
-request. Every value was read from the framework code, the Hugging Face dataset card
+request (*{{ anonymity_notice }}*). Every value was read from the framework code, the Hugging Face dataset card
 or the paper; a field we could not verify is left empty rather than
 estimated. The table can lag behind both frameworks.

@@ -11,7 +11,8 @@ family, cross-referenced against the
 [`lm-evaluation-harness`](https://github.com/EleutherAI/lm-evaluation-harness/tree/main/lm_eval/tasks)
 task READMEs which fix the actual datasets the eval harness loads. The
 table at the bottom encodes the same information in the schema
-consumed by `INSTRUCTIONS.md` Step 2.
+`analyze.py` consumes (the session plan that once described it,
+`INSTRUCTIONS.md`, was removed on 2026-09-23).
 
 A non-trivial number of `_eu` (Basque) tasks are **independently
 created** datasets sourced from different papers than the rest of
@@ -275,5 +276,5 @@ Notes:
   PAWS, the entailment-class XNLI, the next-sentence HellaSwag, the
   per-option ARC / MMLU / Belebele, and the minimal-pair MultiBLiMP).
 
-When this table is filled in (it now is), run the analysis described
-in [INSTRUCTIONS.md](INSTRUCTIONS.md) Step 2 onward.
+When this table is filled in (it now is), run `analyze.py` and `panels.py`
+(the driver's rq09 block).

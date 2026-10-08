@@ -1,7 +1,7 @@
 """RQ1 (paper RQ1) — What scales predictably?
 
-Per (task, L), the final-checkpoint score of the deep, scheme-A, seed-1904
-ladder against log10 N over the rungs from 175M up: the R² of the log-linear
+Per (task, L), the final-checkpoint score of the deep, data-A (scheme A at
+T=1), seed-1904 ladder against log10 N over the rungs from 175M up: the R² of the log-linear
 fit and the Spearman ρ with size, then medians per benchmark family. A family
 whose scores do not move with size has no trend to extrapolate, whatever its
 provenance. The above-random gate (analysis/RULES.md, rule 1) is applied per
@@ -10,16 +10,16 @@ provenance. The above-random gate (analysis/RULES.md, rule 1) is applied per
 rungs, and a (task, L) the gate leaves short is kept in the table with NaN
 statistics and `gated` set (grey in panels.py). The loader already keeps only
 parent tasks (rule 6) and trained languages (rule 2). The loss scaling fit is
-the ladder health check's power law on the seed-1904 cell of every (L, arch,
-scheme); `scaling_law_error.py` next to this script asks how well such a fit
+the ladder health check's power law on the seed-1904 cell of every (L, ladder,
+data build); `scaling_law_error.py` next to this script asks how well such a fit
 on the proxy rungs predicts the reference rung's per-language BPB.
 
     rq1_scaling.png/.pdf/.csv  above-chance curves at L=30 (ungated, so a task at chance is visible at 0),
                                R²/ρ per family over the gated fits; the CSV holds both panels' plotted values
     rq1_fits.csv           one row per (task, L): n_rungs (fitted), gated_rungs, gated, the fit;  rq1_families.csv  the family medians
-    scaling_fit.png/.csv   final loss vs N per L, one power-law fit per (arch, scheme), the rung count in the legend
+    scaling_fit.png/.csv   final loss vs N per L, one power-law fit per (ladder, data build), the rung count in the legend
 
-    python analysis/rq01_scaling_predictability/analyze.py --pool predictivity_all
+    python analysis/rq01_scaling_predictability/analyze.py --pool predictivity_seeds
 """
 
 from __future__ import annotations
@@ -48,12 +48,12 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import SCALING_PREDICTABILITY  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import task_n_options  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import task_chance, task_n_options  # noqa: E402
 from analysis.utils import (  # noqa: E402
     GRID_SEED, NON_EMB, benchmark_family, finals, ladder_frame, size_order)
 
 OUT_ROOT = SCALING_PREDICTABILITY
-CANONICAL = "predictivity_all"
+CANONICAL = "predictivity_seeds"
 MIN_RUNGS = 3           # above-chance rungs a (task, L) fit needs
 MIN_FAMILY_FITS = 3     # fits a family needs for a median
 EXAMPLE_L = 30
@@ -61,22 +61,23 @@ mpl.rcParams.update(S.RC)
 
 
 def _grid(fin: pd.DataFrame) -> pd.DataFrame:
-    return fin[(fin["seed"] == GRID_SEED) & (fin["arch"] == "deep") & (fin["scheme"] == "A")]
+    return fin[(fin["seed"] == GRID_SEED) & (fin["ladder"] == "deep") & (fin["data"] == "A")]
 
 
-def _line_style(size, arch, scheme) -> dict:
-    return dict(color=S.SIZE_COLOR.get(size, S.MUTED), lw=S.ARCH_WIDTH.get(arch, 1.0),
-                ls=S.SCHEME_DASH.get(scheme, "-"))
+def _line_style(size, ladder, data) -> dict:
+    return dict(color=S.SIZE_COLOR.get(size, S.MUTED), lw=S.LADDER_WIDTH.get(ladder, 1.0),
+                ls=S.DATA_DASH.get(data, "-"))
 
 
 # --- the paper's RQ1: log-N fits ------------------------------------------------
 
-def fit_table(fin: pd.DataFrame, pool: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+def fit_table(fin: pd.DataFrame, pool: str, mask: pd.DataFrame | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     """One row per (task, L) of the grid: the log-N fit over the rungs where
-    the task is above chance (rule 1, `grids.mark_gated`); `n_rungs` counts
-    them, `gated_rungs` the rungs the gate removed, and `gated` marks a series
-    the gate left with fewer than MIN_RUNGS (its statistics are NaN)."""
-    g0 = G.mark_gated(_grid(fin), pool, "size", "primary_score")
+    the task is above chance (rule 1, `grids.mark_gated`, `mask` replacing the
+    pool's); `n_rungs` counts them, `gated_rungs` the rungs the gate removed,
+    and `gated` marks a series the gate left with fewer than MIN_RUNGS (its
+    statistics are NaN)."""
+    g0 = G.mark_gated(_grid(fin), pool, "size", "primary_score", mask=mask)
     rows = []
     for (task, L), g_all in g0.groupby(["task", "L"]):
         g_all = g_all.assign(N=g_all["size"].map(NON_EMB)).dropna(subset=["N"]).sort_values("N")
@@ -111,9 +112,9 @@ def plot_rq1(fin: pd.DataFrame, fits: pd.DataFrame, fam: pd.DataFrame, out_dir: 
     # (a) score above chance against size, family medians at one L (ungated: a task at chance sits at 0)
     ex = g0[(g0["L"] == EXAMPLE_L) & (g0["kind"] == "benchmark")].copy()
     ex["family"] = ex["task"].map(benchmark_family)
-    ex["chance"] = ex["task"].map(task_n_options)
+    ex["chance"] = ex["task"].map(task_chance)
     ex = ex.dropna(subset=["chance"])
-    ex["above"] = ex["primary_score"] - 1 / ex["chance"]
+    ex["above"] = ex["primary_score"] - ex["chance"]
     show = [("multiblimp", S.RAMP[3]), ("hellaswag", S.RAMP[1]), ("xnli", S.SERIES[2]),
             ("belebele", S.SERIES[1]), ("global_mmlu_full", S.MUTED)]
     for famname, col in show:
@@ -153,7 +154,7 @@ def plot_rq1(fin: pd.DataFrame, fits: pd.DataFrame, fam: pd.DataFrame, out_dir: 
                     f"every rung (no gate, so a task at chance reads 0); (b) per family the median R² and Spearman ρ of score ~ log N "
                     f"over its (task, L) fits ({len(fitted)} fits, {fitted['task'].nunique()} tasks), each fit on the rungs where the "
                     f"task is above chance (rule 1 gate; ≥ {MIN_RUNGS} rungs); rungs per L: "
-                    + ", ".join(f"L{L} {n}" for L, n in rungs.items()) + "; deep, scheme A, seed 1904, parent tasks, trained languages")
+                    + ", ".join(f"L{L} {n}" for L, n in rungs.items()) + "; deep, data A (scheme A, T=1), seed 1904, parent tasks, trained languages")
     fig.tight_layout(rect=(0, 0, 1, top)); fig.subplots_adjust(wspace=.55)
     S.save_figure(fig, out_dir, "rq1_scaling")
     med_a = ex.groupby(["family", "size"])["above"].median().rename("value").reset_index().rename(columns={"size": "col"}).assign(panel="a")
@@ -165,18 +166,18 @@ def plot_rq1(fin: pd.DataFrame, fits: pd.DataFrame, fam: pd.DataFrame, out_dir: 
 
 def loss_scaling(fin: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
     """Final training loss of the seed-1904 cells against N per L, one power
-    law per (arch, scheme) over every rung present (≥ MIN_RUNGS; `n_rungs` in
+    law per (ladder, data build) over every rung present (≥ MIN_RUNGS; `n_rungs` in
     the table and the legend): `pretrain.ladder_report._fit`, the ladder
     health check's law, applied to the analysis' cells."""
     loss = fin[(fin["task"] == "train_loss") & (fin["seed"] == GRID_SEED)]
     loss = loss.assign(N=loss["size"].map(NON_EMB)).dropna(subset=["N"])
     rows = []
-    for (L, arch, scheme), g in loss.groupby(["L", "arch", "scheme"]):
+    for (L, ladder, data), g in loss.groupby(["L", "ladder", "data"]):
         g = g.sort_values("N")
         fit = _fit(list(zip(g["N"], g["primary_score"]))) if len(g) >= MIN_RUNGS else None
         for _, r in g.iterrows():
             pred = float(np.exp(fit[1] + fit[0] * np.log(r["N"]))) if fit else np.nan
-            rows.append({"L": int(L), "arch": arch, "scheme": scheme, "size": r["size"], "N": r["N"],
+            rows.append({"L": int(L), "ladder": ladder, "data": data, "size": r["size"], "N": r["N"],
                          "final_loss": r["primary_score"], "alpha": -fit[0] if fit else np.nan,
                          "pred_loss": pred, "n_rungs": len(g)})
     out = pd.DataFrame(rows)
@@ -186,10 +187,10 @@ def loss_scaling(fin: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
     Ls = sorted(out["L"].unique())
     fig, axes = plt.subplots(1, len(Ls), figsize=(3.1 * len(Ls), 3.2), squeeze=False)
     for ax, L in zip(axes[0], Ls):
-        for (arch, scheme), g in out[out["L"] == L].groupby(["arch", "scheme"]):
+        for (ladder, data), g in out[out["L"] == L].groupby(["ladder", "data"]):
             g = g.sort_values("N")
-            st = dict(color=S.SIZE_COLOR["1B"] if arch == "deep" else S.SERIES[1], ls=S.SCHEME_DASH.get(scheme, "-"))
-            lab = f"{arch}/{scheme}" + (f" α={g['alpha'].iloc[0]:.3f}" if g["alpha"].notna().any() else "") + f" (n={len(g)})"
+            st = dict(color={"deep": S.SIZE_COLOR["1B"], "shallow": S.SERIES[1]}.get(ladder, S.SERIES[2]), ls=S.DATA_DASH.get(data, "-"))
+            lab = f"{ladder}/{data}" + (f" α={g['alpha'].iloc[0]:.3f}" if g["alpha"].notna().any() else "") + f" (n={len(g)})"
             ax.plot(g["N"], g["final_loss"], "o", ms=4, color=st["color"], label=lab)
             if g["pred_loss"].notna().any():
                 ax.plot(g["N"], g["pred_loss"], lw=1, alpha=.7, **st)
@@ -199,9 +200,9 @@ def loss_scaling(fin: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
         ax.set_xticks([], minor=True); ax.set_title(f"L = {L}", loc="left")
         ax.set_xlabel("non-embedding params"); ax.set_ylabel("final lm loss")
         ax.legend(fontsize=6, frameon=False); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
-    top = G._header(fig, "Final loss against size, one fit per (arch, scheme) over every rung",
-                    f"point = the seed-{GRID_SEED} cell's final training loss; line = log loss = log A − α log N fitted over the (L, arch, "
-                    f"scheme)'s rungs present (n in the legend, ≥ {MIN_RUNGS}); no gate (the loss has no chance level)")
+    top = G._header(fig, "Final loss against size, one fit per (ladder, data build) over every rung",
+                    f"point = the seed-{GRID_SEED} cell's final training loss; line = log loss = log A − α log N fitted over the (L, ladder, "
+                    f"data build)'s rungs present (n in the legend, ≥ {MIN_RUNGS}); no gate (the loss has no chance level)")
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, out_dir / "scaling_fit.png", dpi=150)
     return out
@@ -231,8 +232,8 @@ def generate_readme(pool: str, out_dir: Path, fits: pd.DataFrame, fam: pd.DataFr
         + ", ".join(f"{fmt(v)} over the {int(k)}-option fits" for k, v in by_opt.items()) + ".",
     ]
     if not sf.empty:
-        al = sf.dropna(subset=["alpha"]).groupby(["L", "arch", "scheme"]).agg(alpha=("alpha", "first"), n=("n_rungs", "first"))
-        bullets.append(f"- **Loss exponent α per (L, arch, scheme)**, the seed-{GRID_SEED} cells, sizes in the fit in brackets: "
+        al = sf.dropna(subset=["alpha"]).groupby(["L", "ladder", "data"]).agg(alpha=("alpha", "first"), n=("n_rungs", "first"))
+        bullets.append(f"- **Loss exponent α per (L, ladder, data build)**, the seed-{GRID_SEED} cells, sizes in the fit in brackets: "
                        + ", ".join(f"L{L} {a}/{s} {fmt(r.alpha, 3)} ({int(r.n)})" for (L, a, s), r in al.iterrows()) + ".")
     rows = [[f, fmt(r.r2), fmt(r.rho), int(r.n), "" if not np.isfinite(r.n_options) else int(r.n_options)]
             for f, r in fam.iterrows()]

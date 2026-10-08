@@ -1,4 +1,5 @@
 {
+  "_note": "hello, thank_you and speakers (total L1+L2 speakers, rounded) were drafted for the website's data-mixture view (2026-10-07) from general reference knowledge (Ethnologue / Wikipedia-level figures) and are NOT yet checked by a native speaker or against a cited source; entries without `resource` were added for the 50 trained languages (groups.trained) at the same time.",
   "languages": {
     "ar": {
       "language": "Modern Std. Arabic",
@@ -6,7 +7,10 @@
       "script": "Arabic",
       "resource": "High",
       "iso2": "ar",
-      "iso3": "ara"
+      "iso3": "ara",
+      "hello": "مرحبا",
+      "thank_you": "شكرًا",
+      "speakers": 380000000
     },
     "de": {
       "language": "German",
@@ -14,7 +18,10 @@
       "script": "Latin",
       "resource": "High",
       "iso2": "de",
-      "iso3": "deu"
+      "iso3": "deu",
+      "hello": "Hallo",
+      "thank_you": "Danke",
+      "speakers": 134000000
     },
     "en": {
       "language": "English",
@@ -22,7 +29,10 @@
       "script": "Latin",
       "resource": "High",
       "iso2": "en",
-      "iso3": "eng"
+      "iso3": "eng",
+      "hello": "Hello",
+      "thank_you": "Thank you",
+      "speakers": 1500000000
     },
     "es": {
       "language": "Spanish",
@@ -30,7 +40,10 @@
       "script": "Latin",
       "resource": "High",
       "iso2": "es",
-      "iso3": "spa"
+      "iso3": "spa",
+      "hello": "Hola",
+      "thank_you": "Gracias",
+      "speakers": 560000000
     },
     "eu": {
       "language": "Basque",
@@ -38,7 +51,10 @@
       "script": "Latin",
       "resource": "Low",
       "iso2": "eu",
-      "iso3": "eus"
+      "iso3": "eus",
+      "hello": "Kaixo",
+      "thank_you": "Eskerrik asko",
+      "speakers": 750000
     },
     "fr": {
       "language": "French",
@@ -46,7 +62,10 @@
       "script": "Latin",
       "resource": "High",
       "iso2": "fr",
-      "iso3": "fra"
+      "iso3": "fra",
+      "hello": "Bonjour",
+      "thank_you": "Merci",
+      "speakers": 310000000
     },
     "hi": {
       "language": "Hindi",
@@ -54,7 +73,10 @@
       "script": "Devanagari",
       "resource": "Mid",
       "iso2": "hi",
-      "iso3": "hin"
+      "iso3": "hin",
+      "hello": "नमस्ते",
+      "thank_you": "धन्यवाद",
+      "speakers": 610000000
     },
     "ja": {
       "language": "Japanese",
@@ -62,7 +84,10 @@
       "script": "Kanji and Kana",
       "resource": "High",
       "iso2": "ja",
-      "iso3": "jpn"
+      "iso3": "jpn",
+      "hello": "こんにちは",
+      "thank_you": "ありがとう",
+      "speakers": 125000000
     },
     "ko": {
       "language": "Korean",
@@ -70,7 +95,10 @@
       "script": "Hangul",
       "resource": "High",
       "iso2": "ko",
-      "iso3": "kor"
+      "iso3": "kor",
+      "hello": "안녕하세요",
+      "thank_you": "감사합니다",
+      "speakers": 82000000
     },
     "pt": {
       "language": "Portuguese",
@@ -78,7 +106,10 @@
       "script": "Latin",
       "resource": "High",
       "iso2": "pt",
-      "iso3": "por"
+      "iso3": "por",
+      "hello": "Olá",
+      "thank_you": "Obrigado",
+      "speakers": 265000000
     },
     "ru": {
       "language": "Russian",
@@ -86,7 +117,10 @@
       "script": "Cyrillic",
       "resource": "High",
       "iso2": "ru",
-      "iso3": "rus"
+      "iso3": "rus",
+      "hello": "Привет",
+      "thank_you": "Спасибо",
+      "speakers": 255000000
     },
     "sw": {
       "language": "Swahili",
@@ -94,7 +128,10 @@
       "script": "Latin",
       "resource": "Low",
       "iso2": "sw",
-      "iso3": "swa"
+      "iso3": "swa",
+      "hello": "Habari",
+      "thank_you": "Asante",
+      "speakers": 80000000
     },
     "te": {
       "language": "Telugu",
@@ -102,7 +139,10 @@
       "script": "Telugu",
       "resource": "Low",
       "iso2": "te",
-      "iso3": "tel"
+      "iso3": "tel",
+      "hello": "నమస్కారం",
+      "thank_you": "ధన్యవాదాలు",
+      "speakers": 96000000
     },
     "th": {
       "language": "Thai",
@@ -110,7 +150,10 @@
       "script": "Thai",
       "resource": "Mid",
       "iso2": "th",
-      "iso3": "tha"
+      "iso3": "tha",
+      "hello": "สวัสดี",
+      "thank_you": "ขอบคุณ",
+      "speakers": 61000000
     },
     "tr": {
       "language": "Turkish",
@@ -118,7 +161,10 @@
       "script": "Latin",
       "resource": "Mid",
       "iso2": "tr",
-      "iso3": "tur"
+      "iso3": "tur",
+      "hello": "Merhaba",
+      "thank_you": "Teşekkür ederim",
+      "speakers": 90000000
     },
     "uk": {
       "language": "Ukrainian",
@@ -126,7 +172,10 @@
       "script": "Cyrillic",
       "resource": "Mid",
       "iso2": "uk",
-      "iso3": "ukr"
+      "iso3": "ukr",
+      "hello": "Привіт",
+      "thank_you": "Дякую",
+      "speakers": 39000000
     },
     "vi": {
       "language": "Vietnamese",
@@ -134,7 +183,10 @@
       "script": "Latin",
       "resource": "Mid",
       "iso2": "vi",
-      "iso3": "vie"
+      "iso3": "vie",
+      "hello": "Xin chào",
+      "thank_you": "Cảm ơn",
+      "speakers": 86000000
     },
     "zh": {
       "language": "Mandarin Chinese",
@@ -142,7 +194,360 @@
       "script": "Han",
       "resource": "High",
       "iso2": "zh",
-      "iso3": "zho"
+      "iso3": "zho",
+      "hello": "你好",
+      "thank_you": "谢谢",
+      "speakers": 1140000000
+    },
+    "it": {
+      "language": "Italian",
+      "family": "Indo-European, Romance",
+      "script": "Latin",
+      "iso2": "it",
+      "iso3": "ita",
+      "hello": "Ciao",
+      "thank_you": "Grazie",
+      "speakers": 68000000
+    },
+    "pl": {
+      "language": "Polish",
+      "family": "Indo-European, Slavic",
+      "script": "Latin",
+      "iso2": "pl",
+      "iso3": "pol",
+      "hello": "Cześć",
+      "thank_you": "Dziękuję",
+      "speakers": 40000000
+    },
+    "nl": {
+      "language": "Dutch",
+      "family": "Indo-European, Germanic",
+      "script": "Latin",
+      "iso2": "nl",
+      "iso3": "nld",
+      "hello": "Hallo",
+      "thank_you": "Dank je",
+      "speakers": 25000000
+    },
+    "id": {
+      "language": "Indonesian",
+      "family": "Austronesian, Malayo-Polynesian",
+      "script": "Latin",
+      "iso2": "id",
+      "iso3": "ind",
+      "hello": "Halo",
+      "thank_you": "Terima kasih",
+      "speakers": 250000000
+    },
+    "fa": {
+      "language": "Persian",
+      "family": "Indo-European, Iranian",
+      "script": "Arabic",
+      "iso2": "fa",
+      "iso3": "fas",
+      "hello": "سلام",
+      "thank_you": "متشکرم",
+      "speakers": 80000000
+    },
+    "el": {
+      "language": "Greek",
+      "family": "Indo-European, Hellenic",
+      "script": "Greek",
+      "iso2": "el",
+      "iso3": "ell",
+      "hello": "Γεια σου",
+      "thank_you": "Ευχαριστώ",
+      "speakers": 13500000
+    },
+    "cs": {
+      "language": "Czech",
+      "family": "Indo-European, Slavic",
+      "script": "Latin",
+      "iso2": "cs",
+      "iso3": "ces",
+      "hello": "Ahoj",
+      "thank_you": "Děkuji",
+      "speakers": 10700000
+    },
+    "sv": {
+      "language": "Swedish",
+      "family": "Indo-European, Germanic",
+      "script": "Latin",
+      "iso2": "sv",
+      "iso3": "swe",
+      "hello": "Hej",
+      "thank_you": "Tack",
+      "speakers": 13000000
+    },
+    "hu": {
+      "language": "Hungarian",
+      "family": "Uralic, Ugric",
+      "script": "Latin",
+      "iso2": "hu",
+      "iso3": "hun",
+      "hello": "Szia",
+      "thank_you": "Köszönöm",
+      "speakers": 13000000
+    },
+    "ro": {
+      "language": "Romanian",
+      "family": "Indo-European, Romance",
+      "script": "Latin",
+      "iso2": "ro",
+      "iso3": "ron",
+      "hello": "Salut",
+      "thank_you": "Mulțumesc",
+      "speakers": 24000000
+    },
+    "no": {
+      "language": "Norwegian (Bokmål)",
+      "family": "Indo-European, Germanic",
+      "script": "Latin",
+      "iso2": "no",
+      "iso3": "nob",
+      "hello": "Hei",
+      "thank_you": "Takk",
+      "speakers": 5000000
+    },
+    "da": {
+      "language": "Danish",
+      "family": "Indo-European, Germanic",
+      "script": "Latin",
+      "iso2": "da",
+      "iso3": "dan",
+      "hello": "Hej",
+      "thank_you": "Tak",
+      "speakers": 6000000
+    },
+    "bg": {
+      "language": "Bulgarian",
+      "family": "Indo-European, Slavic",
+      "script": "Cyrillic",
+      "iso2": "bg",
+      "iso3": "bul",
+      "hello": "Здравей",
+      "thank_you": "Благодаря",
+      "speakers": 8000000
+    },
+    "fi": {
+      "language": "Finnish",
+      "family": "Uralic, Finnic",
+      "script": "Latin",
+      "iso2": "fi",
+      "iso3": "fin",
+      "hello": "Hei",
+      "thank_you": "Kiitos",
+      "speakers": 5800000
+    },
+    "bn": {
+      "language": "Bengali",
+      "family": "Indo-European, Indo-Aryan",
+      "script": "Bengali",
+      "iso2": "bn",
+      "iso3": "ben",
+      "hello": "নমস্কার",
+      "thank_you": "ধন্যবাদ",
+      "speakers": 280000000
+    },
+    "sk": {
+      "language": "Slovak",
+      "family": "Indo-European, Slavic",
+      "script": "Latin",
+      "iso2": "sk",
+      "iso3": "slk",
+      "hello": "Ahoj",
+      "thank_you": "Ďakujem",
+      "speakers": 5200000
+    },
+    "he": {
+      "language": "Hebrew",
+      "family": "Afro-Asiatic, Semitic",
+      "script": "Hebrew",
+      "iso2": "he",
+      "iso3": "heb",
+      "hello": "שלום",
+      "thank_you": "תודה",
+      "speakers": 9000000
+    },
+    "lt": {
+      "language": "Lithuanian",
+      "family": "Indo-European, Baltic",
+      "script": "Latin",
+      "iso2": "lt",
+      "iso3": "lit",
+      "hello": "Labas",
+      "thank_you": "Ačiū",
+      "speakers": 3000000
+    },
+    "bs": {
+      "language": "Bosnian",
+      "family": "Indo-European, Slavic",
+      "script": "Latin",
+      "iso2": "bs",
+      "iso3": "bos",
+      "hello": "Zdravo",
+      "thank_you": "Hvala",
+      "speakers": 2500000
+    },
+    "sl": {
+      "language": "Slovene",
+      "family": "Indo-European, Slavic",
+      "script": "Latin",
+      "iso2": "sl",
+      "iso3": "slv",
+      "hello": "Živjo",
+      "thank_you": "Hvala",
+      "speakers": 2500000
+    },
+    "et": {
+      "language": "Estonian",
+      "family": "Uralic, Finnic",
+      "script": "Latin",
+      "iso2": "et",
+      "iso3": "ekk",
+      "hello": "Tere",
+      "thank_you": "Aitäh",
+      "speakers": 1200000
+    },
+    "ca": {
+      "language": "Catalan",
+      "family": "Indo-European, Romance",
+      "script": "Latin",
+      "iso2": "ca",
+      "iso3": "cat",
+      "hello": "Hola",
+      "thank_you": "Gràcies",
+      "speakers": 10000000
+    },
+    "ta": {
+      "language": "Tamil",
+      "family": "Dravidian",
+      "script": "Tamil",
+      "iso2": "ta",
+      "iso3": "tam",
+      "hello": "வணக்கம்",
+      "thank_you": "நன்றி",
+      "speakers": 86000000
+    },
+    "hr": {
+      "language": "Croatian",
+      "family": "Indo-European, Slavic",
+      "script": "Latin",
+      "iso2": "hr",
+      "iso3": "hrv",
+      "hello": "Bok",
+      "thank_you": "Hvala",
+      "speakers": 5500000
+    },
+    "lv": {
+      "language": "Latvian",
+      "family": "Indo-European, Baltic",
+      "script": "Latin",
+      "iso2": "lv",
+      "iso3": "lvs",
+      "hello": "Sveiki",
+      "thank_you": "Paldies",
+      "speakers": 2000000
+    },
+    "ms": {
+      "language": "Malay",
+      "family": "Austronesian, Malayo-Polynesian",
+      "script": "Latin",
+      "iso2": "ms",
+      "iso3": "zsm",
+      "hello": "Helo",
+      "thank_you": "Terima kasih",
+      "speakers": 80000000
+    },
+    "az": {
+      "language": "Azerbaijani",
+      "family": "Turkic",
+      "script": "Latin",
+      "iso2": "az",
+      "iso3": "azj",
+      "hello": "Salam",
+      "thank_you": "Təşəkkür edirəm",
+      "speakers": 24000000
+    },
+    "sr": {
+      "language": "Serbian",
+      "family": "Indo-European, Slavic",
+      "script": "Cyrillic",
+      "iso2": "sr",
+      "iso3": "srp",
+      "hello": "Здраво",
+      "thank_you": "Хвала",
+      "speakers": 10000000
+    },
+    "ka": {
+      "language": "Georgian",
+      "family": "Kartvelian",
+      "script": "Georgian",
+      "iso2": "ka",
+      "iso3": "kat",
+      "hello": "გამარჯობა",
+      "thank_you": "მადლობა",
+      "speakers": 4000000
+    },
+    "ne": {
+      "language": "Nepali",
+      "family": "Indo-European, Indo-Aryan",
+      "script": "Devanagari",
+      "iso2": "ne",
+      "iso3": "npi",
+      "hello": "नमस्ते",
+      "thank_you": "धन्यवाद",
+      "speakers": 32000000
+    },
+    "mr": {
+      "language": "Marathi",
+      "family": "Indo-European, Indo-Aryan",
+      "script": "Devanagari",
+      "iso2": "mr",
+      "iso3": "mar",
+      "hello": "नमस्कार",
+      "thank_you": "धन्यवाद",
+      "speakers": 99000000
+    },
+    "ml": {
+      "language": "Malayalam",
+      "family": "Dravidian",
+      "script": "Malayalam",
+      "iso2": "ml",
+      "iso3": "mal",
+      "hello": "നമസ്കാരം",
+      "thank_you": "നന്ദി",
+      "speakers": 37000000
+    },
+    "kk": {
+      "language": "Kazakh",
+      "family": "Turkic",
+      "script": "Cyrillic",
+      "iso2": "kk",
+      "iso3": "kaz",
+      "hello": "Сәлем",
+      "thank_you": "Рахмет",
+      "speakers": 15000000
+    },
+    "ur": {
+      "language": "Urdu",
+      "family": "Indo-European, Indo-Aryan",
+      "script": "Arabic",
+      "iso2": "ur",
+      "iso3": "urd",
+      "hello": "السلام علیکم",
+      "thank_you": "شکریہ",
+      "speakers": 230000000
+    },
+    "sq": {
+      "language": "Albanian",
+      "family": "Indo-European, Albanian",
+      "script": "Latin",
+      "iso2": "sq",
+      "iso3": "als",
+      "hello": "Përshëndetje",
+      "thank_you": "Faleminderit",
+      "speakers": 7500000
     }
   },
   "groups": {

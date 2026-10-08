@@ -1,5 +1,5 @@
 proxy_family,target_family,kind,total,reached,never,gated,missing
-hellaswag,multiblimp,size,511,59,429,23,0
-multiblimp,hellaswag,size,511,7,481,23,0
-hellaswag,multiblimp,checkpoint,884,48,791,45,0
-multiblimp,hellaswag,checkpoint,884,54,785,45,0
+hellaswag,multiblimp,size,884,161,689,34,0
+multiblimp,hellaswag,size,884,169,681,34,0
+hellaswag,multiblimp,checkpoint,884,74,776,34,0
+multiblimp,hellaswag,checkpoint,884,88,762,34,0
