@@ -11,7 +11,9 @@ form. Two DA definitions live there:
   DA-size  — small-bucket ranking @last vs the reference's ranking @last
              (`decision_acc_size_<small>` is small→TARGET_SIZE; the
              `decision_acc_size_<small>_to_<large>` columns are the scaling
-             ladder and are never pooled into "DA-size").
+             ladder, filed as "DA-size (ladder)" and never pooled into the
+             README's DA-size means; the wide table and the slides show them
+             beside it). A `gated` column marks the cells rule 1 rejects.
   DA-ckpt  — within one bucket, the ranking at an early checkpoint (each of
              the nine evaluated tenths before the final, rule 3) vs that
              bucket's final ranking.
@@ -46,8 +48,8 @@ import pandas as pd  # noqa: E402
 from evals.scripts.utils.configs import (  # noqa: E402
     bucket_order, load_languages, load_pools)
 from analysis.rq00_gate_and_curves.above_random import (  # noqa: E402
-    TABLE_STYLE, above_random_slides, fmt_cell, md_table)
-from analysis.autodoc import CANONICAL_POOL  # noqa: E402
+    load_mask, TABLE_STYLE, above_random_slides, fmt_cell, md_table)
+from analysis.autodoc import CANONICAL_POOL, rewrite  # noqa: E402
 from analysis.utils import (LANGUAGE_AGGREGATES, RELIABLE_DA, one_axes, passes_gate,  # noqa: E402
     _BUCKET_RE, TARGET_SIZE, assign_language, benchmark_family)
 from snr.constants import PLOT_DIR  # noqa: E402
@@ -73,8 +75,8 @@ def melt_da(df: pd.DataFrame) -> pd.DataFrame:
             val = df.at[task, col]
             if pd.isna(val):
                 continue
-            if (m := _SIZE_SCALE.match(col)):
-                da_def, comparison = "DA-size", f"{m.group(1)}→{m.group(2)}"
+            if (m := _SIZE_SCALE.match(col)):     # a rung against a larger proxy, not the reference
+                da_def, comparison = "DA-size (ladder)", f"{m.group(1)}→{m.group(2)}"
                 frm, to = m.group(1), m.group(2)
             elif (m := _SIZE_CANON.match(col)):
                 da_def, comparison = "DA-size", f"{m.group(1)}→{TARGET_SIZE}"
@@ -95,7 +97,7 @@ def _pivot(long: pd.DataFrame, da_def: str) -> pd.DataFrame:
     """Wide view for one DA definition: rows=(language, benchmark, task),
     cols=comparison, sorted by mean DA so the most-predictive benchmarks sit on
     top within each language."""
-    sub = long[long["da_def"] == da_def]
+    sub = long[long["da_def"].str.startswith(da_def)]          # "DA-size" keeps the ladder's own pairs beside it
     if sub.empty:
         return pd.DataFrame()
     wide = sub.pivot_table(index=["language", "benchmark", "task"],
@@ -109,6 +111,11 @@ def run(pool: str, out_dir: Path) -> None:
     csv_path = out_dir / "da_all_per_task_both_axes.csv"
     df = one_axes(pd.read_csv(csv_path)).set_index("task")
     long = melt_da(df)
+    # rule 1, as a column (the values stay): DA-size at the proxy and its target, DA-ckpt at the proxy
+    mask = load_mask(pool)
+    long["gated"] = False
+    for (frm, to), g in long.groupby(["size_from", "size_to"]):
+        long.loc[g.index, "gated"] = ~passes_gate(mask, g["task"], *dict.fromkeys([frm, to])).to_numpy()
     long = long.sort_values(["da_def", "language", "benchmark", "comparison"])
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -250,7 +257,7 @@ def _comparison_key(comp: str) -> tuple[int, int]:
 def _da_language_slides(long: pd.DataFrame) -> list[str]:
     """One DA-size slide per language: benchmark rows × every computable size
     pair, cell = decision accuracy (bold ≥ _DA_BOLD), most-predictive first."""
-    size = long[long["da_def"] == "DA-size"]
+    size = long[long["da_def"].str.startswith("DA-size")]
     # The ladder resolves 96 languages, but only the ones it actually pretrains
     # on carry a claim. `groups.trained` is that set, capped at the 50-language
     # setting because the 100-language distribution is not settled. The CSVs keep
@@ -346,13 +353,12 @@ def generate_slides(long: pd.DataFrame, pool: str) -> None:
         _END,
     ]) + "\n"
 
-    text = _SLIDES.read_text()
-    if _BEGIN in text and _END in text:
-        text = re.sub(re.escape(_BEGIN) + r".*?" + re.escape(_END), block.rstrip(),
-                      text, flags=re.DOTALL)
-    else:
-        text = text.rstrip() + "\n\n" + block
-    _SLIDES.write_text(text)
+    def edit(text: str) -> str:
+        if _BEGIN in text and _END in text:
+            return re.sub(re.escape(_BEGIN) + r".*?" + re.escape(_END), block.rstrip(),
+                          text, flags=re.DOTALL)
+        return text.rstrip() + "\n\n" + block
+    rewrite(_SLIDES, edit)                       # locked: other steps write slides.md too
     print(f"Wrote appendix slides → {_SLIDES} "
           f"({len(ar)} above-random + {len(overview)} overview + "
           f"{len(lang_slides)} per-language DA)")

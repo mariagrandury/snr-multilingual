@@ -1,8 +1,9 @@
 # Task reformulation for the auto evals
 
-Status 2026-10-07. Every hand-written number outside the dated sections, and
-every generated block, is from the ladder-report snapshot **2026-10-06 04:26**
-(full refresh, commit b316f53b), read from this folder's CSVs and the
+Status 2026-10-08. Every hand-written number outside the dated sections, and
+every generated block, is from the ladder-report snapshot **2026-10-08 12:06**
+(regenerated locally: acc_norm on the cloze-format originals) and the outputs
+of the 2026-10-08 refresh (detrended checkpoint noise), read from this folder's CSVs and the
 `predictivity` gate mask (`../rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv`).
 
 The dated sections keep their own dates: the harness survey and the pilot of
@@ -22,11 +23,11 @@ letters are dropped (`rf_`) or the items are rewritten as cloze statements
 
 On 2026-09-18, before the twins and the probe promotions, 113 of 461 gated
 tasks cleared chance at any size, and only 21 of 252 four-option tasks. In
-today's mask, 549 of the 1,041 non-twin benchmark tasks clear chance at some
-size and 231 of the 615 four-option ones.
+today's mask, 681 of the 1,287 non-twin benchmark tasks clear chance at some
+size and 305 of the 782 four-option ones.
 
 `global_mmlu_full` clears in 6 of 37 languages at 175M, 2 at 350M, 1 at 1.7B
-and none at 90M, 600M or 1B. `global_piqa_*` clears in at most 3 of its 95
+and none at 90M, 600M or 1B. `global_piqa_*` clears in at most 12 of its 95
 tasks (at 1.7B), and `truthfulqa-multi_mc1` in 1 of 3 at every size but 600M.
 
 Base models at 90M–1.7B do not pick up the "answer with a letter" convention,
@@ -39,12 +40,22 @@ full answer string scored as the continuation after `Answer:`, with `acc_norm`
 
 Gate counts: the `predictivity` gate mask (seed 1904, every cell, data build
 and ladder, 90M–1.7B), read on the cells that trained the task's language
-(on every cell where none did). The twins exist only on the deep scheme-A seed-1904 cells, so a twin's verdict is
-taken over those runs and the original's over every cell of the pool.
+(on every cell where none did). The twins sit in `auto` beside their
+originals, so every cell scores them in the languages it trains on and a
+twin's verdict is read by the same rule as its original's.
+
+The cells scored in every language (`auto_evals_cscs.ALL_LANGUAGES_RUNS`) are
+the deep seed-1904 cells of scheme A and, since 2026-10-08, of ZH and ES at L2
+and B at L8, whose every-language evals land after this snapshot. `compare.py`
+(the `rf_gate*` and `rf_significance*` tables) still keeps to the deep
+scheme-A seed-1904 cells.
 
 The mask carries 105 belebele, 37 Global-MMLU and 43 INCLUDE tasks, plus 45
 tasks of the five promoted families with an `rf_` twin (mmlu 1,
-commonsense_qa 1, bbh_mcq 17, acp_bench_mcq 7, cultural_bench_easy 19). The
+commonsense_qa 1, bbh_mcq 17, acp_bench_mcq 7, cultural_bench_easy 19) and 47
+of the seven probe families scored from 600M on that have one (m_mmlu 27,
+mmmlu 12, french_bench_extra 4, arabicmmlu, careqa, oall_arabic_mmlu and
+oall_exams 1 each; 44 twins). The
 margins and significance tests use the deep scheme-A seed-1904 finals (six
 cells per size, L1–L50; five at 350M, no L1), trained languages only: 59
 belebele, 29 Global-MMLU and 36 INCLUDE tasks.
@@ -59,15 +70,15 @@ Population: the `predictivity` gate mask, per family and size, the original
 (grey) against each twin, paired on the task; * marks McNemar p < 0.05. The
 counts below are tasks above the gate (`reformulations_gate_mcnemar.csv`).
 
-Key findings (snapshot 2026-10-06 04:26):
+Key findings (snapshot 2026-10-08 12:06):
 
 - **The letter-format originals sit on chance.** Their median margin over chance (trained languages, deep scheme-A finals) stays within ±0.013 at every size; at 1.7B it is +0.011 on belebele, −0.010 on Global-MMLU and +0.005 on INCLUDE. At 1.7B the gate keeps 5 of 105 belebele, 1 of 37 Global-MMLU and 3 of 43 INCLUDE originals.
 - **Dropping the letters moves whole families across the gate.** At 1.7B the `rf_` twins pass in 86 of 105 belebele, 35 of 37 Global-MMLU and 31 of 43 INCLUDE tasks (McNemar twin-only : original-only 82 : 1, 34 : 0 and 29 : 1; p ≤ 5.8e-08). The McNemar test is significant at every size for belebele and Global-MMLU, and from 175M for INCLUDE.
-- **The margin gain is larger at 1.7B than at 90M.** rf − original goes from +0.030 / +0.017 / +0.004 at 90M to **+0.098 / +0.058 / +0.047** at 1.7B (belebele / Global-MMLU / INCLUDE), significant at 1.7B in 56 of 59, 26 of 29 and 18 of 36 tasks. belebele and INCLUDE grow at every size, while Global-MMLU dips to +0.009 at 175M and passes its 90M value again only from 600M (+0.019).
-- **The Gemini rewrite adds more where it exists.** `rfgm_` gains **+0.168** on belebele (59 of 59 tasks significant) and **+0.075** on INCLUDE (22 of 36) at 1.7B. `rfgm_belebele` passes the gate in 59 of 59 tasks at every size, and `rfgm_include_base_44` in 32 of 43 at 1.7B; Global-MMLU has no rewrite yet.
+- **The margin gain is larger at 1.7B than at 90M.** rf − original goes from +0.030 / +0.017 / +0.004 at 90M to **+0.098 / +0.058 / +0.047** at 1.7B (belebele / Global-MMLU / INCLUDE), significant at 1.7B in 56 of 59, 26 of 29 and 17 of 36 tasks. belebele and INCLUDE grow at every size, while Global-MMLU dips to +0.009 at 175M and passes its 90M value again only from 600M (+0.019).
+- **The Gemini rewrite adds more where it exists.** `rfgm_` gains **+0.168** on belebele (59 of 59 tasks significant) and **+0.075** on INCLUDE (21 of 36) at 1.7B. `rfgm_belebele` passes the gate in 59 of 59 tasks at every size, and `rfgm_include_base_44` in 32 of 43 at 1.7B; Global-MMLU has no rewrite yet.
 - **The gain is not the metric.** On plain `acc` on both sides, the median rf gain per (task, model) at 1.7B is +0.124 belebele, +0.047 Global-MMLU and +0.062 INCLUDE, against +0.104 / +0.064 / +0.078 on acc_norm (`rf_significance.csv`, 288 pairs).
-- **Over the gate's whole population, the twins pass in 267 of 332 tasks at 1.7B (0.80)**, against 511 of 1,041 non-twin benchmark tasks (0.49). Their own 230 originals pass in 9.
-- **Passing the gate does not make the twins rank designs better.** Mean DA-size (proxy → 1.7B, multi-axis pairs, gated at proxy and reference, `predictivity`) is 0.485 at 90M and 0.550 at 1B on the twins (145 and 214 tasks), against 0.553 and 0.593 on the non-twin tasks (153 and 237). The twins' pairs come from the deep scheme-A cells alone (the L axis), so the two means are not on the same pairs.
+- **Over the gate's whole population, the twins pass far more often than the other tasks.** At 1.7B they pass in 310 of 376 tasks (0.82), against 644 of 1,287 non-twin benchmark tasks (0.50); their own 277 originals pass in 10.
+- **Passing the gate does not make the twins rank designs better.** Mean DA-size (proxy → 1.7B, multi-axis pairs, gated at proxy and reference, `predictivity`) is 0.480 at 90M and 0.547 at 1B on the twins (145 and 214 tasks), against 0.546 and 0.586 on the non-twin tasks (157 and 256). The twins' pairs come from the deep scheme-A cells alone (the L axis), so the two means are not on the same pairs.
 
 Follow-ups:
 
@@ -206,7 +217,7 @@ scheme-A cells). So the `auto:rf-compare` table further down (after
 It moves only after `ladder_report.py --plot --publish --push-hf` has picked up
 new rf results and `scripts/refresh_analysis.sh` has re-run. Until then `compare.py` refuses to run against a report without the `rf_*` columns (it would empty the table); point `SNR_LADDER_DIR` at a report that has them.
 
-The conclusion does not depend on the metric. On the 2026-10-06 04:26 snapshot,
+The conclusion does not depend on the metric. On the 2026-10-08 12:06 snapshot,
 the median rf gain per (task, model) at 1.7B is +0.104 on acc_norm and +0.124
 on acc for belebele, +0.064 and +0.047 for Global-MMLU, and +0.078 and +0.062
 for INCLUDE (`rf_significance.csv`, which carries the twin run's own `acc`, the
@@ -649,6 +660,30 @@ the `probe-survivors` block). `compare.py` subtracts each task's own chance
 level, so the 2- to 10-way probe pairs read on the same scale as the 4-way
 families above (whose numbers this does not change).
 
+**The probe's gate is its own (2026-10-08).** `probe.sh` gates with the probe
+group counted as trained (`SNR_TRAINED_GROUPS=auto,auto_probe`) and on the
+freshly built local report, so it is not the canonical gate. Until 2026-10-08
+it wrote over `rq00_gate_and_curves/pretraining/predictivity/above_random_*.csv`,
+and every RQ run after it read the probe-flavoured mask. It now writes its
+tables to a scratch dir outside the repo (`$PROBE_GATE`, default
+`/iopsstor/scratch/cscs/$USER/snr-probe-gate`, passed as `SNR_GATE_DIR` to
+`above_random.py` and `probe_survivors.py`), and only `probe_survivors.csv`
+and the two README blocks come back into the repo. The default `FAMILIES`
+also covers the seven pairs of the 2026-10-08 batch (m_mmlu, mmmlu,
+arabicmmlu, oall_arabic_mmlu, oall_exams, careqa, french_bench_extra).
+
+**Chance levels of the 2026-10-08 batch.** Several of its families have a
+variable option count, and `above_random` had read them at 1 / the derived
+count. The multilingual TruthfulQA mc2 families (`m_truthfulqa_mc2`,
+`truthfulqa-multi_mc2`) score probability mass on the true options, so their
+chance level is the mean true-option share, 0.449, as for `truthfulqa_mc2`.
+They had been gated at 1/6 = 0.167, so all 27 tasks passed at every size on
+scores of 0.34–0.50. `above_random.CHANCE` now carries them, plus E[1/n]
+measured on the samples for `m_truthfulqa_mc1` (0.227), `ibero_truthfulqa`
+(0.2253) and `arabicmmlu` and its twin (0.2935). The NorEval quiz and TruthfulQA
+prompts sit in `noreval_extra` beside fixed-count tasks, so their chance levels
+are keyed by task prefix (`CHANCE_BY_PREFIX`).
+
 **Outcome (2026-09-23).** Twenty of the twenty-one candidates were promoted
 into `groups.auto`, so every checkpoint is topped up with them and they enter
 every analysis: a population change, stated in `RULES.md`.
@@ -715,8 +750,8 @@ Gate cells (median task margin over the task's chance level, trained languages, 
 | family | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---:|---:|---:|---:|---:|---:|
 | belebele | +0.004 · rf +0.033 (**+0.030**, n=59, sig=41) · rfgm +0.071 (**+0.067**, n=59, sig=53) | -0.003 · rf +0.039 (**+0.042**, n=59, sig=45) · rfgm +0.081 (**+0.084**, n=59, sig=58) | -0.013 · rf +0.046 (**+0.059**, n=59, sig=55) · rfgm +0.089 (**+0.102**, n=59, sig=57) | -0.007 · rf +0.058 (**+0.065**, n=59, sig=54) · rfgm +0.113 (**+0.120**, n=59, sig=59) | +0.000 · rf +0.083 (**+0.083**, n=59, sig=57) · rfgm +0.139 (**+0.139**, n=59, sig=59) | +0.011 · rf +0.109 (**+0.098**, n=59, sig=56) · rfgm +0.179 (**+0.168**, n=59, sig=59) |
-| global_mmlu_full | -0.012 · rf +0.006 (**+0.017**, n=29, sig=6) · rfgm — | -0.000 · rf +0.009 (**+0.009**, n=29, sig=14) · rfgm — | -0.000 · rf +0.009 (**+0.010**, n=29, sig=17) · rfgm — | -0.004 · rf +0.015 (**+0.019**, n=29, sig=15) · rfgm — | -0.008 · rf +0.029 (**+0.037**, n=29, sig=24) · rfgm — | -0.010 · rf +0.048 (**+0.058**, n=29, sig=26) · rfgm — |
-| include_base_44 | +0.003 · rf +0.007 (**+0.004**, n=36, sig=7) · rfgm +0.009 (**+0.006**, n=36, sig=4) | +0.001 · rf +0.013 (**+0.012**, n=36, sig=3) · rfgm +0.015 (**+0.015**, n=36, sig=6) | +0.001 · rf +0.023 (**+0.022**, n=36, sig=9) · rfgm +0.023 (**+0.022**, n=36, sig=9) | +0.001 · rf +0.027 (**+0.026**, n=36, sig=10) · rfgm +0.035 (**+0.035**, n=36, sig=16) | +0.002 · rf +0.039 (**+0.037**, n=36, sig=14) · rfgm +0.055 (**+0.053**, n=36, sig=16) | +0.005 · rf +0.052 (**+0.047**, n=36, sig=18) · rfgm +0.080 (**+0.075**, n=36, sig=22) |
+| global_mmlu_full | -0.012 · rf +0.006 (**+0.017**, n=29, sig=2) · rfgm — | -0.000 · rf +0.009 (**+0.009**, n=29, sig=1) · rfgm — | -0.000 · rf +0.009 (**+0.010**, n=29, sig=3) · rfgm — | -0.004 · rf +0.015 (**+0.019**, n=29, sig=13) · rfgm — | -0.008 · rf +0.029 (**+0.037**, n=29, sig=24) · rfgm — | -0.010 · rf +0.048 (**+0.058**, n=29, sig=26) · rfgm — |
+| include_base_44 | +0.003 · rf +0.007 (**+0.004**, n=36, sig=2) · rfgm +0.009 (**+0.006**, n=36, sig=1) | +0.001 · rf +0.013 (**+0.012**, n=36, sig=1) · rfgm +0.015 (**+0.015**, n=36, sig=3) | +0.001 · rf +0.023 (**+0.022**, n=36, sig=7) · rfgm +0.023 (**+0.022**, n=36, sig=7) | +0.001 · rf +0.027 (**+0.026**, n=36, sig=6) · rfgm +0.035 (**+0.035**, n=36, sig=12) | +0.002 · rf +0.039 (**+0.037**, n=36, sig=12) · rfgm +0.055 (**+0.053**, n=36, sig=15) | +0.005 · rf +0.052 (**+0.047**, n=36, sig=17) · rfgm +0.080 (**+0.075**, n=36, sig=21) |
 
 ![family x size](rf_gate.png)
 
@@ -734,11 +769,11 @@ Cells are medians over tasks of the margin over chance, `acc` for the originals 
 
 Key findings:
 
-- **The originals stay within ±0.013 of chance at every size** in all three families.
-- **The rf gain and its significance rise overall, but not at every size.** From 90M to 1.7B, belebele goes from +0.030 to +0.098 and INCLUDE from +0.004 to +0.047, rising at every size, while Global-MMLU goes from +0.017 to +0.058 with a dip to +0.009 at 175M. The significant-task counts by size (90M → 1.7B) are 41/45/55/54/57/56 of 59 on belebele, 6/14/17/15/24/26 of 29 on Global-MMLU and 7/3/9/10/14/18 of 36 on INCLUDE.
-- **rfgm beats rf at every size on belebele** (+0.067 at 90M → +0.168 at 1.7B; 53 of 59 tasks significant at 90M, 59 of 59 at 600M, 1B and 1.7B). On INCLUDE, rfgm stays within 0.003 of rf up to 350M (+0.022 each there) and pulls ahead from 600M (+0.075 against +0.047 at 1.7B).
-- **Per language at 1.7B** (`rf_gate_by_language.csv`), every belebele and Global-MMLU language gains. rf − original runs from +0.042 (hi) to +0.158 (ru) over 49 belebele languages (median +0.106; rfgm median +0.170) and from +0.011 (bn) to +0.107 (en) over 29 Global-MMLU languages (median +0.059).
-- **INCLUDE loses in two of 36 languages under each twin**: ne and ur under rf, ml and ur under rfgm; its median language gains +0.067 (rf) and +0.082 (rfgm).
+- **The originals stay within ±0.013 of chance at every size.** That holds in all three families; at 1.7B the median margin is +0.011 on belebele, −0.010 on Global-MMLU and +0.005 on INCLUDE.
+- **The rf gain and its significance rise overall, but not at every size.** From 90M to 1.7B, belebele goes from +0.030 to +0.098 and INCLUDE from +0.004 to +0.047, rising at every size, while Global-MMLU goes from +0.017 to +0.058 with a dip to +0.009 at 175M. The significant-task counts by size (90M → 1.7B) are 41/45/55/54/57/56 of 59 on belebele, 2/1/3/13/24/26 of 29 on Global-MMLU and 2/1/7/6/12/17 of 36 on INCLUDE.
+- **rfgm beats rf at every size on belebele.** It gains +0.067 at 90M → +0.168 at 1.7B (53 of 59 tasks significant at 90M, 59 of 59 at 600M, 1B and 1.7B); on INCLUDE, rfgm stays within 0.003 of rf up to 350M (+0.022 each there) and pulls ahead from 600M (+0.075 against +0.047 at 1.7B).
+- **Per language at 1.7B, every belebele and Global-MMLU language gains** (`rf_gate_by_language.csv`). rf − original runs from +0.042 (hi) to +0.158 (ru) over 49 belebele languages (median +0.106; rfgm median +0.170) and from +0.011 (bn) to +0.107 (en) over 29 Global-MMLU languages (median +0.059).
+- **INCLUDE loses in two of 36 languages under each twin.** It loses ne and ur under rf, ml and ur under rfgm; its median language gains +0.067 (rf) and +0.082 (rfgm).
 - **Part of every twin cell is the acc_norm choice.** Its mean offset (twin acc_norm − twin acc) over the 1,726 rf (task, model) pairs, 90M–1.7B, is −0.016 on belebele, +0.015 on Global-MMLU and +0.018 on INCLUDE, with a median of +0.004. The block's "rf median +0.005 … 36 % of the pairs" is a constant in `compare.py`; today |offset| exceeds half the pair's |acc_norm gain| in 45 % of the pairs.
 
 Follow-ups:
@@ -749,15 +784,22 @@ Follow-ups:
 - Add a Global-MMLU rfgm set: it is the family with the most items and the only letter family with no rewrite.
 
 <!-- BEGIN auto:rf-compare-probe (analysis/rq00_task_reformulation/compare.py --tag probe) -->
-Gate cells (median task margin over the task's chance level, trained languages, deep data-A seed-1904 ladder, from the ladder report; each set on the models that have the original and that twin scored — the original shown is the rf pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's own acc, p < 0.05; 3 of 1419 (task, model) pairs untested, no harness results file).
+Gate cells (median task margin over the task's chance level, trained languages, deep data-A seed-1904 ladder, from the ladder report; each set on the models that have the original and that twin scored — the original shown is the rf pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's own acc, p < 0.05; 3 of 1779 (task, model) pairs untested, no harness results file).
 
 | family | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---:|---:|---:|---:|---:|---:|
 | mmlu | -0.007 · rf +0.023 (**+0.030**, n=1, sig=1) · rfgm — | +0.001 · rf +0.030 (**+0.029**, n=1, sig=1) · rfgm — | -0.005 · rf +0.036 (**+0.041**, n=1, sig=1) · rfgm — | +0.001 · rf +0.057 (**+0.057**, n=1, sig=1) · rfgm — | -0.004 · rf +0.082 (**+0.086**, n=1, sig=1) · rfgm — | +0.017 · rf +0.111 (**+0.093**, n=1, sig=1) · rfgm — |
 | commonsense_qa | +0.004 · rf +0.107 (**+0.103**, n=1, sig=1) · rfgm — | +0.004 · rf +0.135 (**+0.131**, n=1, sig=1) · rfgm — | -0.000 · rf +0.148 (**+0.148**, n=1, sig=1) · rfgm — | +0.002 · rf +0.188 (**+0.186**, n=1, sig=1) · rfgm — | +0.001 · rf +0.214 (**+0.213**, n=1, sig=1) · rfgm — | +0.009 · rf +0.265 (**+0.256**, n=1, sig=1) · rfgm — |
-| cultural_bench_easy | +0.175 · rf +0.010 (**-0.165**, n=19, sig=9) · rfgm — | -0.093 · rf +0.025 (**+0.118**, n=19, sig=7) · rfgm — | -0.026 · rf +0.021 (**+0.047**, n=19, sig=2) · rfgm — | -0.015 · rf +0.025 (**+0.039**, n=19, sig=7) · rfgm — | +0.021 · rf +0.065 (**+0.044**, n=19, sig=5) · rfgm — | +0.043 · rf +0.092 (**+0.049**, n=19, sig=7) · rfgm — |
-| bbh_mcq | -0.000 · rf +0.024 (**+0.024**, n=17, sig=6) · rfgm — | -0.004 · rf +0.030 (**+0.034**, n=17, sig=7) · rfgm — | +0.005 · rf +0.036 (**+0.031**, n=17, sig=6) · rfgm — | +0.006 · rf +0.060 (**+0.054**, n=17, sig=8) · rfgm — | +0.000 · rf +0.075 (**+0.075**, n=17, sig=10) · rfgm — | -0.003 · rf +0.084 (**+0.087**, n=17, sig=12) · rfgm — |
-| acp_bench_mcq | +0.003 · rf +0.047 (**+0.045**, n=7, sig=4) · rfgm — | -0.001 · rf +0.064 (**+0.065**, n=7, sig=5) · rfgm — | +0.010 · rf +0.062 (**+0.052**, n=7, sig=5) · rfgm — | +0.000 · rf +0.087 (**+0.087**, n=7, sig=5) · rfgm — | +0.006 · rf +0.105 (**+0.099**, n=7, sig=5) · rfgm — | +0.010 · rf +0.132 (**+0.122**, n=7, sig=5) · rfgm — |
+| cultural_bench_easy | +0.175 · rf +0.010 (**-0.165**, n=19, sig=0) · rfgm — | -0.093 · rf +0.025 (**+0.118**, n=19, sig=7) · rfgm — | -0.026 · rf +0.021 (**+0.047**, n=19, sig=2) · rfgm — | -0.015 · rf +0.025 (**+0.039**, n=19, sig=7) · rfgm — | +0.021 · rf +0.065 (**+0.044**, n=19, sig=5) · rfgm — | +0.043 · rf +0.092 (**+0.049**, n=19, sig=7) · rfgm — |
+| bbh_mcq | -0.000 · rf +0.024 (**+0.024**, n=17, sig=6) · rfgm — | -0.004 · rf +0.030 (**+0.034**, n=17, sig=6) · rfgm — | +0.005 · rf +0.036 (**+0.031**, n=17, sig=5) · rfgm — | +0.006 · rf +0.060 (**+0.054**, n=17, sig=7) · rfgm — | +0.000 · rf +0.075 (**+0.075**, n=17, sig=8) · rfgm — | -0.003 · rf +0.084 (**+0.087**, n=17, sig=10) · rfgm — |
+| acp_bench_mcq | +0.003 · rf +0.047 (**+0.045**, n=7, sig=4) · rfgm — | -0.001 · rf +0.064 (**+0.065**, n=7, sig=5) · rfgm — | +0.010 · rf +0.062 (**+0.052**, n=7, sig=4) · rfgm — | +0.000 · rf +0.087 (**+0.087**, n=7, sig=5) · rfgm — | +0.006 · rf +0.105 (**+0.099**, n=7, sig=5) · rfgm — | +0.010 · rf +0.132 (**+0.122**, n=7, sig=5) · rfgm — |
+| m_mmlu | — | — | — | -0.003 · rf +0.018 (**+0.020**, n=27, sig=11) · rfgm — | -0.010 · rf +0.026 (**+0.036**, n=27, sig=21) · rfgm — | -0.010 · rf +0.045 (**+0.055**, n=27, sig=22) · rfgm — |
+| mmmlu | — | — | — | -0.003 · rf +0.021 (**+0.024**, n=12, sig=6) · rfgm — | -0.011 · rf +0.034 (**+0.045**, n=12, sig=10) · rfgm — | -0.004 · rf +0.055 (**+0.059**, n=12, sig=10) · rfgm — |
+| arabicmmlu | — | — | — | -0.010 · rf +0.037 (**+0.047**, n=1, sig=1) · rfgm — | -0.003 · rf +0.047 (**+0.050**, n=1, sig=1) · rfgm — | -0.000 · rf +0.063 (**+0.064**, n=1, sig=1) · rfgm — |
+| oall_arabic_mmlu | — | — | — | -0.005 · rf +0.005 (**+0.010**, n=1, sig=0) · rfgm — | +0.005 · rf +0.008 (**+0.004**, n=1, sig=0) · rfgm — | -0.008 · rf +0.022 (**+0.029**, n=1, sig=1) · rfgm — |
+| oall_exams | — | — | — | +0.003 · rf +0.026 (**+0.024**, n=1, sig=0) · rfgm — | +0.015 · rf +0.032 (**+0.017**, n=1, sig=0) · rfgm — | -0.017 · rf +0.046 (**+0.063**, n=1, sig=1) · rfgm — |
+| careqa | — | — | — | +0.007 · rf +0.005 (**-0.002**, n=1, sig=0) · rfgm — | +0.005 · rf +0.018 (**+0.013**, n=1, sig=0) · rfgm — | +0.010 · rf +0.039 (**+0.029**, n=1, sig=0) · rfgm — |
+| french_bench_extra | — | — | — | -0.001 · rf -0.002 (**-0.001**, n=1, sig=0) · rfgm — | +0.003 · rf -0.002 (**-0.005**, n=1, sig=0) · rfgm — | +0.009 · rf -0.008 (**-0.017**, n=1, sig=0) · rfgm — |
 
 ![family x size](rf_gate_probe.png)
 
@@ -773,10 +815,10 @@ Population: the same deep scheme-A seed-1904 finals, on the five promoted famili
 
 Key findings:
 
-- **rf − original is larger at 1.7B than at 90M on all four English families**: commonsense_qa +0.103 → +0.256, acp_bench_mcq +0.045 → +0.122, mmlu +0.030 → +0.093 and bbh_mcq +0.024 → +0.087. Only commonsense_qa rises at every size: mmlu dips at 175M (+0.029), and bbh_mcq (+0.031) and acp_bench_mcq (+0.052) dip at 350M.
-- **Significance:** mmlu and commonsense_qa are significant at every size, bbh_mcq's significant subtasks go from 6 to 12 of 17 (6/7/6/8/10/12, 90M → 1.7B), and acp_bench_mcq's stay at 4–5 of 7.
+- **rf − original is larger at 1.7B than at 90M on all four English families.** It goes commonsense_qa +0.103 → +0.256, acp_bench_mcq +0.045 → +0.122, mmlu +0.030 → +0.093 and bbh_mcq +0.024 → +0.087; only commonsense_qa rises at every size: mmlu dips at 175M (+0.029), and bbh_mcq (+0.031) and acp_bench_mcq (+0.052) dip at 350M.
+- **mmlu and commonsense_qa are significant at every size.** bbh_mcq's significant subtasks go from 6 to 10 of 17 (6/6/5/7/8/10, 90M → 1.7B), and acp_bench_mcq's stay at 4–5 of 7.
 - **acp_bench_mcq's gain partly rides [the length tell](#the-length-tell-and-where-it-actually-is).** Under acc_norm, which the cell plots, only areach beats its pick-shortest rate at 1.7B (0.688 against 0.50; prog 0.350 and val 0.181 stay below theirs, medians over the six 1.7B cells). Plain `acc`, which the significance count reads, reaches 0.527 on prog, above its 0.469.
-- **cultural_bench_easy's original is erratic**: +0.175 at 90M, −0.093 at 175M and +0.043 at 1.7B. Its rf − original (−0.165 at 90M, +0.049 with 7 of 19 tasks significant at 1.7B) reflects the original's instability below 600M, not the twin.
+- **cultural_bench_easy's original is erratic.** It reads +0.175 at 90M, −0.093 at 175M and +0.043 at 1.7B; its rf − original (−0.165 at 90M, +0.049 with 7 of 19 tasks significant at 1.7B) reflects the original's instability below 600M, not the twin.
 
 Follow-ups:
 
@@ -785,99 +827,128 @@ Follow-ups:
 - Check cultural_bench_easy's 90M original for a constant-answer bias before reading its small-size cells.
 
 <!-- BEGIN auto:probe-survivors (analysis/rq00_task_reformulation/probe_survivors.py) -->
-Probe survivors: which of the 33 candidate benchmarks in `auto_probe` clear the above-random gate (rule 1, read from the committed `predictivity` mask, cells that trained the language), over 47 languages. A cell counts languages (original | rf twin where one exists) — the population differs per cell (rule 13) — and the second table names the surviving benchmarks per language, the twin as `-rf`. Same items as `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance; this table is only the gate.
+Probe survivors: which of the 59 candidate benchmarks in `auto_probe` clear the above-random gate (rule 1, the `predictivity` gate re-run by probe.sh with the probe counted as trained, cells that trained the language), over 50 languages. A cell counts languages (original | rf twin where one exists) — the population differs per cell (rule 13) — and the second table names the surviving benchmarks per language, the twin as `-rf`. Same items as `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance; this table is only the gate.
 
 | benchmark | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---:|---:|---:|---:|---:|---:|
 | acp_bench_cloze | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
 | acp_bench_mcq | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| arabicmmlu | orig — | orig — | orig — | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
 | arc_mt | orig 0/11 | orig 0/11 | orig 0/11 | orig 2/11 | orig 10/11 | orig 11/11 |
 | bangla | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
 | bbh_cloze | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
 | bbh_mcq | orig 1/1 · rf 1/1 | orig 1/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 1/1 · rf 1/1 | orig 0/1 · rf 1/1 |
 | blend_sample | orig 1/4 | orig 0/4 | orig 0/4 | orig 0/4 | orig 0/4 | orig 0/4 |
 | blimp_nl | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
+| careqa | orig — | orig — | orig — | orig 0/1 · rf 0/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
 | ceval | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
 | commonsense_qa | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| copal_id | orig — | orig — | orig — | orig 0/1 | orig 0/1 | orig 1/1 |
 | cultural_bench_easy | orig 6/8 · rf 1/8 | orig 0/8 · rf 1/8 | orig 0/8 · rf 2/8 | orig 0/8 · rf 3/8 | orig 0/8 · rf 3/8 | orig 0/8 · rf 5/8 |
 | cultural_bench_hard | orig 0/8 | orig 0/8 | orig 0/8 | orig 0/8 | orig 0/8 | orig 0/8 |
-| evalita_llm | orig 0/1 | orig 0/1 | orig 0/1 | orig 1/1 | orig 1/1 | orig 1/1 |
-| french_bench | orig 0/1 | orig 0/1 | orig 0/1 | orig 1/1 | orig 1/1 | orig 1/1 |
-| haerae | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
+| evalita_llm | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
+| evalita_llm_extra | orig — | orig — | orig — | orig 0/1 | orig 0/1 | orig 1/1 |
+| french_bench | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
+| french_bench_extra | orig — | orig — | orig — | orig 1/1 · rf 0/1 | orig 1/1 · rf 0/1 | orig 1/1 · rf 0/1 |
+| headqa | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
 | ibero_arc | orig 2/2 | orig 2/2 | orig 2/2 | orig 2/2 | orig 2/2 | orig 2/2 |
+| ibero_cola | orig 2/2 | orig 1/2 | orig 1/2 | orig 1/2 | orig 2/2 | orig 2/2 |
+| ibero_copa | orig — | orig — | orig — | orig 2/2 | orig 2/2 | orig 2/2 |
+| ibero_nli | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
 | ibero_openbookqa | orig 2/3 | orig 3/3 | orig 3/3 | orig 3/3 | orig 3/3 | orig 3/3 |
+| ibero_paraphrase | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
 | ibero_piqa | orig 2/2 | orig 2/2 | orig 2/2 | orig 2/2 | orig 2/2 | orig 2/2 |
-| include_v2_en | orig 32/42 | orig 34/42 | orig 35/42 | orig 38/42 | orig 41/42 | orig 42/42 |
-| include_v2_og | orig 13/42 | orig 16/42 | orig 22/42 | orig 28/42 | orig 31/42 | orig 35/42 |
+| ibero_siqa | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
+| ibero_truthfulqa | orig 0/1 | orig 0/1 | orig 0/1 | orig 1/2 | orig 1/2 | orig 1/2 |
+| include_v2_en | orig 32/42 | orig 34/42 | orig 36/42 | orig 38/42 | orig 41/42 | orig 42/42 |
+| include_v2_og | orig 13/42 | orig 16/42 | orig 23/42 | orig 29/42 | orig 31/42 | orig 35/42 |
+| kmmlu | orig 0/1 | orig 0/1 | orig 0/1 | orig 1/1 | orig 1/1 | orig 1/1 |
+| kobest | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
+| m_mmlu | orig — | orig — | orig — | orig 0/27 · rf 24/27 | orig 0/27 · rf 24/27 | orig 1/27 · rf 27/27 |
+| m_truthfulqa_mc1 | orig — | orig — | orig — | orig 16/27 | orig 17/27 | orig 19/27 |
+| m_truthfulqa_mc2 | orig — | orig — | orig — | orig 3/24 | orig 2/24 | orig 2/24 |
 | mathqa | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
+| mela | orig — | orig — | orig — | orig — | orig — | orig — |
 | mmlu | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| mmmlu | orig — | orig — | orig — | orig 0/12 · rf 9/12 | orig 0/12 · rf 11/12 | orig 0/12 · rf 12/12 |
+| multiblimp-extra | orig — | orig — | orig — | orig 3/3 | orig 3/3 | orig 3/3 |
 | noreval | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
-| openbookqa | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
+| noreval_extra | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
+| oall_acva | orig — | orig — | orig — | orig 0/1 | orig 0/1 | orig 0/1 |
+| oall_alghafa | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
+| oall_arabic_mmlu | orig — | orig — | orig — | orig 0/1 · rf 0/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| oall_exams | orig — | orig — | orig — | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| oall_mt | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
+| openbookqa | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
 | toksuite | orig 5/5 | orig 5/5 | orig 5/5 | orig 5/5 | orig 5/5 | orig 5/5 |
 | toksuite_math | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
 | toksuite_stem | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
 | toxigen | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
+| truthfulqa-multi_mc2 | orig — | orig — | orig — | orig 0/3 | orig 0/3 | orig 0/3 |
+| truthfulqa_mc1 | orig — | orig — | orig — | orig 0/1 | orig 0/1 | orig 0/1 |
 | truthfulqa_mc2 | orig 0/3 | orig 0/3 | orig 0/3 | orig 0/3 | orig 0/3 | orig 0/3 |
 | turblimp | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
-| turkishmmlu | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
 | xquad | orig — | orig — | orig — | orig — | orig — | orig — |
 | zhoblimp | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
 
 | language | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| ar | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ar | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | arabicmmlu-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, oall_alghafa, oall_exams-rf, oall_mt | arabicmmlu-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf, oall_alghafa, oall_arabic_mmlu-rf, oall_exams-rf, oall_mt | arabicmmlu-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf, oall_alghafa, oall_arabic_mmlu-rf, oall_exams-rf, oall_mt |
 | az | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
 | bg | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| bn | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ca | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_openbookqa, ibero_piqa |
-| cs | include_v2_og | include_v2_og | include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| da | — | — | — | include_v2_en | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
-| de | — | — | include_v2_en | include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
+| bn | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf |
+| ca | ibero_arc, ibero_cola, ibero_openbookqa, ibero_piqa, ibero_siqa | ibero_arc, ibero_cola, ibero_openbookqa, ibero_piqa, ibero_siqa | ibero_arc, ibero_cola, ibero_openbookqa, ibero_piqa, ibero_siqa | ibero_arc, ibero_cola, ibero_copa, ibero_nli, ibero_openbookqa, ibero_paraphrase, ibero_piqa, ibero_siqa, ibero_truthfulqa, m_mmlu-rf | ibero_arc, ibero_cola, ibero_copa, ibero_nli, ibero_openbookqa, ibero_paraphrase, ibero_piqa, ibero_siqa, ibero_truthfulqa, m_mmlu-rf, m_truthfulqa_mc1 | ibero_arc, ibero_cola, ibero_copa, ibero_nli, ibero_openbookqa, ibero_paraphrase, ibero_piqa, ibero_siqa, ibero_truthfulqa, m_mmlu-rf |
+| cs | include_v2_og | include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| da | — | — | — | include_v2_en, m_mmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
+| de | — | — | include_v2_en | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf |
 | el | include_v2_en | include_v2_en | include_v2_en | include_v2_en | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
-| en | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, blend_sample, commonsense_qa-rf, cultural_bench_easy, cultural_bench_easy-rf, mathqa, mmlu-rf, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, toksuite, toksuite_math, toksuite_stem |
-| es | cultural_bench_easy, include_v2_en, include_v2_og | ibero_openbookqa, include_v2_en, include_v2_og | ibero_openbookqa, include_v2_en, include_v2_og | arc_mt, cultural_bench_easy-rf, ibero_openbookqa, include_v2_en, include_v2_og | arc_mt, cultural_bench_easy-rf, ibero_openbookqa, include_v2_en, include_v2_og | arc_mt, cultural_bench_easy-rf, ibero_openbookqa, include_v2_en, include_v2_og |
+| en | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, blend_sample, commonsense_qa-rf, cultural_bench_easy, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem |
+| es | cultural_bench_easy, ibero_cola, include_v2_en, include_v2_og | ibero_openbookqa, include_v2_en, include_v2_og | ibero_openbookqa, include_v2_en, include_v2_og | arc_mt, cultural_bench_easy-rf, headqa, ibero_copa, ibero_openbookqa, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | arc_mt, careqa-rf, cultural_bench_easy-rf, headqa, ibero_cola, ibero_copa, ibero_openbookqa, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | arc_mt, careqa-rf, cultural_bench_easy-rf, headqa, ibero_cola, ibero_copa, ibero_openbookqa, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf |
 | et | — | — | — | — | — | include_v2_en |
 | eu | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa |
 | fa | toksuite | toksuite | toksuite | toksuite | include_v2_en, toksuite | include_v2_en, toksuite |
 | fi | — | include_v2_en | include_v2_en | include_v2_en | include_v2_en | arc_mt, include_v2_en |
-| fr | include_v2_en | include_v2_en | include_v2_en | french_bench, include_v2_en, include_v2_og | french_bench, include_v2_en, include_v2_og | french_bench, include_v2_en, include_v2_og |
+| fr | french_bench, include_v2_en | french_bench, include_v2_en | french_bench, include_v2_en | french_bench, french_bench_extra, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | french_bench, french_bench_extra, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | french_bench, french_bench_extra, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf |
 | gl | ibero_openbookqa | ibero_openbookqa | ibero_openbookqa | ibero_openbookqa | ibero_openbookqa | ibero_openbookqa |
 | he | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og |
-| hi | cultural_bench_easy, include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en | cultural_bench_easy-rf, include_v2_en, include_v2_og |
-| hr | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| hu | include_v2_en | include_v2_en | include_v2_en | include_v2_en | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
-| id | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| it | include_v2_en, toksuite | include_v2_en, toksuite | include_v2_en, include_v2_og, toksuite | arc_mt, evalita_llm, include_v2_en, include_v2_og, toksuite | arc_mt, evalita_llm, include_v2_en, include_v2_og, toksuite | arc_mt, evalita_llm, include_v2_en, include_v2_og, toksuite |
-| ja | cultural_bench_easy, include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og |
+| hi | cultural_bench_easy, include_v2_en | include_v2_en | include_v2_en | include_v2_en, m_truthfulqa_mc1 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf |
+| hr | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, multiblimp-extra | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, multiblimp-extra | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, multiblimp-extra |
+| hu | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
+| id | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | copal_id, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf |
+| is | — | — | — | — | — | — |
+| it | evalita_llm, include_v2_en, toksuite | evalita_llm, include_v2_en, toksuite | evalita_llm, include_v2_en, include_v2_og, toksuite | arc_mt, evalita_llm, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite | arc_mt, evalita_llm, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite | arc_mt, evalita_llm, evalita_llm_extra, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf, toksuite |
+| ja | cultural_bench_easy, include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og, mmmlu-rf | include_v2_en, include_v2_og, mmmlu-rf | cultural_bench_easy-rf, include_v2_en, include_v2_og, mmmlu-rf |
 | ka | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
 | kk | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ko | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ko | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, kmmlu, kobest, mmmlu-rf | include_v2_en, include_v2_og, kmmlu, kobest, mmmlu-rf | include_v2_en, include_v2_og, kmmlu, kobest, mmmlu-rf |
 | lt | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ml | — | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en |
-| mr | — | — | — | — | include_v2_en | include_v2_en |
+| lv | — | — | — | multiblimp-extra | multiblimp-extra | multiblimp-extra |
+| ml | — | include_v2_en | include_v2_en | include_v2_en, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 |
+| mr | — | — | — | m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 |
 | ms | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ne | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| nl | blimp_nl, include_v2_en | blimp_nl, include_v2_en | blimp_nl, include_v2_en, include_v2_og | blimp_nl, include_v2_en, include_v2_og | blimp_nl, include_v2_en, include_v2_og | blimp_nl, include_v2_en, include_v2_og |
-| no | noreval | noreval | noreval | noreval | arc_mt, noreval | arc_mt, noreval |
+| ne | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu, m_mmlu-rf, m_truthfulqa_mc1 |
+| nl | blimp_nl, include_v2_en | blimp_nl, include_v2_en | blimp_nl, include_v2_en, include_v2_og | blimp_nl, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | blimp_nl, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | blimp_nl, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
+| no | noreval | noreval | noreval | m_mmlu-rf, noreval, noreval_extra | arc_mt, m_mmlu-rf, noreval, noreval_extra | arc_mt, m_mmlu-rf, noreval, noreval_extra |
 | pl | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
-| pt | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
-| ru | cultural_bench_easy, include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| sk | — | — | — | — | include_v2_en | include_v2_en |
-| sq | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| sr | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og |
-| sv | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
-| ta | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en |
+| pt | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf |
+| ro | — | — | — | m_mmlu-rf, m_truthfulqa_mc1 | m_mmlu-rf, m_truthfulqa_mc1 | m_mmlu-rf, m_truthfulqa_mc1 |
+| ru | cultural_bench_easy, include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
+| sk | — | — | — | m_mmlu-rf | include_v2_en, m_mmlu-rf | include_v2_en, m_mmlu-rf |
+| sq | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og, multiblimp-extra | include_v2_en, include_v2_og, multiblimp-extra | include_v2_en, include_v2_og, multiblimp-extra |
+| sr | include_v2_en | include_v2_en | include_v2_en | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
+| sv | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf |
+| ta | include_v2_en | include_v2_en | include_v2_en | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 |
 | tr | include_v2_en, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp |
-| uk | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| uk | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
 | ur | — | — | — | include_v2_en | include_v2_en | include_v2_en, include_v2_og |
-| vi | include_v2_en, include_v2_og | include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og |
-| zh | cultural_bench_easy, include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp |
+| vi | include_v2_en, include_v2_og | include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
+| zh | cultural_bench_easy, include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp |
 <!-- END auto:probe-survivors -->
 
 [probe_survivors.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/probe_survivors.csv)
 
 The margins above leave open which candidates pass the gate at all, per language; this table answers that.
-Population: the `predictivity` gate mask (seed 1904, every cell and data build), cells that trained the language, the 33 candidates over 47 languages.
+Population: the `predictivity` gate mask (seed 1904, every cell and data build), cells that trained the language, the 59 candidates over 50 languages.
 
 Each cell counts languages, and the language count changes from row to row.
 
@@ -885,13 +956,13 @@ Key findings:
 
 - **INCLUDE v2 has the broadest coverage.** include_v2_en clears the gate in 42 of 42 languages at 1.7B (32 of 42 at 90M), and include_v2_og in 35 of 42 (13 of 42 at 90M).
 - **arc_mt switches on with size.** It clears in 0 of 11 languages through 350M, then 2 at 600M, 10 at 1B and 11 at 1.7B.
-- **Three lettered originals never pass**: mmlu, commonsense_qa and acp_bench_mcq clear in 0 of 1 language at every size, while their `rf_` twins clear in 1 of 1. The bbh_mcq original passes only at 90M, 175M and 1B, its twin at every size.
-- **cultural_bench_easy's original passes in 6 of 8 languages at 90M and in none from 175M up**, while its twin rises from 1 of 8 to 5 of 8 at 1.7B.
-- **Ten candidates never pass in any language at any size:** acp_bench_cloze, bangla, bbh_cloze, ceval, cultural_bench_hard (0 of 8), haerae, openbookqa, toxigen, truthfulqa_mc2 (0 of 3) and turkishmmlu. blend_sample passes in 1 of 4 at 90M only, and xquad is generative and has no gate.
+- **Nine lettered originals never pass, while their `rf_` twins do.** mmlu, commonsense_qa and acp_bench_mcq clear in 0 of 1 language at every size and their twins in 1 of 1; m_mmlu (0 of 27), mmmlu (0 of 12), arabicmmlu, careqa, oall_arabic_mmlu and oall_exams (0 of 1), scored from 600M, have twins that clear at 1.7B in every language. The bbh_mcq original passes only at 90M, 175M and 1B, its twin at every size.
+- **cultural_bench_easy's original passes in 6 of 8 languages at 90M and in none from 175M up.** Its twin rises from 1 of 8 at 90M to 5 of 8 at 1.7B.
+- **Ten candidates never pass in any language at any size.** They are acp_bench_cloze, bangla, bbh_cloze, ceval, cultural_bench_hard (0 of 8), ibero_truthfulqa, oall_acva, toxigen, truthfulqa_mc1 and truthfulqa_mc2 (0 of 3); blend_sample passes in 1 of 4 at 90M only, and xquad (generative) and mela have no gate.
 
 Follow-ups:
 
-- Add a first-size-above-gate grid per candidate and language, as `first_size_above_random` draws for `auto`. It would condense the 47-row table above into one figure.
+- Add a first-size-above-gate grid per candidate and language, as `first_size_above_random` draws for `auto`. It would condense the 50-row table above into one figure.
 
 <!-- BEGIN auto:reformulations-gate (reformulations_gate.py --pool predictivity) -->
 ## The twins and the gate, with significance
@@ -901,21 +972,28 @@ Per family at 1.7B: the share of languages above the gate for the original and t
 | family | twin | languages | original | twin | twin only / original only | p (McNemar) |
 |---|---|---|---|---|---|---|
 | acp_bench_mcq | rf | 7 | 0.00 | 0.71 | 5 / 0 | 0.0625 |
+| arabicmmlu | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 | bbh_mcq | rf | 17 | 0.00 | 0.59 | 10 / 0 | 0.00195 |
 | belebele | rf | 105 | 0.05 | 0.82 | 82 / 1 | 1.74e-23 |
 | belebele | rfgm | 59 | 0.05 | 1.00 | 56 / 0 | 2.78e-17 |
+| careqa | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 | commonsense_qa | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 | cultural_bench_easy | rf | 19 | 0.00 | 0.37 | 7 / 0 | 0.0156 |
+| french_bench_extra | rf | 1 | 0.00 | 0.00 | 0 / 0 | — |
 | global_mmlu_full | rf | 37 | 0.03 | 0.95 | 34 / 0 | 1.16e-10 |
 | include_base_44 | rf | 43 | 0.07 | 0.72 | 29 / 1 | 5.77e-08 |
 | include_base_44 | rfgm | 43 | 0.07 | 0.74 | 30 / 1 | 2.98e-08 |
+| m_mmlu | rf | 27 | 0.00 | 1.00 | 27 / 0 | 1.49e-08 |
 | mmlu | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
+| mmmlu | rf | 12 | 0.00 | 1.00 | 12 / 0 | 0.000488 |
+| oall_arabic_mmlu | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
+| oall_exams | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 
 | population | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| every task | 0.40 | 0.43 | 0.46 | 0.49 | 0.53 | 0.57 |
-| originals only | 0.37 | 0.38 | 0.40 | 0.43 | 0.46 | 0.49 |
-| twins only | 0.52 | 0.58 | 0.63 | 0.70 | 0.75 | 0.80 |
+| every task | 0.39 | 0.42 | 0.45 | 0.49 | 0.53 | 0.57 |
+| originals only | 0.36 | 0.38 | 0.40 | 0.43 | 0.47 | 0.50 |
+| twins only | 0.52 | 0.58 | 0.62 | 0.70 | 0.76 | 0.82 |
 
 ![The reformulations and the gate](reformulations_gate.png)
 <!-- END auto:reformulations-gate -->
@@ -924,15 +1002,15 @@ GitHub: [reformulations_gate.png](https://github.com/mariagrandury/snr-multiling
 [reformulations_gate_mcnemar.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate_mcnemar.csv)
 
 This figure is the full version of the opening one: every size, plus the pooled gate share and the decision-accuracy reading.
-Population: the `predictivity` gate mask; the McNemar rows pair each twin with its original on the task, and at 600M–1.7B the pooled rows split the 1,373 gated benchmark tasks into 1,041 non-twin tasks and 332 twins (1,372 and 1,040 at 90M–350M).
+Population: the `predictivity` gate mask; the McNemar rows pair each twin with its original on the task, and at 600M–1.7B the pooled rows split the 1,663 gated benchmark tasks into 1,287 non-twin tasks and 376 twins (1,433, 1,101 and 332 at 90M–350M).
 
 Key findings:
 
-- **At 1.7B the large twins pass in significantly more tasks than their originals.** Twin-only : original-only is 82 : 1 for belebele rf (p 1.7e-23), 56 : 0 for belebele rfgm (2.8e-17), 34 : 0 for Global-MMLU rf (1.2e-10), 29 : 1 and 30 : 1 for INCLUDE rf and rfgm (5.8e-08, 3.0e-08), 10 : 0 for bbh_mcq (0.002) and 7 : 0 for cultural_bench_easy (0.016).
-- **acp_bench_mcq does not reach p < 0.05** (5 : 0, p 0.06), and mmlu and commonsense_qa have one task each (p 1).
-- **Across sizes, belebele and Global-MMLU are significant at every size, INCLUDE and bbh_mcq from 175M.** At 90M cultural_bench_easy is significant the other way: 13 of its 19 originals pass where the twin does not, and none the reverse.
-- **The "originals only" row is every non-twin benchmark task** (511 of 1,041 pass at 1.7B, 0.49), not the twins' own originals, which pass in 9 of 230.
-- **The twins do not rank designs better.** Mean DA-size (proxy → 1.7B, multi-axis pairs, gated at proxy and reference) is 0.485 / 0.505 / 0.499 / 0.500 / 0.550 on the twins from 90M to 1B, against 0.553 / 0.574 / 0.572 / 0.599 / 0.593 on the non-twin tasks. The twins' pairs are the deep scheme-A cells' alone (the L axis), so this is not a same-pairs comparison.
+- **At 1.7B the large twins pass in significantly more tasks than their originals.** Twin-only : original-only is 82 : 1 for belebele rf (p 1.7e-23), 56 : 0 for belebele rfgm (2.8e-17), 34 : 0 for Global-MMLU rf (1.2e-10), 29 : 1 and 30 : 1 for INCLUDE rf and rfgm (5.8e-08, 3.0e-08), 27 : 0 for m_mmlu (1.5e-08), 12 : 0 for mmmlu (4.9e-04), 10 : 0 for bbh_mcq (0.002) and 7 : 0 for cultural_bench_easy (0.016).
+- **acp_bench_mcq does not reach p < 0.05.** It reads 5 : 0 (p 0.06), and mmlu, commonsense_qa, arabicmmlu, careqa, oall_arabic_mmlu and oall_exams have one task each (p 1).
+- **Across sizes, belebele and Global-MMLU are significant at every size, INCLUDE and bbh_mcq from 175M.** At 90M cultural_bench_easy is significant the other way: 10 of its 19 originals pass where the twin does not, against 1 the other way round.
+- **The "originals only" row is every non-twin benchmark task, not the twins' own originals.** It passes in 644 of 1,287 at 1.7B (0.50), while the twins' own originals pass in 10 of 277.
+- **The twins do not rank designs better.** Mean DA-size (proxy → 1.7B, multi-axis pairs, gated at proxy and reference) is 0.480 / 0.498 / 0.494 / 0.499 / 0.547 on the twins from 90M to 1B, against 0.546 / 0.568 / 0.557 / 0.580 / 0.586 on the non-twin tasks. The twins' pairs are the deep scheme-A cells' alone (the L axis), so this is not a same-pairs comparison.
 
 Follow-ups:
 

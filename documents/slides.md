@@ -972,61 +972,61 @@ coverage improved a lot, the diagnosis did not change much, because one family c
 <!-- BEGIN auto:rq4-results (snr_definition_postprocess.py) -->
 ---
 title: RQ4 — Surrogates: SNR definition
-subtitle: "Results (auto) — most reliable benchmark per language (`aad` @ 1.7B)"
+subtitle: "Results (auto) — most reliable benchmark per language (`rel_std` @ 1.7B)"
 ---
 
 | lang | top benchmark | SNR | DA-ckpt@1.7B | BPB SNR |
 |---|---|---|---|---|
-| ar | `bbpb_rf_belebele_arb_Latn` | 3.3 | 0.60 | 0.8 |
-| az | `bbpb_include_v2_og_azerbaijani_azerbaijan` | 12.7 | 0.98 | 1.7 |
-| bg | `multiblimp_bul` | 2.6 | 0.81 | 0.8 |
-| bn | `bbpb_global_piqa_parallel_cloze_ben_latn` | 3.1 | 0.67 | 0.7 |
-| bs | `bbpb_global_piqa_nonparallel_cloze_bos_latn` | 2.5 | 0.87 | 2.1 |
-| ca | `bbpb_xnli_ca` | 5.9 | 0.89 | 1.7 |
-| cs | `bbpb_multiblimp_ces` | 2.0 | 0.76 | 0.4 |
-| da | `multiblimp_dan` | 3.2 | 0.46 | 1.0 |
-| de | `bbpb_multiblimp_deu` | 2.1 | 0.73 | 0.6 |
-| el | `bbpb_belebele_ell_Grek` | 2.6 | 0.67 | 0.3 |
-| en | `bbpb_acp_bench_cloze_val` | 4.3 | 0.59 | 1.4 |
-| es | `bbpb_xnli_es` | 3.0 | 0.79 | 0.8 |
-| et | `bbpb_multiblimp_est` | 7.1 | 0.91 | 2.4 |
-| fa | `bbpb_belebele_pes_Arab` | 2.0 | 0.71 | 0.6 |
-| fi | `bbpb_multiblimp_fin` | 3.0 | 0.80 | 1.3 |
-| fr | `bbpb_include_v2_og_french_canada` | 3.7 | 0.65 | 0.5 |
-| he | `bbpb_multiblimp_heb` | 5.2 | 0.79 | 1.2 |
-| hi | `bbpb_include_base_44_hindi` | 3.1 | 0.66 | 0.7 |
-| hr | `bbpb_global_piqa_parallel_cloze_hrv_latn` | 2.5 | 0.87 | 1.7 |
-| hu | `bbpb_include_v2_og_hungarian_hungary` | 2.6 | 0.72 | 0.7 |
-| id | `bbpb_include_base_44_indonesian` | 2.2 | 0.61 | 0.6 |
-| it | `bbpb_multiblimp_ita` | 2.5 | 0.76 | 0.5 |
-| ja | `bbpb_include_v2_og_japanese_japan` | 2.5 | 0.63 | 0.8 |
-| ka | `bbpb_belebele_kat_Geor` | 1.7 | 0.75 | 0.6 |
-| kk | `bbpb_rf_include_base_44_kazakh` | 4.6 | 0.83 | 1.4 |
-| ko | `bbpb_belebele_kor_Hang` | 1.8 | 0.63 | 0.7 |
-| lt | `bbpb_include_v2_og_lithuanian_lithuania` | 3.6 | 0.85 | 1.7 |
-| lv | `bbpb_rfgm_belebele_lvs_Latn` | 1.6 | 0.98 | 2.1 |
-| ml | `bbpb_include_base_44_malayalam` | 2.8 | 0.72 | 0.7 |
-| mr | `bbpb_belebele_mar_Deva` | 2.7 | 0.69 | 1.2 |
-| ms | `bbpb_include_v2_og_malay_singapore` | 5.9 | 0.67 | 1.7 |
-| ne | `bbpb_rf_belebele_npi_Latn` | 2.6 | 0.81 | 1.2 |
-| nl | `bbpb_multiblimp_nld` | 2.2 | 0.73 | 0.6 |
-| no | `bbpb_global_piqa_parallel_cloze_nob_latn` | 1.5 | 0.63 | 0.9 |
-| pl | `bbpb_multiblimp_pol` | 3.3 | 0.70 | 0.5 |
-| pt | `bbpb_multiblimp_por` | 3.1 | 0.64 | 0.5 |
-| ro | `bbpb_multiblimp_ron` | 2.3 | 0.71 | 0.7 |
-| ru | `bbpb_include_base_44_russian` | 2.7 | 0.72 | 0.8 |
-| sk | `bbpb_global_piqa_parallel_cloze_slk_latn_sari` | 3.5 | 0.89 | 1.3 |
-| sl | `bbpb_global_piqa_parallel_cloze_slv_latn_cerk` | 7.6 | 0.85 | 2.4 |
-| sq | `bbpb_include_v2_og_albanian_albania` | 5.8 | 0.85 | 2.4 |
-| sr | `bbpb_global_piqa_parallel_cloze_srp_latn` | 3.1 | 0.83 | 1.4 |
-| sv | `bbpb_multiblimp_swe` | 2.6 | 0.81 | 1.0 |
-| ta | `bbpb_include_base_44_tamil` | 3.0 | 0.72 | 0.6 |
-| th | `bbpb_belebele_tha_Thai` | 1.6 | 0.66 | 0.4 |
-| tr | `bbpb_multiblimp_tur` | 3.5 | 0.55 | 0.6 |
-| uk | `bbpb_belebele_ukr_Cyrl` | 2.3 | 0.73 | 0.2 |
-| ur | `bbpb_rf_include_base_44_urdu` | 6.2 | 0.81 | 1.8 |
-| vi | `bbpb_include_v2_og_vietnamese_vietnam` | 1.9 | 0.70 | 0.9 |
-| zh | `bbpb_paws_zh` | 4.9 | 0.86 | 1.5 |
+| ar | `bbpb_rfgm_belebele_arz_Arab` | 5.1 | 0.82 | 5.4 |
+| az | `bbpb_rfgm_include_base_44_azerbaijani` | 11.0 | 0.93 | 7.7 |
+| bg | `bbpb_rfgm_include_base_44_bulgarian` | 4.5 | 0.86 | 5.9 |
+| bn | `bbpb_rfgm_include_base_44_bengali` | 5.7 | 0.89 | 7.7 |
+| bs | `bbpb_global_piqa_nonparallel_cloze_bos_latn` | 6.0 | 0.87 | 8.6 |
+| ca | `bbpb_hellaswag_ca` | 7.7 | 0.98 | 7.2 |
+| cs | `bbpb_multiblimp_ces` | 3.4 | 0.75 | 2.4 |
+| da | `multiblimp_dan` | 5.7 | 0.48 | 4.5 |
+| de | `bbpb_hellaswag_de` | 6.6 | 0.89 | 3.9 |
+| el | `bbpb_multiblimp_ell` | 2.8 | 0.72 | 2.6 |
+| en | `hellaswag` | 6.0 | 0.90 | 17.1 |
+| es | `include_v2_og_spanish_espa_a` | 8.4 | 0.74 | 8.3 |
+| et | `bbpb_xcopa_et` | 13.0 | 0.91 | 8.9 |
+| fa | `bbpb_rfgm_include_base_44_persian` | 6.9 | 0.87 | 5.2 |
+| fi | `bbpb_rfgm_include_base_44_finnish` | 4.4 | 0.87 | 5.5 |
+| fr | `bbpb_hellaswag_fr` | 6.1 | 0.93 | 3.3 |
+| he | `bbpb_rfgm_include_base_44_hebrew` | 6.8 | 0.91 | 6.9 |
+| hi | `bbpb_hellaswag_hi` | 5.8 | 0.91 | 7.3 |
+| hr | `bbpb_rfgm_include_base_44_croatian` | 8.7 | 0.94 | 7.0 |
+| hu | `bbpb_multiblimp_hun` | 4.2 | 0.83 | 3.4 |
+| id | `bbpb_rfgm_include_base_44_indonesian` | 4.4 | 0.74 | 3.7 |
+| it | `hellaswag_it` | 4.6 | 0.85 | 3.3 |
+| ja | `bbpb_rf_global_mmlu_full_ja` | 4.6 | 0.73 | 5.1 |
+| ka | `bbpb_rfgm_belebele_kat_Geor` | 6.2 | 0.88 | 7.5 |
+| kk | `bbpb_global_piqa_nonparallel_cloze_kaz_cyrl` | 9.0 | 0.98 | 9.5 |
+| ko | `bbpb_paws_ko` | 3.1 | 0.79 | 3.7 |
+| lt | `bbpb_rfgm_include_base_44_lithuanian` | 6.4 | 0.89 | 6.9 |
+| lv | `bbpb_rfgm_belebele_lvs_Latn` | 8.9 | 0.98 | 8.5 |
+| ml | `bbpb_global_piqa_parallel_cloze_mal_mlym` | 6.1 | 0.89 | 7.8 |
+| mr | `bbpb_rfgm_belebele_mar_Deva` | 6.5 | 1.00 | 10.3 |
+| ms | `bbpb_include_v2_og_malay_malaysia` | 7.7 | 0.93 | 7.3 |
+| ne | `bbpb_hellaswag_ne` | 6.8 | 0.85 | 10.9 |
+| nl | `bbpb_hellaswag_nl` | 4.2 | 0.91 | 3.8 |
+| no | `global_piqa_parallel_cloze_nob_latn` | 2.4 | 0.45 | 4.2 |
+| pl | `bbpb_rf_global_mmlu_full_pl` | 3.2 | 0.66 | 3.2 |
+| pt | `hellaswag_pt` | 4.3 | 0.92 | 3.2 |
+| ro | `bbpb_multiblimp_ron` | 3.9 | 0.70 | 3.7 |
+| ru | `bbpb_hellaswag_ru` | 7.7 | 0.91 | 9.5 |
+| sk | `bbpb_hellaswag_sk` | 4.2 | 0.96 | 5.7 |
+| sl | `bbpb_multiblimp_slv` | 7.4 | 0.91 | 8.8 |
+| sq | `bbpb_rfgm_include_base_44_albanian` | 10.1 | 0.91 | 9.3 |
+| sr | `bbpb_hellaswag_sr` | 8.2 | 0.96 | 9.5 |
+| sv | `bbpb_hellaswag_sv` | 4.9 | 0.95 | 5.0 |
+| ta | `bbpb_rfgm_include_base_44_tamil` | 5.4 | 0.93 | 7.2 |
+| th | `bbpb_xnli_th` | 3.1 | 0.76 | 3.8 |
+| tr | `bbpb_rf_include_base_44_turkish` | 5.5 | 0.74 | 3.3 |
+| uk | `bbpb_multiblimp_ukr` | 3.1 | 0.76 | 1.9 |
+| ur | `bbpb_rfgm_belebele_urd_Arab` | 7.3 | 0.98 | 10.1 |
+| vi | `bbpb_rfgm_include_base_44_vietnamese` | 5.8 | 0.83 | 5.6 |
+| zh | `bbpb_xstorycloze_zh` | 7.0 | 0.92 | 8.3 |
 
 <style>
 .slidev-layout table { font-size: 0.7em; }
@@ -1278,8 +1278,8 @@ subtitle: "Results (auto) — cross-corpus agreement with AllenAI by pool"
 
 | pool | best variant | Pearson r | Spearman ρ | n_shared |
 |---|---|---|---|---|
-| `predictivity` | `aad` | 0.87 | 1.00 | 3 |
-| `predictivity_seeds` | `aad` | 0.84 | 1.00 | 3 |
+| `predictivity` | `rel_std` | 0.81 | 0.83 | 6 |
+| `predictivity_seeds` | `rel_std` | 0.83 | 0.83 | 6 |
 
 The shared universe is the English tasks both corpora evaluate, after the above-random gate.
 
@@ -1305,14 +1305,14 @@ subtitle: "Results (auto) — top subset gains (SNR: full → best subset)"
 
 | case | task | size | full → best SNR | +gain |
 |---|---|---|---|---|
-| per_benchmark | `bbpb_rf_belebele` | 1B | 3.05 → 5.46 | +2.41 |
-| per_benchmark | `bbpb_paws` | 175M | 3.32 → 5.63 | +2.31 |
-| per_benchmark | `arc` | 1B | 3.02 → 5.31 | +2.29 |
-| per_benchmark | `bbpb_rfgm_belebele` | 1B | 3.11 → 5.35 | +2.24 |
-| per_benchmark | `bbpb_rfgm_belebele` | 175M | 2.97 → 5.21 | +2.23 |
-| per_benchmark | `arc` | 1.7B | 3.18 → 5.37 | +2.19 |
-| per_benchmark | `bbpb_rfgm_belebele` | 1.7B | 3.30 → 5.46 | +2.15 |
-| per_benchmark | `hellaswag` | 350M | 2.97 → 5.04 | +2.06 |
+| per_benchmark | `arc` | 350M | 2.82 → 5.57 | +2.75 |
+| per_benchmark | `bbpb_rf_belebele` | 1B | 3.08 → 5.78 | +2.71 |
+| per_benchmark | `bbpb_paws` | 175M | 3.49 → 6.00 | +2.52 |
+| per_benchmark | `bbpb_rfgm_belebele` | 175M | 3.06 → 5.55 | +2.49 |
+| per_benchmark | `bbpb_rfgm_belebele` | 350M | 3.14 → 5.51 | +2.37 |
+| per_benchmark | `bbpb_rfgm_belebele` | 1B | 3.26 → 5.57 | +2.31 |
+| per_benchmark | `hellaswag` | 175M | 3.19 → 5.49 | +2.30 |
+| per_benchmark | `hellaswag` | 350M | 3.19 → 5.48 | +2.29 |
 
 <style>
 .slidev-layout table { font-size: 0.7em; }
@@ -1327,23 +1327,35 @@ subtitle: "Results (auto) — per-family SNR, above-random survivors"
 
 | family | median SNR | n_opts | format |
 |---|---|---|---|
-| `multiblimp` | 1.70 | 2 | minimal_pair |
-| `xstorycloze` | 1.53 | 2 | completion |
-| `xwinograd` | 1.45 | 2 | completion |
-| `paws` | 1.37 | 2 | classification |
-| `xcopa` | 0.98 | 2 | completion |
-| `xnli` | 0.89 | 3 | classification |
-| `global_mmlu_full` | 0.83 | 4 | mcq_question_only |
-| `include_base_44` | 0.70 | 4 | mcq_question_only |
-| `rfgm_belebele` | 0.62 | 4 | statement_continuation |
-| `hellaswag` | 0.61 | 4 | completion |
-| `rf_include_base_44` | 0.60 | 4 | cloze_completion |
-| `rfgm_include_base_44` | 0.58 | 4 | statement_continuation |
-| `arc` | 0.51 | 4 | mcq_question_only |
-| `rf_belebele` | 0.49 | 4 | cloze_completion |
-| `global_piqa_parallel_cloze` | 0.48 | 2 | completion |
-| `belebele` | 0.46 | 4 | mrc_passage |
-| `rf_global_mmlu_full` | 0.41 | 4 | cloze_completion |
+| `multiblimp` | 2.39 | 2 | minimal_pair |
+| `hellaswag` | 2.29 | 4 | completion |
+| `xstorycloze` | 2.18 | 2 | completion |
+| `global_piqa_nonparallel_cloze` | 2.06 | 2 | completion |
+| `xwinograd` | 1.77 | 2 | completion |
+| `paws` | 1.55 | 2 | classification |
+| `xcopa` | 1.32 | 2 | completion |
+| `global_mmlu_full` | 1.26 | 4 | mcq_question_only |
+| `rf_mmlu` | 1.09 | 4 | cloze_completion |
+| `xnli` | 1.01 | 3 | classification |
+| `rf_acp_bench_mcq` | 0.97 | 4 | cloze_completion |
+| `rf_commonsense_qa` | 0.95 | 5 | cloze_completion |
+| `lambada_openai_mt` | 0.94 |  | last_word |
+| `rf_bbh_mcq` | 0.90 |  | cloze_completion |
+| `include_v2_og` | 0.89 | 4 | cloze_completion |
+| `rf_global_mmlu_full` | 0.84 | 4 | cloze_completion |
+| `rfgm_belebele` | 0.83 | 4 | statement_continuation |
+| `rf_cultural_bench_easy` | 0.83 | 4 | cloze_completion |
+| `openbookqa` | 0.76 | 4 | completion |
+| `arc` | 0.73 | 4 | cloze_completion |
+| `rfgm_include_base_44` | 0.72 | 4 | statement_continuation |
+| `include_v2_en` | 0.68 | 4 | cloze_completion |
+| `include_base_44` | 0.66 | 4 | mcq_question_only |
+| `arc_mt` | 0.64 | 4 | cloze_completion |
+| `rf_belebele` | 0.61 | 4 | cloze_completion |
+| `global_piqa_parallel_cloze` | 0.59 | 4 | completion |
+| `rf_include_base_44` | 0.58 | 4 | cloze_completion |
+| `mathqa` | 0.56 | 5 | cloze_completion |
+| `belebele` | 0.51 | 4 | mrc_passage |
 
 <style>
 .slidev-layout table { font-size: 0.7em; }
@@ -1527,105 +1539,140 @@ subtitle: "Predictivity ladder (90M–1.7B, seed 1904) · mean score per family 
 
 | benchmark | rand | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|---|
-| `bbpb_mathqa` |  |  | 2.91 | 2.81 |  | 2.54 | 2.47 |
-| `loss` |  | 2.97 | 2.80 | 2.66 | 2.48 | 2.36 | 2.23 |
-| `bbpb_toxigen` |  |  | 2.39 | 2.39 |  | 2.04 | 2.04 |
-| `bbpb_bbh_mcq` |  |  | 2.08 | 1.93 |  | 1.86 | 2.06 |
-| `bbpb_rf_commonsense_qa` |  |  | 2.15 | 2.08 |  | 1.89 | 1.75 |
-| `bbpb_acp_bench_cloze` |  |  | 1.87 | 1.91 |  | 1.82 | 1.75 |
-| `bbpb_belebele` |  |  | 2.40 | 1.72 |  | 1.42 | 1.25 |
+| `bbpb_mathqa` |  | 3.07 | 2.90 | 2.81 | 2.68 | 2.55 | 2.47 |
+| `loss` |  | 2.97 | 2.79 | 2.66 | 2.47 | 2.37 | 2.23 |
+| `bbpb_toxigen` |  | 2.43 | 2.38 | 2.34 | 2.15 | 2.05 | 2.04 |
+| `bbpb_bbh_mcq` |  | 2.33 | 2.07 | 1.95 | 2.09 | 1.84 | 2.04 |
+| `bbpb_rf_commonsense_qa` |  | 2.27 | 2.15 | 2.08 | 1.96 | 1.89 | 1.75 |
+| `bbpb_belebele` |  | 2.94 | 2.36 | 2.05 | 1.67 | 1.42 | 1.25 |
+| `bbpb_acp_bench_cloze` |  | 1.94 | 1.87 | 1.89 | 1.88 | 1.84 | 1.74 |
+| `bbpb_openbookqa` |  | 1.77 | 1.70 | 1.66 | 1.60 | 1.57 | 1.54 |
 | `bpb` |  | 1.86 | 1.75 | 1.66 | 1.56 | 1.48 | 1.39 |
-| `bbpb_openbookqa` |  |  | 1.70 | 1.65 |  | 1.57 | 1.54 |
-| `bbpb_include_v2_og` |  |  | 1.68 | 1.50 |  | 1.39 | 1.32 |
-| `bbpb_commonsense_qa` |  |  | 1.53 | 1.48 |  | 1.38 | 1.35 |
-| `bbpb_rf_include_base_44` |  |  | 1.69 | 1.43 |  | 1.36 | 1.25 |
-| `bbpb_multiblimp` |  |  | 1.54 | 1.42 |  | 1.36 | 1.32 |
-| `bbpb_global_piqa_parallel_cloze` |  |  | 1.58 | 1.35 |  | 1.33 | 1.25 |
-| `bbpb_include_v2_en` |  |  | 1.55 | 1.42 |  | 1.29 | 1.22 |
-| `bbpb_rf_global_mmlu_full` |  |  | 1.52 | 1.45 |  | 1.26 | 1.16 |
-| `bbpb_arc_mt` |  |  | 1.61 | 1.32 |  | 1.25 | 1.14 |
-| `bbpb_bbh_cloze` |  |  | 1.46 | 1.33 |  | 1.22 | 1.10 |
-| `bbpb_rf_bbh_mcq` |  |  | 1.40 | 1.35 |  | 1.18 | 1.11 |
-| `bbpb_rf_cultural_bench_easy` |  |  | 1.48 | 1.38 |  | 1.13 | 1.04 |
-| `bbpb_rf_mmlu` |  |  | 1.41 | 1.34 |  | 1.15 | 1.09 |
-| `bbpb_rfgm_include_base_44` |  |  | 1.44 | 1.25 |  | 1.16 | 1.07 |
-| `bbpb_acp_bench_mcq` |  |  | 1.33 | 1.27 |  | 1.16 | 1.14 |
-| `bbpb_blend_sample` |  |  | 1.22 | 1.18 |  | 1.22 | 1.22 |
-| `bbpb_include_base_44` |  |  | 1.26 | 1.17 |  | 1.21 | 1.20 |
-| `bbpb_xnli` |  |  | 1.26 | 1.20 |  | 1.16 | 1.13 |
-| `bbpb_arc` |  |  | 1.40 | 1.20 |  | 1.11 | 1.02 |
-| `bbpb_global_mmlu_full` |  |  | 1.27 | 1.15 |  | 1.17 | 1.13 |
-| `bbpb_cultural_bench_easy` |  |  | 1.20 | 1.12 |  | 1.16 | 1.15 |
-| `bbpb_xcopa` |  |  | 1.34 | 1.16 |  | 1.11 | 1.03 |
-| `bbpb_paws` |  |  | 1.21 | 1.18 |  | 1.10 | 1.07 |
-| `bbpb_mmlu` |  |  | 1.21 | 1.15 |  | 1.10 | 1.10 |
-| `bbpb_rf_belebele` |  |  | 1.16 | 1.06 |  | 0.95 | 0.87 |
-| `bbpb_global_piqa_nonparallel_cloze` |  |  | 1.24 |  |  | 0.94 | 0.84 |
-| `bbpb_rfgm_belebele` |  |  | 1.09 | 0.98 |  | 0.92 | 0.87 |
+| `bbpb_include_v2_og` |  | 1.80 | 1.68 | 1.60 | 1.47 | 1.39 | 1.32 |
+| `bbpb_rf_include_base_44` |  | 1.79 | 1.69 | 1.59 | 1.46 | 1.36 | 1.26 |
+| `bbpb_multiblimp` |  | 1.63 | 1.54 | 1.49 | 1.41 | 1.36 | 1.31 |
+| `bbpb_global_piqa_parallel_cloze` |  | 1.67 | 1.58 | 1.50 | 1.40 | 1.34 | 1.26 |
+| `bbpb_commonsense_qa` |  | 1.64 | 1.52 | 1.41 | 1.36 | 1.38 | 1.36 |
+| `bbpb_arc_mt` |  | 1.72 | 1.61 | 1.50 | 1.36 | 1.25 | 1.14 |
+| `bbpb_include_v2_en` |  | 1.68 | 1.55 | 1.47 | 1.37 | 1.29 | 1.22 |
+| `bbpb_rf_global_mmlu_full` |  | 1.62 | 1.52 | 1.45 | 1.35 | 1.26 | 1.17 |
+| `bbpb_bbh_cloze` |  | 1.35 | 1.44 | 1.51 | 1.60 | 1.23 | 1.09 |
+| `bbpb_rf_cultural_bench_easy` |  | 1.65 | 1.48 | 1.37 | 1.22 | 1.14 | 1.04 |
+| `bbpb_rfgm_include_base_44` |  | 1.56 | 1.45 | 1.36 | 1.25 | 1.16 | 1.07 |
+| `bbpb_rf_bbh_mcq` |  | 1.49 | 1.40 | 1.36 | 1.26 | 1.18 | 1.11 |
+| `bbpb_rf_mmlu` |  | 1.52 | 1.41 | 1.34 | 1.23 | 1.15 | 1.09 |
+| `bbpb_arc` |  | 1.50 | 1.40 | 1.32 | 1.21 | 1.11 | 1.03 |
+| `bbpb_acp_bench_mcq` |  | 1.42 | 1.33 | 1.22 | 1.17 | 1.16 | 1.14 |
+| `bbpb_global_mmlu_full` |  | 1.45 | 1.27 | 1.20 | 1.17 | 1.17 | 1.13 |
+| `bbpb_include_base_44` |  | 1.30 | 1.26 | 1.20 | 1.20 | 1.21 | 1.20 |
+| `bbpb_xcopa` |  | 1.44 | 1.34 | 1.27 | 1.17 | 1.11 | 1.03 |
+| `bbpb_blend_sample` |  | 1.27 | 1.23 | 1.19 | 1.21 | 1.21 | 1.23 |
+| `bbpb_xnli` |  | 1.32 | 1.26 | 1.23 | 1.19 | 1.16 | 1.13 |
+| `bbpb_paws` |  | 1.28 | 1.21 | 1.18 | 1.13 | 1.10 | 1.06 |
+| `bbpb_mmlu` |  | 1.31 | 1.20 | 1.14 | 1.11 | 1.10 | 1.10 |
+| `bbpb_cultural_bench_easy` |  | 1.15 | 1.20 | 1.15 | 1.14 | 1.17 | 1.15 |
+| `bbpb_global_piqa_nonparallel_cloze` |  | 1.35 | 1.24 | 1.15 | 1.03 | 0.94 | 0.84 |
+| `bbpb_rf_belebele` |  | 1.23 | 1.16 | 1.10 | 1.02 | 0.95 | 0.87 |
+| `bbpb_rfgm_belebele` |  | 1.16 | 1.09 | 1.04 | 0.97 | 0.92 | 0.87 |
+| `bbpb_hellaswag` |  | 1.01 | 0.95 | 0.90 | 0.83 | 0.79 | 0.74 |
+| `bbpb_xstorycloze` |  | 0.98 | 0.92 | 0.87 | 0.80 | 0.75 | 0.70 |
 | `multiblimp` | 0.50 | **0.80** | **0.81** | **0.83** | **0.85** | **0.85** | **0.87** |
-| `bbpb_hellaswag` |  |  | 0.95 | 0.79 |  | 0.79 | 0.74 |
+| `bbpb_rf_acp_bench_mcq` |  | 0.95 | 0.89 | 0.86 | 0.78 | 0.73 | 0.69 |
 | `zhoblimp` | 0.50 | **0.76** | **0.79** | **0.80** | **0.81** | **0.83** | **0.84** |
-| `bbpb_xstorycloze` |  |  | 0.92 | 0.84 |  | 0.75 | 0.70 |
-| `bbpb_rf_acp_bench_mcq` |  |  | 0.89 | 0.86 |  | 0.73 | 0.69 |
-| `blimp_nl` | 0.50 | **0.67** | **0.70** | **0.74** | **0.76** | **0.78** | **0.80** |
-| `bbpb_truthfulqa_mc2` |  |  | 0.81 | 0.77 |  | 0.69 | 0.64 |
-| `turblimp` | 0.50 | **0.60** | **0.62** | **0.64** | **0.66** | **0.68** | **0.69** |
-| `bbpb_truthfulqa-multi_mc1` |  |  | 0.68 | 0.65 |  | 0.59 | 0.57 |
+| `multiblimp-extra` | 0.50 |  |  |  | **0.74** | **0.76** | **0.76** |
+| `bbpb_truthfulqa_mc2` |  | 0.86 | 0.80 | 0.78 | 0.72 | 0.69 | 0.64 |
+| `blimp_nl` | 0.50 | **0.67** | **0.70** | **0.74** | **0.77** | **0.79** | **0.80** |
+| `turblimp` | 0.50 | **0.60** | **0.62** | **0.64** | **0.67** | **0.68** | **0.70** |
+| `bbpb_truthfulqa-multi_mc1` |  | 0.73 | 0.68 | 0.65 | 0.62 | 0.59 | 0.57 |
 | `xwinograd` | 0.50 | 0.56 | **0.57** | **0.59** | **0.63** | **0.67** | **0.72** |
-| `toksuite` | 0.25 | **0.50** | **0.54** | **0.57** | **0.63** | **0.66** | **0.74** |
-| `xcopa` | 0.50 | 0.53 | **0.53** | **0.54** | **0.55** | **0.57** | **0.60** |
+| `ibero_copa` | 0.50 |  |  |  | 0.58 | 0.61 | 0.65 |
+| `toksuite` | 0.25 | **0.50** | **0.54** | **0.57** | **0.63** | **0.67** | **0.75** |
+| `ibero_paraphrase` | 0.50 |  |  |  | **0.54** | **0.57** | **0.60** |
+| `global_piqa_nonparallel_cloze` | 0.50 | 0.52 | 0.52 | 0.54 | 0.57 | 0.59 | 0.61 |
+| `xcopa` | 0.50 | 0.53 | **0.53** | **0.54** | **0.55** | **0.57** | **0.59** |
 | `ibero_piqa` | 0.50 | **0.54** | **0.54** | **0.54** | **0.55** | **0.56** | **0.57** |
 | `xstorycloze` | 0.50 | 0.51 | 0.51 | **0.52** | **0.54** | **0.56** | **0.58** |
-| `global_piqa_nonparallel_cloze` | 0.50 | 0.49 | 0.49 | 0.50 | 0.51 | 0.54 | 0.56 |
-| `paws` | 0.50 | 0.50 | 0.50 | 0.50 | 0.50 | 0.52 | **0.54** |
-| `toksuite_stem` | 0.25 | **0.43** | **0.47** | **0.48** | **0.52** | **0.55** | **0.58** |
+| `copal_id` | 0.50 |  |  |  | 0.52 | 0.52 | 0.53 |
+| `kobest` | 0.50 |  |  |  | **0.50** | 0.51 | 0.52 |
+| `paws` | 0.50 | 0.50 | 0.50 | 0.50 | 0.50 | 0.51 | **0.54** |
+| `toksuite_stem` | 0.25 | **0.43** | **0.47** | **0.48** | **0.52** | **0.54** | **0.58** |
+| `rf_french_bench_extra` | 0.50 |  |  |  | 0.50 | 0.49 | 0.50 |
+| `french_bench` | 0.25 | **0.42** | **0.45** | **0.49** | **0.51** | **0.54** | **0.56** |
 | `acp_bench_cloze` | 0.50 | 0.49 | 0.49 | 0.49 | 0.49 | 0.49 | 0.49 |
-| `bbh_cloze` | 0.50 | 0.47 | 0.48 | 0.48 | 0.47 | 0.47 | 0.47 |
-| `toksuite_math` | 0.25 | **0.36** | **0.39** | **0.41** | **0.46** | **0.53** | **0.62** |
-| `toxigen` | 0.50 | 0.48 | 0.48 | 0.47 | 0.44 | 0.41 | 0.43 |
+| `bbh_cloze` | 0.50 | 0.47 | 0.48 | 0.47 | 0.47 | 0.47 | 0.47 |
+| `toksuite_math` | 0.25 | **0.36** | **0.39** | **0.41** | **0.46** | **0.52** | **0.62** |
+| `french_bench_extra` | 0.50 |  |  |  | 0.44 | 0.46 | 0.48 |
+| `ibero_cola` | 0.50 | 0.47 | 0.41 | 0.43 | 0.45 | 0.48 | 0.48 |
+| `toxigen` | 0.50 | 0.49 | 0.48 | 0.46 | 0.44 | 0.42 | 0.43 |
+| `m_truthfulqa_mc2` | 0.17 |  |  |  | **0.44** | **0.43** | **0.43** |
+| `ibero_nli` | 0.33 |  |  |  | **0.40** | **0.42** | **0.45** |
+| `noreval_extra` | 0.50 |  |  |  | **0.41** | **0.42** | **0.42** |
 | `bbq` | 0.08 |  |  |  | **0.40** | **0.41** | **0.44** |
 | `truthfulqa_mc2` | 0.45 | 0.43 | 0.42 | 0.41 | 0.40 | 0.40 | 0.40 |
+| `oall_acva` | 0.50 |  |  |  | 0.41 | 0.41 | 0.41 |
 | `xnli` | 0.33 | **0.37** | **0.38** | **0.39** | **0.41** | **0.42** | **0.44** |
+| `truthfulqa-multi_mc2` | 0.17 |  |  |  | **0.40** | **0.39** | **0.39** |
+| `evalita_llm` | 0.20 | 0.40 | 0.39 | 0.39 | 0.39 | **0.39** | **0.39** |
+| `oall_mt` | 0.25 |  |  |  | **0.38** | **0.38** | **0.39** |
 | `rf_acp_bench_mcq` | 0.25 | 0.36 | 0.37 | **0.38** | **0.39** | **0.40** | **0.40** |
-| `rf_commonsense_qa` | 0.20 | **0.30** | **0.33** | **0.35** | **0.39** | **0.41** | **0.46** |
-| `cultural_bench_hard` | 0.50 | 0.33 | 0.36 | 0.34 | 0.35 | 0.38 | 0.41 |
+| `rf_commonsense_qa` | 0.20 | **0.30** | **0.32** | **0.35** | **0.39** | **0.41** | **0.46** |
+| `cultural_bench_hard` | 0.50 | 0.33 | 0.35 | 0.34 | 0.35 | 0.37 | 0.42 |
 | `rfgm_belebele` | 0.25 | **0.32** | **0.33** | **0.34** | **0.36** | **0.38** | **0.41** |
+| `ibero_siqa` | 0.33 | 0.35 | 0.35 | 0.35 | **0.35** | **0.36** | **0.37** |
+| `hellaswag` | 0.25 | **0.29** | **0.30** | **0.31** | **0.34** | **0.38** | **0.43** |
+| `rf_arabicmmlu` | 0.33 |  |  |  | 0.33 | 0.34 | **0.35** |
+| `oall_alghafa` | 0.25 |  |  |  | 0.33 | 0.33 | 0.34 |
+| `openbookqa` | 0.25 | **0.29** | **0.30** | **0.31** | **0.33** | **0.36** | **0.39** |
 | `include_v2_en` | 0.25 | **0.29** | **0.30** | **0.31** | **0.33** | **0.35** | **0.37** |
-| `rf_bbh_mcq` | 0.17 | 0.29 | 0.30 | 0.30 | **0.31** | **0.32** | **0.33** |
+| `headqa` | 0.25 |  |  |  | **0.29** | **0.31** | **0.33** |
 | `ibero_openbookqa` | 0.25 | **0.29** | **0.29** | **0.30** | **0.31** | **0.32** | **0.34** |
+| `rf_bbh_mcq` | 0.17 | 0.29 | 0.30 | 0.30 | **0.31** | **0.32** | **0.33** |
+| `lambada_openai_mt` |  | 0.21 | 0.24 | 0.27 | 0.33 | 0.37 | 0.42 |
 | `rf_mmlu` | 0.25 | **0.27** | **0.28** | **0.29** | **0.31** | **0.33** | **0.36** |
-| `lambada_openai_mt` |  | 0.21 | 0.23 | 0.27 | 0.33 | 0.37 | 0.42 |
-| `hellaswag` | 0.25 | **0.27** | **0.27** | **0.28** | **0.30** | **0.32** | **0.35** |
+| `bangla` | 0.20 | 0.30 | 0.30 | 0.30 | 0.30 | 0.30 | 0.30 |
 | `rf_belebele` | 0.25 | **0.28** | **0.28** | **0.29** | **0.29** | **0.31** | **0.32** |
-| `rf_cultural_bench_easy` | 0.25 | 0.24 | 0.26 | 0.27 | 0.30 | 0.33 | 0.37 |
-| `cultural_bench_easy` | 0.25 | **0.40** | 0.26 | 0.27 | 0.29 | 0.26 | 0.27 |
-| `include_v2_og` | 0.25 | 0.27 | 0.27 | 0.28 | **0.29** | **0.31** | **0.33** |
-| `rfgm_include_base_44` | 0.25 | 0.26 | 0.27 | 0.27 | **0.29** | **0.31** | **0.33** |
-| `french_bench` | 0.25 | 0.25 | 0.25 | 0.27 | **0.28** | **0.30** | **0.34** |
+| `arabicmmlu` | 0.33 |  |  |  | 0.29 | 0.30 | 0.30 |
+| `rf_cultural_bench_easy` | 0.25 | 0.24 | 0.26 | 0.27 | 0.30 | 0.32 | 0.37 |
+| `include_v2_og` | 0.25 | 0.27 | 0.27 | **0.28** | **0.29** | **0.31** | **0.33** |
+| `cultural_bench_easy` | 0.25 | **0.38** | 0.26 | 0.30 | 0.28 | 0.24 | 0.27 |
+| `rfgm_include_base_44` | 0.25 | 0.26 | 0.27 | 0.27 | 0.29 | **0.31** | **0.33** |
+| `rf_oall_exams` | 0.25 |  |  |  | 0.27 | **0.28** | **0.30** |
 | `rf_include_base_44` | 0.25 | 0.26 | 0.26 | 0.27 | 0.28 | **0.29** | **0.31** |
+| `rf_mmmlu` | 0.25 |  |  |  | **0.27** | **0.28** | **0.29** |
 | `ibero_arc` | 0.25 | 0.26 | 0.27 | 0.27 | 0.28 | 0.29 | **0.30** |
+| `rf_m_mmlu` | 0.25 |  |  |  | **0.27** | **0.27** | **0.28** |
+| `evalita_llm_extra` | 0.25 |  |  |  | 0.27 | 0.27 | 0.28 |
+| `arc` | 0.25 | 0.25 | 0.25 | 0.26 | 0.27 | **0.28** | **0.31** |
+| `rf_careqa` | 0.25 |  |  |  | 0.26 | **0.27** | **0.29** |
 | `arc_mt` | 0.25 | 0.24 | 0.24 | 0.25 | 0.26 | **0.29** | **0.33** |
 | `rf_global_mmlu_full` | 0.25 | 0.26 | **0.26** | **0.26** | **0.27** | **0.27** | **0.29** |
+| `rf_oall_arabic_mmlu` | 0.25 |  |  |  | 0.25 | **0.26** | **0.27** |
+| `noreval` | 0.50 | 0.24 | 0.25 | 0.25 | 0.26 | 0.26 | 0.28 |
+| `m_truthfulqa_mc1` | 0.25 |  |  |  | 0.26 | 0.26 | 0.26 |
 | `acp_bench_mcq` | 0.25 | 0.25 | 0.25 | 0.25 | 0.25 | 0.25 | 0.26 |
+| `careqa` | 0.25 |  |  |  | 0.25 | 0.25 | 0.26 |
 | `include_base_44` | 0.25 | 0.25 | 0.25 | 0.25 | 0.25 | 0.25 | 0.25 |
+| `oall_exams` | 0.25 |  |  |  | 0.26 | 0.25 | 0.25 |
 | `mmlu` | 0.25 | 0.24 | 0.25 | 0.25 | 0.25 | 0.25 | 0.26 |
+| `oall_arabic_mmlu` | 0.25 |  |  |  | 0.25 | 0.25 | 0.25 |
 | `blend_sample` | 0.25 | 0.24 | 0.25 | 0.25 | 0.24 | 0.25 | 0.25 |
 | `bbh_mcq` | 0.17 | 0.24 | 0.25 | 0.25 | 0.25 | 0.25 | 0.25 |
-| `ceval` | 0.25 | 0.24 | 0.24 | 0.25 | 0.25 | 0.24 | 0.25 |
 | `global_mmlu_full` | 0.25 | 0.24 | 0.25 | 0.25 | 0.24 | 0.24 | 0.25 |
+| `ceval` | 0.25 | 0.24 | 0.24 | 0.25 | 0.25 | 0.24 | 0.25 |
+| `m_mmlu` | 0.25 |  |  |  | 0.24 | 0.24 | 0.25 |
+| `mmmlu` | 0.25 |  |  |  | 0.24 | 0.24 | 0.25 |
 | `belebele` | 0.25 | 0.24 | 0.24 | 0.24 | 0.24 | 0.24 | 0.25 |
-| `bangla` | 0.20 | 0.23 | 0.23 | 0.24 | 0.24 | 0.23 | 0.24 |
-| `noreval` | 0.25 | 0.22 | 0.23 | 0.23 | 0.24 | 0.24 | 0.25 |
-| `mathqa` | 0.20 | **0.22** | **0.22** | **0.22** | **0.23** | **0.24** | **0.25** |
-| `arc` | 0.25 | 0.21 | 0.21 | 0.22 | 0.23 | 0.25 | 0.28 |
+| `global_piqa_parallel_cloze` | 0.25 | 0.23 | 0.23 | 0.23 | 0.24 | 0.24 | 0.26 |
+| `mathqa` | 0.20 | **0.22** | **0.22** | **0.23** | **0.23** | **0.24** | **0.25** |
 | `truthfulqa-multi_mc1` | 0.23 | 0.24 | 0.24 | 0.23 | 0.23 | 0.23 | 0.22 |
-| `evalita_llm` | 0.20 | 0.20 | 0.20 | 0.21 | 0.22 | **0.23** | **0.24** |
-| `openbookqa` | 0.25 | 0.17 | 0.19 | 0.20 | 0.22 | 0.24 | 0.27 |
-| `global_piqa_parallel_cloze` | 0.25 | 0.21 | 0.21 | 0.21 | 0.21 | 0.22 | 0.23 |
-| `commonsense_qa` | 0.20 | 0.20 | 0.20 | 0.20 | 0.20 | 0.20 | 0.21 |
+| `truthfulqa_mc1` | 0.23 |  |  |  | 0.22 | 0.22 | 0.23 |
+| `commonsense_qa` | 0.20 | 0.20 | 0.20 | 0.20 | 0.20 | 0.20 | 0.20 |
+| `ibero_truthfulqa` | 0.25 | 0.19 | 0.19 | 0.18 | 0.21 | 0.21 | 0.21 |
 | `haerae` | 0.20 | 0.19 | 0.19 | 0.19 | 0.19 | 0.19 | 0.20 |
+| `kmmlu` | 0.25 | 0.13 | 0.15 | 0.16 | 0.20 | 0.23 | 0.25 |
 | `turkishmmlu` | 0.20 | 0.18 | 0.18 | 0.18 | 0.18 | 0.19 | 0.19 |
 | `xquad` |  | 0.00 | 0.00 | 0.00 | 0.01 | 0.03 | 0.07 |
+| `mela` |  | -0.00 | -0.01 | 0.00 | 0.00 | 0.01 | -0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1730,211 +1777,211 @@ subtitle: "English (en) · small→large size pair (bold ≥ 0.75)"
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `acp_bench_cloze_areach` | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `acp_bench_cloze_app` | **0.92** | **0.92** | **0.92** | **0.92** | **0.92** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `acp_bench_cloze_reach` | **0.92** | **0.92** | **0.92** | **0.92** | **0.92** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `acp_bench_cloze_prog` | **0.92** | **1.00** | **1.00** | **1.00** | **1.00** | **0.92** | **0.92** | **0.92** | **0.92** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `acp_bench_cloze_val` | **1.00** | **1.00** | **1.00** | **1.00** | **0.92** | **1.00** | **1.00** | **1.00** | **0.92** | **1.00** | **1.00** | **0.92** | **1.00** | **0.92** | **0.92** |
-| `bbh_cloze_sports_understanding` | **1.00** | **1.00** | **1.00** | **1.00** | **0.92** | **1.00** | **1.00** | **1.00** | **0.92** | **1.00** | **1.00** | **0.92** | **1.00** | **0.92** | **0.92** |
-| `acp_bench_cloze_just` | **0.85** | **1.00** | **0.85** | **0.92** | **0.92** | **0.92** | **0.85** | **0.92** | **0.92** | **0.92** | **1.00** | **1.00** | **0.92** | **0.92** | **1.00** |
-| `acp_bench_cloze_land` | **0.92** | **1.00** | **1.00** | **1.00** | **0.85** | **0.92** | **0.92** | **0.92** | **0.78** | **1.00** | **1.00** | **0.84** | **1.00** | **0.85** | **0.85** |
-| `bbpb_hellaswag` |  |  |  |  |  | **0.87** |  | **0.82** | **0.81** |  | **0.85** | **0.85** |  |  | **0.88** |
-| `rf_bbh_mcq_geometric_shapes` | **0.92** | **0.77** | **0.78** | **0.85** | **0.85** | **0.84** | **0.85** | **0.92** | **0.92** | 0.70 | **0.77** | **0.77** | **0.78** | **0.78** | **0.85** |
-| `bpb` | **0.95** | 0.75 | 0.66 | **0.87** | **0.89** | **0.79** | 0.71 | **0.91** | **0.89** | 0.74 | **0.79** | **0.78** | 0.72 | 0.69 | **0.91** |
-| `hellaswag` | **0.82** | **0.75** | **0.76** | **0.81** | **0.80** | **0.78** | **0.76** | **0.88** | **0.86** | **0.79** | 0.74 | **0.78** | **0.78** | **0.82** | **0.90** |
-| `xstorycloze` | 0.68 | 0.71 | 0.65 | 0.73 | 0.68 | 0.72 | 0.74 | **0.76** | 0.70 | **0.76** | 0.74 | **0.77** | **0.76** | 0.75 | **0.75** |
-| `lambada_openai_mt` | 0.68 | 0.67 | 0.68 | 0.71 | 0.69 | 0.65 | 0.73 | **0.76** | **0.78** | 0.64 | 0.65 | 0.64 | **0.79** | 0.74 | **0.86** |
-| `bbpb_xstorycloze` |  |  |  |  |  | 0.69 |  | **0.82** | 0.71 |  | 0.60 | 0.64 |  |  | **0.78** |
-| `bbpb_arc_easy` |  |  |  |  |  | **0.87** |  | 0.62 | 0.61 |  | 0.74 | 0.72 |  |  | 0.60 |
-| `bbpb_arc_challenge` |  |  |  |  |  | **0.86** |  | 0.61 | 0.61 |  | 0.68 | 0.73 |  |  | 0.61 |
-| `bbpb_rf_cultural_bench_easy_south_africa` |  |  |  |  |  | 0.68 |  | 0.70 | 0.59 |  | 0.70 | 0.60 |  |  | **0.80** |
-| `xwinograd` | 0.63 | 0.69 | 0.64 | 0.70 | 0.67 | 0.64 | 0.72 | 0.72 | 0.62 | 0.61 | 0.69 | **0.75** | 0.71 | 0.65 | 0.71 |
-| `arc_challenge` | 0.65 | 0.56 | 0.62 | 0.67 | 0.65 | 0.64 | 0.65 | **0.75** | 0.74 | **0.84** | 0.63 | 0.67 | 0.67 | 0.74 | 0.67 |
-| `rf_mmlu` | 0.71 | 0.59 | 0.64 | 0.71 | 0.73 | 0.68 | 0.60 | 0.69 | 0.64 | 0.69 | 0.70 | 0.59 | **0.80** | 0.67 | 0.68 |
-| `bbpb_rf_cultural_bench_easy_nigeria` |  |  |  |  |  | 0.71 |  | 0.63 | 0.66 |  | 0.72 | 0.63 |  |  | 0.65 |
-| `bbpb_rf_cultural_bench_easy_united_kingdom` |  |  |  |  |  | 0.69 |  | 0.66 | 0.67 |  | 0.65 | 0.65 |  |  | 0.62 |
-| `rf_global_mmlu_full` | 0.66 | 0.62 | 0.64 | 0.63 | 0.56 | 0.57 | 0.61 | 0.74 | 0.72 | 0.71 | 0.64 | 0.58 | 0.73 | 0.70 | 0.74 |
-| `arc_easy` | 0.65 | **0.76** | **0.78** | 0.63 | 0.57 | 0.68 | 0.68 | 0.65 | 0.50 | 0.74 | 0.61 | 0.62 | 0.68 | 0.58 | 0.60 |
-| `bbpb_cultural_bench_easy_united_states` |  |  |  |  |  | 0.70 |  | 0.61 | 0.58 |  | 0.70 | **0.76** |  |  | 0.54 |
-| `bbpb_rf_cultural_bench_easy_australia` |  |  |  |  |  | 0.66 |  | 0.63 | 0.64 |  | 0.73 | 0.66 |  |  | 0.55 |
-| `bbpb_xnli` |  |  |  |  |  | **0.77** |  | 0.62 | 0.55 |  | 0.61 | 0.60 |  |  | 0.69 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | 0.72 |  | 0.69 | 0.60 |  | 0.65 | 0.51 |  |  | 0.66 |
-| `bbpb_rf_mmlu` |  |  |  |  |  | **0.76** |  | 0.60 | 0.59 |  | 0.58 | 0.64 |  |  | 0.63 |
-| `bbh_cloze_formal_fallacies` | 0.42 | **0.77** | 0.71 | **0.86** | **1.00** | 0.36 | 0.32 | 0.35 | 0.42 | 0.65 | 0.71 | **0.77** | 0.59 | 0.71 | **0.86** |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | 0.67 |  | 0.59 | 0.59 |  | 0.67 | 0.62 |  |  | 0.58 |
-| `bbpb_mmlu` |  |  |  |  |  | 0.58 |  | 0.62 | 0.59 |  | 0.67 | 0.67 |  |  | 0.58 |
-| `bbpb_rf_commonsense_qa` |  |  |  |  |  | 0.61 |  | 0.64 | 0.62 |  | 0.68 | 0.54 |  |  | 0.58 |
-| `bbpb_rf_bbh_mcq_snarks` |  |  |  |  |  | 0.65 |  | 0.66 | 0.51 |  | 0.62 | 0.68 |  |  | 0.53 |
-| `bbpb_multiblimp` |  |  |  |  |  | 0.72 |  | 0.66 | 0.50 |  | 0.68 | 0.49 |  |  | 0.59 |
-| `bbpb_rf_belebele` |  |  |  |  |  | 0.58 |  | 0.71 | 0.53 |  | 0.65 | 0.61 |  |  | 0.55 |
-| `bbpb_belebele` |  |  |  |  |  | 0.74 |  | 0.64 | 0.53 |  | 0.59 | 0.59 |  |  | 0.52 |
-| `bbpb_rf_cultural_bench_easy_zimbabwe` |  |  |  |  |  | 0.55 |  | 0.65 | 0.58 |  | 0.50 | 0.62 |  |  | 0.65 |
-| `bbpb_cultural_bench_easy_south_africa` |  |  |  |  |  | 0.68 |  | 0.61 | 0.51 |  | 0.56 | 0.64 |  |  | 0.51 |
-| `bbpb_blend_sample` |  |  |  |  |  | 0.52 |  | 0.58 | 0.57 |  | 0.55 | 0.74 |  |  | 0.55 |
-| `bbpb_cultural_bench_easy_canada` |  |  |  |  |  | 0.62 |  | 0.66 | 0.51 |  | 0.52 | **0.76** |  |  | 0.42 |
-| `bbpb_cultural_bench_easy_zimbabwe` |  |  |  |  |  | 0.71 |  | 0.62 | 0.50 |  | 0.56 | 0.61 |  |  | 0.49 |
-| `bbpb_rf_cultural_bench_easy_united_states` |  |  |  |  |  | 0.66 |  | 0.54 | 0.61 |  | 0.48 | 0.60 |  |  | 0.58 |
-| `rf_commonsense_qa` | 0.59 | 0.65 | 0.55 | 0.66 | 0.54 | 0.50 | 0.63 | 0.54 | 0.52 | 0.61 | 0.63 | 0.49 | 0.54 | 0.61 | 0.56 |
-| `bbpb_bbh_mcq_logical_deduction_five_objects` |  |  |  |  |  | 0.52 |  | 0.46 | 0.54 |  | 0.68 | 0.64 |  |  | 0.59 |
-| `bbpb_truthfulqa_mc2` |  |  |  |  |  | 0.69 |  | 0.57 | 0.48 |  | 0.56 | 0.56 |  |  | 0.55 |
-| `bbpb_cultural_bench_easy_united_kingdom` |  |  |  |  |  | 0.53 |  | 0.49 | 0.54 |  | 0.64 | 0.70 |  |  | 0.52 |
-| `bbpb_rf_bbh_mcq_logical_deduction_five_objects` |  |  |  |  |  | 0.58 |  | 0.49 | 0.62 |  | 0.60 | 0.64 |  |  | 0.48 |
-| `bbpb_rf_bbh_mcq_logical_deduction_three_objects` |  |  |  |  |  | 0.60 |  | 0.45 | 0.67 |  | 0.58 | 0.62 |  |  | 0.48 |
-| `bbpb_rf_acp_bench_mcq_reach` |  |  |  |  |  | 0.62 |  | 0.57 | 0.44 |  | 0.58 | 0.65 |  |  | 0.52 |
-| `bbpb_rf_bbh_mcq_disambiguation_qa` |  |  |  |  |  | 0.61 |  | 0.50 | 0.49 |  | 0.66 | 0.61 |  |  | 0.50 |
-| `bbpb_rf_acp_bench_mcq_app` |  |  |  |  |  | 0.59 |  | 0.60 | 0.56 |  | 0.54 | 0.53 |  |  | 0.56 |
-| `bbpb_paws` |  |  |  |  |  | 0.59 |  | 0.57 | 0.64 |  | 0.51 | 0.44 |  |  | 0.62 |
-| `bbpb_openbookqa` |  |  |  |  |  | 0.67 |  | 0.63 | 0.56 |  | 0.44 | 0.59 |  |  | 0.49 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  | 0.52 |  | 0.60 | 0.54 |  | 0.65 | 0.55 |  |  | 0.51 |
-| `bbpb_rf_bbh_mcq_salient_translation_error_detection` |  |  |  |  |  | 0.68 |  | 0.52 | 0.58 |  | 0.43 | 0.69 |  |  | 0.45 |
-| `bbpb_rf_cultural_bench_easy_canada` |  |  |  |  |  | 0.63 |  | 0.51 | 0.53 |  | 0.55 | 0.53 |  |  | 0.61 |
-| `rf_belebele` | 0.44 | 0.47 | 0.57 | 0.56 | 0.46 | 0.51 | 0.70 | 0.67 | 0.55 | 0.54 | 0.54 | 0.57 | 0.69 | 0.52 | 0.58 |
-| `bbpb_rf_bbh_mcq_logical_deduction_seven_objects` |  |  |  |  |  | 0.51 |  | 0.49 | 0.61 |  | 0.58 | 0.64 |  |  | 0.52 |
-| `bbpb_cultural_bench_easy_australia` |  |  |  |  |  | 0.74 |  | 0.52 | 0.47 |  | 0.55 | 0.55 |  |  | 0.51 |
-| `bbpb_truthfulqa-multi_mc1` |  |  |  |  |  | 0.67 |  | 0.53 | 0.48 |  | 0.61 | 0.54 |  |  | 0.52 |
-| `bbpb_bbh_mcq_tracking_shuffled_objects_five_objects` |  |  |  |  |  | 0.65 |  | 0.45 | 0.47 |  | 0.65 | 0.52 |  |  | 0.58 |
-| `bbpb_rf_bbh_mcq_tracking_shuffled_objects_three_objects` |  |  |  |  |  | 0.69 |  | 0.54 | 0.48 |  | 0.55 | 0.57 |  |  | 0.49 |
-| `bbpb_rf_acp_bench_mcq_areach` |  |  |  |  |  | 0.59 |  | 0.54 | 0.56 |  | 0.49 | 0.55 |  |  | 0.58 |
-| `bbpb_cultural_bench_easy_nigeria` |  |  |  |  |  | 0.53 |  | 0.59 | 0.50 |  | 0.56 | 0.68 |  |  | 0.45 |
-| `bbpb_bbh_mcq_tracking_shuffled_objects_seven_objects` |  |  |  |  |  | 0.61 |  | 0.46 | 0.48 |  | 0.68 | 0.53 |  |  | 0.54 |
-| `bbpb_rf_bbh_mcq_tracking_shuffled_objects_seven_objects` |  |  |  |  |  | 0.65 |  | 0.57 | 0.50 |  | 0.48 | 0.53 |  |  | 0.57 |
-| `bbpb_rf_bbh_mcq_movie_recommendation` |  |  |  |  |  | 0.67 |  | 0.53 | 0.50 |  | 0.60 | 0.54 |  |  | 0.45 |
-| `bbpb_acp_bench_mcq_val` |  |  |  |  |  | 0.73 |  | 0.51 | 0.50 |  | 0.55 | 0.45 |  |  | 0.56 |
-| `rfgm_belebele` | 0.49 | 0.50 | 0.58 | 0.55 | 0.63 | 0.52 | 0.54 | 0.59 | 0.49 | 0.54 | 0.52 | 0.62 | 0.49 | 0.51 | 0.61 |
-| `bbpb_commonsense_qa` |  |  |  |  |  | 0.52 |  | 0.49 | 0.62 |  | 0.65 | 0.50 |  |  | 0.50 |
-| `bbpb_rf_bbh_mcq_tracking_shuffled_objects_five_objects` |  |  |  |  |  | 0.69 |  | 0.56 | 0.44 |  | 0.52 | 0.54 |  |  | 0.50 |
-| `bbpb_bbh_mcq_logical_deduction_seven_objects` |  |  |  |  |  | 0.52 |  | 0.43 | 0.48 |  | 0.62 | 0.58 |  |  | 0.63 |
-| `bbpb_rf_bbh_mcq_temporal_sequences` |  |  |  |  |  | 0.52 |  | 0.50 | 0.62 |  | 0.57 | 0.57 |  |  | 0.44 |
-| `bbpb_bbh_cloze_web_of_lies` |  |  |  |  |  | 0.58 |  | 0.54 | 0.52 |  | 0.58 | 0.45 |  |  | 0.56 |
-| `xnli` | 0.42 | 0.66 | 0.62 | 0.66 | 0.46 | 0.53 | 0.56 | 0.50 | 0.49 | 0.64 | 0.62 | 0.45 | 0.49 | 0.57 | 0.42 |
-| `bbpb_bbh_mcq_movie_recommendation` |  |  |  |  |  | 0.44 |  | 0.59 | 0.57 |  | 0.58 | 0.45 |  |  | 0.59 |
-| `bbpb_rf_bbh_mcq_date_understanding` |  |  |  |  |  | 0.54 |  | 0.44 | 0.58 |  | 0.48 | 0.48 |  |  | 0.68 |
-| `openbookqa` | 0.60 | 0.46 | 0.57 | 0.51 | 0.47 | 0.53 | 0.57 | 0.60 | 0.51 | 0.46 | 0.55 | 0.64 | 0.54 | 0.40 | 0.57 |
-| `mmlu` | 0.62 | 0.60 | 0.62 | 0.48 | 0.66 | 0.52 | 0.61 | 0.46 | 0.52 | 0.45 | 0.53 | 0.42 | 0.52 | 0.60 | 0.40 |
-| `bbpb_acp_bench_cloze_just` |  |  |  |  |  | 0.56 |  | 0.50 | 0.56 |  | 0.62 | 0.45 |  |  | 0.48 |
-| `bbpb_bbh_mcq_tracking_shuffled_objects_three_objects` |  |  |  |  |  | 0.64 |  | 0.46 | 0.46 |  | 0.59 | 0.47 |  |  | 0.55 |
-| `bbpb_bbh_mcq_salient_translation_error_detection` |  |  |  |  |  | 0.50 |  | 0.42 | 0.53 |  | 0.68 | 0.50 |  |  | 0.54 |
-| `bbpb_acp_bench_cloze_app` |  |  |  |  |  | 0.60 |  | 0.45 | 0.52 |  | 0.53 | 0.53 |  |  | 0.54 |
-| `global_mmlu_full` | 0.52 | 0.65 | 0.54 | 0.50 | 0.60 | 0.60 | 0.51 | 0.47 | 0.49 | 0.49 | 0.47 | 0.51 | 0.52 | 0.57 | 0.45 |
-| `bbpb_bbh_mcq_snarks` |  |  |  |  |  | 0.58 |  | 0.50 | 0.49 |  | 0.52 | 0.67 |  |  | 0.41 |
-| `rf_bbh_mcq_disambiguation_qa` | 0.48 | 0.50 | 0.42 | 0.57 | 0.49 | 0.66 | 0.60 | 0.40 | 0.58 | 0.65 | 0.40 | 0.60 | 0.40 | 0.61 | 0.54 |
-| `paws` | 0.48 | 0.45 | 0.45 | 0.56 | 0.59 | 0.59 | 0.42 | 0.60 | 0.62 | 0.43 | 0.52 | 0.67 | 0.48 | 0.44 | 0.57 |
-| `bbpb_bbh_cloze_navigate` |  |  |  |  |  | 0.59 |  | 0.51 | 0.46 |  | 0.50 | 0.50 |  |  | 0.58 |
-| `bbpb_rf_acp_bench_mcq_just` |  |  |  |  |  | 0.52 |  | 0.51 | 0.50 |  | 0.51 | 0.57 |  |  | 0.54 |
-| `bbpb_mathqa` |  |  |  |  |  | 0.63 |  | 0.59 | 0.46 |  | 0.45 | 0.51 |  |  | 0.50 |
-| `bbpb_bbh_cloze_boolean_expressions` |  |  |  |  |  | 0.50 |  | 0.59 | 0.42 |  | 0.64 | 0.50 |  |  | 0.49 |
-| `bbpb_bbh_cloze_sports_understanding` |  |  |  |  |  | 0.62 |  | 0.53 | 0.33 |  | 0.67 | 0.50 |  |  | 0.49 |
-| `bbpb_toxigen` |  |  |  |  |  | 0.54 |  | 0.59 | 0.50 |  | 0.56 | 0.52 |  |  | 0.42 |
-| `bbpb_bbh_mcq_geometric_shapes` |  |  |  |  |  | 0.62 |  | 0.47 | 0.52 |  | 0.48 | 0.53 |  |  | 0.50 |
-| `bbpb_acp_bench_mcq_app` |  |  |  |  |  | 0.60 |  | 0.58 | 0.52 |  | 0.36 | 0.53 |  |  | 0.52 |
-| `mathqa` | 0.50 | 0.54 | 0.53 | 0.54 | 0.48 | 0.49 | 0.47 | 0.46 | 0.42 | 0.54 | 0.61 | 0.56 | 0.50 | 0.50 | 0.63 |
-| `bbpb_rf_acp_bench_mcq_val` |  |  |  |  |  | 0.55 |  | 0.41 | 0.55 |  | 0.46 | 0.58 |  |  | 0.55 |
-| `bbpb_rf_bbh_mcq_geometric_shapes` |  |  |  |  |  | 0.54 |  | 0.41 | 0.50 |  | 0.53 | 0.57 |  |  | 0.54 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | 0.59 |  | 0.52 | 0.51 |  | 0.48 | 0.39 |  |  | 0.61 |
-| `bbpb_acp_bench_cloze_val` |  |  |  |  |  | 0.75 |  | 0.43 | 0.55 |  | 0.40 | 0.44 |  |  | 0.52 |
-| `bbpb_acp_bench_cloze_prog` |  |  |  |  |  | 0.62 |  | 0.56 | 0.59 |  | 0.56 | 0.33 |  |  | 0.41 |
-| `blend_sample` | 0.58 | 0.43 | 0.39 | 0.54 | 0.56 | 0.50 | 0.43 | 0.58 | 0.47 | 0.49 | 0.58 | 0.49 | 0.48 | 0.56 | 0.57 |
-| `toxigen` | 0.53 | 0.53 | 0.36 | 0.39 | 0.50 | 0.60 | 0.40 | 0.57 | 0.46 | 0.64 | 0.59 | 0.48 | 0.57 | 0.60 | 0.44 |
-| `bbpb_acp_bench_cloze_land` |  |  |  |  |  | 0.47 |  | 0.51 | 0.54 |  | 0.56 | 0.44 |  |  | 0.53 |
-| `bbpb_bbh_mcq_logical_deduction_three_objects` |  |  |  |  |  | 0.48 |  | 0.45 | 0.55 |  | 0.55 | 0.45 |  |  | 0.56 |
-| `commonsense_qa` | 0.48 | 0.61 | 0.44 | 0.44 | 0.51 | 0.59 | 0.46 | 0.52 | 0.63 | 0.43 | 0.56 | 0.56 | 0.43 | 0.46 | 0.50 |
-| `belebele` | 0.48 | 0.55 | 0.56 | 0.58 | 0.50 | 0.39 | 0.47 | 0.51 | 0.60 | 0.45 | 0.52 | 0.37 | 0.62 | 0.51 | 0.46 |
-| `bbpb_rf_bbh_mcq_hyperbaton` |  |  |  |  |  | 0.47 |  | 0.53 | 0.63 |  | 0.38 | 0.60 |  |  | 0.43 |
-| `bbpb_bbh_mcq_penguins_in_a_table` |  |  |  |  |  | 0.59 |  | 0.41 | 0.57 |  | 0.59 | 0.44 |  |  | 0.43 |
-| `bbpb_bbh_mcq_date_understanding` |  |  |  |  |  | 0.58 |  | 0.48 | 0.46 |  | 0.53 | 0.47 |  |  | 0.51 |
-| `bbpb_acp_bench_mcq_land` |  |  |  |  |  | 0.60 |  | 0.52 | 0.59 |  | 0.33 | 0.44 |  |  | 0.55 |
-| `bbpb_rf_bbh_mcq_penguins_in_a_table` |  |  |  |  |  | 0.36 |  | 0.45 | 0.52 |  | 0.67 | 0.50 |  |  | 0.52 |
-| `truthfulqa_mc2` | 0.49 | 0.61 | 0.61 | 0.62 | 0.46 | 0.40 | 0.46 | 0.31 | 0.34 | 0.58 | 0.52 | 0.56 | 0.54 | 0.49 | 0.53 |
-| `bbpb_bbh_mcq_hyperbaton` |  |  |  |  |  | 0.50 |  | 0.55 | 0.54 |  | 0.55 | 0.41 |  |  | 0.47 |
-| `bbpb_bbh_mcq_ruin_names` |  |  |  |  |  | 0.39 |  | 0.50 | 0.57 |  | 0.64 | 0.35 |  |  | 0.54 |
-| `cultural_bench_hard_united_states` | 0.55 | 0.57 | 0.53 | 0.47 | 0.58 | 0.45 | 0.44 | 0.58 | 0.53 | 0.37 | 0.51 | 0.53 | 0.51 | 0.48 | 0.36 |
-| `bbpb_acp_bench_cloze_areach` |  |  |  |  |  | 0.56 |  | 0.57 | 0.52 |  | 0.49 | 0.40 |  |  | 0.44 |
-| `bbpb_bbh_cloze_causal_judgement` |  |  |  |  |  | 0.44 |  | 0.54 | 0.47 |  | 0.52 | 0.42 |  |  | 0.58 |
-| `bbpb_bbh_cloze_formal_fallacies` |  |  |  |  |  | 0.62 |  | 0.64 | 0.43 |  | 0.59 | 0.24 |  |  | 0.44 |
-| `bbpb_rf_acp_bench_mcq_land` |  |  |  |  |  | 0.57 |  | 0.42 | 0.54 |  | 0.36 | 0.62 |  |  | 0.46 |
-| `bbpb_acp_bench_mcq_prog` |  |  |  |  |  | 0.53 |  | 0.51 | 0.56 |  | 0.42 | 0.40 |  |  | 0.54 |
-| `bbpb_rf_bbh_mcq_ruin_names` |  |  |  |  |  | 0.49 |  | 0.56 | 0.53 |  | 0.43 | 0.40 |  |  | 0.54 |
-| `bbpb_acp_bench_mcq_reach` |  |  |  |  |  | 0.51 |  | 0.54 | 0.56 |  | 0.36 | 0.44 |  |  | 0.54 |
-| `bbpb_bbh_mcq_temporal_sequences` |  |  |  |  |  | 0.50 |  | 0.44 | 0.48 |  | 0.53 | 0.50 |  |  | 0.50 |
-| `cultural_bench_hard_south_africa` | 0.41 | 0.52 | 0.53 | 0.46 | 0.62 | 0.48 | 0.46 | 0.54 | 0.45 | 0.47 | 0.46 | 0.48 | 0.58 | 0.50 | 0.40 |
-| `rf_bbh_mcq_movie_recommendation` | 0.55 | 0.52 | 0.59 | 0.38 | 0.46 | 0.53 | 0.57 | 0.43 | 0.52 | 0.48 | 0.51 | 0.44 | 0.48 | 0.46 | 0.40 |
-| `cultural_bench_hard_nigeria` | 0.43 | 0.49 | 0.45 | 0.38 | 0.58 | 0.51 | 0.45 | 0.48 | 0.54 | 0.41 | 0.42 | 0.56 | 0.65 | 0.46 | 0.46 |
-| `bbh_mcq_movie_recommendation` | 0.49 | 0.47 | 0.52 | 0.47 | 0.45 | 0.50 | 0.51 | 0.41 | 0.49 | 0.52 | 0.43 | 0.58 | 0.36 | 0.58 | 0.42 |
-| `rf_bbh_mcq_hyperbaton` | 0.58 | 0.46 | 0.47 | 0.41 | 0.63 | 0.54 | 0.39 | 0.42 | 0.48 | 0.49 | 0.35 | 0.44 | 0.57 | 0.51 | 0.43 |
-| `bbpb_acp_bench_mcq_just` |  |  |  |  |  | 0.55 |  | 0.53 | 0.56 |  | 0.33 | 0.38 |  |  | 0.49 |
-| `bbpb_acp_bench_mcq_areach` |  |  |  |  |  | 0.51 |  | 0.51 | 0.56 |  | 0.35 | 0.44 |  |  | 0.48 |
-| `rf_bbh_mcq_snarks` | 0.41 | 0.54 | 0.40 | 0.36 | 0.49 | 0.47 | 0.57 | 0.47 | 0.46 | 0.53 | 0.47 | 0.52 | 0.50 | 0.43 | 0.45 |
-| `global_piqa_parallel_cloze` | 0.37 | 0.55 | 0.49 | 0.46 | 0.44 | 0.48 | 0.45 | 0.39 | 0.50 | 0.42 | 0.53 | 0.52 | 0.52 | 0.50 | 0.47 |
-| `bbpb_rf_acp_bench_mcq_prog` |  |  |  |  |  | 0.39 |  | 0.49 | 0.47 |  | 0.44 | 0.57 |  |  | 0.46 |
-| `cultural_bench_easy_south_africa` | 0.46 | 0.63 | 0.43 | 0.54 | 0.43 | 0.56 | 0.46 | 0.49 | 0.42 | 0.46 | 0.47 | 0.41 | 0.42 | 0.44 | 0.38 |
-| `bbpb_bbh_mcq_disambiguation_qa` |  |  |  |  |  | 0.41 |  | 0.40 | 0.54 |  | 0.52 | 0.41 |  |  | 0.53 |
-| `rf_bbh_mcq_tracking_shuffled_objects_five_objects` | 0.52 | 0.47 | 0.56 | 0.41 | 0.54 | 0.41 | 0.46 | 0.48 | 0.46 | 0.45 | 0.38 | 0.52 | 0.37 | 0.55 | 0.43 |
-| `bbpb_bbh_mcq_reasoning_about_colored_objects` |  |  |  |  |  | 0.48 |  | 0.50 | 0.44 |  | 0.55 | 0.35 |  |  | 0.47 |
-| `bbpb_rf_bbh_mcq_reasoning_about_colored_objects` |  |  |  |  |  | 0.45 |  | 0.34 | 0.48 |  | 0.49 | 0.48 |  |  | 0.54 |
-| `bbh_mcq_ruin_names` | 0.52 | 0.35 | 0.34 | 0.49 | 0.41 | 0.51 | 0.33 | 0.43 | 0.58 | 0.51 | 0.42 | 0.53 | 0.51 | 0.46 | 0.56 |
-| `bbpb_acp_bench_cloze_reach` |  |  |  |  |  | 0.49 |  | 0.43 | 0.55 |  | 0.44 | 0.35 |  |  | 0.52 |
-| `rf_bbh_mcq_date_understanding` | 0.47 | 0.44 | 0.44 | 0.59 | 0.45 | 0.43 | 0.46 | 0.44 | 0.35 | 0.46 | 0.48 | 0.59 | 0.49 | 0.42 | 0.40 |
-| `rf_acp_bench_mcq_just` | 0.30 | 0.52 | 0.51 | 0.47 | 0.40 | 0.51 | 0.44 | 0.43 | 0.51 | 0.49 | 0.46 | 0.41 | 0.50 | 0.39 | 0.58 |
-| `rf_bbh_mcq_ruin_names` | 0.49 | 0.52 | 0.42 | 0.41 | 0.46 | 0.51 | 0.42 | 0.45 | 0.47 | 0.38 | 0.45 | 0.54 | 0.51 | 0.40 | 0.50 |
-| `truthfulqa-multi_mc1` | 0.45 | 0.40 | 0.46 | 0.47 | 0.55 | 0.56 | 0.50 | 0.48 | 0.41 | 0.44 | 0.49 | 0.40 | 0.44 | 0.49 | 0.37 |
-| `acp_bench_mcq_areach` | 0.40 | 0.45 | 0.43 | 0.41 | 0.42 | 0.44 | 0.47 | 0.50 | 0.45 | 0.45 | 0.53 | 0.38 | 0.57 | 0.43 | 0.52 |
-| `rf_bbh_mcq_reasoning_about_colored_objects` | 0.56 | 0.43 | 0.42 | 0.49 | 0.54 | 0.38 | 0.50 | 0.32 | 0.40 | 0.63 | 0.54 | 0.42 | 0.47 | 0.25 | 0.46 |
-| `acp_bench_mcq_app` | 0.48 | 0.39 | 0.49 | 0.48 | 0.36 | 0.56 | 0.42 | 0.54 | 0.37 | 0.37 | 0.48 | 0.46 | 0.39 | 0.46 | 0.53 |
-| `rf_bbh_mcq_logical_deduction_three_objects` | 0.40 | 0.45 | 0.44 | 0.48 | 0.58 | 0.42 | 0.40 | 0.41 | 0.47 | 0.50 | 0.47 | 0.46 | 0.52 | 0.42 | 0.35 |
-| `rf_cultural_bench_easy_canada` | 0.40 | 0.32 | 0.30 | 0.30 | 0.47 | 0.54 | 0.67 | 0.41 | 0.46 | 0.55 | 0.44 | 0.65 | 0.38 | 0.41 | 0.45 |
-| `rf_bbh_mcq_logical_deduction_seven_objects` | 0.48 | 0.36 | 0.41 | 0.43 | 0.40 | 0.45 | 0.48 | 0.44 | 0.47 | 0.45 | 0.44 | 0.45 | 0.48 | 0.51 | 0.47 |
-| `multiblimp` | 0.53 | 0.51 | 0.39 | 0.40 | 0.43 | 0.51 | 0.44 | 0.50 | 0.40 | 0.45 | 0.46 | 0.50 | 0.42 | 0.49 | 0.31 |
-| `cultural_bench_hard_canada` | 0.47 | 0.53 | 0.44 | 0.37 | 0.53 | 0.46 | 0.47 | 0.33 | 0.43 | 0.45 | 0.41 | 0.48 | 0.44 | 0.53 | 0.34 |
-| `cultural_bench_easy_united_kingdom` | 0.38 | 0.55 | 0.41 | 0.56 | 0.44 | 0.63 | 0.39 | 0.38 | 0.46 | 0.39 | 0.51 | 0.53 | 0.34 | 0.36 | 0.35 |
-| `acp_bench_mcq_val` | 0.35 | 0.50 | 0.33 | 0.44 | 0.36 | 0.44 | 0.45 | 0.59 | 0.50 | 0.53 | 0.39 | 0.49 | 0.40 | 0.42 | 0.47 |
-| `cultural_bench_hard_united_kingdom` | 0.27 | 0.40 | 0.44 | 0.45 | 0.54 | 0.42 | 0.48 | 0.50 | 0.45 | 0.34 | 0.39 | 0.41 | 0.55 | 0.58 | 0.38 |
-| `acp_bench_mcq_just` | 0.49 | 0.55 | 0.30 | 0.50 | 0.42 | 0.48 | 0.35 | 0.48 | 0.48 | 0.41 | 0.42 | 0.44 | 0.51 | 0.36 | 0.39 |
-| `rf_bbh_mcq_salient_translation_error_detection` | 0.39 | 0.36 | 0.38 | 0.42 | 0.54 | 0.46 | 0.43 | 0.34 | 0.46 | 0.42 | 0.55 | 0.42 | 0.45 | 0.47 | 0.50 |
-| `bbh_mcq_temporal_sequences` | 0.39 | 0.42 | 0.48 | 0.45 | 0.29 | 0.39 | 0.46 | 0.39 | 0.46 | 0.52 | 0.52 | 0.50 | 0.39 | 0.41 | 0.48 |
-| `rf_acp_bench_mcq_areach` | 0.50 | 0.51 | 0.41 | 0.51 | 0.47 | 0.45 | 0.40 | 0.36 | 0.41 | 0.44 | 0.50 | 0.45 | 0.33 | 0.42 | 0.38 |
-| `rf_bbh_mcq_tracking_shuffled_objects_three_objects` | 0.41 | 0.56 | 0.44 | 0.49 | 0.40 | 0.42 | 0.41 | 0.47 | 0.42 | 0.36 | 0.45 | 0.40 | 0.40 | 0.37 | 0.50 |
-| `rf_bbh_mcq_tracking_shuffled_objects_seven_objects` | 0.50 | 0.46 | 0.46 | 0.41 | 0.40 | 0.38 | 0.41 | 0.49 | 0.28 | 0.38 | 0.54 | 0.51 | 0.32 | 0.47 | 0.48 |
-| `acp_bench_mcq_prog` | 0.54 | 0.54 | 0.38 | 0.39 | 0.35 | 0.34 | 0.57 | 0.35 | 0.41 | 0.28 | 0.50 | 0.46 | 0.34 | 0.53 | 0.52 |
-| `rf_bbh_mcq_logical_deduction_five_objects` | 0.43 | 0.42 | 0.45 | 0.54 | 0.34 | 0.26 | 0.48 | 0.28 | 0.47 | 0.46 | 0.52 | 0.52 | 0.42 | 0.47 | 0.39 |
-| `bbh_mcq_date_understanding` | 0.41 | 0.39 | 0.46 | 0.29 | 0.35 | 0.41 | 0.41 | 0.50 | 0.59 | 0.41 | 0.56 | 0.40 | 0.41 | 0.39 | 0.43 |
-| `bbh_mcq_snarks` | 0.50 | 0.35 | 0.50 | 0.49 | 0.41 | 0.44 | 0.47 | 0.37 | 0.42 | 0.40 | 0.38 | 0.50 | 0.33 | 0.39 | 0.44 |
-| `acp_bench_mcq_land` | 0.45 | 0.36 | 0.37 | 0.40 | 0.58 | 0.47 | 0.45 | 0.45 | 0.42 | 0.43 | 0.47 | 0.33 | 0.43 | 0.41 | 0.37 |
-| `cultural_bench_easy_zimbabwe` | 0.43 | 0.61 | 0.36 | 0.31 | 0.42 | 0.48 | 0.44 | 0.36 | 0.46 | 0.36 | 0.44 | 0.50 | 0.43 | 0.50 | 0.28 |
-| `bbh_mcq_disambiguation_qa` | 0.42 | 0.34 | 0.36 | 0.54 | 0.33 | 0.27 | 0.35 | 0.42 | 0.38 | 0.55 | 0.48 | 0.47 | 0.51 | 0.45 | 0.46 |
-| `cultural_bench_hard_zimbabwe` | 0.42 | 0.32 | 0.42 | 0.29 | 0.60 | 0.39 | 0.39 | 0.45 | 0.53 | 0.34 | 0.46 | 0.43 | 0.51 | 0.48 | 0.31 |
-| `rf_acp_bench_mcq_app` | 0.42 | 0.35 | 0.41 | 0.44 | 0.55 | 0.33 | 0.50 | 0.45 | 0.43 | 0.30 | 0.44 | 0.34 | 0.50 | 0.38 | 0.49 |
-| `bbh_mcq_logical_deduction_five_objects` | 0.33 | 0.40 | 0.45 | 0.38 | 0.37 | 0.33 | 0.42 | 0.35 | 0.38 | 0.47 | 0.50 | 0.37 | 0.52 | 0.54 | 0.51 |
-| `bbh_mcq_penguins_in_a_table` | 0.41 | 0.34 | 0.39 | 0.35 | 0.21 | 0.48 | 0.44 | 0.53 | 0.51 | 0.44 | 0.54 | 0.39 | 0.46 | 0.36 | 0.42 |
-| `rf_acp_bench_mcq_reach` | 0.42 | 0.40 | 0.46 | 0.42 | 0.43 | 0.31 | 0.52 | 0.43 | 0.40 | 0.41 | 0.45 | 0.35 | 0.48 | 0.42 | 0.34 |
-| `bbh_mcq_reasoning_about_colored_objects` | 0.49 | 0.36 | 0.22 | 0.30 | 0.50 | 0.42 | 0.26 | 0.37 | 0.51 | 0.45 | 0.55 | 0.52 | 0.48 | 0.35 | 0.46 |
-| `cultural_bench_hard_australia` | 0.44 | 0.41 | 0.42 | 0.27 | 0.47 | 0.42 | 0.50 | 0.39 | 0.44 | 0.41 | 0.39 | 0.41 | 0.53 | 0.40 | 0.30 |
-| `cultural_bench_easy_canada` | 0.39 | 0.44 | 0.36 | 0.44 | 0.39 | 0.47 | 0.42 | 0.51 | 0.28 | 0.44 | 0.54 | 0.44 | 0.44 | 0.33 | 0.29 |
-| `rf_acp_bench_mcq_land` | 0.42 | 0.36 | 0.48 | 0.46 | 0.47 | 0.40 | 0.39 | 0.43 | 0.47 | 0.48 | 0.35 | 0.46 | 0.25 | 0.37 | 0.39 |
-| `acp_bench_mcq_reach` | 0.46 | 0.34 | 0.42 | 0.37 | 0.40 | 0.46 | 0.42 | 0.39 | 0.36 | 0.38 | 0.48 | 0.34 | 0.53 | 0.41 | 0.38 |
-| `cultural_bench_easy_united_states` | 0.38 | 0.47 | 0.34 | 0.51 | 0.37 | 0.52 | 0.42 | 0.32 | 0.48 | 0.30 | 0.39 | 0.47 | 0.36 | 0.38 | 0.36 |
-| `rf_bbh_mcq_penguins_in_a_table` | 0.44 | 0.31 | 0.39 | 0.32 | 0.36 | 0.32 | 0.45 | 0.29 | 0.56 | 0.42 | 0.58 | 0.42 | 0.37 | 0.45 | 0.35 |
-| `rf_bbh_mcq_temporal_sequences` | 0.53 | 0.34 | 0.32 | 0.32 | 0.48 | 0.34 | 0.35 | 0.30 | 0.50 | 0.43 | 0.38 | 0.31 | 0.52 | 0.42 | 0.48 |
-| `cultural_bench_easy_australia` | 0.39 | 0.43 | 0.34 | 0.34 | 0.41 | 0.53 | 0.48 | 0.42 | 0.43 | 0.25 | 0.43 | 0.32 | 0.38 | 0.41 | 0.44 |
-| `bbh_mcq_tracking_shuffled_objects_five_objects` | 0.27 | 0.30 | 0.40 | 0.41 | 0.26 | 0.41 | 0.45 | 0.35 | 0.47 | 0.51 | 0.47 | 0.44 | 0.48 | 0.35 | 0.42 |
-| `rf_acp_bench_mcq_val` | 0.46 | 0.48 | 0.38 | 0.34 | 0.39 | 0.46 | 0.53 | 0.50 | 0.24 | 0.34 | 0.32 | 0.31 | 0.49 | 0.29 | 0.41 |
-| `bbh_mcq_tracking_shuffled_objects_three_objects` | 0.36 | 0.42 | 0.30 | 0.30 | 0.40 | 0.40 | 0.37 | 0.40 | 0.40 | 0.42 | 0.49 | 0.48 | 0.41 | 0.31 | 0.45 |
-| `cultural_bench_easy_nigeria` | 0.42 | 0.35 | 0.27 | 0.38 | 0.33 | 0.47 | 0.48 | 0.45 | 0.30 | 0.34 | 0.49 | 0.31 | 0.45 | 0.39 | 0.42 |
-| `rf_acp_bench_mcq_prog` | 0.40 | 0.39 | 0.27 | 0.34 | 0.52 | 0.37 | 0.45 | 0.34 | 0.38 | 0.31 | 0.42 | 0.40 | 0.44 | 0.39 | 0.40 |
-| `rf_cultural_bench_easy_australia` | 0.24 | 0.36 | 0.38 | 0.24 | 0.39 | 0.43 | 0.38 | 0.37 | 0.40 | 0.49 | 0.42 | 0.50 | 0.49 | 0.40 | 0.32 |
-| `bbh_mcq_logical_deduction_seven_objects` | 0.48 | 0.25 | 0.29 | 0.20 | 0.27 | 0.39 | 0.34 | 0.34 | 0.37 | 0.51 | 0.37 | 0.43 | 0.46 | 0.53 | 0.39 |
-| `bbh_cloze_navigate` | 0.34 | 0.49 | 0.22 | 0.27 | 0.39 | 0.57 | 0.31 | 0.36 | 0.34 | 0.38 | 0.45 | 0.43 | 0.34 | 0.37 | 0.31 |
-| `bbh_mcq_logical_deduction_three_objects` | 0.30 | 0.32 | 0.33 | 0.19 | 0.25 | 0.24 | 0.48 | 0.42 | 0.43 | 0.40 | 0.45 | 0.41 | 0.39 | 0.50 | 0.45 |
-| `bbh_mcq_salient_translation_error_detection` | 0.31 | 0.23 | 0.26 | 0.39 | 0.24 | 0.35 | 0.30 | 0.38 | 0.38 | 0.50 | 0.41 | 0.48 | 0.43 | 0.43 | 0.48 |
-| `bbh_cloze_web_of_lies` | 0.34 | 0.50 | 0.39 | 0.33 | 0.26 | 0.36 | 0.35 | 0.41 | 0.33 | 0.43 | 0.43 | 0.30 | 0.34 | 0.37 | 0.38 |
-| `bbh_cloze_causal_judgement` | 0.38 | 0.45 | 0.45 | 0.40 | 0.37 | 0.38 | 0.34 | 0.30 | 0.29 | 0.29 | 0.34 | 0.46 | 0.36 | 0.40 | 0.32 |
-| `bbh_mcq_hyperbaton` | 0.38 | 0.41 | 0.26 | 0.32 | 0.27 | 0.35 | 0.35 | 0.26 | 0.34 | 0.28 | 0.46 | 0.43 | 0.42 | 0.39 | 0.42 |
-| `rf_cultural_bench_easy_united_kingdom` | 0.26 | 0.43 | 0.29 | 0.27 | 0.30 | 0.33 | 0.38 | 0.37 | 0.38 | 0.31 | 0.36 | 0.41 | 0.45 | 0.29 | 0.36 |
-| `rf_cultural_bench_easy_south_africa` | 0.35 | 0.39 | 0.35 | 0.40 | 0.22 | 0.36 | 0.32 | 0.24 | 0.25 | 0.44 | 0.47 | 0.34 | 0.41 | 0.29 | 0.35 |
-| `bbh_cloze_boolean_expressions` | 0.22 | 0.44 | 0.37 | 0.40 | 0.35 | 0.20 | 0.39 | 0.25 | 0.30 | 0.39 | 0.40 | 0.42 | 0.45 | 0.28 | 0.31 |
-| `bbh_mcq_tracking_shuffled_objects_seven_objects` | 0.26 | 0.31 | 0.23 | 0.29 | 0.27 | 0.35 | 0.26 | 0.28 | 0.29 | 0.42 | 0.27 | 0.47 | 0.40 | 0.52 | 0.34 |
-| `rf_cultural_bench_easy_nigeria` | 0.41 | 0.25 | 0.32 | 0.31 | 0.38 | 0.31 | 0.41 | 0.35 | 0.38 | 0.30 | 0.35 | 0.29 | 0.29 | 0.30 | 0.33 |
-| `rf_cultural_bench_easy_zimbabwe` | 0.41 | 0.31 | 0.32 | 0.39 | 0.39 | 0.37 | 0.22 | 0.26 | 0.33 | 0.37 | 0.25 | 0.40 | 0.26 | 0.34 | 0.33 |
-| `rf_cultural_bench_easy_united_states` | 0.43 | 0.40 | 0.32 | 0.27 | 0.38 | 0.28 | 0.27 | 0.36 | 0.33 | 0.34 | 0.31 | 0.24 | 0.23 | 0.38 | 0.36 |
-| `bbh_mcq_geometric_shapes` | 0.42 | 0.15 | 0.14 | 0.18 | 0.21 | 0.31 | 0.23 | 0.26 | 0.18 | 0.45 | 0.57 | 0.44 | 0.39 | 0.46 | 0.38 |
+| `acp_bench_cloze_reach` | **0.94** | **0.93** | **0.93** | **0.93** | **0.93** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `bbh_cloze_sports_understanding` | **1.00** | **1.00** | **1.00** | **1.00** | **0.93** | **1.00** | **1.00** | **1.00** | **0.93** | **1.00** | **1.00** | **0.93** | **1.00** | **0.93** | **0.93** |
+| `acp_bench_cloze_val` | **1.00** | **1.00** | **1.00** | **1.00** | **0.93** | **1.00** | **1.00** | **1.00** | **0.93** | **1.00** | **1.00** | **0.93** | **1.00** | **0.93** | **0.93** |
+| `acp_bench_cloze_prog` | **0.88** | **1.00** | **1.00** | **1.00** | **1.00** | **0.87** | **0.86** | **0.86** | **0.86** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `acp_bench_cloze_land` | **0.94** | **1.00** | **1.00** | **1.00** | **0.86** | **0.93** | **0.93** | **0.93** | **0.80** | **1.00** | **1.00** | **0.86** | **1.00** | **0.86** | **0.86** |
+| `acp_bench_cloze_app` | **0.82** | **0.81** | **0.93** | **0.93** | **0.93** | **0.87** | **0.93** | **0.93** | **0.93** | **0.93** | **0.93** | **0.93** | **1.00** | **1.00** | **1.00** |
+| `acp_bench_cloze_just` | **0.77** | **0.81** | **0.87** | **0.93** | **0.93** | **0.75** | **0.80** | **0.86** | **0.86** | **0.80** | **0.86** | **0.86** | **0.93** | **0.93** | **1.00** |
+| `rf_bbh_mcq_geometric_shapes` | **0.94** | **0.81** | **0.80** | **0.86** | **0.86** | **0.87** | **0.86** | **0.93** | **0.93** | 0.73 | **0.79** | **0.79** | **0.80** | **0.80** | **0.86** |
+| `hellaswag` | **0.86** | **0.78** | 0.68 | **0.81** | **0.79** | **0.82** | **0.76** | **0.89** | **0.85** | **0.80** | **0.81** | **0.79** | **0.79** | **0.76** | **0.92** |
+| `bpb` | **0.94** | 0.73 | 0.65 | **0.87** | **0.89** | 0.75 | 0.70 | **0.91** | **0.89** | 0.75 | **0.78** | **0.78** | 0.72 | 0.69 | **0.91** |
+| `bbpb_hellaswag` | **0.89** | 0.74 | 0.72 | **0.78** | 0.75 | **0.78** | **0.78** | **0.83** | **0.77** | **0.78** | **0.78** | 0.69 | **0.76** | 0.67 | **0.82** |
+| `xstorycloze` | 0.68 | 0.68 | 0.65 | 0.70 | 0.68 | 0.69 | 0.73 | 0.71 | 0.69 | 0.72 | 0.71 | 0.73 | 0.72 | 0.72 | **0.75** |
+| `lambada_openai_mt` | 0.67 | 0.67 | 0.66 | 0.71 | 0.68 | 0.64 | 0.73 | 0.74 | **0.79** | 0.62 | 0.61 | 0.62 | **0.77** | 0.73 | **0.84** |
+| `bbpb_xstorycloze` | 0.71 | 0.60 | 0.70 | **0.76** | 0.66 | 0.72 | 0.62 | **0.77** | 0.68 | 0.57 | 0.59 | 0.62 | 0.71 | 0.63 | **0.77** |
+| `arc_easy` | 0.60 | 0.71 | 0.73 | 0.70 | 0.73 | 0.64 | 0.61 | 0.66 | 0.57 | 0.67 | 0.71 | 0.61 | 0.64 | 0.67 | 0.63 |
+| `bbpb_rf_global_mmlu_full` | 0.70 | 0.67 | 0.70 | 0.71 | 0.60 | 0.66 | 0.65 | 0.67 | 0.62 | 0.74 | 0.58 | 0.60 | 0.61 | 0.70 | 0.66 |
+| `xwinograd` | 0.64 | 0.68 | 0.60 | 0.68 | 0.67 | 0.66 | 0.65 | 0.66 | 0.59 | 0.56 | 0.65 | 0.72 | 0.70 | 0.63 | 0.71 |
+| `rf_mmlu` | 0.70 | 0.57 | 0.58 | 0.66 | 0.68 | 0.66 | 0.56 | 0.65 | 0.62 | 0.67 | 0.70 | 0.59 | **0.82** | 0.66 | 0.67 |
+| `rf_global_mmlu_full` | 0.64 | 0.55 | 0.62 | 0.64 | 0.53 | 0.57 | 0.62 | 0.74 | 0.71 | 0.71 | 0.62 | 0.61 | 0.72 | 0.70 | 0.71 |
+| `bbpb_rf_cultural_bench_easy_australia` | 0.70 | **0.78** | 0.58 | 0.67 | 0.64 | 0.65 | 0.62 | 0.61 | 0.65 | 0.55 | 0.72 | 0.65 | 0.58 | 0.69 | 0.56 |
+| `bbpb_global_mmlu_full` | 0.61 | 0.66 | 0.72 | 0.62 | 0.67 | 0.68 | 0.69 | 0.61 | 0.57 | 0.73 | 0.67 | 0.57 | 0.68 | 0.58 | 0.57 |
+| `bbh_cloze_formal_fallacies` | 0.47 | 0.70 | 0.74 | **0.87** | **1.00** | 0.34 | 0.38 | 0.40 | 0.47 | 0.63 | 0.69 | 0.74 | 0.63 | 0.74 | **0.87** |
+| `bbpb_rf_mmlu` | 0.64 | 0.71 | 0.65 | 0.75 | 0.66 | 0.67 | 0.63 | 0.58 | 0.57 | 0.58 | 0.59 | 0.58 | 0.68 | 0.67 | 0.64 |
+| `bbpb_arc_challenge` | 0.62 | 0.71 | **0.77** | 0.67 | 0.66 | 0.62 | 0.65 | 0.58 | 0.61 | 0.64 | 0.63 | 0.53 | 0.63 | 0.63 | 0.61 |
+| `bbpb_rf_cultural_bench_easy_south_africa` | 0.67 | 0.68 | 0.65 | 0.69 | 0.63 | 0.56 | 0.65 | 0.69 | 0.59 | 0.62 | 0.63 | 0.61 | 0.54 | 0.52 | **0.78** |
+| `bbpb_arc_easy` | 0.65 | 0.72 | 0.74 | 0.63 | 0.62 | 0.59 | 0.64 | 0.59 | 0.60 | 0.61 | 0.65 | 0.56 | 0.64 | 0.64 | 0.60 |
+| `arc_challenge` | 0.59 | 0.51 | 0.57 | 0.61 | 0.63 | 0.57 | 0.69 | 0.63 | 0.61 | 0.62 | 0.66 | 0.69 | 0.66 | 0.66 | 0.75 |
+| `bbpb_rf_cultural_bench_easy_united_kingdom` | 0.64 | 0.70 | 0.65 | 0.67 | 0.58 | 0.64 | 0.67 | 0.64 | 0.70 | 0.67 | 0.55 | 0.55 | 0.59 | 0.54 | 0.62 |
+| `bbpb_rf_cultural_bench_easy_nigeria` | 0.73 | 0.65 | 0.55 | 0.66 | 0.67 | 0.66 | 0.55 | 0.64 | 0.66 | 0.48 | 0.66 | 0.65 | 0.58 | 0.60 | 0.66 |
+| `bbpb_belebele` | 0.59 | 0.69 | 0.61 | 0.57 | 0.59 | 0.66 | 0.62 | 0.63 | 0.54 | 0.68 | 0.62 | 0.61 | 0.59 | 0.69 | 0.53 |
+| `bbpb_rf_belebele` | 0.75 | 0.58 | 0.71 | 0.66 | 0.54 | 0.55 | 0.63 | 0.66 | 0.52 | 0.67 | 0.62 | 0.54 | 0.66 | 0.58 | 0.54 |
+| `bbpb_xnli` | 0.69 | 0.61 | 0.67 | 0.57 | 0.56 | 0.67 | 0.61 | 0.56 | 0.54 | 0.66 | 0.54 | 0.61 | 0.56 | 0.65 | 0.66 |
+| `bbpb_mmlu` | 0.55 | 0.62 | 0.68 | 0.56 | 0.56 | 0.58 | 0.69 | 0.63 | 0.57 | 0.61 | 0.61 | 0.62 | 0.67 | 0.55 | 0.55 |
+| `bbpb_openbookqa` | 0.55 | 0.63 | 0.57 | 0.48 | 0.60 | 0.67 | 0.68 | 0.66 | 0.55 | 0.68 | 0.55 | 0.61 | 0.57 | 0.66 | 0.48 |
+| `bbpb_rf_commonsense_qa` | 0.62 | 0.56 | 0.63 | 0.59 | 0.60 | 0.60 | 0.63 | 0.62 | 0.63 | 0.53 | 0.61 | 0.60 | 0.49 | 0.65 | 0.58 |
+| `bbpb_multiblimp` | 0.55 | 0.58 | 0.66 | 0.71 | 0.65 | 0.62 | 0.56 | 0.57 | 0.47 | 0.56 | 0.55 | 0.51 | 0.64 | 0.65 | 0.63 |
+| `bbpb_truthfulqa-multi_mc1` | 0.68 | 0.63 | 0.62 | 0.60 | 0.54 | 0.59 | 0.51 | 0.54 | 0.50 | 0.64 | 0.58 | 0.57 | 0.69 | 0.55 | 0.54 |
+| `bbpb_truthfulqa_mc2` | 0.61 | 0.65 | 0.57 | 0.54 | 0.57 | 0.59 | 0.61 | 0.55 | 0.49 | 0.57 | 0.55 | 0.64 | 0.74 | 0.50 | 0.56 |
+| `bbpb_rf_bbh_mcq_snarks` | 0.66 | 0.52 | 0.71 | 0.69 | 0.43 | 0.53 | 0.68 | 0.67 | 0.53 | 0.54 | 0.58 | 0.65 | 0.60 | 0.37 | 0.54 |
+| `bbpb_rf_cultural_bench_easy_zimbabwe` | 0.55 | 0.58 | 0.67 | 0.58 | 0.65 | 0.49 | 0.55 | 0.62 | 0.58 | 0.44 | 0.45 | 0.64 | 0.59 | 0.61 | 0.65 |
+| `bbpb_cultural_bench_easy_zimbabwe` | 0.53 | 0.60 | 0.59 | 0.58 | 0.65 | 0.63 | 0.66 | 0.57 | 0.49 | 0.64 | 0.54 | 0.60 | 0.57 | 0.48 | 0.51 |
+| `bbpb_paws` | 0.63 | 0.57 | 0.57 | 0.63 | 0.57 | 0.55 | 0.56 | 0.54 | 0.60 | 0.48 | 0.54 | 0.49 | 0.56 | 0.63 | 0.62 |
+| `rf_commonsense_qa` | 0.59 | 0.65 | 0.55 | 0.66 | 0.57 | 0.49 | 0.58 | 0.52 | 0.51 | 0.60 | 0.61 | 0.47 | 0.56 | 0.62 | 0.58 |
+| `bbpb_global_piqa_parallel_cloze` | 0.68 | 0.47 | 0.66 | 0.56 | 0.51 | 0.60 | 0.61 | 0.65 | 0.55 | 0.53 | 0.53 | 0.59 | 0.55 | 0.54 | 0.52 |
+| `bbpb_rf_acp_bench_mcq_app` | 0.68 | 0.59 | 0.54 | 0.54 | 0.58 | 0.67 | 0.50 | 0.59 | 0.55 | 0.46 | 0.58 | 0.49 | 0.57 | 0.56 | 0.57 |
+| `bbpb_cultural_bench_easy_united_states` | 0.51 | 0.53 | 0.58 | 0.55 | 0.63 | 0.63 | 0.56 | 0.57 | 0.57 | 0.50 | 0.58 | 0.67 | 0.60 | 0.46 | 0.54 |
+| `bbpb_cultural_bench_easy_canada` | 0.46 | 0.57 | 0.51 | 0.52 | 0.57 | 0.62 | 0.67 | 0.67 | 0.53 | 0.61 | 0.60 | 0.57 | 0.64 | 0.41 | 0.46 |
+| `bbpb_rf_bbh_mcq_movie_recommendation` | 0.63 | 0.50 | 0.69 | 0.48 | 0.54 | 0.61 | 0.71 | 0.55 | 0.51 | 0.49 | 0.61 | 0.47 | 0.53 | 0.59 | 0.46 |
+| `bbpb_rf_cultural_bench_easy_united_states` | 0.62 | 0.64 | 0.55 | 0.62 | 0.59 | 0.54 | 0.50 | 0.55 | 0.61 | 0.49 | 0.53 | 0.52 | 0.45 | 0.53 | 0.59 |
+| `rf_belebele` | 0.45 | 0.45 | 0.56 | 0.55 | 0.49 | 0.58 | 0.68 | 0.64 | 0.57 | 0.54 | 0.56 | 0.56 | 0.67 | 0.50 | 0.56 |
+| `bbpb_commonsense_qa` | 0.59 | 0.53 | 0.61 | 0.60 | 0.50 | 0.52 | 0.51 | 0.48 | 0.61 | 0.62 | 0.62 | 0.51 | 0.57 | 0.54 | 0.49 |
+| `bbpb_rfgm_belebele` | 0.72 | 0.60 | 0.62 | 0.47 | 0.49 | 0.55 | 0.62 | 0.48 | 0.51 | 0.67 | 0.50 | 0.42 | 0.56 | 0.47 | 0.63 |
+| `bbpb_cultural_bench_easy_south_africa` | 0.50 | 0.56 | 0.52 | 0.60 | 0.60 | 0.58 | 0.63 | 0.58 | 0.50 | 0.57 | 0.51 | 0.57 | 0.57 | 0.50 | 0.51 |
+| `bbpb_cultural_bench_easy_united_kingdom` | 0.51 | 0.63 | 0.61 | 0.52 | 0.58 | 0.58 | 0.61 | 0.49 | 0.51 | 0.55 | 0.53 | 0.62 | 0.52 | 0.47 | 0.50 |
+| `bbpb_rf_bbh_mcq_date_understanding` | 0.60 | 0.63 | 0.53 | 0.46 | 0.47 | 0.54 | 0.54 | 0.48 | 0.56 | 0.52 | 0.52 | 0.54 | 0.55 | 0.62 | 0.65 |
+| `bbpb_cultural_bench_easy_nigeria` | 0.55 | 0.53 | 0.58 | 0.48 | 0.59 | 0.55 | 0.72 | 0.57 | 0.49 | 0.52 | 0.53 | 0.56 | 0.60 | 0.46 | 0.47 |
+| `bbpb_rf_bbh_mcq_logical_deduction_five_objects` | 0.52 | 0.55 | 0.61 | 0.46 | 0.58 | 0.61 | 0.54 | 0.47 | 0.63 | 0.50 | 0.53 | 0.62 | 0.55 | 0.50 | 0.49 |
+| `bbpb_blend_sample` | 0.57 | 0.48 | 0.53 | 0.44 | 0.58 | 0.48 | 0.54 | 0.58 | 0.59 | 0.64 | 0.46 | 0.59 | 0.47 | 0.63 | 0.55 |
+| `bbpb_bbh_cloze_web_of_lies` | 0.67 | 0.58 | 0.45 | 0.54 | 0.51 | 0.61 | 0.47 | 0.54 | 0.54 | 0.50 | 0.61 | 0.49 | 0.50 | 0.51 | 0.57 |
+| `bbpb_rf_acp_bench_mcq_areach` | 0.66 | 0.56 | 0.55 | 0.56 | 0.50 | 0.54 | 0.49 | 0.53 | 0.53 | 0.45 | 0.61 | 0.50 | 0.46 | 0.56 | 0.58 |
+| `openbookqa` | 0.55 | 0.48 | 0.61 | 0.47 | 0.53 | 0.63 | 0.49 | 0.52 | 0.44 | 0.52 | 0.61 | 0.55 | 0.60 | 0.57 | 0.49 |
+| `bbpb_acp_bench_mcq_land` | 0.60 | 0.56 | 0.54 | 0.59 | 0.62 | 0.58 | 0.53 | 0.49 | 0.59 | 0.50 | 0.44 | 0.49 | 0.49 | 0.47 | 0.54 |
+| `bbpb_acp_bench_cloze_land` | 0.52 | 0.55 | 0.55 | 0.59 | 0.48 | 0.53 | 0.45 | 0.52 | 0.56 | 0.58 | 0.53 | 0.49 | 0.60 | 0.54 | 0.55 |
+| `bbpb_acp_bench_mcq_areach` | 0.58 | 0.58 | 0.52 | 0.47 | 0.62 | 0.59 | 0.51 | 0.50 | 0.57 | 0.60 | 0.44 | 0.54 | 0.54 | 0.51 | 0.48 |
+| `bbpb_rf_bbh_mcq_logical_deduction_three_objects` | 0.57 | 0.51 | 0.65 | 0.44 | 0.56 | 0.64 | 0.47 | 0.45 | 0.67 | 0.48 | 0.52 | 0.60 | 0.52 | 0.46 | 0.49 |
+| `rfgm_belebele` | 0.47 | 0.48 | 0.55 | 0.51 | 0.63 | 0.50 | 0.51 | 0.58 | 0.48 | 0.58 | 0.56 | 0.57 | 0.54 | 0.49 | 0.57 |
+| `bbpb_cultural_bench_easy_australia` | 0.54 | 0.51 | 0.56 | 0.50 | 0.63 | 0.57 | 0.71 | 0.51 | 0.46 | 0.54 | 0.49 | 0.54 | 0.50 | 0.42 | 0.51 |
+| `bbpb_rf_bbh_mcq_ruin_names` | 0.52 | 0.45 | 0.49 | 0.61 | 0.41 | 0.61 | 0.54 | 0.53 | 0.54 | 0.52 | 0.47 | 0.53 | 0.65 | 0.60 | 0.54 |
+| `bbpb_acp_bench_mcq_val` | 0.67 | 0.58 | 0.60 | 0.43 | 0.46 | 0.58 | 0.64 | 0.51 | 0.50 | 0.66 | 0.42 | 0.42 | 0.51 | 0.46 | 0.56 |
+| `bbpb_rf_bbh_mcq_penguins_in_a_table` | 0.56 | 0.54 | 0.55 | 0.60 | 0.55 | 0.40 | 0.49 | 0.43 | 0.53 | 0.60 | 0.58 | 0.51 | 0.55 | 0.60 | 0.51 |
+| `bbpb_rf_bbh_mcq_disambiguation_qa` | 0.56 | 0.49 | 0.61 | 0.48 | 0.54 | 0.57 | 0.50 | 0.54 | 0.51 | 0.49 | 0.58 | 0.51 | 0.63 | 0.46 | 0.52 |
+| `xnli` | 0.48 | 0.63 | 0.64 | 0.65 | 0.41 | 0.57 | 0.55 | 0.50 | 0.45 | 0.64 | 0.61 | 0.45 | 0.48 | 0.52 | 0.41 |
+| `bbpb_rf_bbh_mcq_logical_deduction_seven_objects` | 0.49 | 0.56 | 0.57 | 0.45 | 0.54 | 0.56 | 0.46 | 0.47 | 0.60 | 0.53 | 0.50 | 0.66 | 0.53 | 0.53 | 0.51 |
+| `mmlu` | 0.58 | 0.59 | 0.65 | 0.48 | 0.67 | 0.51 | 0.56 | 0.47 | 0.50 | 0.48 | 0.51 | 0.41 | 0.52 | 0.61 | 0.44 |
+| `bbpb_acp_bench_mcq_just` | 0.56 | 0.61 | 0.54 | 0.51 | 0.70 | 0.53 | 0.53 | 0.51 | 0.56 | 0.52 | 0.47 | 0.47 | 0.46 | 0.51 | 0.48 |
+| `bbpb_acp_bench_mcq_app` | 0.53 | 0.53 | 0.50 | 0.49 | 0.62 | 0.59 | 0.55 | 0.57 | 0.52 | 0.58 | 0.44 | 0.55 | 0.50 | 0.45 | 0.51 |
+| `bbpb_bbh_mcq_movie_recommendation` | 0.54 | 0.52 | 0.52 | 0.55 | 0.45 | 0.46 | 0.52 | 0.62 | 0.57 | 0.55 | 0.49 | 0.46 | 0.54 | 0.53 | 0.60 |
+| `bbpb_rf_acp_bench_mcq_just` | 0.62 | 0.51 | 0.56 | 0.45 | 0.42 | 0.54 | 0.51 | 0.49 | 0.48 | 0.49 | 0.53 | 0.66 | 0.54 | 0.54 | 0.56 |
+| `bbpb_acp_bench_cloze_areach` | 0.52 | 0.43 | 0.65 | 0.53 | 0.60 | 0.63 | 0.46 | 0.60 | 0.54 | 0.45 | 0.46 | 0.55 | 0.48 | 0.55 | 0.44 |
+| `bbpb_acp_bench_mcq_prog` | 0.58 | 0.57 | 0.55 | 0.49 | 0.61 | 0.53 | 0.52 | 0.51 | 0.56 | 0.51 | 0.43 | 0.48 | 0.51 | 0.48 | 0.54 |
+| `bbpb_acp_bench_cloze_app` | 0.48 | 0.42 | 0.67 | 0.52 | 0.54 | 0.75 | 0.44 | 0.50 | 0.53 | 0.34 | 0.43 | 0.56 | 0.61 | 0.53 | 0.54 |
+| `bbpb_bbh_mcq_hyperbaton` | 0.50 | 0.53 | 0.53 | 0.59 | 0.45 | 0.53 | 0.51 | 0.59 | 0.52 | 0.47 | 0.60 | 0.51 | 0.58 | 0.48 | 0.46 |
+| `bbpb_acp_bench_cloze_prog` | 0.62 | 0.49 | 0.50 | 0.61 | 0.48 | 0.66 | 0.45 | 0.57 | 0.61 | 0.45 | 0.47 | 0.56 | 0.45 | 0.51 | 0.41 |
+| `global_mmlu_full` | 0.50 | 0.61 | 0.56 | 0.50 | 0.63 | 0.60 | 0.49 | 0.48 | 0.47 | 0.46 | 0.47 | 0.48 | 0.52 | 0.61 | 0.46 |
+| `bbpb_toxigen` | 0.62 | 0.55 | 0.56 | 0.51 | 0.47 | 0.63 | 0.50 | 0.57 | 0.50 | 0.42 | 0.47 | 0.52 | 0.50 | 0.57 | 0.43 |
+| `bbpb_acp_bench_mcq_reach` | 0.57 | 0.48 | 0.54 | 0.55 | 0.64 | 0.52 | 0.49 | 0.53 | 0.55 | 0.47 | 0.44 | 0.46 | 0.51 | 0.51 | 0.55 |
+| `bbpb_bbh_cloze_boolean_expressions` | 0.54 | 0.63 | 0.52 | 0.49 | 0.58 | 0.57 | 0.50 | 0.54 | 0.43 | 0.44 | 0.54 | 0.52 | 0.49 | 0.52 | 0.50 |
+| `paws` | 0.53 | 0.46 | 0.48 | 0.58 | 0.55 | 0.57 | 0.46 | 0.57 | 0.59 | 0.41 | 0.53 | 0.65 | 0.45 | 0.42 | 0.55 |
+| `bbpb_bbh_cloze_causal_judgement` | 0.56 | 0.56 | 0.45 | 0.54 | 0.56 | 0.59 | 0.41 | 0.51 | 0.49 | 0.51 | 0.58 | 0.46 | 0.54 | 0.46 | 0.56 |
+| `bbpb_rf_bbh_mcq_tracking_shuffled_objects_seven_objects` | 0.56 | 0.47 | 0.50 | 0.67 | 0.43 | 0.62 | 0.58 | 0.56 | 0.50 | 0.53 | 0.48 | 0.50 | 0.46 | 0.33 | 0.57 |
+| `blend_sample` | 0.58 | 0.42 | 0.42 | 0.54 | 0.57 | 0.44 | 0.42 | 0.58 | 0.50 | 0.53 | 0.58 | 0.49 | 0.51 | 0.58 | 0.60 |
+| `bbpb_bbh_mcq_salient_translation_error_detection` | 0.55 | 0.39 | 0.45 | 0.47 | 0.44 | 0.55 | 0.62 | 0.46 | 0.53 | 0.62 | 0.60 | 0.60 | 0.43 | 0.49 | 0.54 |
+| `bbpb_acp_bench_cloze_val` | 0.57 | 0.48 | 0.48 | 0.50 | 0.58 | 0.62 | 0.46 | 0.46 | 0.56 | 0.44 | 0.52 | 0.61 | 0.48 | 0.47 | 0.51 |
+| `bbpb_bbh_cloze_formal_fallacies` | 0.49 | 0.54 | 0.52 | 0.50 | 0.63 | 0.63 | 0.38 | 0.63 | 0.44 | 0.45 | 0.60 | 0.41 | 0.61 | 0.46 | 0.44 |
+| `bbpb_rf_bbh_mcq_temporal_sequences` | 0.56 | 0.45 | 0.60 | 0.62 | 0.46 | 0.39 | 0.59 | 0.50 | 0.62 | 0.46 | 0.57 | 0.48 | 0.53 | 0.46 | 0.44 |
+| `bbpb_acp_bench_cloze_reach` | 0.54 | 0.43 | 0.67 | 0.46 | 0.60 | 0.72 | 0.43 | 0.45 | 0.56 | 0.38 | 0.43 | 0.50 | 0.49 | 0.55 | 0.52 |
+| `bbpb_mathqa` | 0.43 | 0.54 | 0.67 | 0.42 | 0.66 | 0.56 | 0.43 | 0.57 | 0.45 | 0.50 | 0.44 | 0.52 | 0.49 | 0.56 | 0.49 |
+| `bbpb_acp_bench_cloze_just` | 0.50 | 0.52 | 0.50 | 0.50 | 0.46 | 0.70 | 0.43 | 0.51 | 0.56 | 0.39 | 0.51 | 0.58 | 0.48 | 0.57 | 0.50 |
+| `bbpb_bbh_mcq_date_understanding` | 0.59 | 0.59 | 0.41 | 0.48 | 0.42 | 0.56 | 0.59 | 0.47 | 0.46 | 0.47 | 0.55 | 0.53 | 0.52 | 0.56 | 0.51 |
+| `bbpb_bbh_mcq_ruin_names` | 0.56 | 0.47 | 0.51 | 0.45 | 0.38 | 0.47 | 0.61 | 0.51 | 0.58 | 0.43 | 0.46 | 0.47 | 0.64 | 0.65 | 0.53 |
+| `bbpb_rf_bbh_mcq_salient_translation_error_detection` | 0.58 | 0.51 | 0.51 | 0.47 | 0.58 | 0.56 | 0.39 | 0.51 | 0.59 | 0.56 | 0.48 | 0.57 | 0.46 | 0.51 | 0.44 |
+| `rf_bbh_mcq_disambiguation_qa` | 0.46 | 0.53 | 0.41 | 0.53 | 0.43 | 0.62 | 0.59 | 0.41 | 0.58 | 0.58 | 0.38 | 0.54 | 0.42 | 0.63 | 0.56 |
+| `bbpb_rf_acp_bench_mcq_reach` | 0.58 | 0.49 | 0.55 | 0.57 | 0.41 | 0.54 | 0.42 | 0.53 | 0.43 | 0.39 | 0.59 | 0.54 | 0.58 | 0.53 | 0.52 |
+| `bbpb_rf_cultural_bench_easy_canada` | 0.54 | 0.42 | 0.44 | 0.64 | 0.40 | 0.55 | 0.55 | 0.55 | 0.52 | 0.46 | 0.56 | 0.63 | 0.39 | 0.46 | 0.58 |
+| `bbpb_rf_acp_bench_mcq_prog` | 0.60 | 0.48 | 0.53 | 0.44 | 0.56 | 0.44 | 0.48 | 0.49 | 0.45 | 0.43 | 0.53 | 0.52 | 0.56 | 0.65 | 0.48 |
+| `bbpb_bbh_mcq_logical_deduction_five_objects` | 0.47 | 0.44 | 0.46 | 0.43 | 0.42 | 0.51 | 0.59 | 0.48 | 0.54 | 0.52 | 0.54 | 0.55 | 0.53 | 0.61 | 0.58 |
+| `bbpb_rf_acp_bench_mcq_val` | 0.60 | 0.48 | 0.42 | 0.50 | 0.53 | 0.56 | 0.50 | 0.42 | 0.55 | 0.54 | 0.47 | 0.53 | 0.53 | 0.47 | 0.56 |
+| `bbpb_bbh_mcq_logical_deduction_seven_objects` | 0.52 | 0.44 | 0.43 | 0.45 | 0.46 | 0.48 | 0.60 | 0.42 | 0.48 | 0.53 | 0.54 | 0.55 | 0.57 | 0.54 | 0.64 |
+| `bbpb_rf_bbh_mcq_tracking_shuffled_objects_five_objects` | 0.50 | 0.49 | 0.51 | 0.65 | 0.40 | 0.65 | 0.56 | 0.55 | 0.44 | 0.52 | 0.50 | 0.53 | 0.45 | 0.36 | 0.50 |
+| `mathqa` | 0.64 | 0.49 | 0.48 | 0.48 | 0.42 | 0.57 | 0.46 | 0.54 | 0.47 | 0.52 | 0.54 | 0.51 | 0.45 | 0.57 | 0.49 |
+| `bbpb_rf_bbh_mcq_geometric_shapes` | 0.49 | 0.58 | 0.43 | 0.40 | 0.59 | 0.45 | 0.56 | 0.41 | 0.49 | 0.48 | 0.59 | 0.59 | 0.50 | 0.50 | 0.54 |
+| `bbpb_rf_bbh_mcq_reasoning_about_colored_objects` | 0.49 | 0.47 | 0.46 | 0.59 | 0.58 | 0.45 | 0.58 | 0.39 | 0.47 | 0.50 | 0.60 | 0.50 | 0.53 | 0.47 | 0.52 |
+| `bbpb_bbh_cloze_navigate` | 0.53 | 0.47 | 0.34 | 0.53 | 0.52 | 0.60 | 0.42 | 0.52 | 0.45 | 0.53 | 0.58 | 0.50 | 0.47 | 0.52 | 0.58 |
+| `bbpb_bbh_cloze_sports_understanding` | 0.55 | 0.51 | 0.45 | 0.55 | 0.45 | 0.51 | 0.53 | 0.52 | 0.33 | 0.63 | 0.51 | 0.52 | 0.47 | 0.50 | 0.49 |
+| `bbpb_bbh_mcq_penguins_in_a_table` | 0.49 | 0.51 | 0.42 | 0.38 | 0.38 | 0.65 | 0.57 | 0.42 | 0.58 | 0.55 | 0.48 | 0.55 | 0.58 | 0.52 | 0.43 |
+| `bbpb_rf_bbh_mcq_tracking_shuffled_objects_three_objects` | 0.46 | 0.49 | 0.52 | 0.59 | 0.42 | 0.62 | 0.50 | 0.52 | 0.49 | 0.48 | 0.52 | 0.57 | 0.48 | 0.38 | 0.48 |
+| `truthfulqa_mc2` | 0.49 | 0.61 | 0.57 | 0.62 | 0.49 | 0.43 | 0.48 | 0.31 | 0.38 | 0.57 | 0.52 | 0.53 | 0.54 | 0.45 | 0.52 |
+| `bbpb_rf_acp_bench_mcq_land` | 0.54 | 0.40 | 0.49 | 0.49 | 0.52 | 0.50 | 0.53 | 0.42 | 0.52 | 0.49 | 0.45 | 0.54 | 0.50 | 0.65 | 0.45 |
+| `bbpb_rf_bbh_mcq_hyperbaton` | 0.51 | 0.50 | 0.53 | 0.50 | 0.46 | 0.52 | 0.40 | 0.52 | 0.64 | 0.43 | 0.39 | 0.59 | 0.57 | 0.47 | 0.45 |
+| `toxigen` | 0.49 | 0.49 | 0.36 | 0.43 | 0.51 | 0.58 | 0.40 | 0.54 | 0.45 | 0.63 | 0.59 | 0.44 | 0.55 | 0.58 | 0.44 |
+| `bbpb_bbh_mcq_temporal_sequences` | 0.54 | 0.53 | 0.43 | 0.57 | 0.37 | 0.56 | 0.55 | 0.42 | 0.48 | 0.53 | 0.51 | 0.42 | 0.54 | 0.50 | 0.51 |
+| `commonsense_qa` | 0.50 | 0.53 | 0.43 | 0.41 | 0.51 | 0.54 | 0.47 | 0.48 | 0.62 | 0.45 | 0.55 | 0.56 | 0.41 | 0.49 | 0.48 |
+| `belebele` | 0.49 | 0.54 | 0.50 | 0.54 | 0.51 | 0.37 | 0.49 | 0.46 | 0.58 | 0.47 | 0.53 | 0.39 | 0.59 | 0.49 | 0.46 |
+| `bbpb_bbh_mcq_tracking_shuffled_objects_seven_objects` | 0.50 | 0.50 | 0.41 | 0.43 | 0.48 | 0.54 | 0.50 | 0.48 | 0.48 | 0.52 | 0.52 | 0.60 | 0.49 | 0.39 | 0.57 |
+| `cultural_bench_hard_united_states` | 0.56 | 0.54 | 0.52 | 0.51 | 0.57 | 0.40 | 0.44 | 0.57 | 0.50 | 0.35 | 0.50 | 0.56 | 0.51 | 0.48 | 0.37 |
+| `bbpb_bbh_mcq_tracking_shuffled_objects_five_objects` | 0.51 | 0.47 | 0.46 | 0.42 | 0.38 | 0.59 | 0.45 | 0.49 | 0.49 | 0.53 | 0.51 | 0.52 | 0.50 | 0.45 | 0.58 |
+| `bbpb_bbh_mcq_reasoning_about_colored_objects` | 0.51 | 0.47 | 0.40 | 0.44 | 0.55 | 0.50 | 0.49 | 0.50 | 0.46 | 0.54 | 0.52 | 0.49 | 0.60 | 0.41 | 0.49 |
+| `bbpb_bbh_mcq_geometric_shapes` | 0.49 | 0.48 | 0.44 | 0.40 | 0.50 | 0.49 | 0.43 | 0.47 | 0.52 | 0.51 | 0.55 | 0.64 | 0.56 | 0.37 | 0.50 |
+| `bbpb_bbh_mcq_logical_deduction_three_objects` | 0.45 | 0.50 | 0.37 | 0.48 | 0.42 | 0.47 | 0.62 | 0.47 | 0.54 | 0.30 | 0.47 | 0.51 | 0.60 | 0.58 | 0.56 |
+| `rf_bbh_mcq_movie_recommendation` | 0.54 | 0.50 | 0.56 | 0.40 | 0.50 | 0.54 | 0.54 | 0.40 | 0.53 | 0.49 | 0.50 | 0.47 | 0.49 | 0.44 | 0.40 |
+| `bbpb_bbh_mcq_disambiguation_qa` | 0.52 | 0.42 | 0.49 | 0.47 | 0.39 | 0.47 | 0.54 | 0.45 | 0.54 | 0.43 | 0.51 | 0.43 | 0.57 | 0.56 | 0.52 |
+| `cultural_bench_hard_south_africa` | 0.42 | 0.48 | 0.51 | 0.48 | 0.59 | 0.48 | 0.44 | 0.54 | 0.43 | 0.47 | 0.42 | 0.49 | 0.56 | 0.52 | 0.40 |
+| `bbpb_bbh_mcq_snarks` | 0.47 | 0.46 | 0.48 | 0.58 | 0.41 | 0.49 | 0.52 | 0.50 | 0.48 | 0.35 | 0.56 | 0.53 | 0.53 | 0.44 | 0.41 |
+| `bbpb_bbh_mcq_tracking_shuffled_objects_three_objects` | 0.46 | 0.47 | 0.41 | 0.49 | 0.42 | 0.53 | 0.48 | 0.51 | 0.48 | 0.40 | 0.50 | 0.45 | 0.50 | 0.50 | 0.55 |
+| `rf_bbh_mcq_hyperbaton` | 0.55 | 0.44 | 0.49 | 0.44 | 0.64 | 0.50 | 0.39 | 0.39 | 0.49 | 0.49 | 0.33 | 0.44 | 0.57 | 0.52 | 0.43 |
+| `cultural_bench_hard_nigeria` | 0.40 | 0.46 | 0.42 | 0.41 | 0.57 | 0.51 | 0.44 | 0.48 | 0.50 | 0.40 | 0.42 | 0.54 | 0.62 | 0.45 | 0.45 |
+| `global_piqa_parallel_cloze` | 0.39 | 0.46 | 0.50 | 0.40 | 0.50 | 0.45 | 0.38 | 0.42 | 0.59 | 0.50 | 0.45 | 0.45 | 0.52 | 0.49 | 0.46 |
+| `bbh_mcq_movie_recommendation` | 0.44 | 0.42 | 0.52 | 0.45 | 0.44 | 0.52 | 0.51 | 0.41 | 0.46 | 0.50 | 0.44 | 0.55 | 0.34 | 0.54 | 0.43 |
+| `cultural_bench_easy_south_africa` | 0.44 | 0.60 | 0.46 | 0.54 | 0.42 | 0.58 | 0.44 | 0.44 | 0.42 | 0.47 | 0.46 | 0.40 | 0.47 | 0.43 | 0.42 |
+| `rf_bbh_mcq_tracking_shuffled_objects_five_objects` | 0.50 | 0.49 | 0.52 | 0.41 | 0.54 | 0.45 | 0.44 | 0.45 | 0.46 | 0.43 | 0.37 | 0.52 | 0.38 | 0.53 | 0.45 |
+| `rf_bbh_mcq_snarks` | 0.39 | 0.54 | 0.40 | 0.38 | 0.46 | 0.48 | 0.55 | 0.47 | 0.43 | 0.52 | 0.48 | 0.49 | 0.50 | 0.41 | 0.42 |
+| `truthfulqa-multi_mc1` | 0.43 | 0.35 | 0.48 | 0.51 | 0.58 | 0.60 | 0.47 | 0.45 | 0.37 | 0.41 | 0.43 | 0.35 | 0.47 | 0.53 | 0.44 |
+| `rf_cultural_bench_easy_canada` | 0.42 | 0.35 | 0.30 | 0.31 | 0.46 | 0.60 | 0.66 | 0.42 | 0.46 | 0.54 | 0.46 | 0.63 | 0.39 | 0.39 | 0.46 |
+| `bbh_mcq_ruin_names` | 0.46 | 0.37 | 0.36 | 0.47 | 0.37 | 0.46 | 0.35 | 0.45 | 0.60 | 0.48 | 0.39 | 0.50 | 0.51 | 0.45 | 0.56 |
+| `rf_bbh_mcq_ruin_names` | 0.51 | 0.48 | 0.44 | 0.38 | 0.42 | 0.51 | 0.45 | 0.42 | 0.44 | 0.39 | 0.44 | 0.55 | 0.49 | 0.38 | 0.49 |
+| `rf_bbh_mcq_date_understanding` | 0.48 | 0.43 | 0.45 | 0.56 | 0.44 | 0.46 | 0.45 | 0.41 | 0.35 | 0.42 | 0.46 | 0.58 | 0.47 | 0.40 | 0.42 |
+| `rf_acp_bench_mcq_just` | 0.30 | 0.48 | 0.47 | 0.45 | 0.40 | 0.52 | 0.42 | 0.41 | 0.52 | 0.46 | 0.44 | 0.38 | 0.53 | 0.39 | 0.57 |
+| `rf_bbh_mcq_logical_deduction_seven_objects` | 0.44 | 0.33 | 0.42 | 0.41 | 0.39 | 0.46 | 0.46 | 0.47 | 0.47 | 0.47 | 0.48 | 0.45 | 0.49 | 0.50 | 0.50 |
+| `acp_bench_mcq_areach` | 0.42 | 0.44 | 0.39 | 0.44 | 0.41 | 0.40 | 0.45 | 0.53 | 0.41 | 0.44 | 0.53 | 0.40 | 0.55 | 0.43 | 0.49 |
+| `multiblimp` | 0.53 | 0.47 | 0.42 | 0.41 | 0.42 | 0.47 | 0.50 | 0.48 | 0.39 | 0.43 | 0.45 | 0.49 | 0.39 | 0.44 | 0.39 |
+| `rf_bbh_mcq_reasoning_about_colored_objects` | 0.58 | 0.40 | 0.42 | 0.47 | 0.53 | 0.35 | 0.46 | 0.30 | 0.43 | 0.66 | 0.57 | 0.37 | 0.48 | 0.22 | 0.44 |
+| `acp_bench_mcq_val` | 0.42 | 0.46 | 0.33 | 0.49 | 0.36 | 0.44 | 0.45 | 0.60 | 0.47 | 0.53 | 0.42 | 0.44 | 0.40 | 0.41 | 0.46 |
+| `rf_bbh_mcq_logical_deduction_three_objects` | 0.41 | 0.43 | 0.43 | 0.47 | 0.56 | 0.43 | 0.41 | 0.41 | 0.45 | 0.49 | 0.42 | 0.48 | 0.54 | 0.40 | 0.32 |
+| `acp_bench_mcq_app` | 0.48 | 0.38 | 0.47 | 0.47 | 0.36 | 0.52 | 0.42 | 0.53 | 0.36 | 0.40 | 0.44 | 0.47 | 0.37 | 0.45 | 0.49 |
+| `cultural_bench_hard_united_kingdom` | 0.30 | 0.38 | 0.43 | 0.46 | 0.57 | 0.40 | 0.46 | 0.50 | 0.41 | 0.39 | 0.38 | 0.42 | 0.53 | 0.56 | 0.40 |
+| `cultural_bench_hard_canada` | 0.45 | 0.49 | 0.46 | 0.39 | 0.52 | 0.44 | 0.47 | 0.35 | 0.41 | 0.47 | 0.35 | 0.50 | 0.42 | 0.53 | 0.32 |
+| `acp_bench_mcq_just` | 0.51 | 0.56 | 0.33 | 0.50 | 0.43 | 0.47 | 0.35 | 0.47 | 0.47 | 0.43 | 0.42 | 0.44 | 0.48 | 0.34 | 0.38 |
+| `cultural_bench_easy_united_kingdom` | 0.38 | 0.51 | 0.43 | 0.55 | 0.42 | 0.60 | 0.39 | 0.38 | 0.44 | 0.42 | 0.47 | 0.52 | 0.36 | 0.36 | 0.34 |
+| `bbh_mcq_logical_deduction_five_objects` | 0.39 | 0.43 | 0.45 | 0.41 | 0.39 | 0.37 | 0.45 | 0.35 | 0.37 | 0.47 | 0.51 | 0.38 | 0.50 | 0.53 | 0.53 |
+| `rf_acp_bench_mcq_areach` | 0.49 | 0.55 | 0.43 | 0.49 | 0.46 | 0.41 | 0.39 | 0.36 | 0.41 | 0.45 | 0.47 | 0.42 | 0.33 | 0.46 | 0.38 |
+| `bbh_mcq_snarks` | 0.48 | 0.37 | 0.50 | 0.48 | 0.43 | 0.41 | 0.45 | 0.37 | 0.39 | 0.43 | 0.40 | 0.53 | 0.36 | 0.42 | 0.46 |
+| `rf_bbh_mcq_tracking_shuffled_objects_seven_objects` | 0.49 | 0.47 | 0.43 | 0.42 | 0.36 | 0.43 | 0.41 | 0.49 | 0.29 | 0.40 | 0.50 | 0.49 | 0.32 | 0.50 | 0.48 |
+| `rf_bbh_mcq_tracking_shuffled_objects_three_objects` | 0.38 | 0.56 | 0.40 | 0.50 | 0.40 | 0.39 | 0.45 | 0.45 | 0.41 | 0.33 | 0.46 | 0.43 | 0.39 | 0.38 | 0.54 |
+| `bbh_mcq_temporal_sequences` | 0.39 | 0.43 | 0.46 | 0.44 | 0.28 | 0.40 | 0.40 | 0.44 | 0.50 | 0.51 | 0.52 | 0.46 | 0.34 | 0.39 | 0.49 |
+| `acp_bench_mcq_land` | 0.45 | 0.38 | 0.38 | 0.44 | 0.53 | 0.41 | 0.47 | 0.46 | 0.47 | 0.40 | 0.43 | 0.31 | 0.47 | 0.45 | 0.40 |
+| `rf_bbh_mcq_logical_deduction_five_objects` | 0.38 | 0.40 | 0.48 | 0.57 | 0.35 | 0.34 | 0.45 | 0.27 | 0.47 | 0.42 | 0.46 | 0.53 | 0.46 | 0.48 | 0.38 |
+| `rf_acp_bench_mcq_app` | 0.38 | 0.44 | 0.42 | 0.43 | 0.50 | 0.32 | 0.48 | 0.44 | 0.47 | 0.34 | 0.46 | 0.37 | 0.50 | 0.37 | 0.50 |
+| `acp_bench_mcq_prog` | 0.51 | 0.49 | 0.36 | 0.36 | 0.34 | 0.34 | 0.57 | 0.36 | 0.43 | 0.28 | 0.51 | 0.43 | 0.36 | 0.54 | 0.51 |
+| `bbh_mcq_disambiguation_qa` | 0.39 | 0.39 | 0.40 | 0.51 | 0.35 | 0.25 | 0.38 | 0.41 | 0.41 | 0.55 | 0.48 | 0.44 | 0.49 | 0.45 | 0.47 |
+| `bbh_mcq_date_understanding` | 0.35 | 0.39 | 0.44 | 0.27 | 0.40 | 0.42 | 0.43 | 0.51 | 0.55 | 0.41 | 0.54 | 0.40 | 0.42 | 0.40 | 0.41 |
+| `bbh_mcq_penguins_in_a_table` | 0.40 | 0.33 | 0.37 | 0.33 | 0.27 | 0.49 | 0.46 | 0.54 | 0.49 | 0.48 | 0.56 | 0.40 | 0.49 | 0.33 | 0.41 |
+| `rf_bbh_mcq_salient_translation_error_detection` | 0.35 | 0.33 | 0.37 | 0.44 | 0.54 | 0.47 | 0.41 | 0.32 | 0.43 | 0.38 | 0.49 | 0.40 | 0.45 | 0.46 | 0.48 |
+| `cultural_bench_hard_zimbabwe` | 0.42 | 0.30 | 0.41 | 0.33 | 0.56 | 0.42 | 0.41 | 0.45 | 0.51 | 0.37 | 0.44 | 0.43 | 0.51 | 0.47 | 0.29 |
+| `cultural_bench_easy_zimbabwe` | 0.40 | 0.58 | 0.38 | 0.32 | 0.39 | 0.51 | 0.43 | 0.36 | 0.45 | 0.40 | 0.41 | 0.46 | 0.40 | 0.47 | 0.31 |
+| `cultural_bench_easy_canada` | 0.39 | 0.41 | 0.36 | 0.45 | 0.38 | 0.47 | 0.43 | 0.53 | 0.31 | 0.45 | 0.51 | 0.42 | 0.44 | 0.34 | 0.33 |
+| `rf_acp_bench_mcq_land` | 0.44 | 0.35 | 0.45 | 0.46 | 0.48 | 0.39 | 0.39 | 0.41 | 0.46 | 0.51 | 0.39 | 0.47 | 0.29 | 0.35 | 0.38 |
+| `cultural_bench_hard_australia` | 0.42 | 0.47 | 0.43 | 0.29 | 0.50 | 0.37 | 0.45 | 0.42 | 0.40 | 0.42 | 0.37 | 0.47 | 0.50 | 0.41 | 0.30 |
+| `rf_bbh_mcq_penguins_in_a_table` | 0.44 | 0.34 | 0.45 | 0.38 | 0.36 | 0.32 | 0.45 | 0.29 | 0.58 | 0.41 | 0.57 | 0.39 | 0.42 | 0.44 | 0.35 |
+| `rf_acp_bench_mcq_reach` | 0.39 | 0.46 | 0.47 | 0.39 | 0.40 | 0.31 | 0.47 | 0.43 | 0.44 | 0.41 | 0.43 | 0.33 | 0.47 | 0.38 | 0.35 |
+| `acp_bench_mcq_reach` | 0.46 | 0.34 | 0.41 | 0.36 | 0.43 | 0.43 | 0.46 | 0.42 | 0.37 | 0.39 | 0.44 | 0.34 | 0.50 | 0.39 | 0.38 |
+| `bbh_mcq_reasoning_about_colored_objects` | 0.44 | 0.32 | 0.25 | 0.28 | 0.48 | 0.37 | 0.27 | 0.36 | 0.48 | 0.47 | 0.58 | 0.51 | 0.50 | 0.35 | 0.43 |
+| `rf_acp_bench_mcq_prog` | 0.44 | 0.37 | 0.31 | 0.35 | 0.51 | 0.41 | 0.46 | 0.34 | 0.38 | 0.35 | 0.41 | 0.40 | 0.48 | 0.43 | 0.45 |
+| `bbh_mcq_tracking_shuffled_objects_five_objects` | 0.23 | 0.33 | 0.41 | 0.38 | 0.25 | 0.40 | 0.47 | 0.36 | 0.50 | 0.53 | 0.45 | 0.45 | 0.46 | 0.38 | 0.42 |
+| `cultural_bench_easy_united_states` | 0.38 | 0.41 | 0.36 | 0.52 | 0.34 | 0.54 | 0.42 | 0.33 | 0.48 | 0.28 | 0.37 | 0.51 | 0.41 | 0.34 | 0.33 |
+| `cultural_bench_easy_australia` | 0.38 | 0.37 | 0.36 | 0.36 | 0.36 | 0.52 | 0.46 | 0.44 | 0.44 | 0.26 | 0.42 | 0.37 | 0.36 | 0.40 | 0.43 |
+| `cultural_bench_easy_nigeria` | 0.42 | 0.35 | 0.28 | 0.38 | 0.32 | 0.47 | 0.49 | 0.45 | 0.31 | 0.38 | 0.44 | 0.33 | 0.45 | 0.40 | 0.45 |
+| `bbh_mcq_tracking_shuffled_objects_three_objects` | 0.32 | 0.43 | 0.32 | 0.36 | 0.38 | 0.43 | 0.34 | 0.41 | 0.41 | 0.40 | 0.46 | 0.44 | 0.42 | 0.34 | 0.44 |
+| `rf_bbh_mcq_temporal_sequences` | 0.45 | 0.34 | 0.35 | 0.31 | 0.45 | 0.39 | 0.31 | 0.31 | 0.51 | 0.40 | 0.35 | 0.33 | 0.50 | 0.37 | 0.50 |
+| `rf_acp_bench_mcq_val` | 0.41 | 0.46 | 0.40 | 0.34 | 0.38 | 0.46 | 0.49 | 0.47 | 0.25 | 0.34 | 0.31 | 0.30 | 0.47 | 0.36 | 0.42 |
+| `rf_cultural_bench_easy_australia` | 0.26 | 0.35 | 0.37 | 0.23 | 0.39 | 0.42 | 0.40 | 0.37 | 0.40 | 0.49 | 0.41 | 0.48 | 0.49 | 0.39 | 0.32 |
+| `bbh_mcq_salient_translation_error_detection` | 0.33 | 0.32 | 0.27 | 0.40 | 0.25 | 0.34 | 0.31 | 0.38 | 0.40 | 0.48 | 0.44 | 0.46 | 0.43 | 0.43 | 0.51 |
+| `bbh_mcq_logical_deduction_three_objects` | 0.35 | 0.36 | 0.34 | 0.22 | 0.28 | 0.29 | 0.47 | 0.41 | 0.42 | 0.40 | 0.43 | 0.40 | 0.39 | 0.50 | 0.46 |
+| `bbh_mcq_logical_deduction_seven_objects` | 0.38 | 0.24 | 0.32 | 0.24 | 0.30 | 0.37 | 0.32 | 0.35 | 0.36 | 0.52 | 0.36 | 0.44 | 0.42 | 0.52 | 0.39 |
+| `bbh_cloze_navigate` | 0.32 | 0.52 | 0.23 | 0.30 | 0.37 | 0.50 | 0.29 | 0.34 | 0.30 | 0.39 | 0.47 | 0.43 | 0.36 | 0.36 | 0.32 |
+| `bbh_cloze_causal_judgement` | 0.39 | 0.47 | 0.43 | 0.37 | 0.35 | 0.36 | 0.34 | 0.30 | 0.33 | 0.29 | 0.33 | 0.43 | 0.38 | 0.41 | 0.31 |
+| `bbh_cloze_web_of_lies` | 0.36 | 0.43 | 0.37 | 0.33 | 0.25 | 0.33 | 0.34 | 0.42 | 0.30 | 0.45 | 0.40 | 0.33 | 0.34 | 0.36 | 0.39 |
+| `bbh_cloze_boolean_expressions` | 0.34 | 0.43 | 0.41 | 0.39 | 0.35 | 0.25 | 0.37 | 0.22 | 0.29 | 0.37 | 0.38 | 0.44 | 0.50 | 0.30 | 0.34 |
+| `bbh_mcq_tracking_shuffled_objects_seven_objects` | 0.27 | 0.34 | 0.23 | 0.33 | 0.30 | 0.40 | 0.29 | 0.34 | 0.37 | 0.42 | 0.32 | 0.48 | 0.39 | 0.51 | 0.37 |
+| `bbh_mcq_hyperbaton` | 0.41 | 0.38 | 0.25 | 0.29 | 0.32 | 0.37 | 0.35 | 0.26 | 0.34 | 0.34 | 0.44 | 0.37 | 0.44 | 0.34 | 0.42 |
+| `rf_cultural_bench_easy_south_africa` | 0.37 | 0.39 | 0.33 | 0.38 | 0.21 | 0.38 | 0.31 | 0.23 | 0.26 | 0.43 | 0.46 | 0.34 | 0.41 | 0.30 | 0.38 |
+| `rf_cultural_bench_easy_united_kingdom` | 0.26 | 0.41 | 0.29 | 0.26 | 0.32 | 0.34 | 0.37 | 0.37 | 0.37 | 0.33 | 0.35 | 0.40 | 0.44 | 0.29 | 0.36 |
+| `rf_cultural_bench_easy_zimbabwe` | 0.39 | 0.35 | 0.33 | 0.40 | 0.37 | 0.41 | 0.23 | 0.25 | 0.32 | 0.38 | 0.27 | 0.40 | 0.25 | 0.36 | 0.33 |
+| `rf_cultural_bench_easy_nigeria` | 0.38 | 0.28 | 0.32 | 0.32 | 0.38 | 0.30 | 0.38 | 0.34 | 0.34 | 0.37 | 0.33 | 0.31 | 0.28 | 0.31 | 0.33 |
+| `bbh_mcq_geometric_shapes` | 0.32 | 0.16 | 0.19 | 0.22 | 0.23 | 0.33 | 0.25 | 0.26 | 0.20 | 0.44 | 0.56 | 0.47 | 0.42 | 0.49 | 0.40 |
+| `rf_cultural_bench_easy_united_states` | 0.38 | 0.40 | 0.33 | 0.27 | 0.39 | 0.26 | 0.26 | 0.39 | 0.31 | 0.34 | 0.32 | 0.27 | 0.21 | 0.39 | 0.35 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1957,123 +2004,123 @@ subtitle: "Modern Std. Arabic (ar) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_xstorycloze` |  |  |  |  |  | **0.96** |  | **0.94** | **0.88** |  | **0.86** | **0.89** |  |  | **0.91** |
-| `bbpb_arc` |  |  |  |  |  | **1.00** |  | **0.80** | **0.76** |  | **1.00** | **1.00** |  |  | **0.80** |
-| `bpb` | **0.97** | **0.89** | **0.80** | **0.86** | **1.00** | **0.92** | **0.80** | **0.89** | **0.97** | **0.88** | **0.94** | **0.89** | **0.88** | **0.80** | **0.86** |
-| `bbpb_hellaswag` |  |  |  |  |  | 0.67 |  | **0.88** | **0.91** |  | **1.00** | **1.00** |  |  | **0.88** |
-| `bbpb_rfgm_belebele_ars_Arab` |  |  |  |  |  | **0.86** |  | **0.83** | **0.88** |  | **0.86** | **0.89** |  |  | **0.86** |
-| `bbpb_rfgm_belebele_arz_Arab` |  |  |  |  |  | **0.89** |  | **0.79** | **0.80** |  | **0.79** | **0.79** |  |  | **0.89** |
-| `bbpb_rfgm_belebele_apc_Arab` |  |  |  |  |  | **0.75** |  | **0.80** | 0.73 |  | **0.96** | **0.86** |  |  | **0.83** |
-| `bbpb_global_piqa_parallel_cloze_apc_arab_pale` |  |  |  |  |  | 0.67 |  | 0.71 | 0.70 |  | **1.00** | **1.00** |  |  | **0.80** |
-| `bbpb_multiblimp` |  |  |  |  |  | **0.93** |  | **0.79** | **0.76** |  | **1.00** | 0.73 |  |  | 0.67 |
-| `bbpb_rfgm_belebele_arb_Arab` |  |  |  |  |  | **0.86** |  | **0.77** | 0.74 |  | **0.89** | **0.82** |  |  | **0.79** |
-| `bbpb_global_piqa_parallel_cloze_apc_arab_jord` |  |  |  |  |  | 0.67 |  | 0.73 | 0.67 |  | **1.00** | **1.00** |  |  | **0.79** |
-| `bbpb_global_piqa_parallel_cloze_apc_arab_leba` |  |  |  |  |  | 0.67 |  | 0.67 | 0.58 |  | **1.00** | **1.00** |  |  | 0.73 |
-| `bbpb_rfgm_belebele_ary_Arab` |  |  |  |  |  | **0.79** |  | **0.79** | 0.70 |  | **0.82** | 0.71 |  |  | **0.79** |
-| `bbpb_global_piqa_parallel_cloze_apc_arab_syri` |  |  |  |  |  | 0.67 |  | 0.62 | 0.61 |  | **1.00** | 0.67 |  |  | **0.83** |
-| `bbpb_rf_belebele_apc_Arab` |  |  |  |  |  | **0.86** |  | **0.83** | 0.61 |  | **0.82** | 0.61 |  |  | 0.65 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | 0.71 |  | 0.71 | **0.79** |  | 0.68 | 0.61 |  |  | **0.83** |
-| `bbpb_rf_belebele_ars_Arab` |  |  |  |  |  | **0.75** |  | **0.83** | 0.65 |  | **0.82** | 0.61 |  |  | 0.67 |
-| `bbpb_xnli` |  |  |  |  |  | **0.82** |  | 0.68 | 0.70 |  | **0.82** | 0.64 |  |  | 0.65 |
-| `bbpb_global_piqa_parallel_cloze_arz_arab` |  |  |  |  |  | 0.67 |  | 0.71 | 0.67 |  | **1.00** | 0.67 |  |  | 0.59 |
-| `bbpb_global_piqa_parallel_cloze_arb_arab` |  |  |  |  |  | **1.00** |  | 0.70 | 0.68 |  | 0.67 | 0.67 |  |  | 0.56 |
-| `bbpb_include_base_44` |  |  |  |  |  | **1.00** |  | 0.64 | 0.62 |  | 0.60 | **0.80** |  |  | 0.59 |
-| `bbpb_rf_belebele_arz_Arab` |  |  |  |  |  | **0.89** |  | **0.77** | 0.58 |  | **0.75** | 0.57 |  |  | 0.68 |
-| `hellaswag` | 0.55 | 0.71 | 0.64 | 0.64 | 0.65 | 0.70 | 0.73 | 0.67 | 0.73 | 0.73 | **0.79** | **0.76** | 0.70 | 0.70 | **0.79** |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | **0.75** |  | 0.70 | 0.68 |  | 0.64 | 0.68 |  |  | 0.71 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | 0.67 |  | 0.68 | 0.65 |  | 0.33 | **1.00** |  |  | **0.79** |
-| `bbpb_rf_belebele_ary_Arab` |  |  |  |  |  | 0.68 |  | **0.77** | 0.52 |  | 0.68 | 0.71 |  |  | 0.68 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | 0.68 |  | **0.80** | **0.79** |  | 0.43 | 0.57 |  |  | 0.74 |
-| `bbpb_rf_belebele_arb_Arab` |  |  |  |  |  | 0.64 |  | **0.77** | 0.55 |  | **0.79** | 0.61 |  |  | 0.56 |
-| `bbpb_global_piqa_parallel_cloze_ars_arab` |  |  |  |  |  | **1.00** |  | 0.67 | 0.65 |  | 0.33 | 0.67 |  |  | 0.59 |
-| `bbpb_include_v2_og_arabic_uae` |  |  |  |  |  | **0.90** |  | 0.64 | 0.59 |  | 0.40 | 0.50 |  |  | **0.77** |
-| `bbpb_cultural_bench_easy_morocco` |  |  |  |  |  | **1.00** |  | 0.65 | 0.56 |  | 0.67 | 0.33 |  |  | 0.55 |
-| `multiblimp` | **0.76** | 0.59 | 0.68 | 0.73 | 0.53 | 0.45 | 0.59 | 0.68 | 0.44 | 0.61 | 0.67 | 0.55 | 0.74 | 0.71 | 0.67 |
-| `xstorycloze` | 0.61 | 0.41 | 0.50 | 0.50 | 0.64 | 0.50 | 0.61 | **0.83** | 0.61 | 0.65 | 0.58 | 0.44 | 0.67 | 0.61 | 0.67 |
-| `bbpb_include_v2_en_arabic_kuwait` |  |  |  |  |  | 0.70 |  | 0.58 | 0.50 |  | 0.60 | 0.40 |  |  | 0.68 |
-| `bbpb_rf_cultural_bench_easy_morocco` |  |  |  |  |  | **0.86** |  | 0.53 | 0.48 |  | 0.43 | 0.50 |  |  | 0.65 |
-| `bbpb_include_v2_en_arabic_qatar` |  |  |  |  |  | 0.40 |  | 0.55 | 0.56 |  | **0.80** | 0.50 |  |  | 0.62 |
-| `bbpb_cultural_bench_easy_saudi_arabia` |  |  |  |  |  | 0.67 |  | 0.61 | 0.58 |  | 0.67 | 0.33 |  |  | 0.58 |
-| `bbpb_belebele_arz_Arab` |  |  |  |  |  | 0.67 |  | 0.62 | 0.56 |  | **1.00** | 0.00 |  |  | 0.55 |
-| `rf_global_mmlu_full` | 0.62 | 0.55 | 0.58 | 0.55 | 0.62 | 0.55 | 0.47 | 0.58 | 0.55 | 0.56 | 0.67 | 0.48 | 0.38 | 0.52 | 0.74 |
-| `include_v2_og_arabic_jordan` | 0.59 | 0.65 | 0.59 | 0.64 | 0.47 | 0.55 | 0.47 | 0.74 | 0.45 | 0.67 | 0.61 | 0.36 | 0.53 | 0.61 | 0.42 |
-| `bbpb_include_v2_og_arabic_qatar` |  |  |  |  |  | 0.30 |  | 0.65 | 0.39 |  | 0.60 | 0.70 |  |  | 0.68 |
-| `bbpb_belebele_apc_Arab` |  |  |  |  |  | 0.67 |  | 0.58 | 0.55 |  | **1.00** | 0.00 |  |  | 0.52 |
-| `bbpb_include_v2_en_arabic_egypt` |  |  |  |  |  | 0.40 |  | 0.48 | 0.29 |  | **0.80** | 0.70 |  |  | 0.62 |
-| `bbpb_belebele_arb_Latn` |  |  |  |  |  | 0.67 |  | 0.48 | 0.52 |  | **1.00** | 0.00 |  |  | 0.61 |
-| `bbpb_belebele_ars_Arab` |  |  |  |  |  | 0.67 |  | 0.58 | 0.53 |  | **1.00** | 0.00 |  |  | 0.50 |
-| `bbpb_include_v2_og_arabic_ksa` |  |  |  |  |  | 0.40 |  | 0.62 | 0.48 |  | 0.50 | **0.90** |  |  | 0.35 |
-| `bbpb_include_v2_og_arabic_kuwait` |  |  |  |  |  | 0.60 |  | 0.62 | 0.56 |  | 0.30 | **0.80** |  |  | 0.36 |
-| `bbpb_include_v2_en_arabic_jordan` |  |  |  |  |  | 0.40 |  | 0.55 | 0.33 |  | **0.80** | 0.60 |  |  | 0.55 |
-| `bbpb_global_piqa_parallel_cloze_ary_arab` |  |  |  |  |  | 0.33 |  | 0.64 | 0.65 |  | 0.67 | 0.33 |  |  | 0.59 |
-| `bbpb_include_v2_og_arabic_jordan` |  |  |  |  |  | 0.40 |  | **0.76** | 0.29 |  | 0.60 | **0.80** |  |  | 0.35 |
-| `bbpb_include_v2_en_arabic_ksa` |  |  |  |  |  | 0.50 |  | 0.38 | 0.52 |  | 0.70 | 0.60 |  |  | 0.50 |
-| `include_v2_en_arabic_jordan` | 0.58 | 0.67 | 0.59 | 0.29 | 0.47 | 0.42 | 0.56 | 0.53 | 0.74 | 0.62 | 0.47 | 0.41 | 0.48 | 0.52 | 0.64 |
-| `include_v2_en_arabic_qatar` | 0.59 | 0.44 | 0.62 | 0.53 | 0.48 | 0.62 | 0.56 | 0.59 | 0.42 | 0.52 | 0.64 | 0.36 | 0.42 | 0.67 | 0.47 |
-| `belebele_arb_Arab` | 0.36 | 0.67 | 0.48 | 0.61 | 0.48 | 0.61 | 0.48 | 0.29 | 0.47 | 0.48 | 0.45 | 0.48 | 0.67 | 0.65 | 0.68 |
-| `global_mmlu_full` | 0.36 | 0.45 | 0.55 | 0.62 | 0.61 | 0.67 | 0.58 | 0.35 | 0.55 | 0.58 | 0.38 | 0.55 | 0.47 | 0.58 | 0.56 |
-| `rfgm_belebele_ars_Arab` | 0.50 | 0.62 | 0.35 | 0.47 | 0.36 | 0.70 | 0.41 | 0.65 | 0.74 | 0.36 | 0.55 | 0.55 | 0.48 | 0.42 | 0.58 |
-| `bbpb_belebele_ary_Arab` |  |  |  |  |  | 0.67 |  | 0.67 | 0.52 |  | 0.67 | 0.00 |  |  | 0.55 |
-| `rf_belebele_ars_Arab` | 0.42 | 0.70 | 0.62 | 0.52 | 0.61 | 0.41 | 0.36 | 0.53 | 0.67 | 0.52 | 0.47 | 0.47 | 0.44 | 0.47 | 0.44 |
-| `bbpb_rfgm_belebele_arb_Latn` |  |  |  |  |  | 0.54 |  | 0.56 | 0.59 |  | 0.54 | 0.43 |  |  | 0.39 |
-| `bbpb_belebele_arb_Arab` |  |  |  |  |  | 0.33 |  | 0.58 | 0.58 |  | **1.00** | 0.00 |  |  | 0.55 |
-| `rf_belebele_arz_Arab` | 0.29 | 0.35 | 0.30 | 0.53 | 0.44 | 0.68 | 0.65 | 0.55 | 0.56 | 0.58 | 0.55 | 0.58 | 0.48 | 0.50 | 0.53 |
-| `include_v2_og_arabic_morocco` | 0.47 | 0.56 | 0.53 | 0.42 | 0.32 | 0.67 | 0.55 | 0.50 | 0.44 | 0.58 | 0.41 | 0.33 | 0.50 | 0.71 | 0.53 |
-| `bbpb_include_v2_en_arabic_palestine` |  |  |  |  |  | 0.40 |  | 0.50 | 0.29 |  | 0.40 | **0.90** |  |  | 0.52 |
-| `bbpb_include_v2_og_arabic_palestine` |  |  |  |  |  | 0.50 |  | 0.73 | 0.35 |  | 0.50 | 0.60 |  |  | 0.32 |
-| `rfgm_include_base_44` | 0.48 | 0.47 | 0.58 | 0.71 | 0.58 | 0.62 | 0.36 | 0.48 | 0.58 | 0.21 | 0.38 | 0.53 | 0.52 | 0.45 | 0.52 |
-| `bbpb_include_v2_og_arabic_egypt` |  |  |  |  |  | 0.50 |  | 0.73 | 0.38 |  | 0.60 | 0.50 |  |  | 0.26 |
-| `rfgm_belebele_apc_Arab` | 0.41 | 0.65 | 0.44 | 0.35 | 0.65 | 0.50 | 0.45 | 0.58 | 0.56 | 0.24 | 0.50 | 0.73 | 0.50 | 0.41 | 0.35 |
-| `blend_sample` | 0.36 | 0.41 | 0.24 | 0.44 | 0.47 | 0.59 | 0.58 | 0.53 | 0.62 | 0.53 | 0.65 | 0.38 | 0.41 | 0.56 | 0.53 |
-| `include_v2_en_arabic_palestine` | 0.62 | 0.45 | 0.59 | 0.50 | 0.55 | 0.44 | 0.62 | 0.35 | 0.52 | 0.48 | 0.29 | 0.39 | 0.41 | 0.50 | 0.59 |
-| `rfgm_belebele_ary_Arab` | 0.65 | 0.45 | 0.29 | 0.68 | 0.41 | 0.44 | 0.32 | 0.50 | 0.27 | 0.44 | 0.58 | 0.64 | 0.45 | 0.67 | 0.50 |
-| `belebele_apc_Arab` | 0.64 | 0.59 | 0.50 | 0.44 | 0.36 | 0.55 | 0.44 | 0.36 | 0.53 | 0.38 | 0.55 | 0.53 | 0.47 | 0.42 | 0.53 |
-| `include_base_44` | 0.47 | 0.50 | 0.53 | 0.33 | 0.70 | 0.67 | 0.58 | 0.42 | 0.48 | 0.55 | 0.48 | 0.44 | 0.45 | 0.39 | 0.29 |
-| `bbpb_rf_belebele_arb_Latn` |  |  |  |  |  | 0.57 |  | 0.74 | 0.42 |  | 0.36 | 0.29 |  |  | 0.53 |
-| `include_v2_og_arabic_qatar` | 0.38 | 0.56 | 0.44 | 0.41 | 0.50 | 0.48 | 0.47 | 0.35 | 0.45 | 0.47 | 0.52 | 0.58 | 0.45 | 0.52 | 0.68 |
-| `rfgm_belebele_arb_Arab` | 0.44 | 0.33 | 0.52 | 0.50 | 0.39 | 0.62 | 0.52 | 0.61 | 0.67 | 0.33 | 0.55 | 0.52 | 0.38 | 0.50 | 0.38 |
-| `rfgm_belebele_arz_Arab` | 0.48 | 0.20 | 0.64 | 0.32 | 0.59 | 0.61 | 0.39 | 0.59 | 0.30 | 0.47 | 0.71 | 0.39 | 0.47 | 0.71 | 0.33 |
-| `include_v2_og_arabic_egypt` | 0.20 | 0.41 | 0.56 | 0.45 | 0.33 | 0.42 | 0.44 | 0.58 | 0.73 | 0.45 | 0.56 | 0.36 | 0.52 | 0.67 | 0.52 |
-| `arc` | 0.39 | 0.44 | 0.35 | 0.45 | 0.30 | 0.38 | 0.55 | 0.62 | 0.44 | 0.45 | 0.53 | 0.65 | 0.62 | 0.44 | 0.58 |
-| `bbpb_include_v2_en_arabic_morocco` |  |  |  |  |  | 0.50 |  | 0.44 | 0.47 |  | 0.40 | 0.70 |  |  | 0.36 |
-| `include_v2_en_arabic_morocco` | 0.55 | 0.41 | 0.42 | 0.50 | 0.20 | 0.52 | 0.38 | 0.33 | 0.45 | 0.52 | 0.36 | 0.58 | 0.70 | 0.70 | 0.55 |
-| `include_v2_en_arabic_ksa` | 0.48 | 0.55 | 0.39 | 0.64 | 0.53 | 0.55 | 0.53 | 0.36 | 0.56 | 0.44 | 0.33 | 0.56 | 0.39 | 0.41 | 0.42 |
-| `bbpb_include_v2_en_arabic_uae` |  |  |  |  |  | 0.30 |  | 0.64 | 0.50 |  | 0.50 | 0.50 |  |  | 0.41 |
-| `rf_belebele_arb_Latn` | 0.52 | 0.29 | 0.42 | 0.61 | 0.44 | 0.45 | 0.52 | 0.50 | 0.59 | 0.53 | 0.26 | 0.53 | 0.29 | 0.62 | 0.50 |
-| `include_v2_og_arabic_palestine` | 0.41 | 0.33 | 0.55 | 0.52 | 0.35 | 0.52 | 0.58 | 0.55 | 0.42 | 0.38 | 0.56 | 0.47 | 0.48 | 0.35 | 0.58 |
-| `global_piqa_parallel_cloze_apc_arab_leba` | 0.47 | 0.36 | 0.64 | 0.38 | 0.33 | 0.64 | 0.47 | 0.71 | 0.35 | 0.30 | 0.67 | 0.36 | 0.42 | 0.45 | 0.47 |
-| `rf_belebele_apc_Arab` | 0.59 | 0.47 | 0.38 | 0.68 | 0.36 | 0.47 | 0.36 | 0.62 | 0.35 | 0.62 | 0.47 | 0.50 | 0.27 | 0.52 | 0.36 |
-| `belebele_ary_Arab` | 0.39 | 0.42 | 0.50 | 0.61 | 0.48 | 0.50 | 0.52 | 0.18 | 0.56 | 0.50 | 0.42 | 0.52 | 0.41 | 0.48 | 0.52 |
-| `rf_include_base_44` | 0.36 | 0.52 | 0.56 | 0.41 | 0.26 | 0.52 | 0.48 | 0.41 | 0.47 | 0.48 | 0.52 | 0.53 | 0.39 | 0.59 | 0.50 |
-| `xnli` | 0.33 | 0.38 | 0.55 | 0.59 | 0.45 | 0.53 | 0.58 | 0.39 | 0.42 | 0.53 | 0.47 | 0.32 | 0.52 | 0.35 | 0.58 |
-| `belebele_arb_Latn` | 0.55 | 0.41 | 0.38 | 0.42 | 0.74 | 0.44 | 0.53 | 0.33 | 0.65 | 0.39 | 0.33 | 0.48 | 0.29 | 0.41 | 0.48 |
-| `bbpb_blend_sample` |  |  |  |  |  | 0.33 |  | 0.64 | 0.47 |  | 0.33 | 0.67 |  |  | 0.29 |
-| `include_v2_en_arabic_egypt` | 0.44 | 0.59 | 0.44 | 0.21 | 0.62 | 0.47 | 0.48 | 0.55 | 0.41 | 0.53 | 0.35 | 0.53 | 0.58 | 0.24 | 0.36 |
-| `belebele_arz_Arab` | 0.18 | 0.42 | 0.33 | 0.52 | 0.58 | 0.58 | 0.61 | 0.32 | 0.50 | 0.29 | 0.38 | 0.44 | 0.56 | 0.53 | 0.52 |
-| `cultural_bench_hard_morocco` | 0.58 | 0.58 | 0.39 | 0.27 | 0.52 | 0.70 | 0.27 | 0.36 | 0.52 | 0.36 | 0.32 | 0.47 | 0.47 | 0.52 | 0.42 |
-| `rf_belebele_ary_Arab` | 0.36 | 0.26 | 0.61 | 0.45 | 0.38 | 0.45 | 0.53 | 0.58 | 0.26 | 0.41 | 0.52 | 0.68 | 0.48 | 0.44 | 0.33 |
-| `rfgm_belebele_arb_Latn` | 0.42 | 0.44 | 0.58 | 0.50 | 0.41 | 0.44 | 0.47 | 0.26 | 0.33 | 0.55 | 0.35 | 0.44 | 0.62 | 0.47 | 0.44 |
-| `rf_belebele_arb_Arab` | 0.44 | 0.30 | 0.32 | 0.48 | 0.53 | 0.55 | 0.56 | 0.61 | 0.36 | 0.71 | 0.42 | 0.20 | 0.39 | 0.29 | 0.48 |
-| `belebele_ars_Arab` | 0.27 | 0.64 | 0.33 | 0.45 | 0.44 | 0.44 | 0.55 | 0.21 | 0.61 | 0.26 | 0.47 | 0.59 | 0.45 | 0.47 | 0.45 |
-| `bbpb_rf_cultural_bench_easy_saudi_arabia` |  |  |  |  |  | 0.46 |  | 0.39 | 0.48 |  | 0.50 | 0.29 |  |  | 0.39 |
-| `cultural_bench_easy_morocco` | 0.44 | 0.52 | 0.32 | 0.29 | 0.56 | 0.50 | 0.27 | 0.41 | 0.44 | 0.38 | 0.50 | 0.35 | 0.64 | 0.30 | 0.38 |
-| `include_v2_og_arabic_uae` | 0.50 | 0.33 | 0.36 | 0.52 | 0.47 | 0.26 | 0.33 | 0.29 | 0.47 | 0.39 | 0.47 | 0.35 | 0.52 | 0.53 | 0.42 |
-| `bbpb_include_v2_og_arabic_morocco` |  |  |  |  |  | 0.30 |  | 0.58 | 0.42 |  | 0.00 | 0.70 |  |  | 0.48 |
-| `global_piqa_parallel_cloze_apc_arab_pale` | 0.48 | 0.53 | 0.53 | 0.41 | 0.29 | 0.48 | 0.45 | 0.29 | 0.53 | 0.33 | 0.59 | 0.26 | 0.30 | 0.41 | 0.27 |
-| `global_piqa_parallel_cloze_arz_arab` | 0.39 | 0.58 | 0.45 | 0.45 | 0.33 | 0.24 | 0.30 | 0.45 | 0.30 | 0.42 | 0.41 | 0.39 | 0.52 | 0.42 | 0.47 |
-| `global_piqa_parallel_cloze_arb_arab` | 0.42 | 0.47 | 0.41 | 0.44 | 0.32 | 0.32 | 0.42 | 0.62 | 0.52 | 0.39 | 0.55 | 0.14 | 0.32 | 0.38 | 0.36 |
-| `cultural_bench_hard_saudi_arabia` | 0.33 | 0.42 | 0.42 | 0.32 | 0.48 | 0.58 | 0.27 | 0.47 | 0.35 | 0.39 | 0.56 | 0.26 | 0.45 | 0.48 | 0.27 |
-| `global_piqa_parallel_cloze_apc_arab_syri` | 0.42 | 0.50 | 0.30 | 0.32 | 0.35 | 0.45 | 0.24 | 0.61 | 0.42 | 0.33 | 0.45 | 0.47 | 0.30 | 0.38 | 0.30 |
-| `global_piqa_parallel_cloze_apc_arab_jord` | 0.24 | 0.55 | 0.48 | 0.50 | 0.24 | 0.38 | 0.32 | 0.45 | 0.53 | 0.33 | 0.35 | 0.36 | 0.41 | 0.36 | 0.27 |
-| `include_v2_en_arabic_uae` | 0.47 | 0.35 | 0.52 | 0.35 | 0.35 | 0.32 | 0.65 | 0.33 | 0.29 | 0.36 | 0.47 | 0.35 | 0.23 | 0.27 | 0.45 |
-| `cultural_bench_easy_saudi_arabia` | 0.47 | 0.41 | 0.35 | 0.36 | 0.47 | 0.44 | 0.32 | 0.45 | 0.20 | 0.20 | 0.38 | 0.35 | 0.53 | 0.38 | 0.41 |
-| `global_piqa_parallel_cloze_ars_arab` | 0.42 | 0.33 | 0.35 | 0.21 | 0.56 | 0.55 | 0.29 | 0.45 | 0.44 | 0.18 | 0.45 | 0.30 | 0.36 | 0.45 | 0.32 |
-| `global_piqa_parallel_cloze_ary_arab` | 0.39 | 0.38 | 0.20 | 0.30 | 0.35 | 0.33 | 0.33 | 0.58 | 0.47 | 0.33 | 0.41 | 0.33 | 0.26 | 0.32 | 0.48 |
-| `include_v2_og_arabic_ksa` | 0.24 | 0.55 | 0.24 | 0.48 | 0.21 | 0.27 | 0.44 | 0.15 | 0.50 | 0.23 | 0.56 | 0.24 | 0.23 | 0.64 | 0.27 |
-| `include_v2_og_arabic_kuwait` | 0.50 | 0.45 | 0.26 | 0.33 | 0.41 | 0.33 | 0.33 | 0.18 | 0.47 | 0.36 | 0.36 | 0.30 | 0.33 | 0.41 | 0.15 |
-| `include_v2_en_arabic_kuwait` | 0.39 | 0.32 | 0.38 | 0.18 | 0.29 | 0.45 | 0.32 | 0.20 | 0.24 | 0.47 | 0.33 | 0.32 | 0.38 | 0.39 | 0.21 |
-| `rf_cultural_bench_easy_saudi_arabia` | 0.32 | 0.33 | 0.47 | 0.18 | 0.18 | 0.52 | 0.21 | 0.41 | 0.32 | 0.23 | 0.21 | 0.48 | 0.33 | 0.29 | 0.35 |
-| `rf_cultural_bench_easy_morocco` | 0.41 | 0.18 | 0.41 | 0.30 | 0.45 | 0.21 | 0.39 | 0.42 | 0.33 | 0.21 | 0.21 | 0.29 | 0.33 | 0.27 | 0.38 |
+| `bpb` | **0.95** | **0.88** | **0.78** | **0.87** | **1.00** | **0.93** | **0.81** | **0.90** | **0.97** | **0.88** | **0.95** | **0.89** | **0.87** | **0.80** | **0.86** |
+| `bbpb_xstorycloze` | **0.89** | **0.89** | **0.88** | **0.88** | **0.91** | **0.96** | **0.86** | **0.86** | **0.87** | **0.84** | **0.86** | **0.87** | **0.82** | **0.86** | **0.84** |
+| `bbpb_hellaswag` | **0.97** | **0.90** | **0.84** | **0.85** | **0.91** | **0.89** | **0.85** | **0.86** | **0.88** | **0.85** | **0.86** | **0.90** | **0.81** | **0.81** | **0.80** |
+| `bbpb_rfgm_belebele_arz_Arab` | **0.81** | **0.80** | **0.90** | 0.70 | **0.85** | **0.84** | **0.82** | 0.71 | **0.78** | 0.75 | 0.73 | **0.77** | **0.76** | **0.87** | **0.88** |
+| `bbpb_rfgm_belebele_ars_Arab` | **0.85** | **0.84** | **0.82** | **0.77** | **0.76** | **0.90** | **0.76** | **0.79** | **0.83** | 0.73 | **0.80** | **0.85** | 0.70 | 0.71 | **0.85** |
+| `bbpb_rfgm_belebele_apc_Arab` | **0.79** | **0.78** | **0.87** | **0.78** | 0.74 | 0.75 | **0.79** | **0.79** | 0.72 | 0.74 | **0.87** | **0.81** | **0.78** | 0.73 | **0.82** |
+| `bbpb_rfgm_belebele_arb_Arab` | **0.90** | **0.84** | 0.70 | **0.84** | 0.73 | **0.82** | 0.65 | **0.78** | 0.73 | 0.67 | **0.85** | 0.69 | 0.71 | 0.62 | **0.77** |
+| `bbpb_rfgm_belebele_ary_Arab` | 0.70 | 0.74 | 0.75 | 0.71 | 0.74 | **0.77** | 0.71 | 0.73 | 0.68 | 0.73 | 0.74 | 0.74 | **0.77** | **0.78** | **0.78** |
+| `bbpb_rf_belebele_ary_Arab` | **0.80** | **0.79** | **0.84** | **0.76** | 0.69 | 0.70 | **0.79** | 0.67 | 0.52 | 0.74 | 0.70 | 0.73 | 0.75 | 0.62 | 0.67 |
+| `bbpb_rfgm_include_base_44` | 0.62 | **0.79** | 0.66 | 0.60 | 0.65 | 0.71 | 0.74 | 0.68 | **0.77** | 0.71 | 0.75 | 0.73 | **0.81** | **0.76** | **0.76** |
+| `bbpb_rf_belebele_ars_Arab` | **0.80** | **0.78** | 0.74 | **0.79** | 0.64 | 0.69 | 0.74 | **0.81** | 0.68 | 0.63 | 0.73 | 0.62 | 0.73 | 0.62 | 0.69 |
+| `bbpb_rf_belebele_arz_Arab` | **0.81** | **0.77** | 0.75 | 0.73 | 0.57 | **0.76** | **0.76** | 0.74 | 0.60 | **0.76** | 0.63 | 0.58 | 0.67 | 0.67 | 0.71 |
+| `bbpb_rf_belebele_apc_Arab` | **0.80** | **0.85** | 0.68 | 0.73 | 0.60 | **0.80** | **0.77** | **0.81** | 0.59 | 0.68 | 0.66 | 0.62 | 0.67 | 0.60 | 0.62 |
+| `bbpb_global_piqa_parallel_cloze_apc_arab_pale` | **0.78** | 0.74 | 0.73 | 0.73 | **0.77** | 0.65 | 0.59 | 0.68 | 0.68 | 0.57 | 0.75 | 0.70 | 0.58 | 0.71 | **0.78** |
+| `bbpb_global_piqa_parallel_cloze_arb_arab` | **0.77** | 0.66 | 0.75 | 0.59 | 0.65 | 0.71 | **0.80** | 0.71 | 0.66 | 0.71 | 0.67 | **0.77** | 0.65 | 0.70 | 0.62 |
+| `bbpb_global_piqa_parallel_cloze_apc_arab_jord` | 0.71 | **0.78** | 0.69 | 0.68 | 0.74 | 0.63 | 0.65 | 0.73 | 0.63 | 0.56 | **0.77** | 0.71 | 0.66 | 0.71 | 0.75 |
+| `bbpb_xnli` | 0.66 | 0.68 | **0.78** | **0.78** | 0.59 | **0.80** | 0.66 | 0.66 | 0.65 | **0.77** | **0.84** | 0.56 | **0.78** | 0.55 | 0.57 |
+| `bbpb_global_piqa_parallel_cloze_apc_arab_leba` | 0.74 | **0.76** | 0.69 | 0.63 | 0.62 | 0.69 | 0.65 | 0.65 | 0.59 | 0.69 | 0.69 | **0.77** | 0.60 | 0.68 | 0.70 |
+| `hellaswag` | 0.60 | 0.47 | 0.47 | 0.43 | 0.46 | **0.78** | 0.68 | 0.74 | **0.79** | 0.70 | **0.76** | **0.88** | **0.77** | 0.75 | **0.79** |
+| `bbpb_multiblimp` | 0.65 | 0.62 | 0.66 | 0.71 | 0.64 | **0.86** | 0.55 | **0.76** | 0.68 | 0.43 | 0.70 | 0.74 | 0.62 | 0.54 | 0.66 |
+| `bbpb_global_piqa_parallel_cloze_arz_arab` | 0.60 | 0.73 | 0.59 | 0.62 | 0.65 | 0.64 | 0.57 | 0.68 | 0.65 | 0.74 | 0.67 | 0.64 | 0.67 | 0.70 | 0.64 |
+| `bbpb_arc` | 0.67 | 0.75 | 0.60 | 0.65 | 0.67 | 0.66 | 0.56 | 0.74 | 0.71 | 0.51 | 0.55 | 0.62 | 0.74 | 0.58 | 0.74 |
+| `bbpb_global_piqa_parallel_cloze_apc_arab_syri` | 0.68 | 0.71 | 0.57 | 0.56 | 0.63 | 0.62 | 0.69 | 0.64 | 0.62 | 0.53 | 0.69 | 0.67 | 0.64 | 0.66 | **0.82** |
+| `bbpb_global_piqa_parallel_cloze_ars_arab` | 0.68 | 0.67 | 0.56 | 0.58 | 0.68 | **0.84** | 0.53 | 0.64 | 0.60 | 0.60 | 0.74 | 0.64 | 0.58 | 0.70 | 0.64 |
+| `bbpb_rf_global_mmlu_full` | 0.66 | 0.58 | **0.76** | 0.64 | 0.68 | 0.66 | 0.62 | **0.78** | **0.76** | 0.60 | 0.46 | 0.53 | 0.57 | 0.64 | 0.74 |
+| `bbpb_rf_include_base_44` | 0.66 | **0.81** | 0.48 | 0.52 | 0.63 | **0.76** | 0.60 | 0.62 | 0.62 | 0.49 | 0.55 | 0.59 | 0.73 | 0.66 | 0.69 |
+| `bbpb_rf_belebele_arb_Arab` | 0.74 | 0.65 | 0.74 | **0.76** | 0.54 | 0.65 | 0.67 | 0.74 | 0.54 | 0.47 | 0.56 | 0.54 | **0.78** | 0.47 | 0.54 |
+| `bbpb_global_piqa_parallel_cloze_ary_arab` | 0.66 | 0.59 | 0.65 | 0.60 | 0.62 | 0.67 | 0.68 | 0.64 | 0.60 | 0.62 | 0.75 | 0.60 | 0.60 | 0.48 | 0.55 |
+| `multiblimp` | 0.67 | 0.47 | 0.64 | 0.74 | 0.54 | 0.51 | 0.56 | 0.66 | 0.49 | 0.66 | 0.58 | 0.44 | 0.67 | 0.57 | 0.68 |
+| `bbpb_cultural_bench_easy_saudi_arabia` | 0.51 | 0.51 | 0.63 | 0.69 | 0.55 | 0.67 | 0.68 | 0.59 | 0.60 | 0.62 | 0.62 | 0.52 | 0.58 | 0.46 | 0.64 |
+| `bbpb_include_v2_og_arabic_uae` | 0.69 | 0.67 | 0.46 | 0.47 | 0.53 | 0.65 | 0.64 | 0.58 | 0.51 | 0.46 | 0.56 | 0.45 | 0.68 | 0.68 | **0.79** |
+| `bbpb_belebele_ars_Arab` | 0.52 | 0.51 | 0.68 | 0.54 | 0.65 | 0.62 | 0.70 | 0.54 | 0.60 | 0.56 | 0.64 | 0.48 | 0.66 | 0.62 | 0.49 |
+| `bbpb_belebele_arz_Arab` | 0.51 | 0.48 | 0.70 | 0.47 | 0.67 | 0.63 | 0.71 | 0.55 | 0.62 | 0.56 | 0.64 | 0.55 | 0.64 | 0.59 | 0.47 |
+| `bbpb_belebele_apc_Arab` | 0.53 | 0.46 | 0.69 | 0.47 | 0.69 | 0.65 | 0.68 | 0.55 | 0.59 | 0.57 | 0.62 | 0.51 | 0.67 | 0.58 | 0.49 |
+| `bbpb_global_mmlu_full` | 0.58 | 0.38 | 0.60 | 0.62 | 0.45 | 0.45 | 0.69 | 0.70 | 0.67 | 0.47 | 0.64 | 0.58 | 0.64 | 0.49 | **0.77** |
+| `bbpb_cultural_bench_easy_morocco` | 0.59 | 0.48 | 0.55 | 0.64 | 0.68 | 0.63 | 0.49 | 0.60 | 0.54 | 0.54 | 0.56 | 0.58 | 0.65 | 0.49 | 0.58 |
+| `bbpb_belebele_arb_Arab` | 0.47 | 0.49 | 0.66 | 0.58 | 0.62 | 0.58 | 0.66 | 0.52 | 0.62 | 0.53 | 0.58 | 0.46 | 0.70 | 0.60 | 0.53 |
+| `bbpb_belebele_ary_Arab` | 0.46 | 0.44 | 0.64 | 0.47 | 0.63 | 0.67 | 0.63 | 0.59 | 0.57 | 0.58 | 0.62 | 0.55 | 0.66 | 0.59 | 0.47 |
+| `bbpb_include_v2_og_arabic_qatar` | 0.58 | 0.66 | 0.54 | **0.79** | 0.67 | 0.51 | 0.63 | 0.66 | 0.36 | 0.31 | 0.54 | 0.53 | 0.55 | 0.58 | 0.67 |
+| `xstorycloze` | 0.47 | 0.48 | 0.51 | 0.49 | 0.67 | 0.44 | 0.58 | **0.80** | 0.49 | 0.64 | 0.54 | 0.47 | 0.68 | 0.56 | 0.57 |
+| `arc` | 0.35 | 0.57 | 0.57 | 0.54 | 0.58 | 0.44 | 0.48 | 0.57 | 0.51 | 0.60 | 0.65 | 0.59 | 0.58 | 0.64 | 0.68 |
+| `bbpb_include_v2_og_arabic_kuwait` | 0.66 | 0.67 | 0.44 | 0.55 | 0.56 | 0.64 | 0.54 | 0.60 | 0.53 | 0.37 | 0.53 | 0.58 | **0.80** | 0.46 | 0.41 |
+| `bbpb_include_base_44` | 0.53 | 0.37 | 0.45 | 0.51 | 0.47 | 0.58 | 0.64 | 0.65 | 0.64 | 0.51 | 0.60 | 0.57 | 0.53 | 0.65 | 0.59 |
+| `bbpb_include_v2_og_arabic_ksa` | 0.57 | 0.58 | 0.56 | 0.46 | 0.55 | 0.53 | 0.68 | 0.67 | 0.46 | 0.47 | 0.46 | **0.76** | 0.51 | 0.54 | 0.36 |
+| `bbpb_rfgm_belebele_arb_Latn` | 0.54 | 0.59 | 0.42 | 0.70 | 0.45 | 0.62 | 0.62 | 0.66 | 0.59 | 0.36 | 0.63 | 0.51 | 0.47 | 0.56 | 0.44 |
+| `bbpb_include_v2_og_arabic_jordan` | 0.52 | 0.75 | 0.48 | 0.57 | 0.64 | 0.48 | 0.64 | 0.75 | 0.27 | 0.38 | 0.49 | 0.69 | 0.60 | 0.47 | 0.38 |
+| `bbpb_rf_belebele_arb_Latn` | 0.66 | 0.58 | 0.47 | 0.70 | 0.54 | 0.51 | 0.55 | 0.71 | 0.48 | 0.71 | 0.51 | 0.34 | 0.55 | 0.27 | 0.51 |
+| `rf_global_mmlu_full` | 0.53 | 0.50 | 0.57 | 0.46 | 0.59 | 0.56 | 0.47 | 0.57 | 0.52 | 0.52 | 0.66 | 0.49 | 0.44 | 0.51 | 0.67 |
+| `include_v2_og_arabic_jordan` | 0.53 | 0.53 | 0.60 | 0.64 | 0.44 | 0.52 | 0.51 | 0.66 | 0.45 | 0.64 | 0.63 | 0.36 | 0.53 | 0.56 | 0.42 |
+| `global_mmlu_full` | 0.46 | 0.52 | 0.51 | 0.53 | 0.54 | 0.64 | 0.55 | 0.42 | 0.54 | 0.55 | 0.40 | 0.49 | 0.56 | 0.64 | 0.66 |
+| `bbpb_include_v2_en_arabic_qatar` | 0.37 | 0.67 | 0.48 | 0.56 | 0.71 | 0.35 | 0.43 | 0.59 | 0.49 | 0.55 | 0.56 | 0.46 | 0.53 | 0.53 | 0.60 |
+| `bbpb_include_v2_og_arabic_morocco` | 0.53 | 0.60 | 0.52 | 0.54 | 0.37 | 0.57 | 0.68 | 0.62 | 0.40 | 0.49 | 0.38 | 0.47 | 0.65 | 0.54 | 0.49 |
+| `include_v2_en_arabic_qatar` | 0.56 | 0.42 | 0.66 | 0.55 | 0.47 | 0.58 | 0.49 | 0.55 | 0.43 | 0.49 | 0.58 | 0.49 | 0.44 | 0.62 | 0.49 |
+| `bbpb_include_v2_en_arabic_jordan` | 0.30 | 0.70 | 0.55 | 0.57 | 0.60 | 0.35 | 0.42 | 0.59 | 0.32 | 0.56 | 0.60 | 0.58 | 0.47 | 0.71 | 0.51 |
+| `include_v2_en_arabic_jordan` | 0.60 | 0.68 | 0.56 | 0.24 | 0.51 | 0.47 | 0.51 | 0.49 | 0.64 | 0.62 | 0.43 | 0.47 | 0.46 | 0.54 | 0.58 |
+| `bbpb_include_v2_en_arabic_ksa` | 0.38 | 0.63 | 0.52 | 0.65 | 0.60 | 0.43 | 0.52 | 0.43 | 0.51 | 0.47 | 0.56 | 0.47 | 0.45 | 0.64 | 0.49 |
+| `belebele_arb_Arab` | 0.36 | 0.59 | 0.52 | 0.59 | 0.46 | 0.52 | 0.56 | 0.31 | 0.43 | 0.44 | 0.51 | 0.53 | 0.63 | 0.60 | 0.70 |
+| `rfgm_include_base_44` | 0.50 | 0.43 | 0.58 | 0.64 | 0.54 | 0.57 | 0.43 | 0.51 | 0.56 | 0.32 | 0.53 | 0.57 | 0.52 | 0.47 | 0.55 |
+| `bbpb_include_v2_en_arabic_palestine` | 0.38 | 0.66 | 0.56 | 0.54 | 0.60 | 0.46 | 0.49 | 0.49 | 0.29 | 0.48 | 0.57 | 0.54 | 0.52 | 0.59 | 0.53 |
+| `bbpb_include_v2_og_arabic_palestine` | 0.55 | 0.74 | 0.33 | 0.46 | 0.53 | 0.51 | 0.54 | 0.71 | 0.32 | 0.53 | 0.44 | 0.50 | 0.60 | 0.53 | 0.37 |
+| `bbpb_include_v2_og_arabic_egypt` | 0.60 | 0.68 | 0.41 | 0.52 | 0.46 | 0.48 | 0.60 | 0.67 | 0.36 | 0.40 | 0.46 | 0.49 | 0.65 | 0.50 | 0.33 |
+| `blend_sample` | 0.44 | 0.46 | 0.27 | 0.43 | 0.53 | 0.66 | 0.55 | 0.51 | 0.67 | 0.53 | 0.60 | 0.41 | 0.49 | 0.55 | 0.52 |
+| `bbpb_include_v2_en_arabic_egypt` | 0.37 | 0.56 | 0.40 | 0.41 | 0.56 | 0.46 | 0.41 | 0.53 | 0.28 | 0.53 | 0.67 | 0.54 | 0.62 | 0.67 | 0.62 |
+| `bbpb_belebele_arb_Latn` | 0.52 | 0.49 | 0.46 | 0.58 | 0.46 | 0.36 | 0.42 | 0.49 | 0.55 | 0.44 | 0.69 | 0.51 | 0.44 | 0.58 | 0.57 |
+| `include_base_44` | 0.41 | 0.46 | 0.53 | 0.35 | 0.67 | 0.57 | 0.58 | 0.51 | 0.54 | 0.57 | 0.49 | 0.45 | 0.55 | 0.45 | 0.41 |
+| `rfgm_belebele_ars_Arab` | 0.45 | 0.62 | 0.43 | 0.43 | 0.32 | 0.68 | 0.51 | 0.54 | 0.70 | 0.47 | 0.46 | 0.55 | 0.36 | 0.42 | 0.59 |
+| `rf_belebele_ars_Arab` | 0.53 | 0.55 | 0.49 | 0.57 | 0.51 | 0.47 | 0.33 | 0.56 | 0.58 | 0.54 | 0.44 | 0.51 | 0.43 | 0.54 | 0.44 |
+| `bbpb_include_v2_en_arabic_kuwait` | 0.33 | 0.56 | 0.47 | 0.49 | 0.47 | 0.55 | 0.55 | 0.57 | 0.44 | 0.32 | 0.69 | 0.50 | 0.38 | 0.50 | 0.64 |
+| `rf_belebele_arz_Arab` | 0.32 | 0.42 | 0.36 | 0.51 | 0.47 | 0.60 | 0.62 | 0.57 | 0.52 | 0.55 | 0.48 | 0.65 | 0.45 | 0.52 | 0.44 |
+| `bbpb_rf_cultural_bench_easy_saudi_arabia` | 0.48 | 0.64 | 0.56 | 0.25 | 0.54 | 0.34 | 0.59 | 0.46 | 0.47 | 0.51 | 0.44 | 0.68 | 0.43 | 0.63 | 0.42 |
+| `bbpb_include_v2_en_arabic_morocco` | 0.73 | 0.60 | 0.30 | 0.54 | 0.33 | 0.51 | 0.44 | 0.44 | 0.42 | 0.45 | 0.41 | 0.55 | 0.63 | 0.63 | 0.41 |
+| `rfgm_belebele_arz_Arab` | 0.51 | 0.27 | 0.68 | 0.36 | 0.58 | 0.59 | 0.40 | 0.54 | 0.38 | 0.44 | 0.66 | 0.43 | 0.49 | 0.67 | 0.31 |
+| `include_v2_og_arabic_morocco` | 0.40 | 0.59 | 0.49 | 0.48 | 0.32 | 0.58 | 0.62 | 0.49 | 0.42 | 0.53 | 0.45 | 0.31 | 0.51 | 0.63 | 0.49 |
+| `rfgm_belebele_apc_Arab` | 0.43 | 0.64 | 0.42 | 0.46 | 0.55 | 0.48 | 0.44 | 0.49 | 0.60 | 0.38 | 0.52 | 0.64 | 0.51 | 0.42 | 0.30 |
+| `include_v2_en_arabic_ksa` | 0.53 | 0.50 | 0.45 | 0.65 | 0.51 | 0.53 | 0.55 | 0.43 | 0.54 | 0.40 | 0.30 | 0.54 | 0.47 | 0.41 | 0.45 |
+| `bbpb_rf_cultural_bench_easy_morocco` | 0.22 | 0.41 | 0.52 | 0.44 | 0.47 | 0.51 | 0.48 | 0.58 | 0.51 | 0.49 | 0.46 | 0.55 | 0.33 | 0.56 | 0.68 |
+| `include_v2_en_arabic_palestine` | 0.58 | 0.41 | 0.58 | 0.51 | 0.57 | 0.44 | 0.63 | 0.31 | 0.52 | 0.49 | 0.30 | 0.37 | 0.40 | 0.49 | 0.58 |
+| `include_v2_og_arabic_palestine` | 0.43 | 0.42 | 0.49 | 0.55 | 0.32 | 0.55 | 0.59 | 0.56 | 0.45 | 0.38 | 0.62 | 0.46 | 0.46 | 0.40 | 0.47 |
+| `belebele_ary_Arab` | 0.44 | 0.44 | 0.53 | 0.56 | 0.51 | 0.49 | 0.60 | 0.19 | 0.55 | 0.45 | 0.51 | 0.52 | 0.37 | 0.49 | 0.51 |
+| `include_v2_og_arabic_egypt` | 0.25 | 0.38 | 0.58 | 0.41 | 0.42 | 0.44 | 0.38 | 0.53 | 0.65 | 0.44 | 0.59 | 0.35 | 0.55 | 0.67 | 0.51 |
+| `global_piqa_parallel_cloze_ars_arab` | 0.28 | 0.51 | 0.46 | 0.51 | 0.48 | 0.46 | 0.32 | 0.45 | 0.60 | 0.45 | 0.69 | 0.47 | 0.54 | 0.51 | 0.42 |
+| `bbpb_blend_sample` | 0.57 | 0.49 | 0.56 | 0.41 | 0.62 | 0.35 | 0.37 | 0.57 | 0.54 | 0.69 | 0.32 | 0.57 | 0.21 | 0.59 | 0.26 |
+| `belebele_apc_Arab` | 0.49 | 0.61 | 0.46 | 0.47 | 0.37 | 0.42 | 0.53 | 0.34 | 0.47 | 0.33 | 0.63 | 0.59 | 0.42 | 0.38 | 0.59 |
+| `bbpb_include_v2_en_arabic_uae` | 0.43 | 0.48 | 0.38 | 0.53 | 0.59 | 0.37 | 0.43 | 0.64 | 0.51 | 0.59 | 0.47 | 0.19 | 0.55 | 0.40 | 0.44 |
+| `include_v2_og_arabic_qatar` | 0.41 | 0.47 | 0.38 | 0.37 | 0.48 | 0.44 | 0.52 | 0.34 | 0.48 | 0.47 | 0.54 | 0.52 | 0.51 | 0.48 | 0.56 |
+| `include_v2_en_arabic_morocco` | 0.58 | 0.47 | 0.37 | 0.43 | 0.27 | 0.54 | 0.42 | 0.31 | 0.42 | 0.47 | 0.34 | 0.56 | 0.66 | 0.58 | 0.54 |
+| `rfgm_belebele_ary_Arab` | 0.55 | 0.48 | 0.33 | 0.62 | 0.43 | 0.45 | 0.34 | 0.46 | 0.27 | 0.45 | 0.46 | 0.52 | 0.42 | 0.64 | 0.55 |
+| `rfgm_belebele_arb_Arab` | 0.48 | 0.47 | 0.52 | 0.45 | 0.30 | 0.61 | 0.51 | 0.54 | 0.54 | 0.36 | 0.47 | 0.40 | 0.42 | 0.46 | 0.45 |
+| `rf_belebele_apc_Arab` | 0.65 | 0.52 | 0.31 | 0.73 | 0.35 | 0.47 | 0.32 | 0.65 | 0.34 | 0.52 | 0.46 | 0.51 | 0.25 | 0.52 | 0.37 |
+| `rf_belebele_arb_Arab` | 0.41 | 0.34 | 0.38 | 0.49 | 0.56 | 0.54 | 0.57 | 0.65 | 0.33 | 0.74 | 0.46 | 0.24 | 0.43 | 0.34 | 0.46 |
+| `include_v2_en_arabic_egypt` | 0.42 | 0.55 | 0.48 | 0.25 | 0.62 | 0.53 | 0.45 | 0.49 | 0.41 | 0.48 | 0.38 | 0.56 | 0.59 | 0.32 | 0.41 |
+| `xnli` | 0.33 | 0.40 | 0.54 | 0.59 | 0.42 | 0.49 | 0.58 | 0.41 | 0.40 | 0.56 | 0.47 | 0.32 | 0.55 | 0.34 | 0.53 |
+| `belebele_ars_Arab` | 0.39 | 0.61 | 0.35 | 0.46 | 0.51 | 0.46 | 0.54 | 0.25 | 0.66 | 0.24 | 0.52 | 0.55 | 0.43 | 0.51 | 0.43 |
+| `rf_belebele_arb_Latn` | 0.36 | 0.27 | 0.45 | 0.51 | 0.48 | 0.53 | 0.45 | 0.58 | 0.55 | 0.51 | 0.36 | 0.51 | 0.29 | 0.58 | 0.47 |
+| `rfgm_belebele_arb_Latn` | 0.46 | 0.35 | 0.59 | 0.46 | 0.48 | 0.48 | 0.54 | 0.29 | 0.35 | 0.56 | 0.37 | 0.43 | 0.59 | 0.48 | 0.42 |
+| `rf_belebele_ary_Arab` | 0.37 | 0.26 | 0.64 | 0.46 | 0.40 | 0.42 | 0.54 | 0.58 | 0.27 | 0.36 | 0.48 | 0.59 | 0.55 | 0.48 | 0.44 |
+| `rf_include_base_44` | 0.45 | 0.47 | 0.55 | 0.37 | 0.27 | 0.47 | 0.43 | 0.40 | 0.47 | 0.43 | 0.53 | 0.52 | 0.38 | 0.55 | 0.48 |
+| `belebele_arz_Arab` | 0.23 | 0.40 | 0.36 | 0.55 | 0.52 | 0.52 | 0.65 | 0.36 | 0.40 | 0.30 | 0.44 | 0.49 | 0.57 | 0.44 | 0.53 |
+| `cultural_bench_hard_morocco` | 0.54 | 0.57 | 0.43 | 0.29 | 0.58 | 0.54 | 0.27 | 0.37 | 0.43 | 0.40 | 0.33 | 0.52 | 0.45 | 0.53 | 0.40 |
+| `cultural_bench_easy_morocco` | 0.45 | 0.53 | 0.33 | 0.30 | 0.51 | 0.59 | 0.32 | 0.43 | 0.45 | 0.38 | 0.44 | 0.35 | 0.64 | 0.40 | 0.47 |
+| `global_piqa_parallel_cloze_arb_arab` | 0.51 | 0.58 | 0.37 | 0.58 | 0.51 | 0.25 | 0.25 | 0.55 | 0.43 | 0.32 | 0.55 | 0.49 | 0.29 | 0.27 | 0.59 |
+| `belebele_arb_Latn` | 0.47 | 0.40 | 0.40 | 0.41 | 0.64 | 0.42 | 0.43 | 0.37 | 0.67 | 0.41 | 0.33 | 0.49 | 0.27 | 0.35 | 0.47 |
+| `cultural_bench_hard_saudi_arabia` | 0.30 | 0.46 | 0.42 | 0.32 | 0.53 | 0.55 | 0.41 | 0.57 | 0.32 | 0.43 | 0.58 | 0.25 | 0.56 | 0.45 | 0.27 |
+| `include_v2_og_arabic_uae` | 0.53 | 0.31 | 0.41 | 0.47 | 0.41 | 0.26 | 0.38 | 0.29 | 0.44 | 0.44 | 0.48 | 0.44 | 0.49 | 0.54 | 0.44 |
+| `global_piqa_parallel_cloze_apc_arab_jord` | 0.46 | 0.56 | 0.31 | 0.33 | 0.41 | 0.43 | 0.30 | 0.45 | 0.52 | 0.41 | 0.38 | 0.46 | 0.38 | 0.29 | 0.43 |
+| `global_piqa_parallel_cloze_apc_arab_pale` | 0.70 | 0.55 | 0.36 | 0.42 | 0.26 | 0.58 | 0.31 | 0.31 | 0.24 | 0.41 | 0.37 | 0.37 | 0.40 | 0.30 | 0.46 |
+| `global_piqa_parallel_cloze_ary_arab` | 0.52 | 0.57 | 0.26 | 0.38 | 0.29 | 0.38 | 0.44 | 0.33 | 0.22 | 0.21 | 0.42 | 0.30 | 0.33 | 0.54 | 0.63 |
+| `include_v2_en_arabic_uae` | 0.40 | 0.29 | 0.54 | 0.41 | 0.41 | 0.45 | 0.58 | 0.31 | 0.27 | 0.37 | 0.41 | 0.32 | 0.29 | 0.30 | 0.45 |
+| `cultural_bench_easy_saudi_arabia` | 0.44 | 0.40 | 0.42 | 0.38 | 0.42 | 0.50 | 0.26 | 0.40 | 0.25 | 0.21 | 0.35 | 0.44 | 0.54 | 0.38 | 0.36 |
+| `global_piqa_parallel_cloze_arz_arab` | 0.28 | 0.58 | 0.47 | 0.23 | 0.40 | 0.46 | 0.34 | 0.33 | 0.36 | 0.51 | 0.33 | 0.36 | 0.30 | 0.37 | 0.35 |
+| `global_piqa_parallel_cloze_apc_arab_syri` | 0.54 | 0.53 | 0.14 | 0.32 | 0.45 | 0.38 | 0.36 | 0.56 | 0.35 | 0.19 | 0.26 | 0.45 | 0.38 | 0.36 | 0.35 |
+| `global_piqa_parallel_cloze_apc_arab_leba` | 0.40 | 0.58 | 0.34 | 0.18 | 0.42 | 0.19 | 0.33 | 0.38 | 0.53 | 0.31 | 0.37 | 0.35 | 0.31 | 0.31 | 0.40 |
+| `include_v2_og_arabic_ksa` | 0.23 | 0.46 | 0.23 | 0.54 | 0.25 | 0.33 | 0.45 | 0.18 | 0.45 | 0.22 | 0.54 | 0.24 | 0.22 | 0.65 | 0.27 |
+| `include_v2_og_arabic_kuwait` | 0.44 | 0.37 | 0.25 | 0.36 | 0.37 | 0.28 | 0.32 | 0.21 | 0.46 | 0.38 | 0.43 | 0.33 | 0.32 | 0.42 | 0.19 |
+| `include_v2_en_arabic_kuwait` | 0.34 | 0.35 | 0.38 | 0.31 | 0.35 | 0.43 | 0.32 | 0.21 | 0.20 | 0.53 | 0.34 | 0.30 | 0.40 | 0.37 | 0.29 |
+| `rf_cultural_bench_easy_saudi_arabia` | 0.32 | 0.31 | 0.45 | 0.22 | 0.24 | 0.43 | 0.22 | 0.37 | 0.25 | 0.30 | 0.22 | 0.48 | 0.33 | 0.36 | 0.36 |
+| `rf_cultural_bench_easy_morocco` | 0.33 | 0.18 | 0.40 | 0.31 | 0.41 | 0.26 | 0.35 | 0.35 | 0.36 | 0.26 | 0.22 | 0.26 | 0.24 | 0.25 | 0.36 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2096,25 +2143,25 @@ subtitle: "Azerbaijani (az) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_rfgm_belebele` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
+| `bbpb_rfgm_belebele` | **1.00** | **1.00** | **0.83** | **1.00** | **1.00** | **1.00** | **0.83** | **1.00** | **1.00** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** |
 | `bpb` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
-| `bbpb_rf_belebele` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | 0.67 | **1.00** |  |  |  |  |  | 0.67 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  |  |  | 0.67 | **1.00** |  |  |  |  |  | 0.67 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | 0.67 | 0.67 |  |  |  |  |  | **1.00** |
+| `bbpb_rfgm_include_base_44` | **1.00** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** |
+| `bbpb_rf_belebele` | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** |
+| `bbpb_global_piqa_parallel_cloze` | 0.67 | **0.83** | 0.67 | **1.00** | **1.00** | **0.83** | **1.00** | 0.67 | 0.67 | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | **1.00** |
+| `bbpb_include_v2_og` | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | 0.67 | 0.67 |
+| `bbpb_rf_include_base_44` | **1.00** | 0.67 | 0.67 | 0.67 | **1.00** | 0.67 | 0.67 | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | 0.67 | 0.67 |
 | `rfgm_include_base_44` | **1.00** | **0.83** | **0.83** | 0.50 | 0.50 | **0.83** | **0.83** | 0.50 | 0.50 | 0.67 | 0.33 | 0.67 | 0.50 | 0.50 | 0.67 |
 | `include_v2_en` | 0.33 | 0.50 | 0.67 | **0.83** | 0.17 | **0.83** | 0.67 | 0.50 | **0.83** | **0.83** | 0.67 | 0.67 | 0.50 | 0.50 | 0.33 |
+| `bbpb_belebele` | 0.67 | 0.33 | 0.50 | 0.67 | 0.67 | 0.67 | **0.83** | 0.33 | 0.33 | **0.83** | 0.33 | 0.33 | 0.50 | 0.50 | **1.00** |
 | `include_base_44` | 0.67 | 0.67 | 0.50 | 0.67 | 0.33 | 0.33 | 0.33 | 0.33 | 0.00 | **0.83** | **1.00** | 0.67 | **0.83** | 0.50 | 0.67 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.33 | 0.33 |  |  |  |  |  | **1.00** |
 | `rfgm_belebele` | 0.50 | 0.50 | 0.50 | 0.50 | 0.00 | 0.67 | 0.67 | 0.33 | 0.50 | **1.00** | 0.67 | 0.50 | 0.67 | 0.50 | 0.50 |
+| `bbpb_include_base_44` | 0.33 | 0.33 | 0.67 | 0.50 | 0.17 | 0.67 | 0.33 | 0.50 | 0.50 | 0.67 | **0.83** | 0.50 | **0.83** | 0.50 | 0.33 |
 | `include_v2_og` | 0.67 | 0.67 | 0.17 | 0.17 | 0.17 | **1.00** | 0.50 | 0.50 | 0.17 | 0.50 | 0.50 | 0.17 | 0.67 | 0.67 | 0.67 |
+| `bbpb_include_v2_en` | 0.17 | 0.67 | 0.17 | 0.50 | 0.67 | 0.50 | 0.67 | 0.67 | 0.17 | 0.50 | **0.83** | 0.33 | 0.67 | 0.17 | 0.17 |
 | `rf_belebele` | 0.67 | 0.50 | 0.17 | 0.50 | 0.67 | 0.33 | 0.33 | 0.67 | 0.67 | 0.33 | 0.33 | 0.67 | 0.67 | 0.00 | 0.33 |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.50 | 0.50 |  |  |  |  |  | 0.33 |
 | `belebele` | 0.50 | 0.33 | **0.83** | 0.17 | 0.33 | **0.83** | 0.33 | 0.50 | 0.17 | 0.17 | 0.67 | 0.33 | 0.33 | 0.50 | 0.50 |
-| `global_piqa_parallel_cloze` | 0.17 | 0.50 | 0.33 | 0.67 | 0.17 | 0.50 | 0.67 | 0.17 | **0.83** | 0.17 | 0.17 | 0.33 | 0.33 | 0.67 | 0.17 |
+| `global_piqa_parallel_cloze` | 0.67 | 0.00 | 0.33 | 0.17 | 0.50 | 0.33 | 0.50 | 0.33 | **0.83** | 0.33 | 0.33 | 0.33 | **0.83** | 0.33 | 0.17 |
 | `rf_include_base_44` | 0.50 | 0.17 | 0.33 | 0.17 | 0.67 | 0.33 | 0.33 | 0.17 | 0.50 | 0.33 | 0.50 | 0.50 | **0.83** | 0.00 | 0.17 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.67 | 0.17 |  |  |  |  |  | 0.17 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2137,29 +2184,29 @@ subtitle: "Bulgarian (bg) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_rf_belebele` |  |  |  |  |  | **1.00** |  | **0.95** | **0.76** |  | **1.00** | **1.00** |  |  | 0.71 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **1.00** |  | **0.86** | **0.81** |  | **1.00** | 0.67 |  |  | **0.95** |
-| `bpb` | **1.00** | **0.95** | **0.76** | **0.90** | **0.90** | **0.95** | **0.76** | **0.90** | **0.90** | 0.71 | **0.95** | **0.95** | 0.67 | 0.67 | **1.00** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **1.00** |  | **0.90** | **0.81** |  | 0.67 | **1.00** |  |  | 0.71 |
-| `multiblimp` | **0.81** | 0.71 | 0.67 | **0.86** | **0.81** | **0.90** | **0.76** | **0.76** | **0.90** | **0.86** | **0.86** | **0.81** | **0.81** | **0.86** | **0.76** |
-| `bbpb_xnli` |  |  |  |  |  | 0.67 |  | 0.67 | 0.71 |  | **1.00** | **1.00** |  |  | 0.67 |
-| `bbpb_multiblimp` |  |  |  |  |  |  |  | **0.90** | 0.71 |  |  |  |  |  | 0.62 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | 0.71 | **0.86** |  |  |  |  |  | 0.67 |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | **0.76** | 0.67 |  |  |  |  |  | 0.71 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.67 |  | **1.00** | 0.62 |  | 0.67 | 0.67 |  |  | 0.62 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.71 | 0.43 |  |  |  |  |  | 0.52 |
-| `include_v2_en` | 0.38 | 0.57 | **0.86** | 0.57 | 0.57 | 0.33 | 0.33 | 0.33 | 0.10 | 0.62 | **0.90** | 0.62 | 0.62 | 0.52 | 0.62 |
-| `xnli` | 0.43 | 0.57 | 0.29 | 0.57 | 0.48 | 0.67 | 0.57 | 0.62 | 0.67 | 0.71 | 0.48 | 0.52 | 0.38 | 0.52 | 0.48 |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.52 | 0.48 |  |  |  |  |  | 0.57 |
-| `rfgm_belebele` | 0.29 | 0.43 | 0.48 | 0.33 | **0.76** | 0.62 | 0.71 | 0.57 | 0.19 | 0.62 | 0.67 | 0.52 | **0.76** | 0.38 | 0.43 |
-| `rf_include_base_44` | 0.71 | 0.52 | 0.52 | 0.67 | 0.62 | 0.33 | 0.62 | 0.67 | 0.57 | 0.14 | 0.57 | 0.33 | 0.48 | 0.43 | 0.48 |
-| `include_v2_og` | 0.57 | 0.24 | 0.67 | 0.71 | 0.38 | 0.29 | 0.71 | **0.76** | 0.52 | 0.29 | 0.14 | 0.38 | 0.67 | 0.57 | 0.48 |
-| `belebele` | 0.38 | 0.43 | 0.48 | 0.33 | 0.43 | **0.76** | 0.33 | 0.57 | **0.76** | 0.14 | 0.62 | 0.62 | 0.19 | 0.48 | 0.52 |
-| `rf_belebele` | 0.10 | 0.14 | 0.24 | 0.14 | 0.52 | 0.71 | 0.52 | **0.90** | 0.38 | 0.62 | 0.62 | 0.43 | 0.43 | 0.43 | 0.48 |
-| `include_base_44` | 0.29 | 0.67 | 0.62 | 0.67 | 0.43 | 0.48 | 0.52 | 0.14 | 0.38 | 0.62 | 0.33 | 0.48 | 0.38 | 0.19 | 0.43 |
-| `rfgm_include_base_44` | 0.19 | **0.76** | 0.19 | 0.38 | 0.67 | 0.19 | 0.52 | 0.62 | 0.43 | 0.43 | 0.29 | 0.48 | 0.38 | 0.05 | 0.57 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.29 | 0.33 |  |  |  |  |  | 0.57 |
-| `global_piqa_parallel_cloze` | 0.38 | 0.48 | 0.43 | 0.29 | 0.33 | 0.00 | 0.24 | 0.38 | 0.52 | 0.62 | 0.33 | 0.24 | 0.24 | 0.10 | 0.71 |
+| `bpb` | **1.00** | **0.86** | **0.79** | **0.86** | **0.90** | **0.86** | **0.79** | **0.86** | **0.90** | 0.64 | **0.93** | **0.95** | 0.64 | 0.67 | **1.00** |
+| `bbpb_rfgm_belebele` | **0.93** | **0.75** | **0.89** | **0.93** | **0.81** | **0.75** | **0.89** | **0.93** | **0.81** | **0.79** | 0.68 | **0.86** | **0.82** | **0.86** | 0.71 |
+| `bbpb_rfgm_include_base_44` | **0.75** | **0.86** | 0.71 | **0.82** | **0.90** | **0.89** | **0.82** | **0.86** | **0.81** | **0.86** | **0.82** | **0.86** | 0.68 | 0.67 | **0.95** |
+| `bbpb_rf_belebele` | **0.82** | **0.86** | **0.79** | **0.79** | **0.86** | **0.82** | **0.75** | **0.96** | **0.75** | 0.64 | **0.79** | 0.71 | 0.71 | **0.79** | 0.71 |
+| `multiblimp` | 0.67 | 0.64 | 0.68 | **0.86** | 0.71 | **0.89** | **0.75** | 0.71 | **0.93** | **0.86** | **0.82** | **0.82** | **0.82** | **0.82** | 0.71 |
+| `bbpb_multiblimp` | 0.71 | **0.79** | **0.86** | **0.75** | **0.86** | **0.86** | 0.64 | **0.82** | 0.71 | 0.71 | **0.82** | 0.71 | **0.82** | **0.79** | 0.61 |
+| `bbpb_global_piqa_parallel_cloze` | **0.93** | **0.82** | **0.82** | 0.64 | **0.82** | **0.82** | **0.75** | 0.64 | **0.82** | **0.86** | 0.68 | **0.79** | 0.68 | 0.64 | 0.68 |
+| `bbpb_xnli` | **0.89** | 0.71 | **0.93** | **0.75** | 0.71 | 0.61 | **0.89** | 0.64 | 0.68 | 0.71 | 0.68 | **0.86** | 0.68 | **0.79** | 0.68 |
+| `bbpb_rf_include_base_44` | **0.79** | **0.75** | 0.50 | **0.75** | 0.54 | **0.75** | 0.64 | **0.89** | 0.61 | 0.61 | **0.79** | **0.79** | **0.75** | 0.68 | 0.64 |
+| `bbpb_include_v2_og` | 0.64 | 0.64 | 0.46 | 0.71 | 0.57 | 0.71 | 0.54 | **0.79** | 0.67 | **0.75** | 0.71 | 0.71 | 0.54 | **0.76** | 0.71 |
+| `bbpb_belebele` | 0.54 | 0.68 | 0.61 | 0.54 | 0.68 | 0.57 | 0.71 | **0.79** | 0.57 | 0.64 | 0.57 | 0.50 | 0.71 | 0.71 | 0.64 |
+| `xnli` | 0.64 | 0.42 | 0.32 | 0.50 | 0.57 | 0.44 | 0.54 | 0.57 | **0.75** | 0.71 | 0.50 | 0.46 | 0.39 | 0.50 | 0.46 |
+| `include_v2_en` | 0.31 | 0.56 | 0.68 | 0.46 | 0.64 | 0.33 | 0.50 | 0.43 | 0.07 | 0.54 | **0.82** | 0.64 | 0.64 | 0.39 | 0.54 |
+| `rfgm_belebele` | 0.25 | 0.33 | 0.50 | 0.32 | **0.75** | 0.64 | 0.61 | 0.50 | 0.21 | 0.64 | 0.68 | 0.50 | **0.75** | 0.39 | 0.36 |
+| `include_v2_og` | 0.56 | 0.33 | 0.61 | 0.71 | 0.46 | 0.28 | 0.64 | 0.71 | 0.50 | 0.36 | 0.25 | 0.43 | 0.57 | 0.54 | 0.46 |
+| `bbpb_include_base_44` | 0.54 | 0.36 | 0.64 | 0.43 | 0.61 | 0.54 | 0.32 | 0.54 | 0.43 | 0.36 | 0.64 | 0.54 | 0.29 | 0.61 | 0.54 |
+| `rf_belebele` | 0.28 | 0.39 | 0.39 | 0.29 | 0.46 | 0.72 | 0.50 | **0.82** | 0.43 | 0.68 | 0.64 | 0.39 | 0.54 | 0.36 | 0.43 |
+| `rf_include_base_44` | 0.61 | 0.39 | 0.50 | 0.64 | 0.64 | 0.36 | 0.61 | 0.61 | 0.50 | 0.14 | 0.57 | 0.36 | 0.50 | 0.39 | 0.46 |
+| `bbpb_include_v2_en` | 0.39 | 0.64 | 0.43 | 0.46 | 0.71 | 0.39 | 0.39 | 0.29 | 0.33 | 0.50 | 0.54 | 0.48 | 0.54 | 0.38 | 0.57 |
+| `rfgm_include_base_44` | 0.36 | 0.64 | 0.29 | 0.46 | **0.75** | 0.28 | 0.54 | 0.64 | 0.57 | 0.43 | 0.29 | 0.50 | 0.36 | 0.18 | 0.61 |
+| `belebele` | 0.28 | 0.56 | 0.54 | 0.39 | 0.36 | 0.56 | 0.29 | 0.57 | **0.82** | 0.29 | 0.54 | 0.50 | 0.21 | 0.39 | 0.54 |
+| `include_base_44` | 0.33 | 0.72 | 0.64 | 0.68 | 0.39 | 0.47 | 0.54 | 0.11 | 0.36 | 0.61 | 0.39 | 0.43 | 0.39 | 0.21 | 0.46 |
+| `global_piqa_parallel_cloze` | 0.25 | 0.67 | 0.71 | 0.50 | 0.18 | 0.25 | 0.25 | 0.57 | 0.39 | 0.71 | 0.39 | 0.36 | 0.50 | 0.14 | 0.21 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2182,47 +2229,47 @@ subtitle: "Bengali (bn) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **0.98** | **0.91** | **0.82** | **0.87** | **0.93** | **0.93** | **0.84** | **0.89** | **0.95** | **0.87** | **0.89** | **0.87** | **0.87** | **0.78** | **0.91** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **0.90** |  | **0.80** | **0.84** |  | **1.00** | **0.81** |  |  | **0.85** |
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | **0.87** | **0.89** |  |  |  |  |  | **0.84** |
-| `bbpb_rfgm_belebele_ben_Beng` |  |  |  |  |  | **0.81** |  | **0.91** | **0.76** |  | **0.90** | **0.90** |  |  | **0.82** |
-| `bbpb_global_piqa_parallel_cloze_ben_beng` |  |  |  |  |  |  |  | **0.93** | **0.76** |  |  |  |  |  | **0.76** |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | **0.86** |  | **0.80** | **0.80** |  | **0.95** | 0.71 |  |  | 0.71 |
-| `bbpb_include_v2_og_bengali_bangladesh` |  |  |  |  |  | **0.83** |  | 0.64 | **0.76** |  | **0.83** | **0.83** |  |  | **0.80** |
-| `bbpb_arc` |  |  |  |  |  |  |  | 0.73 | **0.84** |  |  |  |  |  | **0.78** |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.95** |  | 0.73 | **0.76** |  | 0.71 | 0.67 |  |  | **0.85** |
-| `bbpb_rf_belebele_ben_Beng` |  |  |  |  |  | **0.76** |  | 0.69 | 0.71 |  | 0.71 | **0.76** |  |  | **0.76** |
-| `bbpb_include_v2_og_bengali_india` |  |  |  |  |  | 0.50 |  | 0.53 | 0.64 |  | **0.83** | **0.83** |  |  | 0.64 |
-| `bbpb_belebele_ben_Latn` |  |  |  |  |  |  |  | 0.55 | 0.65 |  |  |  |  |  | 0.60 |
-| `bbpb_include_v2_en_bengali_bangladesh` |  |  |  |  |  | 0.67 |  | 0.49 | 0.31 |  | 0.67 | **0.83** |  |  | 0.56 |
-| `bbpb_multiblimp` |  |  |  |  |  | 0.50 |  | 0.69 | 0.56 |  | 0.70 | 0.70 |  |  | 0.36 |
-| `include_v2_og_bengali_bangladesh` | 0.53 | 0.53 | 0.69 | 0.55 | 0.58 | 0.33 | 0.47 | 0.49 | 0.47 | 0.55 | 0.58 | 0.58 | **0.78** | **0.76** | **0.87** |
-| `bbpb_rf_belebele_ben_Latn` |  |  |  |  |  | 0.57 |  | 0.65 | 0.64 |  | 0.43 | 0.43 |  |  | 0.73 |
-| `bbpb_global_piqa_parallel_cloze_ben_latn` |  |  |  |  |  |  |  | 0.53 | 0.47 |  |  |  |  |  | 0.69 |
-| `bbpb_rfgm_belebele_ben_Latn` |  |  |  |  |  | 0.57 |  | 0.55 | 0.62 |  | 0.57 | 0.43 |  |  | 0.56 |
-| `belebele_ben_Latn` | 0.60 | 0.71 | 0.49 | 0.58 | 0.64 | **0.82** | 0.38 | 0.44 | 0.53 | 0.40 | 0.47 | 0.58 | 0.36 | 0.58 | 0.65 |
-| `bbpb_include_base_44` |  |  |  |  |  | 0.67 |  | 0.58 | 0.38 |  | **0.83** | 0.33 |  |  | 0.40 |
-| `global_mmlu_full` | 0.53 | 0.42 | 0.36 | 0.44 | 0.56 | 0.49 | 0.47 | 0.55 | 0.64 | 0.51 | 0.47 | 0.45 | 0.49 | 0.44 | **0.76** |
-| `bbpb_belebele_ben_Beng` |  |  |  |  |  |  |  | 0.58 | 0.44 |  |  |  |  |  | 0.45 |
-| `rf_global_mmlu_full` | 0.49 | 0.49 | 0.40 | 0.47 | 0.18 | 0.67 | 0.42 | 0.40 | 0.55 | 0.42 | 0.40 | 0.58 | 0.53 | 0.60 | 0.64 |
-| `hellaswag` | 0.40 | 0.58 | 0.64 | 0.36 | 0.42 | 0.42 | 0.47 | 0.47 | 0.44 | 0.44 | 0.40 | 0.49 | 0.51 | 0.55 | 0.53 |
-| `include_v2_en_bengali_bangladesh` | 0.51 | 0.33 | 0.53 | 0.47 | 0.42 | 0.47 | 0.49 | 0.31 | 0.38 | 0.35 | 0.53 | 0.65 | 0.49 | 0.36 | 0.73 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  |  |  | 0.45 | 0.44 |  |  |  |  |  | 0.51 |
-| `rf_include_base_44` | 0.53 | 0.51 | 0.55 | 0.25 | 0.27 | 0.44 | 0.42 | 0.35 | 0.44 | 0.49 | 0.40 | 0.40 | 0.56 | 0.64 | 0.69 |
-| `rf_belebele_ben_Beng` | 0.55 | 0.53 | 0.69 | 0.25 | 0.49 | 0.38 | 0.44 | 0.35 | 0.53 | 0.45 | 0.60 | 0.29 | 0.31 | 0.69 | 0.38 |
-| `rfgm_belebele_ben_Latn` | 0.40 | 0.40 | 0.58 | 0.27 | 0.55 | 0.44 | 0.51 | 0.62 | 0.40 | 0.40 | 0.49 | 0.49 | 0.25 | 0.51 | 0.55 |
-| `include_base_44` | 0.35 | 0.35 | 0.47 | 0.65 | 0.55 | 0.49 | 0.42 | 0.27 | 0.49 | 0.45 | 0.49 | 0.38 | 0.53 | 0.45 | 0.47 |
-| `rfgm_belebele_ben_Beng` | 0.49 | 0.71 | 0.35 | 0.38 | 0.44 | 0.51 | 0.35 | 0.16 | 0.53 | 0.38 | 0.33 | 0.36 | 0.60 | 0.60 | 0.51 |
-| `include_v2_en_bengali_india` | 0.51 | 0.47 | 0.42 | 0.58 | 0.38 | 0.38 | 0.53 | 0.42 | 0.29 | 0.31 | 0.60 | 0.40 | 0.55 | 0.36 | 0.38 |
-| `rf_belebele_ben_Latn` | 0.38 | 0.47 | 0.35 | 0.31 | 0.40 | 0.47 | 0.36 | 0.36 | 0.42 | 0.40 | 0.47 | 0.45 | 0.51 | 0.58 | 0.60 |
-| `arc` | 0.45 | 0.29 | 0.58 | 0.42 | 0.40 | 0.31 | 0.47 | 0.42 | 0.42 | 0.45 | 0.42 | 0.44 | 0.25 | 0.55 | 0.56 |
-| `global_piqa_parallel_cloze_ben_latn` | 0.47 | 0.25 | 0.55 | 0.44 | 0.51 | 0.11 | 0.49 | 0.27 | 0.35 | 0.29 | 0.47 | 0.49 | 0.47 | 0.58 | 0.33 |
-| `belebele_ben_Beng` | 0.35 | 0.47 | 0.35 | 0.44 | 0.35 | 0.29 | 0.44 | 0.47 | 0.60 | 0.36 | 0.35 | 0.33 | 0.42 | 0.42 | 0.44 |
-| `rfgm_include_base_44` | 0.47 | 0.51 | 0.25 | 0.33 | 0.35 | 0.42 | 0.27 | 0.25 | 0.25 | 0.36 | 0.33 | 0.31 | 0.58 | 0.67 | 0.65 |
-| `include_v2_og_bengali_india` | 0.40 | 0.55 | 0.47 | 0.31 | 0.45 | 0.36 | 0.29 | 0.40 | 0.38 | 0.51 | 0.35 | 0.47 | 0.44 | 0.35 | 0.20 |
-| `global_piqa_parallel_cloze_ben_beng` | 0.22 | 0.22 | 0.35 | 0.40 | 0.51 | 0.35 | 0.24 | 0.51 | 0.36 | 0.64 | 0.38 | 0.38 | 0.35 | 0.55 | 0.45 |
-| `bbpb_include_v2_en_bengali_india` |  |  |  |  |  | 0.17 |  | 0.36 | 0.29 |  | 0.67 | 0.33 |  |  | 0.45 |
-| `multiblimp` | 0.35 | 0.27 | 0.47 | 0.40 | 0.35 | 0.36 | 0.38 | 0.44 | 0.51 | 0.29 | 0.20 | 0.22 | 0.31 | 0.55 | 0.29 |
+| `bpb` | **0.95** | **0.91** | **0.79** | **0.85** | **0.93** | **0.89** | **0.83** | **0.86** | **0.95** | **0.85** | **0.88** | **0.87** | **0.85** | **0.78** | **0.91** |
+| `bbpb_rfgm_include_base_44` | **0.88** | **0.85** | **0.95** | **0.83** | **0.89** | **0.88** | **0.86** | **0.80** | **0.84** | **0.83** | **0.83** | 0.75 | **0.85** | **0.89** | **0.85** |
+| `bbpb_rfgm_belebele_ben_Beng` | **0.82** | **0.76** | **0.85** | **0.82** | **0.84** | **0.79** | **0.76** | **0.85** | **0.76** | 0.73 | **0.79** | **0.87** | **0.82** | 0.75 | **0.82** |
+| `bbpb_hellaswag` | **0.85** | **0.85** | **0.79** | **0.76** | **0.82** | **0.79** | **0.76** | **0.85** | **0.88** | 0.70 | **0.82** | **0.79** | **0.82** | 0.70 | **0.82** |
+| `bbpb_rf_include_base_44` | **0.79** | **0.88** | **0.82** | **0.94** | 0.70 | **0.82** | **0.76** | **0.76** | **0.79** | 0.73 | **0.88** | **0.76** | **0.79** | **0.82** | 0.70 |
+| `bbpb_global_piqa_parallel_cloze_ben_beng` | **0.79** | 0.73 | **0.77** | **0.79** | 0.70 | **0.79** | **0.77** | **0.94** | 0.70 | **0.77** | 0.73 | **0.79** | **0.80** | **0.77** | 0.70 |
+| `bbpb_rf_global_mmlu_full` | 0.74 | **0.85** | 0.74 | **0.82** | 0.64 | **0.83** | **0.76** | 0.74 | **0.76** | **0.83** | **0.79** | 0.67 | **0.77** | 0.65 | **0.85** |
+| `bbpb_arc` | 0.71 | **0.80** | 0.71 | **0.83** | **0.76** | 0.64 | **0.85** | 0.70 | **0.83** | 0.61 | 0.73 | **0.77** | **0.79** | **0.80** | 0.74 |
+| `bbpb_rf_belebele_ben_Beng` | **0.79** | **0.76** | **0.83** | **0.76** | 0.62 | 0.70 | **0.83** | 0.67 | 0.74 | 0.74 | **0.82** | 0.74 | 0.68 | **0.79** | 0.74 |
+| `bbpb_include_v2_og_bengali_bangladesh` | 0.59 | 0.73 | 0.59 | **0.80** | 0.69 | **0.80** | **0.79** | 0.67 | **0.76** | **0.77** | **0.80** | **0.84** | 0.67 | **0.80** | **0.80** |
+| `bbpb_rf_belebele_ben_Latn` | 0.59 | 0.62 | 0.58 | 0.71 | 0.64 | 0.70 | 0.56 | 0.67 | 0.68 | 0.71 | 0.64 | 0.65 | 0.56 | 0.52 | 0.71 |
+| `bbpb_include_v2_og_bengali_india` | 0.74 | 0.68 | 0.56 | **0.76** | 0.71 | 0.55 | 0.73 | 0.59 | 0.64 | 0.45 | 0.56 | 0.53 | 0.56 | 0.64 | 0.64 |
+| `include_v2_og_bengali_bangladesh` | 0.53 | 0.53 | 0.71 | 0.55 | 0.58 | 0.47 | 0.52 | 0.52 | 0.47 | 0.58 | 0.59 | 0.56 | **0.77** | **0.76** | **0.86** |
+| `bbpb_rfgm_belebele_ben_Latn` | 0.64 | 0.47 | 0.45 | 0.55 | 0.58 | **0.77** | 0.73 | 0.55 | 0.62 | **0.83** | 0.53 | 0.58 | 0.52 | 0.51 | 0.56 |
+| `bbpb_multiblimp` | 0.61 | **0.77** | 0.52 | 0.64 | 0.52 | 0.59 | 0.58 | 0.73 | 0.58 | 0.59 | 0.65 | 0.59 | 0.48 | 0.52 | 0.42 |
+| `hellaswag` | 0.58 | 0.55 | 0.62 | 0.56 | 0.47 | 0.47 | 0.62 | 0.53 | 0.55 | 0.39 | 0.39 | 0.36 | **0.79** | 0.73 | **0.79** |
+| `belebele_ben_Latn` | 0.54 | 0.63 | 0.52 | 0.58 | 0.64 | **0.81** | 0.35 | 0.39 | 0.50 | 0.39 | 0.45 | 0.58 | 0.42 | 0.62 | 0.67 |
+| `bbpb_include_base_44` | 0.74 | 0.47 | 0.58 | 0.45 | 0.52 | 0.42 | 0.59 | 0.62 | 0.35 | 0.50 | 0.65 | 0.50 | 0.55 | 0.73 | 0.36 |
+| `bbpb_belebele_ben_Latn` | 0.52 | 0.53 | 0.48 | 0.61 | 0.41 | 0.56 | 0.36 | 0.58 | 0.71 | 0.56 | 0.53 | 0.33 | 0.48 | 0.47 | 0.62 |
+| `bbpb_global_piqa_parallel_cloze_ben_latn` | 0.39 | **0.82** | 0.53 | 0.36 | 0.26 | 0.52 | 0.62 | 0.48 | 0.50 | 0.59 | 0.52 | 0.32 | 0.50 | 0.67 | 0.65 |
+| `bbpb_belebele_ben_Beng` | 0.47 | 0.58 | 0.68 | 0.48 | 0.64 | 0.56 | 0.30 | 0.53 | 0.47 | 0.65 | 0.42 | 0.52 | 0.41 | 0.53 | 0.42 |
+| `global_mmlu_full` | 0.51 | 0.41 | 0.35 | 0.48 | 0.58 | 0.46 | 0.44 | 0.61 | 0.67 | 0.53 | 0.45 | 0.42 | 0.47 | 0.41 | **0.79** |
+| `include_v2_en_bengali_bangladesh` | 0.55 | 0.36 | 0.58 | 0.53 | 0.44 | 0.49 | 0.56 | 0.41 | 0.42 | 0.35 | 0.50 | 0.65 | 0.58 | 0.42 | 0.73 |
+| `bbpb_include_v2_en_bengali_bangladesh` | 0.45 | 0.70 | 0.33 | 0.56 | 0.75 | 0.39 | 0.39 | 0.47 | 0.31 | 0.52 | 0.53 | 0.60 | 0.53 | 0.40 | 0.56 |
+| `bbpb_global_mmlu_full` | **0.80** | 0.39 | 0.48 | 0.42 | 0.59 | 0.23 | 0.44 | 0.47 | 0.45 | 0.55 | 0.45 | 0.47 | 0.45 | 0.65 | 0.53 |
+| `bbpb_include_v2_en_bengali_india` | 0.38 | 0.67 | 0.50 | 0.47 | 0.42 | 0.53 | 0.39 | 0.36 | 0.29 | 0.53 | 0.62 | 0.36 | 0.73 | 0.64 | 0.45 |
+| `rf_global_mmlu_full` | 0.54 | 0.54 | 0.42 | 0.48 | 0.20 | 0.59 | 0.35 | 0.42 | 0.50 | 0.52 | 0.41 | 0.61 | 0.52 | 0.62 | 0.62 |
+| `rf_include_base_44` | 0.50 | 0.56 | 0.52 | 0.26 | 0.39 | 0.46 | 0.45 | 0.36 | 0.42 | 0.48 | 0.41 | 0.45 | 0.56 | 0.59 | 0.62 |
+| `rf_belebele_ben_Beng` | 0.56 | 0.50 | 0.62 | 0.32 | 0.44 | 0.41 | 0.45 | 0.33 | 0.55 | 0.50 | 0.56 | 0.35 | 0.30 | 0.73 | 0.35 |
+| `rfgm_belebele_ben_Latn` | 0.38 | 0.35 | 0.59 | 0.29 | 0.50 | 0.47 | 0.53 | 0.56 | 0.38 | 0.42 | 0.55 | 0.56 | 0.27 | 0.50 | 0.61 |
+| `arc` | 0.45 | 0.63 | 0.38 | 0.35 | 0.53 | 0.59 | 0.48 | 0.42 | 0.42 | 0.42 | 0.35 | 0.41 | 0.67 | 0.29 | 0.56 |
+| `rfgm_belebele_ben_Beng` | 0.58 | 0.68 | 0.35 | 0.38 | 0.42 | 0.53 | 0.39 | 0.20 | 0.56 | 0.36 | 0.32 | 0.35 | 0.59 | 0.62 | 0.50 |
+| `include_base_44` | 0.33 | 0.40 | 0.44 | 0.67 | 0.52 | 0.45 | 0.41 | 0.33 | 0.45 | 0.44 | 0.48 | 0.41 | 0.47 | 0.48 | 0.42 |
+| `include_v2_en_bengali_india` | 0.46 | 0.45 | 0.41 | 0.55 | 0.38 | 0.42 | 0.47 | 0.41 | 0.27 | 0.35 | 0.61 | 0.44 | 0.56 | 0.38 | 0.38 |
+| `rf_belebele_ben_Latn` | 0.36 | 0.50 | 0.41 | 0.26 | 0.39 | 0.44 | 0.35 | 0.39 | 0.41 | 0.39 | 0.45 | 0.47 | 0.44 | 0.55 | 0.61 |
+| `belebele_ben_Beng` | 0.31 | 0.50 | 0.35 | 0.38 | 0.42 | 0.33 | 0.47 | 0.53 | 0.55 | 0.38 | 0.38 | 0.30 | 0.42 | 0.41 | 0.41 |
+| `rfgm_include_base_44` | 0.53 | 0.50 | 0.26 | 0.33 | 0.36 | 0.47 | 0.29 | 0.24 | 0.27 | 0.33 | 0.41 | 0.30 | 0.55 | 0.67 | 0.62 |
+| `include_v2_og_bengali_india` | 0.42 | 0.51 | 0.47 | 0.27 | 0.48 | 0.41 | 0.33 | 0.33 | 0.42 | 0.52 | 0.35 | 0.45 | 0.41 | 0.35 | 0.20 |
+| `global_piqa_parallel_cloze_ben_latn` | 0.47 | 0.51 | 0.38 | 0.32 | 0.45 | 0.47 | 0.52 | 0.33 | 0.26 | 0.39 | 0.30 | 0.45 | 0.17 | 0.42 | 0.36 |
+| `global_piqa_parallel_cloze_ben_beng` | 0.44 | 0.27 | 0.50 | 0.26 | 0.45 | 0.28 | 0.21 | 0.38 | 0.27 | 0.41 | 0.48 | 0.41 | 0.35 | 0.44 | 0.44 |
+| `multiblimp` | 0.33 | 0.27 | 0.41 | 0.42 | 0.36 | 0.35 | 0.38 | 0.47 | 0.52 | 0.27 | 0.24 | 0.24 | 0.29 | 0.45 | 0.33 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2246,8 +2293,8 @@ subtitle: "Bosnian (bs) · small→large size pair (bold ≥ 0.75)"
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `bpb` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
-| `bbpb_global_piqa_nonparallel_cloze` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | **1.00** |
-| `global_piqa_nonparallel_cloze` | 0.33 | 0.50 | 0.50 | 0.33 | 0.67 | 0.17 | 0.67 | 0.33 | 0.17 | 0.00 | 0.17 | 0.67 | 0.17 | 0.17 | 0.50 |
+| `bbpb_global_piqa_nonparallel_cloze` | **0.83** | **0.83** | **0.83** | **1.00** | **1.00** | 0.67 | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** |
+| `global_piqa_nonparallel_cloze` | **0.83** | 0.50 | 0.50 | **0.83** | 0.33 | 0.33 | 0.67 | **0.83** | 0.50 | 0.00 | 0.33 | 0.50 | 0.50 | 0.50 | 0.33 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2270,27 +2317,27 @@ subtitle: "Catalan (ca) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `bbpb_global_piqa_parallel_cloze` | **0.83** | **0.83** | **1.00** | **0.83** | **1.00** | **1.00** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** |
+| `bbpb_paws` | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** |
 | `bpb` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
-| `bbpb_xstorycloze` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | **1.00** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | **0.83** | **1.00** |  |  |  |  |  | **0.83** |
-| `bbpb_paws` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
+| `bbpb_hellaswag` | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** |
 | `multiblimp` | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 |
-| `bbpb_multiblimp` |  |  |  |  |  |  |  | **1.00** | 0.67 |  |  |  |  |  | 0.67 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  |  |  | **1.00** | 0.67 |  |  |  |  |  | 0.67 |
-| `bbpb_arc` |  |  |  |  |  |  |  | 0.67 | 0.67 |  |  |  |  |  | **1.00** |
-| `bbpb_rf_belebele` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | 0.67 |
-| `bbpb_xnli` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | **0.83** |
-| `hellaswag` | 0.33 | 0.67 | 0.67 | 0.67 | 0.67 | 0.33 | 0.67 | 0.67 | 0.67 | 0.67 | 0.67 | 0.67 | **1.00** | **1.00** | **1.00** |
+| `bbpb_multiblimp` | **1.00** | **0.83** | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** | **1.00** | 0.67 | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 |
+| `bbpb_rf_belebele` | **0.83** | **1.00** | **0.83** | **1.00** | 0.67 | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** | 0.67 |
+| `bbpb_xstorycloze` | **0.83** | **0.83** | 0.67 | **1.00** | **1.00** | 0.67 | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | **1.00** |
+| `bbpb_arc` | **1.00** | **0.83** | **0.83** | 0.67 | 0.67 | **0.83** | **0.83** | 0.67 | 0.67 | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** |
+| `bbpb_xnli` | **1.00** | **0.83** | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | **1.00** | **0.83** | 0.67 | **0.83** | **0.83** |
+| `bbpb_rfgm_belebele` | **1.00** | **1.00** | 0.67 | **1.00** | 0.67 | **1.00** | 0.67 | **1.00** | 0.67 | 0.67 | **1.00** | 0.67 | 0.67 | 0.67 | 0.67 |
+| `hellaswag` | **1.00** | **0.83** | 0.50 | 0.50 | 0.50 | **0.83** | 0.50 | 0.50 | 0.50 | 0.67 | 0.67 | 0.67 | **1.00** | **1.00** | **1.00** |
 | `belebele` | 0.33 | 0.67 | 0.50 | 0.50 | 0.67 | 0.67 | 0.67 | **0.83** | 0.67 | 0.50 | **0.83** | 0.67 | 0.67 | **0.83** | **0.83** |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.33 | 0.50 |  |  |  |  |  | **0.83** |
+| `bbpb_belebele` | 0.67 | 0.50 | 0.50 | 0.67 | **0.83** | **0.83** | **0.83** | 0.33 | 0.50 | **1.00** | 0.17 | 0.33 | 0.17 | 0.33 | **0.83** |
 | `paws` | 0.17 | 0.67 | 0.17 | 0.17 | 0.17 | 0.50 | 0.67 | **1.00** | **1.00** | 0.17 | 0.50 | 0.50 | 0.67 | 0.67 | **1.00** |
 | `rfgm_belebele` | 0.67 | 0.50 | 0.67 | 0.67 | 0.50 | 0.33 | **0.83** | 0.50 | 0.50 | 0.50 | **0.83** | 0.00 | 0.67 | 0.50 | 0.17 |
 | `xstorycloze` | 0.33 | 0.67 | 0.33 | 0.50 | 0.67 | 0.00 | 0.17 | 0.00 | 0.00 | 0.67 | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** |
+| `arc` | 0.67 | 0.33 | **0.83** | 0.50 | 0.50 | 0.67 | 0.50 | 0.17 | 0.50 | 0.17 | 0.50 | 0.50 | 0.33 | 0.33 | 0.67 |
 | `rf_belebele` | 0.50 | 0.33 | 0.67 | 0.67 | 0.50 | 0.17 | 0.50 | 0.17 | 0.67 | 0.33 | 0.67 | 0.17 | 0.33 | 0.50 | 0.50 |
 | `xnli` | 0.33 | 0.50 | 0.00 | 0.67 | 0.00 | 0.33 | 0.50 | 0.50 | 0.50 | 0.50 | 0.50 | 0.50 | 0.33 | **1.00** | 0.33 |
-| `arc` | **0.83** | 0.67 | **0.83** | 0.00 | 0.33 | 0.50 | 0.67 | 0.17 | 0.17 | 0.50 | 0.17 | 0.50 | 0.17 | 0.17 | 0.33 |
-| `global_piqa_parallel_cloze` | 0.33 | 0.67 | 0.50 | 0.33 | 0.17 | 0.50 | 0.00 | 0.33 | 0.00 | 0.50 | 0.17 | 0.00 | 0.67 | 0.00 | 0.00 |
+| `global_piqa_parallel_cloze` | 0.50 | 0.17 | 0.33 | 0.67 | 0.50 | 0.17 | 0.00 | 0.50 | 0.17 | 0.50 | 0.00 | 0.50 | 0.33 | **0.83** | 0.17 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2313,25 +2360,25 @@ subtitle: "Czech (cs) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **0.97** | **0.92** | **0.75** | **0.92** | **0.97** | **0.94** | **0.78** | **0.94** | **0.94** | **0.83** | **0.94** | **0.94** | **0.78** | **0.78** | **0.89** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **0.80** |  | **0.83** | 0.67 |  | **1.00** | **1.00** |  |  | 0.72 |
-| `bbpb_rf_belebele` |  |  |  |  |  | **1.00** |  | **1.00** | 0.61 |  | **1.00** | 0.70 |  |  | 0.61 |
-| `bbpb_multiblimp` |  |  |  |  |  | **1.00** |  | **0.89** | 0.61 |  | **1.00** | 0.67 |  |  | 0.61 |
-| `multiblimp` | 0.72 | **0.86** | 0.72 | **0.81** | 0.69 | **0.75** | 0.72 | **0.75** | **0.86** | **0.86** | **0.83** | 0.72 | **0.75** | 0.64 | **0.78** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | 0.72 | 0.72 |  |  |  |  |  | 0.67 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  |  |  | 0.69 | 0.50 |  |  |  |  |  | 0.69 |
-| `rfgm_belebele` | 0.58 | 0.53 | 0.64 | 0.53 | 0.64 | 0.39 | 0.44 | 0.47 | 0.50 | 0.67 | 0.42 | 0.67 | **0.75** | **0.83** | 0.58 |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | 0.58 | 0.53 |  |  |  |  |  | 0.61 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | 0.60 |  | 0.72 | 0.47 |  | **0.80** | 0.20 |  |  | 0.36 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.47 | 0.53 |  |  |  |  |  | 0.50 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.36 | 0.69 |  |  |  |  |  | 0.44 |
-| `global_mmlu_full` | 0.42 | 0.64 | 0.39 | 0.33 | 0.47 | 0.28 | 0.42 | **0.75** | 0.44 | 0.42 | 0.42 | 0.61 | 0.50 | 0.53 | 0.64 |
-| `include_v2_en` | 0.58 | 0.39 | 0.58 | 0.28 | 0.42 | 0.53 | 0.58 | 0.42 | 0.50 | 0.53 | 0.61 | 0.36 | 0.56 | 0.56 | 0.36 |
-| `rf_belebele` | 0.67 | 0.53 | 0.50 | 0.39 | 0.44 | 0.33 | 0.31 | 0.44 | 0.64 | 0.67 | 0.53 | 0.36 | 0.39 | 0.39 | 0.58 |
-| `belebele` | 0.47 | 0.31 | 0.22 | 0.53 | 0.36 | 0.47 | 0.47 | 0.56 | 0.39 | 0.58 | 0.47 | 0.64 | 0.67 | 0.53 | 0.47 |
-| `rf_global_mmlu_full` | 0.47 | 0.39 | 0.44 | 0.50 | 0.42 | 0.53 | 0.42 | 0.42 | 0.67 | 0.53 | 0.61 | 0.28 | 0.61 | 0.47 | 0.31 |
-| `include_v2_og` | 0.39 | 0.56 | 0.50 | 0.47 | 0.25 | 0.56 | 0.31 | 0.36 | 0.28 | 0.50 | 0.39 | 0.44 | 0.47 | 0.56 | 0.61 |
-| `global_piqa_parallel_cloze` | 0.42 | **0.78** | 0.31 | 0.36 | 0.36 | 0.36 | 0.06 | 0.39 | 0.44 | 0.33 | 0.39 | 0.39 | 0.36 | 0.42 | 0.11 |
+| `bpb` | **0.96** | **0.89** | 0.71 | **0.91** | **0.97** | **0.93** | **0.76** | **0.96** | **0.94** | **0.82** | **0.93** | **0.94** | **0.76** | **0.78** | **0.89** |
+| `bbpb_rfgm_belebele` | **0.82** | **0.84** | 0.73 | **0.82** | **0.81** | **0.84** | 0.69 | **0.78** | 0.67 | **0.80** | **0.89** | **0.75** | **0.78** | 0.61 | 0.72 |
+| `multiblimp` | 0.73 | **0.80** | 0.71 | **0.78** | 0.64 | 0.75 | 0.73 | 0.69 | **0.84** | **0.80** | 0.71 | **0.78** | 0.73 | 0.62 | 0.67 |
+| `bbpb_rf_belebele` | **0.89** | **0.87** | 0.60 | **0.89** | 0.60 | **0.84** | 0.67 | **0.96** | 0.62 | 0.60 | **0.84** | 0.56 | 0.71 | 0.56 | 0.62 |
+| `bbpb_global_piqa_parallel_cloze` | **0.87** | **0.80** | 0.62 | 0.69 | **0.76** | **0.76** | 0.62 | 0.64 | 0.67 | 0.60 | 0.58 | 0.73 | **0.80** | **0.78** | 0.71 |
+| `bbpb_multiblimp` | **0.80** | 0.69 | **0.89** | **0.82** | 0.69 | **0.80** | 0.69 | **0.84** | 0.53 | 0.58 | 0.73 | 0.56 | **0.80** | 0.62 | 0.56 |
+| `bbpb_global_mmlu_full` | 0.73 | 0.69 | 0.42 | **0.78** | 0.56 | **0.82** | 0.51 | 0.60 | 0.47 | 0.60 | 0.56 | 0.51 | 0.51 | 0.60 | 0.73 |
+| `bbpb_rf_global_mmlu_full` | 0.64 | 0.69 | 0.49 | **0.78** | 0.56 | **0.78** | 0.67 | 0.73 | 0.56 | 0.53 | 0.73 | 0.47 | 0.40 | 0.53 | 0.47 |
+| `bbpb_belebele` | 0.49 | 0.42 | 0.62 | 0.71 | 0.56 | 0.71 | 0.60 | 0.51 | 0.62 | 0.53 | 0.49 | 0.47 | 0.64 | **0.76** | 0.53 |
+| `rfgm_belebele` | 0.53 | 0.49 | 0.62 | 0.58 | 0.58 | 0.38 | 0.42 | 0.44 | 0.51 | 0.64 | 0.44 | 0.62 | **0.76** | **0.78** | 0.53 |
+| `bbpb_include_v2_en` | 0.47 | 0.67 | 0.60 | 0.38 | 0.67 | 0.58 | 0.42 | 0.38 | 0.69 | 0.67 | 0.44 | **0.75** | 0.51 | 0.53 | 0.44 |
+| `bbpb_include_v2_og` | 0.62 | 0.53 | 0.33 | 0.69 | 0.47 | 0.51 | 0.44 | 0.62 | 0.53 | 0.67 | 0.62 | 0.61 | 0.33 | 0.53 | 0.61 |
+| `rf_global_mmlu_full` | 0.55 | 0.55 | 0.49 | 0.56 | 0.51 | 0.62 | 0.42 | 0.42 | 0.69 | 0.56 | 0.60 | 0.36 | 0.58 | 0.49 | 0.38 |
+| `rf_belebele` | 0.62 | 0.55 | 0.58 | 0.47 | 0.47 | 0.31 | 0.33 | 0.44 | 0.62 | 0.67 | 0.53 | 0.38 | 0.49 | 0.44 | 0.58 |
+| `global_mmlu_full` | 0.47 | 0.64 | 0.38 | 0.29 | 0.47 | 0.47 | 0.40 | 0.62 | 0.44 | 0.38 | 0.38 | 0.60 | 0.56 | 0.51 | 0.64 |
+| `include_v2_en` | 0.64 | 0.42 | 0.56 | 0.31 | 0.38 | 0.55 | 0.58 | 0.38 | 0.51 | 0.49 | 0.53 | 0.36 | 0.53 | 0.53 | 0.36 |
+| `include_v2_og` | 0.55 | 0.56 | 0.51 | 0.47 | 0.29 | 0.58 | 0.40 | 0.36 | 0.31 | 0.47 | 0.40 | 0.44 | 0.42 | 0.53 | 0.60 |
+| `belebele` | 0.45 | 0.31 | 0.22 | 0.51 | 0.33 | 0.47 | 0.47 | 0.53 | 0.36 | 0.51 | 0.42 | 0.62 | 0.69 | 0.49 | 0.42 |
+| `global_piqa_parallel_cloze` | 0.49 | 0.73 | 0.42 | 0.36 | 0.31 | 0.60 | 0.56 | 0.40 | 0.47 | 0.47 | 0.33 | 0.33 | 0.07 | 0.67 | 0.27 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2354,25 +2401,25 @@ subtitle: "Danish (da) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | **1.00** | **0.95** |  |  |  |  |  | **0.95** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **1.00** |  | **0.90** | **0.86** |  | **1.00** | **1.00** |  |  | **0.86** |
-| `bbpb_rf_belebele` |  |  |  |  |  | **1.00** |  | **0.90** | **0.86** |  | **1.00** | **1.00** |  |  | **0.76** |
-| `bpb` | **1.00** | **0.95** | **0.76** | **0.95** | **1.00** | **0.95** | **0.76** | **0.95** | **1.00** | **0.81** | **1.00** | **0.95** | **0.81** | **0.76** | **0.95** |
-| `hellaswag` | 0.48 | **0.90** | **0.76** | **0.76** | **0.76** | 0.57 | 0.71 | 0.71 | 0.71 | **0.86** | **0.86** | **0.86** | **0.90** | **1.00** | **0.90** |
-| `bbpb_multiblimp` |  |  |  |  |  |  |  | **0.95** | 0.71 |  |  |  |  |  | 0.67 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | **0.76** | 0.62 |  |  |  |  |  | 0.57 |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | 0.62 | 0.57 |  |  |  |  |  | **0.76** |
-| `bbpb_arc_mt` |  |  |  |  |  |  |  | 0.71 | 0.52 |  |  |  |  |  | 0.71 |
-| `bbpb_arc` |  |  |  |  |  |  |  | 0.71 | 0.48 |  |  |  |  |  | **0.76** |
-| `include_v2_og` | 0.62 | 0.52 | 0.67 | 0.57 | 0.62 | 0.57 | 0.71 | **0.90** | 0.43 | **0.76** | 0.57 | 0.43 | **0.81** | 0.48 | 0.48 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.67 | 0.43 |  |  |  |  |  | 0.57 |
-| `rfgm_belebele` | 0.24 | **0.76** | 0.57 | **0.81** | 0.48 | 0.29 | 0.43 | 0.24 | 0.29 | **0.76** | **0.76** | 0.67 | 0.62 | **0.76** | 0.62 |
-| `include_v2_en` | 0.48 | 0.71 | 0.62 | 0.67 | 0.62 | 0.33 | 0.67 | 0.24 | 0.62 | 0.52 | 0.67 | 0.57 | 0.38 | 0.71 | 0.38 |
-| `belebele` | 0.43 | 0.57 | 0.43 | 0.52 | 0.43 | **0.86** | 0.33 | 0.38 | 0.71 | 0.38 | 0.43 | 0.57 | **0.81** | 0.43 | 0.57 |
-| `arc_mt` | 0.43 | 0.67 | 0.48 | 0.19 | 0.38 | 0.33 | 0.38 | 0.38 | 0.57 | **0.76** | 0.52 | 0.57 | 0.62 | **0.76** | 0.57 |
-| `arc` | 0.38 | 0.19 | 0.38 | 0.38 | **0.76** | 0.48 | 0.48 | 0.52 | 0.29 | 0.52 | 0.62 | 0.38 | 0.24 | 0.38 | 0.48 |
-| `rf_belebele` | 0.29 | 0.29 | 0.38 | 0.43 | 0.48 | 0.43 | 0.71 | 0.38 | 0.33 | 0.38 | 0.67 | 0.48 | 0.33 | 0.29 | 0.57 |
-| `multiblimp` | 0.24 | 0.14 | 0.52 | 0.24 | 0.29 | 0.48 | 0.19 | 0.33 | 0.14 | 0.24 | 0.43 | 0.24 | 0.43 | 0.33 | 0.52 |
+| `bbpb_hellaswag` | **0.96** | **0.89** | **0.82** | **0.96** | **0.86** | **0.93** | **0.86** | **1.00** | **0.89** | **0.93** | **0.93** | **0.89** | **0.86** | **0.89** | **0.89** |
+| `bpb` | **1.00** | **0.93** | 0.71 | **0.93** | **1.00** | **0.93** | 0.71 | **0.93** | **1.00** | **0.79** | **1.00** | **0.95** | **0.79** | **0.76** | **0.95** |
+| `bbpb_rfgm_belebele` | **0.93** | **0.89** | **0.86** | **0.96** | **0.86** | **0.82** | **0.86** | **0.89** | **0.86** | **0.75** | **0.93** | **0.86** | **0.82** | 0.67 | **0.86** |
+| `bbpb_multiblimp` | **0.89** | **0.79** | **0.82** | **0.82** | **0.82** | **0.89** | 0.71 | **0.93** | 0.71 | 0.61 | **0.89** | 0.61 | 0.64 | **0.86** | 0.64 |
+| `hellaswag` | 0.64 | 0.64 | 0.71 | **0.82** | 0.71 | **0.75** | 0.71 | **0.86** | **0.75** | **0.82** | 0.68 | 0.71 | **0.79** | **0.82** | **0.89** |
+| `bbpb_rf_belebele` | **0.86** | **0.82** | 0.61 | **0.82** | 0.71 | **0.82** | 0.61 | **0.82** | 0.71 | 0.71 | 0.71 | **0.82** | 0.64 | 0.68 | **0.75** |
+| `bbpb_arc_mt` | **0.79** | **0.89** | 0.68 | **0.75** | 0.67 | 0.68 | **0.75** | 0.68 | 0.52 | 0.71 | 0.71 | **0.76** | **0.86** | **0.76** | 0.71 |
+| `bbpb_arc` | **0.75** | **0.79** | 0.64 | 0.68 | 0.57 | 0.61 | 0.68 | 0.64 | 0.46 | 0.71 | **0.75** | **0.79** | **0.89** | 0.64 | 0.68 |
+| `bbpb_belebele` | 0.61 | 0.61 | 0.68 | 0.64 | 0.68 | 0.71 | **0.86** | **0.75** | 0.71 | 0.71 | 0.68 | 0.50 | 0.68 | **0.79** | 0.61 |
+| `bbpb_include_v2_og` | **0.75** | **0.79** | 0.50 | **0.82** | **0.76** | 0.68 | 0.68 | 0.64 | 0.57 | 0.57 | **0.82** | 0.71 | 0.54 | 0.43 | **0.76** |
+| `include_v2_og` | 0.58 | 0.58 | 0.64 | 0.61 | 0.57 | 0.53 | **0.79** | **0.75** | 0.54 | 0.68 | 0.57 | 0.39 | 0.68 | 0.57 | 0.46 |
+| `rfgm_belebele` | 0.44 | 0.69 | 0.46 | **0.86** | 0.54 | 0.39 | 0.39 | 0.36 | 0.32 | 0.64 | **0.79** | 0.71 | 0.50 | 0.64 | 0.64 |
+| `bbpb_include_v2_en` | 0.50 | 0.71 | 0.61 | 0.50 | 0.62 | 0.71 | 0.61 | 0.50 | 0.43 | 0.68 | 0.50 | 0.52 | 0.54 | 0.29 | 0.57 |
+| `include_v2_en` | 0.47 | 0.44 | 0.57 | 0.68 | 0.68 | 0.42 | 0.68 | 0.29 | 0.61 | 0.54 | 0.57 | 0.46 | 0.46 | 0.68 | 0.43 |
+| `arc_mt` | 0.47 | 0.64 | 0.43 | 0.18 | 0.32 | 0.36 | 0.36 | 0.39 | 0.54 | **0.75** | 0.57 | 0.61 | 0.64 | **0.75** | 0.68 |
+| `arc` | 0.58 | 0.56 | 0.46 | 0.21 | 0.36 | 0.39 | 0.36 | 0.43 | 0.71 | 0.57 | 0.61 | 0.61 | 0.50 | 0.39 | 0.64 |
+| `belebele` | 0.39 | 0.53 | 0.39 | 0.50 | 0.46 | **0.78** | 0.39 | 0.39 | 0.61 | 0.32 | 0.43 | 0.57 | **0.75** | 0.36 | 0.50 |
+| `rf_belebele` | 0.36 | 0.28 | 0.32 | 0.43 | 0.50 | 0.53 | 0.71 | 0.39 | 0.39 | 0.54 | 0.68 | 0.43 | 0.43 | 0.29 | 0.57 |
+| `multiblimp` | 0.28 | 0.17 | 0.46 | 0.25 | 0.29 | 0.53 | 0.21 | 0.39 | 0.18 | 0.25 | 0.46 | 0.25 | 0.43 | 0.39 | 0.46 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2395,42 +2442,42 @@ subtitle: "German (de) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **0.99** | **0.92** | **0.88** | **0.95** | **0.96** | **0.92** | **0.88** | **0.95** | **0.95** | **0.93** | **0.93** | **0.89** | **0.88** | **0.85** | **0.91** |
-| `hellaswag` | 0.65 | 0.65 | 0.71 | **0.75** | 0.73 | **0.78** | **0.82** | **0.84** | **0.85** | **0.87** | **0.76** | **0.76** | **0.84** | **0.83** | **0.85** |
-| `bbpb_include_v2_og` |  |  |  |  |  | **0.86** |  | **0.81** | 0.71 |  | **0.90** | 0.62 |  |  | 0.73 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **0.84** |  | **0.82** | **0.76** |  | 0.75 | 0.69 |  |  | 0.71 |
-| `bbpb_multiblimp` |  |  |  |  |  | **0.96** |  | **0.79** | 0.69 |  | **0.86** | 0.68 |  |  | 0.57 |
-| `bbpb_hellaswag` |  |  |  |  |  | **0.80** |  | **0.88** | **0.82** |  | **0.80** | 0.40 |  |  | **0.84** |
-| `bbpb_arc_mt` |  |  |  |  |  | 0.60 |  | **0.82** | 0.71 |  | **0.80** | **0.80** |  |  | 0.73 |
-| `lambada_openai_mt` | **0.78** | **0.76** | 0.68 | **0.82** | **0.82** | 0.75 | 0.75 | **0.86** | 0.69 | 0.63 | 0.71 | 0.69 | 0.71 | 0.69 | **0.76** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **0.78** |  | 0.73 | 0.69 |  | 0.65 | 0.71 |  |  | **0.78** |
-| `bbpb_arc` |  |  |  |  |  | 0.60 |  | **0.79** | 0.67 |  | 0.70 | **0.80** |  |  | 0.72 |
-| `bbpb_paws` |  |  |  |  |  | **0.75** |  | **0.76** | 0.73 |  | **0.75** | 0.57 |  |  | 0.67 |
-| `multiblimp` | 0.73 | 0.73 | 0.63 | 0.63 | 0.56 | 0.69 | 0.70 | 0.66 | 0.58 | 0.68 | 0.60 | 0.63 | 0.65 | 0.67 | 0.59 |
-| `bbpb_xnli` |  |  |  |  |  | 0.75 |  | 0.70 | 0.67 |  | 0.58 | 0.49 |  |  | 0.65 |
-| `bbpb_rf_belebele` |  |  |  |  |  | 0.64 |  | 0.71 | 0.52 |  | 0.71 | 0.62 |  |  | 0.61 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  | 0.60 |  | 0.70 | 0.73 |  | 0.50 | 0.60 |  |  | 0.67 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.60 |  | 0.72 | 0.63 |  | 0.67 | 0.51 |  |  | 0.61 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.82** |  | 0.72 | 0.59 |  | 0.51 | 0.47 |  |  | 0.60 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | 0.50 |  | 0.74 | 0.70 |  | 0.50 | 0.50 |  |  | 0.69 |
-| `bbpb_include_base_44` |  |  |  |  |  | 0.52 |  | 0.63 | 0.56 |  | 0.71 | 0.48 |  |  | 0.61 |
-| `rf_global_mmlu_full` | 0.58 | 0.57 | 0.49 | 0.53 | 0.50 | 0.54 | 0.60 | 0.65 | 0.61 | 0.44 | 0.52 | 0.52 | 0.68 | 0.65 | **0.78** |
-| `include_v2_og` | 0.51 | 0.59 | 0.51 | 0.56 | 0.44 | 0.46 | 0.61 | 0.58 | 0.60 | 0.58 | 0.64 | 0.56 | 0.70 | 0.63 | 0.60 |
-| `xnli` | 0.43 | 0.51 | 0.69 | 0.56 | 0.61 | 0.36 | 0.54 | 0.53 | 0.57 | 0.52 | 0.50 | 0.69 | 0.63 | 0.51 | 0.50 |
-| `bbpb_belebele` |  |  |  |  |  | 0.10 |  | 0.63 | 0.56 |  | 0.50 | **0.90** |  |  | 0.57 |
-| `arc_mt` | 0.63 | 0.53 | 0.61 | 0.63 | 0.62 | 0.41 | 0.48 | 0.52 | 0.54 | 0.46 | 0.53 | 0.45 | 0.53 | 0.59 | 0.59 |
-| `paws` | 0.63 | 0.47 | 0.52 | 0.47 | 0.59 | 0.46 | 0.45 | 0.41 | 0.53 | 0.58 | 0.58 | 0.48 | 0.54 | 0.46 | 0.65 |
-| `arc` | 0.46 | 0.37 | 0.45 | 0.53 | 0.42 | 0.33 | 0.55 | 0.61 | 0.61 | 0.55 | 0.54 | 0.57 | 0.58 | 0.56 | 0.68 |
-| `include_v2_en` | 0.44 | 0.42 | 0.56 | 0.52 | 0.57 | 0.59 | 0.58 | 0.41 | 0.33 | 0.67 | 0.50 | 0.46 | 0.58 | 0.49 | 0.59 |
-| `rfgm_belebele` | 0.48 | 0.66 | 0.50 | 0.48 | 0.48 | 0.44 | 0.56 | 0.56 | 0.37 | 0.46 | 0.50 | 0.38 | 0.53 | 0.60 | 0.65 |
-| `global_mmlu_full` | 0.51 | 0.56 | 0.53 | 0.57 | 0.43 | 0.58 | 0.42 | 0.42 | 0.40 | 0.41 | 0.60 | 0.61 | 0.46 | 0.63 | 0.50 |
-| `bbpb_include_v2_en` |  |  |  |  |  | 0.24 |  | 0.52 | 0.37 |  | 0.62 | 0.67 |  |  | 0.50 |
-| `rf_belebele` | 0.44 | 0.28 | 0.35 | 0.37 | 0.46 | 0.57 | 0.51 | 0.50 | 0.56 | 0.50 | 0.50 | 0.50 | 0.66 | 0.50 | 0.58 |
-| `belebele` | 0.41 | 0.50 | 0.49 | 0.60 | 0.50 | 0.57 | 0.42 | 0.45 | 0.38 | 0.54 | 0.48 | 0.33 | 0.61 | 0.37 | 0.52 |
-| `rf_include_base_44` | 0.50 | 0.48 | 0.54 | 0.30 | 0.41 | 0.48 | 0.54 | 0.40 | 0.52 | 0.46 | 0.35 | 0.56 | 0.33 | 0.60 | 0.37 |
-| `global_piqa_parallel_cloze` | 0.33 | 0.54 | 0.39 | 0.46 | 0.46 | 0.52 | 0.47 | 0.52 | 0.38 | 0.52 | 0.48 | 0.42 | 0.37 | 0.50 | 0.49 |
-| `include_base_44` | 0.34 | 0.49 | 0.30 | 0.44 | 0.46 | 0.50 | 0.48 | 0.39 | 0.48 | 0.52 | 0.37 | 0.46 | 0.41 | 0.44 | 0.55 |
-| `rfgm_include_base_44` | 0.56 | 0.52 | 0.60 | 0.43 | 0.22 | 0.48 | 0.49 | 0.57 | 0.43 | 0.42 | 0.46 | 0.36 | 0.32 | 0.27 | 0.45 |
+| `bpb` | **0.99** | **0.90** | **0.86** | **0.94** | **0.96** | **0.90** | **0.86** | **0.94** | **0.95** | **0.93** | **0.94** | **0.89** | **0.88** | **0.85** | **0.91** |
+| `bbpb_hellaswag` | **0.96** | **0.88** | **0.87** | **0.88** | **0.81** | **0.89** | **0.87** | **0.87** | **0.79** | **0.91** | **0.90** | 0.74 | **0.87** | 0.74 | **0.78** |
+| `bbpb_rfgm_belebele` | **0.85** | **0.86** | **0.76** | **0.80** | 0.71 | **0.90** | **0.83** | **0.82** | **0.77** | **0.81** | **0.81** | 0.69 | **0.80** | 0.75 | 0.72 |
+| `hellaswag` | **0.80** | **0.77** | **0.77** | **0.77** | 0.73 | **0.76** | **0.80** | **0.89** | **0.80** | **0.79** | **0.80** | 0.73 | **0.85** | 0.74 | **0.81** |
+| `bbpb_rfgm_include_base_44` | **0.77** | **0.78** | **0.77** | **0.78** | 0.74 | 0.69 | 0.68 | 0.74 | 0.70 | **0.83** | 0.74 | **0.77** | **0.79** | 0.75 | **0.79** |
+| `bbpb_include_v2_og` | **0.76** | **0.80** | 0.71 | **0.85** | 0.74 | **0.76** | 0.73 | **0.79** | 0.69 | 0.68 | **0.78** | 0.75 | 0.74 | 0.74 | 0.75 |
+| `bbpb_global_piqa_parallel_cloze` | **0.80** | **0.81** | **0.80** | 0.64 | 0.71 | **0.81** | 0.71 | 0.66 | 0.73 | **0.78** | 0.73 | **0.77** | 0.75 | 0.68 | 0.68 |
+| `bbpb_multiblimp` | **0.82** | **0.77** | **0.78** | 0.73 | 0.69 | **0.84** | 0.73 | **0.80** | 0.67 | 0.70 | 0.72 | 0.68 | 0.74 | 0.62 | 0.58 |
+| `bbpb_xnli` | **0.81** | **0.75** | **0.82** | 0.72 | 0.66 | **0.79** | **0.75** | 0.66 | 0.67 | **0.80** | 0.68 | 0.69 | 0.73 | 0.68 | 0.65 |
+| `lambada_openai_mt` | **0.75** | 0.70 | 0.65 | **0.82** | **0.82** | **0.77** | **0.75** | **0.81** | 0.68 | 0.66 | 0.69 | 0.66 | 0.66 | 0.65 | **0.77** |
+| `bbpb_paws` | **0.80** | 0.73 | 0.72 | 0.73 | 0.67 | **0.77** | **0.76** | 0.74 | 0.72 | 0.66 | 0.71 | 0.66 | 0.67 | 0.62 | 0.65 |
+| `bbpb_global_mmlu_full` | **0.76** | 0.70 | 0.66 | 0.74 | 0.65 | 0.67 | 0.73 | 0.71 | 0.66 | **0.76** | 0.71 | 0.68 | **0.76** | 0.65 | 0.66 |
+| `bbpb_arc_mt` | **0.77** | **0.79** | 0.59 | **0.79** | 0.70 | 0.75 | 0.68 | **0.82** | 0.72 | 0.51 | 0.71 | 0.75 | 0.60 | 0.61 | 0.73 |
+| `bbpb_arc` | 0.74 | **0.78** | 0.59 | **0.78** | 0.71 | 0.74 | 0.66 | **0.80** | 0.67 | 0.51 | 0.70 | **0.77** | 0.60 | 0.58 | 0.71 |
+| `bbpb_rf_belebele` | **0.83** | 0.72 | 0.71 | **0.79** | 0.62 | 0.73 | 0.71 | 0.70 | 0.51 | 0.60 | 0.71 | 0.59 | 0.67 | 0.66 | 0.58 |
+| `bbpb_rf_global_mmlu_full` | **0.79** | 0.71 | 0.73 | 0.66 | 0.69 | **0.76** | 0.74 | 0.71 | 0.58 | **0.76** | 0.62 | 0.58 | 0.57 | 0.64 | 0.58 |
+| `bbpb_rf_include_base_44` | **0.79** | 0.73 | 0.66 | 0.73 | 0.67 | 0.71 | 0.66 | 0.70 | 0.61 | 0.60 | 0.64 | 0.68 | 0.65 | 0.67 | 0.62 |
+| `bbpb_include_base_44` | 0.72 | 0.68 | 0.65 | 0.67 | 0.70 | 0.64 | **0.77** | 0.64 | 0.57 | 0.61 | 0.60 | 0.57 | **0.78** | 0.54 | 0.63 |
+| `multiblimp` | 0.68 | 0.68 | 0.66 | 0.64 | 0.57 | 0.68 | 0.69 | 0.62 | 0.55 | 0.65 | 0.54 | 0.66 | 0.64 | 0.64 | 0.56 |
+| `bbpb_belebele` | 0.67 | 0.63 | 0.67 | 0.67 | 0.58 | 0.59 | 0.70 | 0.59 | 0.56 | 0.60 | 0.53 | 0.56 | 0.65 | 0.62 | 0.58 |
+| `rf_global_mmlu_full` | 0.60 | 0.54 | 0.49 | 0.54 | 0.51 | 0.57 | 0.58 | 0.65 | 0.65 | 0.43 | 0.51 | 0.55 | 0.70 | 0.63 | **0.76** |
+| `include_v2_og` | 0.50 | 0.56 | 0.52 | 0.60 | 0.48 | 0.47 | 0.64 | 0.56 | 0.62 | 0.56 | 0.62 | 0.56 | 0.67 | 0.66 | 0.60 |
+| `arc_mt` | 0.62 | 0.55 | 0.61 | 0.63 | 0.63 | 0.43 | 0.50 | 0.53 | 0.54 | 0.54 | 0.60 | 0.47 | 0.58 | 0.60 | 0.58 |
+| `arc` | 0.57 | 0.38 | 0.40 | 0.42 | 0.48 | 0.59 | 0.56 | 0.56 | 0.72 | 0.54 | 0.56 | 0.55 | 0.63 | 0.61 | 0.60 |
+| `xnli` | 0.41 | 0.52 | 0.69 | 0.56 | 0.59 | 0.28 | 0.52 | 0.57 | 0.48 | 0.54 | 0.45 | 0.72 | 0.60 | 0.54 | 0.46 |
+| `rfgm_belebele` | 0.51 | 0.62 | 0.53 | 0.54 | 0.41 | 0.54 | 0.60 | 0.57 | 0.39 | 0.49 | 0.51 | 0.38 | 0.56 | 0.58 | 0.56 |
+| `paws` | 0.54 | 0.52 | 0.50 | 0.52 | 0.58 | 0.48 | 0.50 | 0.34 | 0.53 | 0.52 | 0.65 | 0.48 | 0.47 | 0.46 | 0.59 |
+| `include_v2_en` | 0.48 | 0.45 | 0.54 | 0.49 | 0.58 | 0.57 | 0.54 | 0.39 | 0.38 | 0.59 | 0.48 | 0.45 | 0.62 | 0.48 | 0.52 |
+| `bbpb_include_v2_en` | 0.43 | 0.65 | 0.51 | 0.57 | 0.61 | 0.47 | 0.47 | 0.46 | 0.39 | 0.49 | 0.53 | 0.50 | 0.56 | 0.39 | 0.50 |
+| `global_mmlu_full` | 0.50 | 0.52 | 0.50 | 0.49 | 0.39 | 0.60 | 0.39 | 0.42 | 0.41 | 0.43 | 0.57 | 0.57 | 0.52 | 0.67 | 0.56 |
+| `rf_belebele` | 0.44 | 0.30 | 0.45 | 0.40 | 0.46 | 0.57 | 0.51 | 0.51 | 0.56 | 0.52 | 0.49 | 0.48 | 0.63 | 0.44 | 0.59 |
+| `belebele` | 0.46 | 0.56 | 0.50 | 0.55 | 0.49 | 0.53 | 0.44 | 0.45 | 0.36 | 0.53 | 0.48 | 0.36 | 0.58 | 0.37 | 0.53 |
+| `include_base_44` | 0.36 | 0.47 | 0.27 | 0.38 | 0.40 | 0.54 | 0.46 | 0.41 | 0.45 | 0.50 | 0.43 | 0.49 | 0.43 | 0.48 | 0.60 |
+| `rf_include_base_44` | 0.43 | 0.42 | 0.50 | 0.29 | 0.43 | 0.52 | 0.53 | 0.37 | 0.46 | 0.44 | 0.33 | 0.51 | 0.37 | 0.58 | 0.40 |
+| `rfgm_include_base_44` | 0.57 | 0.47 | 0.60 | 0.42 | 0.24 | 0.45 | 0.48 | 0.55 | 0.44 | 0.42 | 0.44 | 0.36 | 0.31 | 0.23 | 0.45 |
+| `global_piqa_parallel_cloze` | 0.44 | 0.40 | 0.38 | 0.43 | 0.40 | 0.53 | 0.46 | 0.43 | 0.42 | 0.37 | 0.46 | 0.36 | 0.40 | 0.47 | 0.47 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2453,39 +2500,39 @@ subtitle: "Greek (el) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **1.00** |  | **0.85** | **0.79** |  | **0.81** | **0.86** |  |  | **0.90** |
-| `bpb` | **1.00** | **0.88** | **0.77** | **0.90** | **0.90** | **0.88** | **0.77** | **0.90** | **0.90** | **0.81** | **0.91** | **0.86** | **0.77** | 0.72 | **0.90** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **0.90** |  | **0.85** | 0.71 |  | **0.86** | 0.71 |  |  | 0.73 |
-| `bbpb_include_v2_og_greek_greece` |  |  |  |  |  | **0.83** |  | 0.69 | 0.62 |  | **0.83** | 0.67 |  |  | 0.64 |
-| `bbpb_multiblimp` |  |  |  |  |  | **0.80** |  | **0.82** | 0.53 |  | **0.80** | 0.70 |  |  | 0.50 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.67 |  | **0.76** | 0.63 |  | **0.86** | 0.62 |  |  | 0.54 |
-| `bbpb_xnli` |  |  |  |  |  | 0.71 |  | 0.67 | 0.65 |  | 0.67 | 0.67 |  |  | 0.63 |
-| `bbpb_rf_belebele` |  |  |  |  |  | **0.81** |  | **0.83** | 0.49 |  | **0.81** | 0.48 |  |  | 0.58 |
-| `bbpb_arc_mt` |  |  |  |  |  |  |  | **0.78** | 0.64 |  |  |  |  |  | 0.53 |
-| `bbpb_include_v2_og_greek_cyprus` |  |  |  |  |  | **0.83** |  | 0.49 | 0.62 |  | 0.67 | 0.67 |  |  | 0.62 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | 0.55 | 0.68 |  |  |  |  |  | 0.64 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  |  |  | 0.60 | 0.64 |  |  |  |  |  | 0.58 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.81** |  | 0.58 | 0.54 |  | 0.52 | 0.43 |  |  | 0.55 |
-| `bbpb_include_base_44` |  |  |  |  |  | 0.67 |  | 0.51 | 0.67 |  | 0.33 | 0.67 |  |  | 0.54 |
-| `multiblimp` | 0.65 | 0.64 | 0.33 | 0.64 | 0.55 | 0.58 | 0.56 | 0.63 | 0.67 | 0.44 | 0.49 | 0.56 | 0.47 | 0.42 | 0.64 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.62 | 0.58 |  |  |  |  |  | 0.37 |
-| `bbpb_include_v2_en_greek_cyprus` |  |  |  |  |  | 0.50 |  | 0.59 | 0.72 |  | 0.50 | 0.33 |  |  | 0.49 |
-| `rfgm_belebele` | 0.40 | 0.41 | 0.41 | 0.59 | 0.62 | 0.60 | 0.56 | 0.59 | 0.47 | 0.36 | 0.46 | 0.41 | 0.64 | 0.56 | 0.67 |
-| `xnli` | 0.42 | 0.53 | 0.58 | 0.63 | 0.38 | 0.51 | 0.46 | 0.72 | 0.49 | 0.26 | 0.49 | 0.65 | 0.62 | 0.36 | 0.56 |
-| `include_v2_en_greek_greece` | 0.42 | 0.63 | 0.50 | 0.49 | 0.56 | 0.49 | 0.51 | 0.51 | 0.44 | 0.53 | 0.37 | 0.54 | 0.62 | 0.50 | 0.44 |
-| `rf_global_mmlu_full` | 0.31 | 0.65 | 0.50 | 0.64 | 0.63 | 0.46 | 0.47 | 0.35 | 0.46 | 0.47 | 0.49 | 0.56 | 0.55 | 0.53 | 0.46 |
-| `rfgm_include_base_44` | 0.55 | 0.51 | 0.60 | 0.42 | 0.42 | 0.58 | 0.56 | 0.40 | 0.38 | 0.50 | 0.63 | 0.56 | 0.41 | 0.50 | 0.45 |
-| `rf_belebele` | 0.35 | 0.46 | 0.45 | 0.36 | 0.42 | 0.51 | 0.47 | 0.49 | 0.44 | 0.53 | 0.58 | 0.35 | 0.69 | 0.65 | 0.64 |
-| `include_v2_og_greek_greece` | 0.53 | 0.69 | 0.47 | 0.47 | 0.46 | 0.59 | 0.45 | 0.44 | 0.59 | 0.38 | 0.38 | 0.44 | 0.42 | 0.62 | 0.38 |
-| `rf_include_base_44` | 0.36 | 0.53 | 0.27 | 0.73 | 0.53 | 0.51 | 0.55 | 0.46 | 0.51 | 0.46 | 0.44 | 0.58 | 0.44 | 0.35 | 0.46 |
-| `global_mmlu_full` | 0.23 | 0.50 | 0.53 | 0.59 | 0.62 | 0.33 | 0.35 | 0.40 | 0.49 | 0.51 | 0.58 | 0.36 | 0.56 | 0.45 | 0.65 |
-| `arc_mt` | 0.65 | 0.32 | 0.38 | 0.55 | 0.63 | 0.50 | 0.32 | 0.58 | 0.46 | 0.29 | 0.50 | 0.36 | 0.51 | 0.47 | 0.53 |
-| `belebele` | 0.31 | 0.47 | 0.54 | 0.63 | 0.41 | 0.44 | 0.47 | 0.24 | 0.41 | 0.35 | 0.58 | 0.59 | 0.53 | 0.36 | 0.63 |
-| `include_base_44` | 0.35 | 0.64 | 0.36 | 0.41 | 0.53 | 0.47 | 0.62 | 0.49 | 0.33 | 0.55 | 0.42 | 0.46 | 0.45 | 0.46 | 0.36 |
-| `global_piqa_parallel_cloze` | 0.45 | 0.35 | 0.36 | 0.47 | 0.51 | 0.55 | 0.41 | 0.50 | 0.45 | 0.53 | 0.29 | 0.37 | 0.45 | 0.50 | 0.40 |
-| `bbpb_include_v2_en_greek_greece` |  |  |  |  |  | 0.17 |  | 0.42 | 0.50 |  | 0.33 | 0.67 |  |  | 0.49 |
-| `include_v2_en_greek_cyprus` | 0.38 | 0.36 | 0.19 | 0.32 | 0.53 | 0.42 | 0.41 | 0.45 | 0.38 | 0.58 | 0.40 | 0.65 | 0.36 | 0.29 | 0.49 |
-| `include_v2_og_greek_cyprus` | 0.23 | 0.41 | 0.38 | 0.46 | 0.24 | 0.36 | 0.40 | 0.40 | 0.67 | 0.46 | 0.27 | 0.53 | 0.28 | 0.38 | 0.32 |
+| `bpb` | **1.00** | **0.88** | 0.75 | **0.90** | **0.90** | **0.88** | 0.75 | **0.90** | **0.90** | **0.80** | **0.91** | **0.86** | **0.76** | 0.72 | **0.90** |
+| `bbpb_rfgm_include_base_44` | **0.88** | **0.86** | **0.84** | **0.88** | **0.82** | **0.87** | **0.78** | **0.82** | **0.79** | **0.80** | **0.82** | **0.82** | **0.87** | **0.85** | **0.90** |
+| `bbpb_rfgm_belebele` | **0.86** | **0.76** | 0.57 | **0.90** | **0.76** | **0.81** | 0.65 | **0.85** | 0.71 | 0.53 | **0.77** | 0.64 | 0.67 | 0.67 | 0.73 |
+| `bbpb_multiblimp` | 0.75 | **0.80** | 0.74 | 0.74 | 0.58 | **0.77** | 0.75 | **0.84** | 0.53 | **0.76** | **0.76** | 0.56 | 0.69 | 0.58 | 0.49 |
+| `bbpb_global_piqa_parallel_cloze` | 0.74 | 0.73 | **0.81** | 0.40 | 0.60 | **0.84** | **0.77** | 0.57 | 0.69 | **0.76** | 0.63 | 0.75 | 0.45 | 0.57 | 0.68 |
+| `bbpb_rf_belebele` | **0.80** | 0.75 | 0.70 | 0.71 | 0.51 | **0.77** | 0.66 | **0.82** | 0.53 | 0.65 | 0.75 | 0.49 | 0.73 | 0.47 | 0.59 |
+| `bbpb_xnli` | **0.78** | 0.62 | 0.69 | 0.71 | 0.66 | 0.66 | 0.56 | 0.65 | 0.66 | 0.53 | 0.66 | 0.67 | 0.63 | 0.53 | 0.64 |
+| `bbpb_include_v2_og_greek_greece` | 0.62 | 0.70 | 0.47 | 0.63 | 0.74 | **0.82** | 0.62 | 0.68 | 0.62 | 0.55 | 0.64 | 0.58 | 0.58 | 0.63 | 0.64 |
+| `bbpb_belebele` | 0.74 | 0.68 | **0.76** | 0.73 | 0.54 | 0.57 | 0.63 | 0.59 | 0.60 | 0.64 | 0.52 | 0.62 | 0.68 | 0.65 | 0.37 |
+| `bbpb_rf_include_base_44` | **0.85** | 0.75 | 0.45 | 0.74 | 0.62 | 0.75 | 0.38 | **0.76** | 0.62 | 0.33 | 0.73 | 0.63 | 0.52 | 0.57 | 0.51 |
+| `bbpb_include_v2_og_greek_cyprus` | 0.65 | 0.73 | 0.59 | 0.69 | 0.59 | 0.70 | 0.53 | 0.49 | 0.62 | 0.49 | 0.57 | 0.64 | 0.66 | 0.56 | 0.62 |
+| `bbpb_global_mmlu_full` | **0.77** | 0.54 | 0.73 | 0.65 | 0.67 | 0.62 | 0.63 | 0.59 | 0.64 | 0.33 | 0.60 | 0.56 | 0.62 | 0.57 | 0.56 |
+| `bbpb_rf_global_mmlu_full` | 0.74 | 0.57 | 0.53 | 0.58 | 0.62 | 0.62 | 0.73 | 0.60 | 0.54 | 0.65 | 0.48 | 0.40 | 0.51 | 0.59 | 0.55 |
+| `bbpb_include_base_44` | **0.79** | 0.46 | 0.60 | 0.59 | 0.66 | 0.54 | 0.57 | 0.52 | 0.67 | 0.31 | 0.58 | 0.58 | 0.48 | 0.55 | 0.54 |
+| `bbpb_arc_mt` | 0.62 | 0.65 | 0.46 | 0.58 | 0.64 | 0.62 | 0.47 | **0.77** | 0.64 | 0.37 | 0.60 | 0.42 | 0.48 | 0.41 | 0.53 |
+| `multiblimp` | 0.60 | 0.58 | 0.34 | 0.67 | 0.55 | 0.56 | 0.57 | 0.58 | 0.63 | 0.45 | 0.46 | 0.54 | 0.46 | 0.40 | 0.65 |
+| `bbpb_include_v2_en_greek_cyprus` | 0.41 | 0.42 | 0.47 | 0.36 | 0.46 | 0.51 | 0.60 | 0.65 | 0.72 | 0.55 | 0.51 | 0.67 | 0.67 | 0.49 | 0.49 |
+| `rfgm_include_base_44` | 0.55 | 0.50 | 0.64 | 0.47 | 0.43 | 0.60 | 0.58 | 0.45 | 0.37 | 0.53 | 0.65 | 0.55 | 0.44 | 0.51 | 0.44 |
+| `include_v2_en_greek_greece` | 0.50 | 0.61 | 0.53 | 0.53 | 0.57 | 0.47 | 0.51 | 0.49 | 0.43 | 0.56 | 0.42 | 0.54 | 0.66 | 0.47 | 0.43 |
+| `rfgm_belebele` | 0.40 | 0.38 | 0.42 | 0.58 | 0.62 | 0.54 | 0.56 | 0.60 | 0.47 | 0.38 | 0.42 | 0.43 | 0.63 | 0.57 | 0.64 |
+| `xnli` | 0.44 | 0.52 | 0.56 | 0.62 | 0.41 | 0.48 | 0.44 | 0.68 | 0.53 | 0.26 | 0.47 | 0.64 | 0.59 | 0.36 | 0.56 |
+| `bbpb_include_v2_en_greek_greece` | 0.29 | 0.58 | 0.57 | 0.45 | 0.45 | 0.44 | 0.47 | 0.48 | 0.50 | 0.64 | 0.49 | 0.60 | 0.48 | 0.53 | 0.49 |
+| `rf_belebele` | 0.30 | 0.45 | 0.43 | 0.37 | 0.44 | 0.50 | 0.51 | 0.49 | 0.44 | 0.51 | 0.56 | 0.34 | 0.71 | 0.67 | 0.66 |
+| `rf_global_mmlu_full` | 0.31 | 0.62 | 0.47 | 0.63 | 0.58 | 0.37 | 0.46 | 0.35 | 0.41 | 0.51 | 0.48 | 0.63 | 0.54 | 0.55 | 0.46 |
+| `include_v2_og_greek_greece` | 0.51 | 0.67 | 0.48 | 0.46 | 0.46 | 0.62 | 0.44 | 0.45 | 0.62 | 0.42 | 0.36 | 0.44 | 0.37 | 0.57 | 0.42 |
+| `rf_include_base_44` | 0.35 | 0.55 | 0.32 | 0.75 | 0.55 | 0.48 | 0.49 | 0.44 | 0.47 | 0.48 | 0.44 | 0.59 | 0.46 | 0.41 | 0.47 |
+| `global_mmlu_full` | 0.29 | 0.45 | 0.49 | 0.60 | 0.62 | 0.33 | 0.33 | 0.45 | 0.52 | 0.56 | 0.52 | 0.34 | 0.51 | 0.40 | 0.67 |
+| `arc_mt` | 0.60 | 0.38 | 0.41 | 0.53 | 0.58 | 0.50 | 0.30 | 0.57 | 0.48 | 0.32 | 0.49 | 0.34 | 0.53 | 0.45 | 0.52 |
+| `include_base_44` | 0.38 | 0.65 | 0.36 | 0.41 | 0.51 | 0.49 | 0.60 | 0.49 | 0.36 | 0.56 | 0.41 | 0.44 | 0.42 | 0.43 | 0.45 |
+| `belebele` | 0.32 | 0.47 | 0.53 | 0.60 | 0.41 | 0.44 | 0.51 | 0.26 | 0.40 | 0.33 | 0.55 | 0.59 | 0.55 | 0.35 | 0.60 |
+| `global_piqa_parallel_cloze` | 0.58 | 0.52 | 0.43 | 0.34 | 0.40 | 0.54 | 0.48 | 0.35 | 0.54 | 0.46 | 0.27 | 0.51 | 0.32 | 0.48 | 0.43 |
+| `include_v2_en_greek_cyprus` | 0.39 | 0.43 | 0.21 | 0.34 | 0.49 | 0.46 | 0.43 | 0.43 | 0.36 | 0.58 | 0.40 | 0.57 | 0.36 | 0.31 | 0.46 |
+| `include_v2_og_greek_cyprus` | 0.22 | 0.36 | 0.38 | 0.45 | 0.23 | 0.36 | 0.40 | 0.42 | 0.68 | 0.49 | 0.24 | 0.51 | 0.25 | 0.38 | 0.33 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2508,155 +2555,155 @@ subtitle: "Spanish (es) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_hellaswag` |  |  |  |  |  | **1.00** |  | **0.92** | **0.90** |  | **1.00** | **1.00** |  |  | **0.88** |
-| `bpb` | **0.99** | **0.90** | **0.80** | **0.90** | **0.95** | **0.89** | **0.81** | **0.90** | **0.96** | **0.89** | **0.91** | **0.87** | **0.82** | **0.81** | **0.88** |
-| `hellaswag` | **0.83** | **0.88** | **0.83** | **0.88** | **0.83** | **0.91** | **0.88** | **0.86** | **0.89** | **0.91** | **0.89** | **0.91** | **0.83** | **0.88** | **0.91** |
-| `bbpb_xstorycloze` |  |  |  |  |  | **0.76** |  | **0.92** | **0.96** |  | **0.80** | **0.80** |  |  | **0.90** |
-| `bbpb_arc_mt` |  |  |  |  |  | **0.83** |  | 0.74 | 0.73 |  | **0.83** | **1.00** |  |  | 0.65 |
-| `bbpb_arc` |  |  |  |  |  | **0.83** |  | 0.72 | 0.66 |  | **0.83** | **1.00** |  |  | 0.57 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | 0.67 |  | **0.85** | 0.73 |  | 0.69 | 0.73 |  |  | **0.81** |
-| `bbpb_rf_belebele` |  |  |  |  |  | **0.83** |  | **0.78** | 0.65 |  | **0.83** | **0.75** |  |  | 0.58 |
-| `bbpb_include_v2_og_spanish_rep_blica_dominicana` |  |  |  |  |  | **0.87** |  | 0.67 | 0.70 |  | 0.67 | **0.80** |  |  | 0.72 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | 0.69 |  | **0.83** | 0.68 |  | **0.84** | 0.71 |  |  | 0.66 |
-| `bbpb_global_piqa_parallel_cloze_spa_latn_mexi` |  |  |  |  |  | **0.83** |  | 0.59 | 0.74 |  | 0.50 | **1.00** |  |  | 0.70 |
-| `bbpb_include_v2_en_spanish_ecuador` |  |  |  |  |  | 0.73 |  | 0.70 | 0.63 |  | **0.80** | **0.80** |  |  | 0.68 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.75** |  | **0.79** | 0.67 |  | 0.72 | 0.61 |  |  | 0.72 |
-| `bbpb_global_piqa_parallel_cloze_spa_latn_spai` |  |  |  |  |  | **0.83** |  | 0.71 | 0.70 |  | 0.50 | **0.83** |  |  | 0.68 |
-| `bbpb_include_v2_og_spanish_ecuador` |  |  |  |  |  | 0.73 |  | **0.84** | 0.73 |  | 0.67 | 0.60 |  |  | 0.67 |
-| `bbpb_global_piqa_parallel_cloze_spa_latn_peru` |  |  |  |  |  | **0.83** |  | 0.70 | 0.70 |  | 0.67 | 0.67 |  |  | 0.67 |
-| `bbpb_include_v2_og_spanish_costa_rica` |  |  |  |  |  | 0.73 |  | 0.71 | 0.57 |  | **0.80** | 0.73 |  |  | 0.67 |
-| `include_v2_og_spanish_espa_a` | 0.70 | 0.71 | 0.70 | 0.73 | 0.72 | **0.77** | 0.69 | 0.53 | 0.70 | 0.68 | 0.61 | 0.71 | 0.70 | **0.78** | 0.74 |
-| `bbpb_multiblimp` |  |  |  |  |  | **0.86** |  | 0.70 | 0.63 |  | 0.71 | **0.76** |  |  | 0.52 |
-| `bbpb_paws` |  |  |  |  |  | 0.71 |  | **0.76** | 0.70 |  | **0.76** | 0.62 |  |  | 0.62 |
-| `bbpb_cultural_bench_easy_peru` |  |  |  |  |  | **1.00** |  | 0.72 | 0.61 |  | **0.83** | 0.50 |  |  | 0.50 |
-| `bbpb_include_v2_og_spanish_espa_a` |  |  |  |  |  | **0.80** |  | **0.87** | 0.65 |  | 0.73 | 0.47 |  |  | 0.59 |
-| `bbpb_include_v2_og_spanish_argentina` |  |  |  |  |  | 0.73 |  | 0.74 | 0.62 |  | **0.80** | 0.60 |  |  | 0.61 |
-| `bbpb_truthfulqa-multi_mc1` |  |  |  |  |  | **0.78** |  | 0.57 | **0.80** |  | 0.58 | 0.71 |  |  | 0.64 |
-| `bbpb_include_v2_og_spanish_panam_` |  |  |  |  |  | 0.73 |  | 0.72 | 0.74 |  | 0.67 | 0.53 |  |  | 0.62 |
-| `xstorycloze` | 0.56 | 0.66 | 0.73 | 0.63 | 0.64 | 0.68 | 0.54 | 0.57 | 0.61 | 0.73 | 0.70 | 0.74 | 0.72 | **0.80** | 0.72 |
-| `bbpb_include_v2_og_spanish_chile` |  |  |  |  |  | **0.80** |  | 0.67 | 0.64 |  | 0.60 | **0.80** |  |  | 0.48 |
-| `bbpb_cultural_bench_easy_spain` |  |  |  |  |  | **1.00** |  | 0.63 | 0.54 |  | **0.83** | 0.50 |  |  | 0.48 |
-| `bbpb_include_v2_og_spanish_bolivia` |  |  |  |  |  | 0.60 |  | 0.70 | 0.70 |  | 0.60 | **0.80** |  |  | 0.55 |
-| `bbpb_include_v2_en_spanish_per_` |  |  |  |  |  | 0.67 |  | 0.50 | 0.45 |  | **0.80** | **0.80** |  |  | 0.74 |
-| `lambada_openai_mt` | **0.77** | 0.61 | 0.61 | 0.70 | 0.70 | 0.51 | 0.72 | 0.66 | 0.65 | 0.54 | 0.65 | 0.71 | 0.59 | 0.66 | **0.76** |
-| `bbpb_cultural_bench_easy_argentina` |  |  |  |  |  | **1.00** |  | 0.70 | 0.54 |  | 0.67 | 0.50 |  |  | 0.52 |
-| `bbpb_cultural_bench_easy_chile` |  |  |  |  |  | **0.83** |  | 0.73 | 0.52 |  | 0.67 | 0.67 |  |  | 0.50 |
-| `bbpb_include_v2_og_spanish_jamaica` |  |  |  |  |  | **0.80** |  | 0.74 | 0.61 |  | **0.93** | 0.33 |  |  | 0.50 |
-| `bbpb_include_v2_og_spanish_el_salvador` |  |  |  |  |  | 0.67 |  | **0.77** | 0.58 |  | 0.67 | 0.67 |  |  | 0.56 |
-| `bbpb_include_v2_og_spanish_belice` |  |  |  |  |  | 0.73 |  | 0.52 | 0.65 |  | **0.80** | 0.67 |  |  | 0.53 |
-| `bbpb_cultural_bench_easy_mexico` |  |  |  |  |  | **1.00** |  | 0.66 | 0.55 |  | **0.83** | 0.33 |  |  | 0.50 |
-| `bbpb_include_v2_og_spanish_cuba` |  |  |  |  |  | 0.73 |  | 0.67 | 0.58 |  | **0.80** | 0.53 |  |  | 0.55 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.58 |  | 0.74 | 0.63 |  | 0.58 | 0.64 |  |  | 0.66 |
-| `bbpb_xnli` |  |  |  |  |  | 0.67 |  | 0.66 | 0.74 |  | 0.51 | 0.71 |  |  | 0.53 |
-| `arc_mt` | 0.59 | **0.76** | 0.56 | 0.49 | 0.55 | 0.58 | 0.69 | 0.58 | 0.69 | 0.60 | 0.59 | 0.68 | 0.72 | **0.77** | 0.70 |
-| `rf_include_base_44` | 0.67 | 0.65 | **0.75** | 0.65 | 0.59 | 0.63 | 0.60 | 0.74 | 0.68 | 0.59 | 0.62 | 0.50 | 0.55 | 0.70 | 0.61 |
-| `bbpb_include_v2_og_spanish_per_` |  |  |  |  |  | 0.60 |  | 0.74 | 0.57 |  | 0.47 | **0.80** |  |  | 0.58 |
-| `bbpb_include_v2_og_spanish_colombia` |  |  |  |  |  | 0.60 |  | **0.82** | 0.66 |  | 0.60 | 0.40 |  |  | 0.65 |
-| `bbpb_include_v2_og_spanish_uruguay` |  |  |  |  |  | **0.80** |  | 0.70 | 0.59 |  | 0.60 | 0.47 |  |  | 0.57 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | 0.33 |  | 0.62 | 0.53 |  | 0.67 | **0.83** |  |  | 0.72 |
-| `bbpb_include_base_44` |  |  |  |  |  | 0.47 |  | 0.63 | 0.55 |  | **0.87** | 0.53 |  |  | 0.66 |
-| `rfgm_belebele` | 0.57 | 0.60 | 0.65 | 0.55 | 0.58 | 0.57 | 0.57 | 0.67 | 0.63 | 0.70 | 0.64 | 0.63 | 0.59 | 0.51 | **0.75** |
-| `rf_global_mmlu_full` | 0.69 | 0.45 | 0.50 | 0.63 | 0.54 | 0.54 | 0.60 | 0.72 | 0.69 | 0.57 | 0.69 | 0.58 | 0.68 | 0.58 | 0.71 |
-| `bbpb_include_v2_en_spanish_espa_a` |  |  |  |  |  | 0.53 |  | 0.44 | 0.46 |  | **0.80** | 0.73 |  |  | 0.70 |
-| `multiblimp` | 0.65 | 0.64 | 0.50 | 0.42 | 0.61 | 0.65 | 0.61 | 0.63 | 0.74 | 0.40 | 0.72 | 0.72 | 0.54 | 0.57 | 0.71 |
-| `bbpb_include_v2_og_spanish_paraguay` |  |  |  |  |  | 0.53 |  | 0.61 | 0.53 |  | 0.67 | **0.80** |  |  | 0.50 |
-| `bbpb_include_v2_og_spanish_nicaragua` |  |  |  |  |  | 0.67 |  | 0.57 | 0.55 |  | 0.47 | 0.67 |  |  | 0.71 |
-| `bbpb_rf_cultural_bench_easy_argentina` |  |  |  |  |  | 0.61 |  | 0.55 | 0.51 |  | 0.56 | 0.58 |  |  | **0.79** |
-| `rf_belebele` | 0.68 | 0.51 | 0.56 | 0.47 | 0.66 | 0.63 | 0.61 | 0.58 | 0.70 | 0.61 | 0.60 | 0.58 | 0.67 | 0.68 | 0.48 |
-| `bbpb_include_v2_en_spanish_m_xico` |  |  |  |  |  | 0.53 |  | **0.75** | 0.44 |  | 0.67 | 0.73 |  |  | 0.48 |
-| `include_v2_og_spanish_m_xico` | 0.58 | 0.36 | 0.47 | 0.48 | 0.49 | 0.53 | 0.60 | 0.57 | 0.54 | 0.70 | 0.72 | 0.70 | 0.74 | 0.74 | 0.64 |
-| `arc` | 0.66 | 0.46 | 0.48 | 0.50 | 0.62 | 0.43 | 0.62 | 0.53 | 0.64 | 0.64 | 0.73 | 0.64 | 0.63 | 0.65 | 0.66 |
-| `rfgm_include_base_44` | 0.66 | 0.59 | 0.61 | 0.61 | 0.50 | 0.59 | 0.58 | 0.57 | 0.55 | 0.51 | 0.68 | 0.60 | 0.59 | 0.54 | 0.52 |
-| `bbpb_include_v2_en_spanish_chile` |  |  |  |  |  | 0.53 |  | 0.65 | 0.50 |  | 0.47 | **0.80** |  |  | 0.54 |
-| `bbpb_include_v2_og_spanish_venezuela` |  |  |  |  |  | 0.53 |  | **0.77** | 0.54 |  | 0.40 | 0.73 |  |  | 0.50 |
-| `include_v2_og_spanish_ecuador` | 0.70 | 0.50 | 0.68 | 0.66 | 0.69 | 0.57 | **0.75** | 0.48 | 0.59 | 0.62 | 0.57 | 0.47 | 0.46 | 0.48 | 0.51 |
-| `bbpb_include_v2_og_spanish_m_xico` |  |  |  |  |  | 0.47 |  | **0.84** | 0.50 |  | 0.47 | 0.73 |  |  | 0.46 |
-| `bbpb_rf_cultural_bench_easy_mexico` |  |  |  |  |  | **0.78** |  | 0.64 | 0.55 |  | **0.75** | 0.42 |  |  | 0.32 |
-| `bbpb_include_v2_en_spanish_rep_blica_dominicana` |  |  |  |  |  | 0.60 |  | 0.56 | 0.56 |  | 0.33 | **0.93** |  |  | 0.47 |
-| `bbpb_include_v2_en_spanish_argentina` |  |  |  |  |  | 0.47 |  | 0.51 | 0.43 |  | 0.67 | 0.67 |  |  | 0.70 |
-| `bbpb_include_v2_en_spanish_nicaragua` |  |  |  |  |  | **0.87** |  | 0.47 | 0.58 |  | 0.47 | 0.40 |  |  | 0.64 |
-| `include_v2_og_spanish_el_salvador` | 0.57 | 0.51 | 0.50 | 0.63 | 0.70 | 0.52 | 0.60 | 0.66 | 0.60 | 0.39 | 0.51 | 0.51 | 0.62 | 0.54 | 0.66 |
-| `include_v2_og_spanish_chile` | 0.42 | 0.50 | 0.45 | 0.52 | 0.55 | 0.56 | 0.59 | 0.62 | 0.46 | 0.69 | 0.60 | 0.60 | 0.68 | 0.64 | 0.66 |
-| `include_v2_og_spanish_per_` | 0.57 | 0.61 | 0.68 | 0.60 | 0.56 | 0.50 | 0.54 | 0.66 | 0.67 | 0.66 | 0.47 | 0.40 | 0.44 | 0.38 | 0.74 |
-| `bbpb_rf_cultural_bench_easy_spain` |  |  |  |  |  | 0.58 |  | 0.56 | 0.49 |  | 0.64 | 0.42 |  |  | 0.70 |
-| `include_v2_en_spanish_espa_a` | 0.59 | 0.61 | 0.60 | 0.54 | 0.62 | 0.40 | 0.40 | 0.59 | 0.46 | 0.68 | 0.63 | 0.55 | 0.51 | 0.57 | 0.67 |
-| `include_v2_en_spanish_m_xico` | 0.48 | 0.70 | 0.71 | 0.59 | 0.47 | 0.40 | 0.47 | 0.57 | 0.46 | 0.72 | 0.50 | 0.55 | 0.58 | 0.57 | 0.59 |
-| `include_v2_en_spanish_colombia` | 0.45 | 0.60 | 0.48 | 0.67 | 0.43 | 0.51 | 0.63 | 0.55 | 0.50 | 0.68 | 0.59 | 0.49 | 0.62 | 0.63 | 0.55 |
-| `bbpb_include_v2_og_spanish_puerto_rico` |  |  |  |  |  | 0.33 |  | 0.64 | 0.48 |  | 0.53 | 0.73 |  |  | 0.63 |
-| `include_v2_og_spanish_colombia` | 0.44 | 0.43 | 0.47 | 0.48 | 0.37 | 0.60 | 0.55 | 0.57 | 0.64 | 0.55 | 0.67 | 0.65 | 0.57 | 0.66 | 0.70 |
-| `bbpb_include_v2_en_spanish_colombia` |  |  |  |  |  | 0.67 |  | 0.57 | 0.51 |  | 0.53 | 0.40 |  |  | 0.64 |
-| `include_v2_og_spanish_bolivia` | 0.68 | 0.45 | 0.54 | 0.59 | 0.50 | 0.44 | 0.61 | 0.67 | 0.49 | 0.48 | 0.57 | 0.59 | 0.58 | 0.54 | 0.58 |
-| `bbpb_include_v2_en_spanish_cuba` |  |  |  |  |  | 0.53 |  | 0.63 | 0.57 |  | 0.53 | 0.47 |  |  | 0.54 |
-| `bbpb_rf_cultural_bench_easy_chile` |  |  |  |  |  | 0.61 |  | 0.49 | 0.42 |  | 0.67 | 0.61 |  |  | 0.48 |
-| `bbpb_include_v2_en_spanish_puerto_rico` |  |  |  |  |  | 0.33 |  | 0.55 | 0.34 |  | 0.53 | **0.87** |  |  | 0.58 |
-| `bbpb_rf_cultural_bench_easy_peru` |  |  |  |  |  | 0.72 |  | 0.49 | 0.47 |  | 0.42 | 0.56 |  |  | 0.56 |
-| `bbpb_include_v2_en_spanish_el_salvador` |  |  |  |  |  | 0.27 |  | 0.62 | 0.47 |  | 0.73 | 0.53 |  |  | 0.54 |
-| `xnli` | 0.46 | 0.47 | 0.51 | 0.52 | 0.46 | 0.49 | 0.57 | 0.61 | 0.60 | 0.48 | 0.45 | 0.55 | 0.65 | 0.47 | 0.57 |
-| `include_v2_en_spanish_uruguay` | 0.49 | 0.49 | 0.52 | 0.64 | 0.46 | 0.48 | 0.54 | 0.50 | 0.55 | 0.57 | 0.41 | 0.44 | 0.52 | 0.67 | 0.55 |
-| `bbpb_include_v2_en_spanish_costa_rica` |  |  |  |  |  | 0.33 |  | 0.58 | 0.43 |  | 0.53 | 0.60 |  |  | 0.64 |
-| `bbpb_include_v2_en_spanish_belice` |  |  |  |  |  | 0.67 |  | 0.41 | 0.52 |  | 0.53 | 0.47 |  |  | 0.50 |
-| `include_v2_en_spanish_ecuador` | 0.50 | 0.50 | 0.59 | 0.61 | 0.50 | 0.51 | 0.53 | 0.55 | 0.51 | 0.65 | 0.48 | 0.42 | 0.56 | 0.33 | 0.51 |
-| `include_v2_og_spanish_cuba` | 0.63 | 0.57 | 0.47 | 0.50 | 0.41 | 0.63 | 0.50 | 0.48 | 0.40 | 0.63 | 0.59 | 0.37 | 0.51 | 0.50 | 0.49 |
-| `include_v2_og_spanish_uruguay` | 0.54 | 0.41 | 0.49 | 0.69 | 0.60 | 0.49 | 0.51 | 0.43 | 0.57 | 0.38 | 0.60 | 0.54 | 0.36 | 0.49 | 0.51 |
-| `bbpb_include_v2_en_spanish_venezuela` |  |  |  |  |  | 0.13 |  | 0.66 | 0.50 |  | 0.47 | 0.73 |  |  | 0.55 |
-| `include_v2_en_spanish_per_` | 0.42 | 0.56 | 0.43 | 0.59 | 0.61 | 0.53 | 0.51 | 0.57 | 0.41 | 0.45 | 0.68 | 0.53 | 0.49 | 0.34 | 0.47 |
-| `bbpb_include_v2_en_spanish_bolivia` |  |  |  |  |  | 0.40 |  | 0.64 | 0.58 |  | 0.33 | 0.47 |  |  | 0.60 |
-| `include_v2_en_spanish_cuba` | 0.51 | 0.65 | 0.47 | 0.43 | 0.41 | 0.45 | 0.58 | 0.64 | 0.40 | 0.50 | 0.32 | 0.57 | 0.57 | 0.60 | 0.41 |
-| `include_v2_og_spanish_venezuela` | 0.65 | 0.37 | 0.61 | 0.53 | 0.43 | 0.46 | 0.50 | 0.57 | 0.39 | 0.38 | 0.59 | 0.41 | 0.55 | 0.61 | 0.44 |
-| `cultural_bench_hard_mexico` | 0.58 | 0.45 | 0.56 | 0.26 | 0.71 | 0.63 | 0.42 | 0.46 | 0.52 | 0.41 | 0.59 | 0.50 | 0.46 | 0.64 | 0.29 |
-| `bbpb_include_v2_en_spanish_uruguay` |  |  |  |  |  | 0.33 |  | 0.66 | 0.40 |  | 0.27 | **0.80** |  |  | 0.53 |
-| `include_v2_og_spanish_argentina` | 0.60 | 0.41 | 0.32 | 0.65 | 0.61 | 0.59 | 0.41 | 0.54 | 0.39 | 0.48 | 0.68 | 0.46 | 0.37 | 0.37 | 0.59 |
-| `cultural_bench_easy_mexico` | 0.46 | 0.45 | 0.52 | 0.41 | 0.51 | 0.54 | 0.58 | 0.32 | 0.62 | 0.40 | 0.45 | 0.59 | 0.52 | 0.54 | 0.41 |
-| `include_v2_en_spanish_argentina` | 0.69 | 0.36 | 0.43 | 0.66 | 0.38 | 0.38 | 0.48 | 0.57 | 0.54 | 0.45 | 0.44 | 0.38 | 0.47 | 0.69 | 0.43 |
-| `include_v2_en_spanish_bolivia` | 0.50 | 0.37 | 0.59 | 0.47 | 0.39 | 0.49 | 0.40 | 0.44 | **0.76** | 0.56 | 0.50 | 0.48 | 0.62 | 0.34 | 0.39 |
-| `include_v2_en_spanish_paraguay` | 0.59 | 0.44 | 0.47 | 0.36 | 0.52 | 0.48 | 0.43 | 0.48 | 0.56 | 0.56 | 0.35 | 0.50 | 0.56 | 0.50 | 0.43 |
-| `global_mmlu_full` | 0.34 | 0.53 | 0.44 | 0.71 | 0.35 | 0.49 | 0.48 | 0.37 | 0.46 | 0.52 | 0.62 | 0.48 | 0.39 | 0.58 | 0.44 |
-| `bbpb_include_v2_en_spanish_paraguay` |  |  |  |  |  | 0.40 |  | 0.44 | 0.48 |  | 0.40 | 0.47 |  |  | 0.70 |
-| `truthfulqa-multi_mc1` | 0.51 | 0.51 | 0.56 | 0.38 | 0.53 | 0.48 | 0.51 | 0.50 | 0.35 | 0.50 | 0.47 | 0.50 | 0.42 | 0.57 | 0.38 |
-| `include_v2_og_spanish_costa_rica` | 0.57 | 0.41 | 0.31 | 0.46 | 0.49 | 0.61 | 0.61 | 0.53 | 0.41 | 0.48 | 0.70 | 0.39 | 0.32 | 0.33 | 0.55 |
-| `blend_spain_sample` | 0.38 | 0.50 | 0.37 | 0.41 | 0.37 | 0.51 | 0.60 | 0.50 | 0.63 | 0.46 | 0.50 | 0.42 | 0.49 | 0.52 | 0.50 |
-| `paws` | 0.52 | 0.31 | 0.25 | 0.50 | 0.46 | 0.57 | 0.33 | 0.37 | 0.69 | 0.55 | 0.43 | 0.58 | 0.65 | 0.40 | 0.54 |
-| `include_v2_en_spanish_puerto_rico` | 0.39 | 0.66 | 0.35 | 0.32 | 0.25 | 0.53 | 0.64 | 0.38 | 0.49 | 0.42 | 0.50 | 0.55 | 0.50 | 0.52 | 0.65 |
-| `include_v2_en_spanish_chile` | 0.59 | 0.29 | 0.59 | 0.30 | 0.37 | 0.50 | 0.42 | 0.46 | 0.42 | 0.40 | 0.54 | 0.65 | 0.49 | 0.42 | 0.68 |
-| `bbpb_include_v2_en_spanish_panam_` |  |  |  |  |  | 0.47 |  | 0.57 | 0.59 |  | 0.40 | 0.27 |  |  | 0.54 |
-| `bbpb_belebele` |  |  |  |  |  | 0.17 |  | 0.61 | 0.50 |  | 0.50 | 0.50 |  |  | 0.56 |
-| `include_v2_og_spanish_paraguay` | 0.46 | 0.54 | 0.45 | 0.25 | 0.33 | 0.62 | 0.40 | 0.53 | 0.61 | 0.41 | 0.44 | 0.50 | 0.55 | 0.40 | 0.56 |
-| `bbpb_include_v2_en_spanish_jamaica` |  |  |  |  |  | 0.67 |  | 0.36 | 0.52 |  | 0.33 | 0.40 |  |  | 0.53 |
-| `include_v2_en_spanish_el_salvador` | 0.56 | 0.36 | 0.40 | 0.47 | 0.71 | 0.40 | 0.53 | 0.37 | 0.50 | 0.59 | 0.30 | 0.32 | 0.39 | 0.43 | 0.59 |
-| `blend_mexico_sample` | 0.52 | 0.57 | 0.43 | 0.41 | 0.58 | 0.43 | 0.36 | 0.36 | 0.51 | 0.58 | 0.39 | 0.56 | 0.50 | 0.36 | 0.31 |
-| `belebele` | 0.52 | 0.38 | 0.40 | 0.29 | 0.49 | 0.50 | 0.41 | 0.40 | 0.41 | 0.55 | 0.44 | 0.46 | 0.69 | 0.51 | 0.45 |
-| `include_v2_en_spanish_costa_rica` | 0.61 | 0.50 | 0.42 | 0.50 | 0.35 | 0.25 | 0.40 | 0.50 | 0.50 | 0.44 | 0.42 | 0.29 | 0.64 | 0.42 | 0.50 |
-| `cultural_bench_hard_chile` | 0.44 | 0.30 | 0.47 | 0.38 | 0.60 | 0.63 | 0.38 | 0.50 | 0.45 | 0.28 | 0.50 | 0.32 | 0.43 | 0.51 | 0.50 |
-| `cultural_bench_hard_spain` | 0.49 | 0.35 | 0.48 | 0.28 | 0.62 | 0.46 | 0.48 | 0.53 | 0.52 | 0.45 | 0.35 | 0.30 | 0.50 | 0.43 | 0.42 |
-| `cultural_bench_easy_argentina` | 0.50 | 0.40 | 0.36 | 0.30 | 0.54 | 0.53 | 0.30 | 0.41 | 0.46 | 0.36 | 0.40 | 0.62 | 0.48 | 0.56 | 0.42 |
-| `cultural_bench_hard_argentina` | 0.48 | 0.41 | 0.45 | 0.23 | 0.68 | 0.66 | 0.22 | 0.39 | 0.44 | 0.25 | 0.53 | 0.38 | 0.64 | 0.50 | 0.39 |
-| `include_base_44` | 0.41 | 0.54 | 0.36 | 0.40 | 0.26 | 0.51 | 0.42 | 0.52 | 0.50 | 0.51 | 0.48 | 0.34 | 0.48 | 0.43 | 0.44 |
-| `cultural_bench_easy_spain` | 0.54 | 0.42 | 0.48 | 0.44 | 0.49 | 0.53 | 0.40 | 0.43 | 0.38 | 0.28 | 0.35 | 0.45 | 0.53 | 0.45 | 0.41 |
-| `cultural_bench_easy_peru` | 0.32 | 0.40 | 0.42 | 0.30 | 0.45 | 0.61 | 0.43 | 0.38 | 0.53 | 0.58 | 0.39 | 0.42 | 0.43 | 0.45 | 0.39 |
-| `include_v2_en_spanish_venezuela` | 0.40 | 0.45 | 0.45 | 0.45 | 0.50 | 0.50 | 0.33 | 0.48 | 0.40 | 0.43 | 0.50 | 0.29 | 0.48 | 0.54 | 0.31 |
-| `include_v2_og_spanish_rep_blica_dominicana` | 0.45 | 0.43 | 0.65 | 0.44 | 0.31 | 0.55 | 0.53 | 0.44 | 0.37 | 0.41 | 0.52 | 0.27 | 0.40 | 0.38 | 0.33 |
-| `cultural_bench_hard_peru` | 0.53 | 0.48 | 0.30 | 0.34 | 0.57 | 0.54 | 0.36 | 0.61 | 0.37 | 0.36 | 0.35 | 0.38 | 0.50 | 0.42 | 0.35 |
-| `bbpb_blend_mexico_sample` |  |  |  |  |  | 0.33 |  | 0.50 | 0.51 |  | 0.33 | 0.50 |  |  | 0.40 |
-| `bbpb_blend_spain_sample` |  |  |  |  |  | 0.33 |  | 0.56 | 0.47 |  | 0.33 | 0.50 |  |  | 0.35 |
-| `cultural_bench_easy_chile` | 0.44 | 0.34 | 0.25 | 0.43 | 0.39 | 0.62 | 0.44 | 0.50 | 0.46 | 0.36 | 0.42 | 0.55 | 0.31 | 0.47 | 0.39 |
-| `global_piqa_parallel_cloze_spa_latn_spai` | 0.41 | 0.49 | 0.17 | 0.47 | 0.51 | 0.41 | 0.35 | 0.34 | 0.34 | 0.38 | 0.43 | 0.51 | 0.58 | 0.38 | 0.57 |
-| `global_piqa_parallel_cloze_spa_latn_mexi` | 0.49 | 0.32 | 0.29 | 0.35 | 0.19 | 0.50 | 0.39 | 0.30 | 0.35 | 0.44 | 0.40 | 0.47 | 0.39 | 0.64 | 0.55 |
-| `global_piqa_parallel_cloze_spa_latn_peru` | 0.42 | 0.29 | 0.41 | 0.35 | 0.44 | 0.41 | 0.40 | 0.44 | 0.33 | 0.50 | 0.33 | 0.26 | 0.43 | 0.53 | 0.53 |
-| `include_v2_en_spanish_nicaragua` | 0.30 | 0.40 | 0.45 | 0.34 | 0.35 | 0.33 | 0.38 | 0.35 | 0.32 | 0.50 | 0.53 | 0.34 | 0.42 | 0.54 | 0.49 |
-| `include_v2_og_spanish_puerto_rico` | 0.45 | 0.43 | 0.56 | 0.27 | 0.43 | 0.44 | 0.41 | 0.43 | 0.29 | 0.31 | 0.27 | 0.56 | 0.45 | 0.40 | 0.33 |
-| `include_v2_og_spanish_panam_` | 0.48 | 0.32 | 0.42 | 0.48 | 0.57 | 0.28 | 0.47 | 0.25 | 0.28 | 0.31 | 0.34 | 0.50 | 0.42 | 0.43 | 0.45 |
-| `include_v2_og_spanish_nicaragua` | 0.43 | 0.40 | 0.38 | 0.37 | 0.29 | 0.44 | 0.50 | 0.33 | 0.34 | 0.46 | 0.44 | 0.45 | 0.31 | 0.40 | 0.40 |
-| `rf_cultural_bench_easy_peru` | 0.63 | 0.40 | 0.38 | 0.35 | 0.55 | 0.26 | 0.27 | 0.47 | 0.55 | 0.43 | 0.34 | 0.25 | 0.29 | 0.30 | 0.46 |
-| `rf_cultural_bench_easy_mexico` | 0.50 | 0.26 | 0.33 | 0.36 | 0.57 | 0.25 | 0.46 | 0.45 | 0.51 | 0.39 | 0.30 | 0.22 | 0.49 | 0.45 | 0.38 |
-| `include_v2_og_spanish_belice` | 0.34 | 0.20 | 0.36 | 0.34 | 0.37 | 0.31 | 0.30 | 0.31 | 0.59 | 0.42 | 0.46 | 0.43 | 0.28 | 0.32 | 0.34 |
-| `include_v2_en_spanish_panam_` | 0.44 | 0.26 | 0.35 | 0.30 | 0.48 | 0.16 | 0.35 | 0.35 | 0.22 | 0.42 | 0.38 | 0.54 | 0.41 | 0.45 | 0.28 |
-| `rf_cultural_bench_easy_chile` | 0.45 | 0.41 | 0.40 | 0.30 | 0.40 | 0.40 | 0.43 | 0.16 | 0.38 | 0.39 | 0.27 | 0.34 | 0.26 | 0.39 | 0.37 |
-| `rf_cultural_bench_easy_spain` | 0.37 | 0.30 | 0.53 | 0.33 | 0.09 | 0.55 | 0.35 | 0.29 | 0.37 | 0.36 | 0.28 | 0.50 | 0.26 | 0.19 | 0.42 |
-| `include_v2_og_spanish_jamaica` | 0.21 | 0.38 | 0.30 | 0.34 | 0.25 | 0.42 | 0.40 | 0.27 | 0.40 | 0.32 | 0.33 | 0.40 | 0.45 | 0.35 | 0.33 |
-| `include_v2_en_spanish_rep_blica_dominicana` | 0.44 | 0.44 | 0.20 | 0.30 | 0.22 | 0.39 | 0.30 | 0.46 | 0.14 | 0.26 | 0.55 | 0.23 | 0.35 | 0.51 | 0.26 |
-| `include_v2_en_spanish_jamaica` | 0.42 | 0.32 | 0.43 | 0.27 | 0.41 | 0.35 | 0.23 | 0.28 | 0.30 | 0.35 | 0.33 | 0.29 | 0.17 | 0.21 | 0.33 |
-| `rf_cultural_bench_easy_argentina` | 0.22 | 0.30 | 0.28 | 0.20 | 0.44 | 0.31 | 0.47 | 0.38 | 0.24 | 0.27 | 0.28 | 0.21 | 0.47 | 0.32 | 0.30 |
-| `include_v2_en_spanish_belice` | 0.31 | 0.17 | 0.21 | 0.26 | 0.24 | 0.27 | 0.28 | 0.35 | 0.39 | 0.32 | 0.31 | 0.35 | 0.43 | 0.25 | 0.25 |
+| `bpb` | **0.99** | **0.88** | **0.79** | **0.90** | **0.95** | **0.87** | **0.80** | **0.90** | **0.96** | **0.90** | **0.92** | **0.87** | **0.82** | **0.81** | **0.88** |
+| `bbpb_hellaswag` | **0.98** | **0.88** | **0.88** | **0.89** | **0.88** | **0.90** | **0.88** | **0.90** | **0.88** | **0.89** | **0.92** | **0.85** | **0.83** | **0.78** | **0.83** |
+| `bbpb_xstorycloze` | **0.88** | **0.77** | **0.81** | **0.89** | **0.90** | **0.86** | **0.84** | **0.89** | **0.93** | **0.83** | **0.83** | **0.83** | **0.90** | **0.85** | **0.91** |
+| `hellaswag` | **0.83** | **0.78** | **0.81** | **0.86** | **0.86** | **0.87** | **0.90** | **0.88** | **0.84** | **0.85** | **0.84** | **0.84** | **0.84** | **0.81** | **0.88** |
+| `bbpb_rfgm_include_base_44` | **0.83** | **0.78** | **0.77** | 0.75 | **0.79** | **0.81** | **0.80** | **0.82** | 0.73 | **0.82** | **0.76** | **0.78** | **0.76** | 0.72 | **0.82** |
+| `bbpb_rfgm_belebele` | **0.84** | **0.83** | **0.82** | **0.81** | 0.72 | **0.76** | **0.84** | **0.77** | 0.68 | 0.74 | **0.88** | 0.70 | 0.73 | 0.68 | 0.66 |
+| `bbpb_rf_belebele` | **0.79** | **0.79** | 0.72 | **0.78** | 0.67 | 0.71 | **0.81** | **0.77** | 0.67 | 0.69 | 0.68 | 0.66 | **0.75** | 0.74 | 0.60 |
+| `bbpb_include_v2_og_spanish_argentina` | **0.77** | **0.84** | **0.76** | 0.72 | 0.72 | 0.75 | 0.73 | **0.75** | 0.62 | 0.73 | 0.75 | 0.67 | 0.67 | 0.73 | 0.60 |
+| `bbpb_include_v2_og_spanish_ecuador` | 0.69 | **0.78** | 0.73 | 0.69 | 0.68 | **0.76** | **0.76** | **0.78** | 0.70 | 0.65 | 0.62 | 0.71 | 0.74 | **0.77** | 0.68 |
+| `bbpb_global_piqa_parallel_cloze_spa_latn_spai` | 0.75 | **0.76** | **0.76** | 0.56 | 0.73 | **0.77** | **0.78** | 0.62 | 0.68 | **0.77** | 0.72 | **0.76** | 0.67 | 0.71 | 0.65 |
+| `bbpb_include_v2_og_spanish_espa_a` | 0.73 | **0.77** | 0.69 | 0.67 | 0.62 | 0.73 | 0.75 | **0.82** | 0.64 | 0.68 | 0.69 | 0.60 | 0.73 | 0.69 | 0.62 |
+| `bbpb_truthfulqa-multi_mc1` | 0.75 | **0.80** | 0.73 | 0.67 | 0.71 | 0.68 | 0.64 | 0.59 | 0.68 | 0.70 | 0.67 | **0.75** | **0.78** | 0.63 | 0.64 |
+| `bbpb_global_piqa_parallel_cloze_spa_latn_peru` | 0.73 | **0.76** | 0.67 | 0.54 | **0.75** | **0.75** | 0.71 | 0.56 | 0.70 | **0.78** | 0.68 | **0.76** | 0.65 | 0.68 | 0.65 |
+| `bbpb_rf_global_mmlu_full` | 0.67 | 0.58 | 0.65 | 0.73 | 0.71 | 0.69 | **0.75** | **0.80** | 0.65 | 0.67 | 0.60 | 0.68 | 0.65 | **0.79** | 0.74 |
+| `bbpb_include_v2_og_spanish_chile` | 0.71 | **0.82** | **0.82** | 0.66 | 0.70 | **0.80** | 0.71 | 0.70 | 0.59 | 0.71 | 0.70 | 0.72 | 0.59 | 0.64 | 0.46 |
+| `bbpb_global_piqa_parallel_cloze_spa_latn_mexi` | **0.76** | 0.75 | 0.69 | 0.52 | **0.75** | 0.70 | **0.76** | 0.54 | 0.72 | 0.66 | 0.60 | **0.76** | 0.69 | 0.74 | 0.67 |
+| `bbpb_global_mmlu_full` | 0.66 | 0.65 | 0.72 | 0.75 | 0.67 | 0.64 | 0.63 | 0.69 | 0.60 | 0.71 | 0.74 | 0.74 | **0.78** | 0.60 | 0.71 |
+| `bbpb_arc_mt` | 0.73 | 0.75 | 0.67 | 0.62 | 0.68 | 0.69 | **0.85** | 0.71 | 0.72 | 0.63 | 0.64 | 0.69 | 0.63 | 0.62 | 0.65 |
+| `include_v2_og_spanish_espa_a` | 0.65 | 0.69 | 0.71 | 0.67 | 0.71 | 0.75 | 0.65 | 0.54 | 0.67 | 0.67 | 0.61 | 0.71 | 0.70 | **0.79** | 0.71 |
+| `bbpb_paws` | 0.71 | 0.71 | **0.75** | 0.62 | **0.76** | 0.75 | 0.65 | 0.73 | 0.67 | 0.63 | 0.67 | 0.66 | 0.59 | 0.66 | 0.65 |
+| `lambada_openai_mt` | **0.81** | 0.67 | 0.63 | 0.73 | **0.75** | 0.60 | 0.73 | 0.69 | 0.68 | 0.54 | 0.65 | 0.69 | 0.59 | 0.65 | 0.73 |
+| `bbpb_include_v2_og_spanish_uruguay` | 0.75 | **0.80** | 0.70 | 0.71 | 0.65 | **0.76** | 0.75 | 0.70 | 0.59 | 0.63 | 0.71 | 0.53 | 0.60 | 0.70 | 0.57 |
+| `bbpb_include_base_44` | **0.76** | 0.68 | 0.74 | 0.65 | 0.73 | 0.54 | 0.68 | 0.62 | 0.58 | 0.67 | 0.70 | 0.68 | **0.77** | 0.62 | 0.68 |
+| `bbpb_arc` | 0.71 | **0.78** | 0.66 | 0.61 | 0.64 | 0.68 | **0.86** | 0.67 | 0.60 | 0.62 | 0.61 | 0.64 | 0.64 | 0.57 | 0.57 |
+| `bbpb_rf_include_base_44` | 0.55 | 0.67 | 0.70 | 0.70 | 0.62 | 0.57 | **0.77** | 0.64 | 0.57 | 0.59 | 0.69 | 0.66 | 0.70 | 0.71 | 0.69 |
+| `bbpb_include_v2_en_spanish_ecuador` | 0.63 | 0.69 | 0.61 | 0.63 | 0.72 | 0.62 | 0.66 | 0.68 | 0.62 | 0.58 | 0.64 | 0.62 | 0.73 | 0.67 | 0.68 |
+| `bbpb_include_v2_og_spanish_costa_rica` | 0.69 | 0.73 | 0.65 | 0.60 | 0.61 | 0.71 | 0.67 | 0.73 | 0.58 | 0.60 | 0.70 | 0.57 | 0.58 | 0.72 | 0.64 |
+| `bbpb_include_v2_og_spanish_colombia` | 0.71 | 0.64 | 0.73 | 0.67 | 0.63 | 0.63 | 0.69 | **0.83** | 0.66 | 0.50 | 0.55 | 0.55 | 0.71 | 0.59 | 0.67 |
+| `bbpb_multiblimp` | 0.66 | 0.62 | 0.72 | 0.63 | 0.66 | 0.74 | 0.67 | 0.67 | 0.57 | 0.60 | 0.60 | 0.63 | 0.62 | **0.75** | 0.61 |
+| `xstorycloze` | 0.60 | 0.62 | 0.71 | 0.61 | 0.64 | 0.64 | 0.52 | 0.54 | 0.58 | 0.70 | 0.70 | 0.67 | 0.74 | **0.78** | 0.69 |
+| `bbpb_xnli` | 0.72 | 0.65 | 0.70 | 0.58 | 0.67 | 0.68 | 0.59 | 0.59 | 0.73 | 0.70 | 0.61 | 0.70 | 0.53 | **0.75** | 0.51 |
+| `bbpb_include_v2_og_spanish_el_salvador` | 0.64 | 0.73 | 0.63 | 0.71 | 0.62 | 0.62 | 0.60 | 0.73 | 0.57 | 0.58 | 0.71 | 0.61 | 0.63 | 0.72 | 0.57 |
+| `bbpb_include_v2_og_spanish_bolivia` | 0.75 | 0.71 | 0.67 | 0.62 | 0.63 | 0.60 | 0.69 | 0.67 | 0.66 | 0.58 | 0.61 | 0.64 | 0.59 | 0.70 | 0.56 |
+| `bbpb_include_v2_og_spanish_per_` | 0.67 | 0.73 | 0.61 | 0.59 | 0.58 | 0.62 | 0.67 | 0.73 | 0.54 | 0.54 | 0.63 | 0.63 | 0.65 | 0.74 | 0.62 |
+| `bbpb_include_v2_og_spanish_cuba` | 0.67 | **0.76** | 0.54 | 0.67 | 0.68 | 0.59 | 0.61 | 0.59 | 0.57 | 0.53 | 0.69 | 0.73 | 0.65 | 0.67 | 0.57 |
+| `bbpb_include_v2_og_spanish_panam_` | 0.70 | 0.58 | 0.71 | 0.65 | 0.62 | 0.63 | 0.65 | 0.63 | 0.72 | 0.59 | 0.59 | 0.58 | 0.56 | 0.65 | 0.57 |
+| `bbpb_include_v2_og_spanish_nicaragua` | 0.55 | 0.71 | 0.63 | 0.59 | 0.65 | 0.52 | 0.65 | 0.57 | 0.52 | 0.66 | 0.56 | 0.72 | 0.74 | 0.72 | 0.69 |
+| `bbpb_include_v2_og_spanish_rep_blica_dominicana` | 0.63 | 0.69 | 0.46 | 0.67 | 0.63 | 0.67 | 0.62 | 0.67 | 0.70 | 0.54 | 0.52 | 0.61 | 0.58 | 0.62 | 0.72 |
+| `rf_global_mmlu_full` | 0.55 | 0.42 | 0.54 | 0.63 | 0.55 | 0.61 | 0.63 | 0.71 | 0.73 | 0.57 | 0.66 | 0.58 | 0.73 | 0.62 | 0.71 |
+| `multiblimp` | 0.75 | 0.61 | 0.48 | 0.56 | 0.61 | 0.62 | 0.58 | 0.67 | 0.73 | 0.48 | 0.65 | 0.67 | 0.52 | 0.63 | 0.69 |
+| `bbpb_include_v2_og_spanish_m_xico` | 0.67 | 0.62 | 0.59 | 0.65 | 0.58 | 0.53 | 0.67 | **0.78** | 0.49 | 0.56 | 0.56 | 0.66 | 0.65 | 0.72 | 0.51 |
+| `bbpb_include_v2_og_spanish_jamaica` | 0.66 | 0.71 | 0.52 | 0.63 | 0.53 | 0.52 | 0.75 | 0.68 | 0.57 | 0.52 | 0.69 | 0.56 | 0.59 | **0.75** | 0.53 |
+| `rf_belebele` | 0.61 | 0.54 | 0.58 | 0.56 | 0.70 | 0.64 | 0.62 | 0.60 | 0.67 | 0.63 | 0.65 | 0.59 | 0.68 | 0.61 | 0.51 |
+| `arc_mt` | 0.56 | 0.67 | 0.58 | 0.47 | 0.49 | 0.58 | 0.69 | 0.54 | 0.63 | 0.61 | 0.58 | 0.64 | 0.68 | 0.69 | 0.69 |
+| `rf_include_base_44` | 0.63 | 0.63 | 0.72 | 0.64 | 0.59 | 0.61 | 0.57 | 0.65 | 0.57 | 0.57 | 0.57 | 0.48 | 0.54 | 0.65 | 0.65 |
+| `rfgm_belebele` | 0.61 | 0.62 | 0.63 | 0.49 | 0.58 | 0.55 | 0.59 | 0.63 | 0.63 | 0.65 | 0.63 | 0.64 | 0.59 | 0.51 | 0.69 |
+| `bbpb_belebele` | 0.61 | 0.62 | 0.67 | 0.72 | 0.58 | 0.58 | 0.68 | 0.58 | 0.54 | 0.68 | 0.55 | 0.46 | 0.61 | 0.60 | 0.56 |
+| `bbpb_cultural_bench_easy_argentina` | 0.59 | 0.56 | 0.63 | 0.58 | **0.76** | 0.62 | 0.58 | 0.65 | 0.58 | 0.55 | 0.64 | 0.57 | 0.59 | 0.54 | 0.55 |
+| `bbpb_include_v2_og_spanish_belice` | 0.67 | 0.67 | 0.57 | 0.65 | 0.56 | 0.50 | 0.67 | 0.48 | 0.62 | 0.47 | 0.73 | 0.57 | 0.54 | **0.75** | 0.54 |
+| `bbpb_include_v2_en_spanish_per_` | 0.40 | 0.59 | 0.58 | 0.61 | **0.78** | 0.53 | 0.58 | 0.59 | 0.45 | 0.54 | 0.65 | 0.65 | 0.62 | 0.67 | 0.72 |
+| `bbpb_cultural_bench_easy_chile` | 0.58 | 0.52 | 0.66 | 0.58 | 0.55 | 0.65 | 0.67 | 0.67 | 0.51 | 0.58 | 0.69 | 0.60 | 0.56 | 0.46 | 0.57 |
+| `bbpb_cultural_bench_easy_mexico` | 0.55 | 0.50 | 0.71 | 0.50 | 0.66 | 0.69 | 0.65 | 0.64 | 0.57 | 0.55 | 0.61 | 0.60 | 0.60 | 0.45 | 0.52 |
+| `bbpb_include_v2_og_spanish_paraguay` | 0.59 | 0.62 | 0.63 | 0.52 | 0.67 | 0.45 | 0.57 | 0.59 | 0.52 | 0.52 | 0.71 | 0.65 | 0.58 | 0.65 | 0.51 |
+| `include_v2_og_spanish_m_xico` | 0.63 | 0.42 | 0.50 | 0.47 | 0.50 | 0.55 | 0.59 | 0.52 | 0.54 | 0.63 | 0.71 | 0.60 | 0.71 | 0.75 | 0.61 |
+| `bbpb_include_v2_og_spanish_venezuela` | 0.65 | 0.70 | 0.47 | 0.56 | 0.57 | 0.57 | 0.58 | **0.76** | 0.56 | 0.46 | 0.53 | 0.57 | 0.52 | 0.70 | 0.53 |
+| `bbpb_include_v2_en_spanish_nicaragua` | 0.43 | 0.65 | 0.49 | 0.67 | 0.63 | 0.46 | 0.51 | 0.48 | 0.53 | 0.56 | 0.64 | 0.64 | 0.62 | 0.64 | 0.62 |
+| `bbpb_include_v2_en_spanish_m_xico` | 0.40 | 0.61 | 0.54 | 0.50 | 0.65 | 0.52 | 0.66 | **0.76** | 0.44 | 0.57 | 0.50 | 0.68 | 0.72 | 0.57 | 0.49 |
+| `include_v2_og_spanish_ecuador` | 0.66 | 0.52 | 0.63 | 0.64 | 0.67 | 0.65 | 0.66 | 0.48 | 0.61 | 0.59 | 0.56 | 0.48 | 0.42 | 0.44 | 0.52 |
+| `bbpb_rf_cultural_bench_easy_spain` | 0.65 | 0.71 | 0.50 | 0.61 | 0.53 | 0.63 | 0.64 | 0.49 | 0.48 | 0.54 | 0.52 | 0.47 | 0.58 | 0.47 | 0.70 |
+| `include_v2_og_spanish_el_salvador` | 0.57 | 0.53 | 0.48 | 0.63 | 0.74 | 0.57 | 0.51 | 0.62 | 0.59 | 0.37 | 0.50 | 0.53 | 0.62 | 0.51 | 0.67 |
+| `rfgm_include_base_44` | 0.59 | 0.61 | 0.58 | 0.55 | 0.48 | 0.51 | 0.61 | 0.56 | 0.59 | 0.44 | 0.60 | 0.50 | 0.59 | 0.61 | 0.58 |
+| `bbpb_rf_cultural_bench_easy_argentina` | 0.56 | 0.50 | 0.56 | 0.49 | 0.55 | 0.52 | 0.44 | 0.61 | 0.53 | 0.61 | 0.49 | 0.53 | 0.58 | 0.67 | **0.77** |
+| `bbpb_cultural_bench_easy_peru` | 0.52 | 0.44 | 0.59 | 0.49 | 0.60 | 0.60 | 0.61 | 0.65 | 0.60 | 0.61 | 0.56 | 0.54 | 0.59 | 0.45 | 0.54 |
+| `include_v2_og_spanish_bolivia` | 0.64 | 0.47 | 0.59 | 0.60 | 0.48 | 0.53 | 0.59 | 0.67 | 0.41 | 0.50 | 0.59 | 0.58 | 0.59 | 0.56 | 0.57 |
+| `bbpb_include_v2_en_spanish_colombia` | 0.50 | 0.57 | 0.67 | 0.50 | 0.64 | 0.59 | 0.62 | 0.59 | 0.51 | 0.47 | 0.59 | 0.45 | 0.55 | 0.49 | 0.63 |
+| `arc` | 0.60 | 0.55 | 0.52 | 0.58 | 0.56 | 0.54 | 0.60 | 0.61 | 0.58 | 0.47 | 0.39 | 0.48 | 0.58 | 0.68 | 0.62 |
+| `include_v2_og_spanish_chile` | 0.48 | 0.42 | 0.47 | 0.50 | 0.56 | 0.56 | 0.60 | 0.65 | 0.44 | 0.63 | 0.61 | 0.61 | 0.67 | 0.52 | 0.59 |
+| `bbpb_cultural_bench_easy_spain` | 0.52 | 0.56 | 0.61 | 0.54 | 0.57 | 0.60 | 0.55 | 0.59 | 0.51 | 0.54 | 0.58 | 0.57 | 0.56 | 0.49 | 0.48 |
+| `bbpb_include_v2_en_spanish_belice` | 0.48 | 0.63 | 0.56 | 0.56 | 0.63 | 0.43 | 0.49 | 0.46 | 0.52 | 0.59 | 0.44 | 0.57 | 0.73 | 0.65 | 0.49 |
+| `bbpb_include_v2_en_spanish_chile` | 0.53 | 0.48 | 0.58 | 0.56 | 0.59 | 0.58 | 0.59 | 0.63 | 0.47 | 0.56 | 0.50 | 0.43 | 0.52 | 0.66 | 0.56 |
+| `include_v2_en_spanish_m_xico` | 0.47 | 0.68 | 0.69 | 0.58 | 0.50 | 0.40 | 0.48 | 0.59 | 0.39 | 0.66 | 0.48 | 0.56 | 0.59 | 0.57 | 0.55 |
+| `bbpb_include_v2_en_spanish_espa_a` | 0.45 | 0.63 | 0.67 | 0.56 | 0.62 | 0.49 | 0.58 | 0.46 | 0.45 | 0.58 | 0.52 | 0.48 | 0.54 | 0.51 | 0.64 |
+| `include_v2_en_spanish_colombia` | 0.42 | 0.55 | 0.58 | 0.59 | 0.44 | 0.55 | 0.53 | 0.56 | 0.51 | 0.61 | 0.61 | 0.52 | 0.57 | 0.59 | 0.53 |
+| `bbpb_include_v2_og_spanish_puerto_rico` | 0.48 | 0.61 | 0.44 | 0.52 | 0.47 | 0.48 | 0.59 | 0.63 | 0.46 | 0.45 | 0.48 | 0.58 | 0.63 | 0.68 | 0.63 |
+| `bbpb_include_v2_en_spanish_cuba` | 0.39 | 0.55 | 0.46 | 0.54 | 0.64 | 0.56 | 0.56 | 0.54 | 0.62 | 0.63 | 0.39 | 0.61 | 0.58 | 0.54 | 0.48 |
+| `include_v2_en_spanish_espa_a` | 0.57 | 0.52 | 0.58 | 0.52 | 0.59 | 0.41 | 0.45 | 0.48 | 0.46 | 0.62 | 0.62 | 0.56 | 0.47 | 0.56 | 0.67 |
+| `bbpb_rf_cultural_bench_easy_mexico` | 0.56 | 0.54 | 0.50 | 0.44 | 0.60 | 0.58 | 0.52 | 0.67 | 0.52 | 0.59 | 0.60 | 0.53 | 0.41 | 0.70 | 0.31 |
+| `include_v2_og_spanish_per_` | 0.59 | 0.53 | 0.59 | 0.61 | 0.53 | 0.48 | 0.59 | 0.61 | 0.52 | 0.71 | 0.39 | 0.41 | 0.39 | 0.37 | 0.69 |
+| `bbpb_include_v2_en_spanish_costa_rica` | 0.44 | 0.56 | 0.59 | 0.48 | 0.67 | 0.49 | 0.58 | 0.55 | 0.43 | 0.60 | 0.44 | 0.50 | 0.53 | 0.52 | 0.64 |
+| `include_v2_og_spanish_colombia` | 0.41 | 0.42 | 0.44 | 0.56 | 0.38 | 0.55 | 0.52 | 0.52 | 0.64 | 0.58 | 0.60 | 0.57 | 0.54 | 0.59 | 0.61 |
+| `bbpb_include_v2_en_spanish_argentina` | 0.50 | 0.59 | 0.63 | 0.51 | 0.49 | 0.49 | 0.42 | 0.56 | 0.42 | 0.54 | 0.57 | 0.47 | 0.47 | 0.57 | 0.68 |
+| `bbpb_include_v2_en_spanish_venezuela` | 0.42 | 0.50 | 0.43 | 0.48 | 0.55 | 0.44 | 0.63 | 0.70 | 0.48 | 0.47 | 0.49 | 0.57 | 0.59 | 0.60 | 0.53 |
+| `xnli` | 0.50 | 0.49 | 0.49 | 0.53 | 0.48 | 0.56 | 0.51 | 0.56 | 0.54 | 0.48 | 0.44 | 0.52 | 0.66 | 0.53 | 0.59 |
+| `bbpb_include_v2_en_spanish_bolivia` | 0.48 | 0.54 | 0.59 | 0.53 | 0.60 | 0.37 | 0.60 | 0.68 | 0.57 | 0.38 | 0.42 | 0.50 | 0.53 | 0.50 | 0.55 |
+| `bbpb_include_v2_en_spanish_rep_blica_dominicana` | 0.60 | 0.61 | 0.59 | 0.46 | 0.64 | 0.42 | 0.60 | 0.50 | 0.51 | 0.48 | 0.36 | 0.62 | 0.50 | 0.43 | 0.50 |
+| `bbpb_rf_cultural_bench_easy_chile` | 0.54 | 0.54 | 0.58 | 0.42 | 0.56 | 0.52 | 0.62 | 0.52 | 0.39 | 0.53 | 0.53 | 0.56 | 0.35 | 0.68 | 0.43 |
+| `bbpb_rf_cultural_bench_easy_peru` | 0.74 | 0.65 | 0.50 | 0.35 | 0.44 | 0.62 | 0.52 | 0.42 | 0.44 | 0.51 | 0.33 | 0.62 | 0.61 | 0.45 | 0.57 |
+| `bbpb_include_v2_en_spanish_el_salvador` | 0.38 | 0.48 | 0.53 | 0.54 | 0.56 | 0.38 | 0.50 | 0.63 | 0.43 | 0.53 | 0.59 | 0.43 | 0.59 | 0.62 | 0.49 |
+| `include_v2_en_spanish_uruguay` | 0.48 | 0.45 | 0.55 | 0.61 | 0.48 | 0.42 | 0.58 | 0.48 | 0.61 | 0.48 | 0.40 | 0.40 | 0.52 | 0.69 | 0.53 |
+| `include_v2_en_spanish_ecuador` | 0.52 | 0.47 | 0.56 | 0.58 | 0.53 | 0.55 | 0.52 | 0.49 | 0.56 | 0.63 | 0.41 | 0.44 | 0.58 | 0.33 | 0.50 |
+| `bbpb_include_v2_en_spanish_uruguay` | 0.53 | 0.52 | 0.56 | 0.52 | 0.62 | 0.47 | 0.39 | 0.63 | 0.42 | 0.41 | 0.49 | 0.51 | 0.44 | 0.55 | 0.54 |
+| `bbpb_include_v2_en_spanish_jamaica` | 0.51 | 0.61 | 0.50 | 0.42 | 0.61 | 0.36 | 0.59 | 0.35 | 0.56 | 0.42 | 0.44 | 0.53 | 0.56 | 0.61 | 0.53 |
+| `bbpb_include_v2_en_spanish_paraguay` | 0.37 | 0.42 | 0.56 | 0.50 | 0.53 | 0.37 | 0.59 | 0.54 | 0.47 | 0.46 | 0.43 | 0.58 | 0.57 | 0.57 | 0.61 |
+| `include_v2_en_spanish_chile` | 0.62 | 0.32 | 0.63 | 0.39 | 0.42 | 0.41 | 0.50 | 0.49 | 0.47 | 0.41 | 0.50 | 0.63 | 0.54 | 0.50 | 0.65 |
+| `blend_spain_sample` | 0.50 | 0.49 | 0.48 | 0.44 | 0.41 | 0.45 | 0.60 | 0.48 | 0.64 | 0.56 | 0.48 | 0.43 | 0.46 | 0.52 | 0.50 |
+| `include_v2_og_spanish_uruguay` | 0.50 | 0.47 | 0.48 | 0.67 | 0.61 | 0.39 | 0.47 | 0.39 | 0.57 | 0.40 | 0.61 | 0.52 | 0.35 | 0.48 | 0.49 |
+| `include_v2_en_spanish_per_` | 0.41 | 0.49 | 0.48 | 0.61 | 0.60 | 0.51 | 0.52 | 0.49 | 0.41 | 0.37 | 0.62 | 0.50 | 0.52 | 0.39 | 0.47 |
+| `include_v2_og_spanish_cuba` | 0.59 | 0.51 | 0.44 | 0.47 | 0.42 | 0.64 | 0.43 | 0.48 | 0.39 | 0.52 | 0.59 | 0.39 | 0.46 | 0.48 | 0.52 |
+| `include_v2_en_spanish_cuba` | 0.43 | 0.53 | 0.50 | 0.44 | 0.43 | 0.48 | 0.61 | 0.59 | 0.40 | 0.52 | 0.31 | 0.50 | 0.54 | 0.56 | 0.50 |
+| `include_v2_en_spanish_bolivia` | 0.49 | 0.37 | 0.62 | 0.47 | 0.41 | 0.45 | 0.42 | 0.46 | 0.69 | 0.56 | 0.50 | 0.48 | 0.59 | 0.40 | 0.39 |
+| `cultural_bench_hard_mexico` | 0.53 | 0.51 | 0.52 | 0.36 | 0.65 | 0.62 | 0.36 | 0.42 | 0.46 | 0.39 | 0.53 | 0.52 | 0.44 | 0.63 | 0.33 |
+| `bbpb_include_v2_en_spanish_puerto_rico` | 0.27 | 0.56 | 0.48 | 0.45 | 0.67 | 0.42 | 0.61 | 0.58 | 0.36 | 0.44 | 0.32 | 0.55 | 0.56 | 0.41 | 0.57 |
+| `include_v2_en_spanish_argentina` | 0.60 | 0.44 | 0.48 | 0.63 | 0.39 | 0.39 | 0.50 | 0.51 | 0.53 | 0.50 | 0.43 | 0.36 | 0.44 | 0.65 | 0.41 |
+| `cultural_bench_easy_mexico` | 0.44 | 0.44 | 0.58 | 0.43 | 0.45 | 0.56 | 0.56 | 0.35 | 0.63 | 0.41 | 0.41 | 0.56 | 0.54 | 0.50 | 0.41 |
+| `include_v2_og_spanish_venezuela` | 0.54 | 0.43 | 0.59 | 0.50 | 0.42 | 0.41 | 0.51 | 0.56 | 0.38 | 0.41 | 0.56 | 0.41 | 0.54 | 0.54 | 0.46 |
+| `include_v2_og_spanish_argentina` | 0.52 | 0.38 | 0.37 | 0.65 | 0.61 | 0.53 | 0.50 | 0.49 | 0.39 | 0.46 | 0.66 | 0.37 | 0.35 | 0.40 | 0.56 |
+| `bbpb_blend_mexico_sample` | 0.51 | 0.48 | 0.55 | 0.43 | 0.71 | 0.39 | 0.41 | 0.46 | 0.55 | 0.59 | 0.33 | 0.50 | 0.33 | 0.59 | 0.38 |
+| `bbpb_blend_spain_sample` | 0.50 | 0.48 | 0.53 | 0.42 | 0.61 | 0.41 | 0.41 | 0.51 | 0.52 | 0.70 | 0.35 | 0.51 | 0.37 | 0.56 | 0.32 |
+| `include_v2_og_spanish_paraguay` | 0.48 | 0.54 | 0.50 | 0.27 | 0.43 | 0.54 | 0.48 | 0.52 | 0.64 | 0.39 | 0.44 | 0.48 | 0.54 | 0.45 | 0.52 |
+| `paws` | 0.54 | 0.45 | 0.32 | 0.46 | 0.43 | 0.54 | 0.42 | 0.35 | 0.63 | 0.59 | 0.40 | 0.54 | 0.55 | 0.41 | 0.57 |
+| `include_base_44` | 0.50 | 0.54 | 0.39 | 0.46 | 0.33 | 0.51 | 0.48 | 0.57 | 0.52 | 0.52 | 0.53 | 0.41 | 0.48 | 0.44 | 0.50 |
+| `global_mmlu_full` | 0.34 | 0.52 | 0.48 | 0.65 | 0.35 | 0.57 | 0.41 | 0.40 | 0.44 | 0.50 | 0.53 | 0.44 | 0.44 | 0.60 | 0.52 |
+| `blend_mexico_sample` | 0.46 | 0.64 | 0.55 | 0.43 | 0.58 | 0.41 | 0.31 | 0.37 | 0.53 | 0.62 | 0.40 | 0.59 | 0.50 | 0.40 | 0.33 |
+| `include_v2_en_spanish_el_salvador` | 0.50 | 0.45 | 0.44 | 0.48 | 0.68 | 0.42 | 0.50 | 0.38 | 0.48 | 0.58 | 0.41 | 0.37 | 0.39 | 0.49 | 0.50 |
+| `bbpb_include_v2_en_spanish_panam_` | 0.50 | 0.59 | 0.39 | 0.51 | 0.57 | 0.34 | 0.44 | 0.58 | 0.57 | 0.41 | 0.35 | 0.43 | 0.37 | 0.46 | 0.51 |
+| `truthfulqa-multi_mc1` | 0.47 | 0.54 | 0.52 | 0.39 | 0.53 | 0.41 | 0.43 | 0.40 | 0.33 | 0.50 | 0.50 | 0.53 | 0.48 | 0.58 | 0.42 |
+| `include_v2_en_spanish_paraguay` | 0.52 | 0.43 | 0.52 | 0.39 | 0.46 | 0.45 | 0.42 | 0.44 | 0.54 | 0.54 | 0.32 | 0.52 | 0.57 | 0.47 | 0.39 |
+| `cultural_bench_hard_argentina` | 0.50 | 0.42 | 0.50 | 0.35 | 0.71 | 0.55 | 0.28 | 0.46 | 0.48 | 0.25 | 0.47 | 0.36 | 0.64 | 0.54 | 0.45 |
+| `cultural_bench_hard_chile` | 0.49 | 0.36 | 0.47 | 0.46 | 0.61 | 0.59 | 0.35 | 0.47 | 0.43 | 0.27 | 0.44 | 0.31 | 0.50 | 0.58 | 0.58 |
+| `cultural_bench_hard_spain` | 0.49 | 0.44 | 0.48 | 0.33 | 0.59 | 0.43 | 0.42 | 0.51 | 0.54 | 0.49 | 0.40 | 0.42 | 0.48 | 0.45 | 0.42 |
+| `include_v2_en_spanish_puerto_rico` | 0.40 | 0.54 | 0.41 | 0.28 | 0.26 | 0.51 | 0.64 | 0.37 | 0.49 | 0.40 | 0.46 | 0.53 | 0.42 | 0.48 | 0.63 |
+| `belebele` | 0.49 | 0.38 | 0.42 | 0.37 | 0.48 | 0.51 | 0.43 | 0.37 | 0.39 | 0.58 | 0.41 | 0.44 | 0.60 | 0.48 | 0.48 |
+| `include_v2_og_spanish_costa_rica` | 0.46 | 0.42 | 0.31 | 0.45 | 0.51 | 0.49 | 0.57 | 0.48 | 0.45 | 0.47 | 0.59 | 0.40 | 0.37 | 0.31 | 0.52 |
+| `include_v2_en_spanish_costa_rica` | 0.57 | 0.45 | 0.41 | 0.48 | 0.35 | 0.35 | 0.42 | 0.44 | 0.47 | 0.49 | 0.41 | 0.36 | 0.58 | 0.49 | 0.53 |
+| `cultural_bench_hard_peru` | 0.54 | 0.51 | 0.35 | 0.41 | 0.56 | 0.49 | 0.32 | 0.58 | 0.37 | 0.36 | 0.35 | 0.37 | 0.52 | 0.46 | 0.37 |
+| `cultural_bench_easy_spain` | 0.50 | 0.42 | 0.50 | 0.45 | 0.43 | 0.61 | 0.41 | 0.43 | 0.38 | 0.31 | 0.35 | 0.46 | 0.55 | 0.42 | 0.35 |
+| `cultural_bench_easy_argentina` | 0.48 | 0.40 | 0.33 | 0.39 | 0.49 | 0.47 | 0.32 | 0.46 | 0.41 | 0.43 | 0.37 | 0.59 | 0.46 | 0.54 | 0.39 |
+| `cultural_bench_easy_peru` | 0.33 | 0.37 | 0.46 | 0.33 | 0.38 | 0.61 | 0.40 | 0.34 | 0.52 | 0.52 | 0.45 | 0.42 | 0.46 | 0.44 | 0.42 |
+| `global_piqa_parallel_cloze_spa_latn_mexi` | 0.45 | 0.31 | 0.41 | 0.51 | 0.37 | 0.51 | 0.41 | 0.44 | 0.39 | 0.52 | 0.44 | 0.40 | 0.37 | 0.42 | 0.44 |
+| `include_v2_og_spanish_nicaragua` | 0.43 | 0.38 | 0.42 | 0.40 | 0.29 | 0.43 | 0.54 | 0.35 | 0.44 | 0.41 | 0.49 | 0.55 | 0.37 | 0.42 | 0.45 |
+| `include_v2_en_spanish_venezuela` | 0.40 | 0.34 | 0.42 | 0.38 | 0.46 | 0.44 | 0.39 | 0.47 | 0.37 | 0.42 | 0.54 | 0.35 | 0.48 | 0.54 | 0.37 |
+| `global_piqa_parallel_cloze_spa_latn_peru` | 0.54 | 0.42 | 0.38 | 0.29 | 0.32 | 0.35 | 0.41 | 0.28 | 0.35 | 0.58 | 0.50 | 0.45 | 0.42 | 0.63 | 0.42 |
+| `global_piqa_parallel_cloze_spa_latn_spai` | 0.34 | 0.33 | 0.39 | 0.29 | 0.40 | 0.49 | 0.29 | 0.56 | 0.29 | 0.42 | 0.37 | 0.50 | 0.50 | 0.65 | 0.52 |
+| `include_v2_og_spanish_puerto_rico` | 0.41 | 0.42 | 0.56 | 0.33 | 0.39 | 0.48 | 0.36 | 0.51 | 0.36 | 0.37 | 0.32 | 0.56 | 0.42 | 0.35 | 0.41 |
+| `include_v2_og_spanish_rep_blica_dominicana` | 0.48 | 0.42 | 0.56 | 0.46 | 0.33 | 0.54 | 0.48 | 0.41 | 0.43 | 0.38 | 0.48 | 0.25 | 0.34 | 0.39 | 0.31 |
+| `cultural_bench_easy_chile` | 0.51 | 0.30 | 0.28 | 0.41 | 0.39 | 0.52 | 0.42 | 0.46 | 0.45 | 0.43 | 0.38 | 0.48 | 0.32 | 0.40 | 0.45 |
+| `rf_cultural_bench_easy_mexico` | 0.45 | 0.24 | 0.36 | 0.45 | 0.47 | 0.29 | 0.46 | 0.46 | 0.46 | 0.39 | 0.29 | 0.25 | 0.49 | 0.42 | 0.35 |
+| `include_v2_og_spanish_panam_` | 0.42 | 0.41 | 0.43 | 0.47 | 0.46 | 0.23 | 0.49 | 0.27 | 0.27 | 0.31 | 0.38 | 0.46 | 0.45 | 0.37 | 0.40 |
+| `include_v2_en_spanish_nicaragua` | 0.30 | 0.35 | 0.45 | 0.35 | 0.37 | 0.39 | 0.40 | 0.36 | 0.28 | 0.39 | 0.46 | 0.34 | 0.43 | 0.46 | 0.45 |
+| `rf_cultural_bench_easy_peru` | 0.47 | 0.39 | 0.43 | 0.31 | 0.48 | 0.26 | 0.30 | 0.41 | 0.58 | 0.41 | 0.35 | 0.22 | 0.25 | 0.32 | 0.38 |
+| `include_v2_en_spanish_panam_` | 0.40 | 0.28 | 0.29 | 0.24 | 0.40 | 0.17 | 0.38 | 0.35 | 0.23 | 0.43 | 0.42 | 0.56 | 0.50 | 0.48 | 0.36 |
+| `include_v2_og_spanish_belice` | 0.36 | 0.22 | 0.39 | 0.31 | 0.33 | 0.37 | 0.33 | 0.30 | 0.56 | 0.46 | 0.41 | 0.41 | 0.35 | 0.28 | 0.27 |
+| `include_v2_og_spanish_jamaica` | 0.34 | 0.38 | 0.28 | 0.38 | 0.29 | 0.43 | 0.41 | 0.33 | 0.35 | 0.39 | 0.33 | 0.33 | 0.41 | 0.31 | 0.35 |
+| `rf_cultural_bench_easy_spain` | 0.39 | 0.31 | 0.48 | 0.31 | 0.16 | 0.53 | 0.35 | 0.27 | 0.41 | 0.39 | 0.33 | 0.50 | 0.31 | 0.21 | 0.38 |
+| `rf_cultural_bench_easy_chile` | 0.37 | 0.41 | 0.35 | 0.31 | 0.35 | 0.34 | 0.49 | 0.18 | 0.41 | 0.37 | 0.24 | 0.35 | 0.26 | 0.48 | 0.36 |
+| `include_v2_en_spanish_rep_blica_dominicana` | 0.44 | 0.44 | 0.21 | 0.33 | 0.22 | 0.46 | 0.31 | 0.44 | 0.22 | 0.25 | 0.46 | 0.33 | 0.35 | 0.45 | 0.28 |
+| `rf_cultural_bench_easy_argentina` | 0.28 | 0.27 | 0.25 | 0.25 | 0.42 | 0.38 | 0.45 | 0.46 | 0.25 | 0.28 | 0.33 | 0.20 | 0.40 | 0.33 | 0.35 |
+| `include_v2_en_spanish_jamaica` | 0.44 | 0.29 | 0.41 | 0.25 | 0.44 | 0.38 | 0.25 | 0.33 | 0.31 | 0.35 | 0.34 | 0.29 | 0.16 | 0.24 | 0.32 |
+| `include_v2_en_spanish_belice` | 0.29 | 0.27 | 0.24 | 0.25 | 0.25 | 0.32 | 0.23 | 0.32 | 0.39 | 0.29 | 0.36 | 0.28 | 0.44 | 0.30 | 0.26 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2679,29 +2726,29 @@ subtitle: "Estonian (et) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `bbpb_multiblimp` | **1.00** | **1.00** | **1.00** | **0.83** | **1.00** | **1.00** | **1.00** | **0.83** | **1.00** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** |
+| `bbpb_rf_belebele` | **1.00** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** |
+| `bbpb_rfgm_belebele` | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** |
 | `bpb` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | **1.00** |
-| `bbpb_multiblimp` |  |  |  |  |  |  |  | **0.83** | **1.00** |  |  |  |  |  | **0.83** |
-| `bbpb_rf_belebele` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  |  |  | **0.83** | **1.00** |  |  |  |  |  | **0.83** |
+| `bbpb_rfgm_include_base_44` | 0.67 | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | 0.67 | 0.67 | **0.83** | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** |
+| `bbpb_xcopa` | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** | **1.00** | 0.67 | **1.00** | 0.67 | 0.67 |
+| `bbpb_global_piqa_parallel_cloze` | **0.83** | **0.83** | **1.00** | 0.67 | 0.67 | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | **1.00** |
 | `multiblimp` | **0.83** | **1.00** | 0.67 | 0.67 | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | 0.67 | **0.83** | **1.00** | **0.83** | **0.83** |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | **0.83** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  |  |  | 0.67 | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_xcopa` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | 0.67 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.50 | 0.67 |  |  |  |  |  | **0.83** |
-| `bbpb_rf_include_base_44` |  |  |  |  |  |  |  | **0.83** | 0.50 |  |  |  |  |  | 0.67 |
+| `bbpb_include_v2_og` | **0.83** | **1.00** | 0.50 | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** | 0.67 | 0.50 | **1.00** | **0.83** | 0.50 | 0.67 | **0.83** |
+| `bbpb_belebele` | **0.83** | **0.83** | **0.83** | 0.67 | **0.83** | **1.00** | **1.00** | 0.50 | 0.67 | **1.00** | 0.50 | 0.67 | 0.50 | 0.67 | **0.83** |
+| `bbpb_rf_include_base_44` | **1.00** | 0.67 | **1.00** | **0.83** | 0.50 | 0.67 | **1.00** | **0.83** | 0.50 | 0.67 | 0.50 | 0.17 | **0.83** | 0.50 | 0.67 |
 | `belebele` | **0.83** | 0.67 | 0.33 | **0.83** | **1.00** | **0.83** | 0.17 | 0.67 | **0.83** | 0.33 | 0.50 | 0.67 | 0.50 | 0.33 | **0.83** |
 | `include_v2_og` | **0.83** | 0.67 | 0.67 | 0.67 | 0.67 | **0.83** | 0.50 | 0.50 | 0.50 | 0.33 | 0.33 | 0.33 | 0.67 | **1.00** | 0.67 |
 | `rf_include_base_44` | 0.67 | 0.17 | **0.83** | 0.67 | 0.50 | 0.50 | 0.50 | 0.67 | **0.83** | 0.33 | 0.50 | 0.67 | **0.83** | 0.67 | **0.83** |
 | `xcopa` | 0.67 | 0.50 | 0.17 | 0.67 | 0.67 | 0.50 | 0.50 | 0.67 | 0.67 | 0.00 | 0.33 | 0.33 | 0.50 | 0.50 | **1.00** |
+| `bbpb_include_v2_en` | 0.33 | **1.00** | 0.67 | 0.33 | 0.67 | 0.33 | 0.33 | 0.67 | 0.33 | 0.67 | 0.33 | 0.67 | 0.67 | 0.33 | 0.00 |
 | `rf_belebele` | **0.83** | 0.50 | 0.17 | 0.33 | 0.00 | 0.67 | 0.33 | 0.50 | 0.00 | 0.67 | **0.83** | 0.33 | **0.83** | 0.67 | 0.50 |
 | `rfgm_include_base_44` | 0.67 | 0.33 | 0.67 | 0.50 | 0.50 | 0.33 | 0.67 | 0.33 | **0.83** | 0.17 | 0.17 | 0.50 | 0.50 | 0.50 | 0.17 |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.67 | 0.33 |  |  |  |  |  | 0.33 |
+| `global_piqa_parallel_cloze` | 0.67 | 0.50 | 0.67 | 0.67 | 0.33 | 0.67 | 0.67 | 0.33 | 0.17 | 0.50 | 0.17 | 0.33 | 0.67 | 0.00 | 0.33 |
+| `bbpb_include_base_44` | **0.83** | 0.33 | 0.17 | **0.83** | 0.17 | 0.17 | 0.00 | 0.67 | 0.33 | **0.83** | 0.50 | 0.50 | 0.33 | 0.67 | 0.33 |
 | `include_base_44` | 0.17 | 0.50 | **1.00** | 0.50 | 0.33 | 0.17 | 0.17 | 0.67 | **0.83** | 0.50 | 0.00 | 0.00 | 0.50 | 0.33 | **0.83** |
 | `rfgm_belebele` | 0.33 | 0.33 | **1.00** | 0.17 | 0.33 | 0.67 | 0.33 | 0.33 | 0.17 | 0.33 | 0.33 | 0.50 | 0.17 | 0.33 | **0.83** |
 | `include_v2_en` | 0.17 | 0.17 | **0.83** | 0.17 | 0.50 | 0.33 | 0.17 | **1.00** | 0.50 | 0.33 | 0.33 | 0.17 | 0.17 | 0.67 | 0.50 |
-| `global_piqa_parallel_cloze` | 0.67 | 0.50 | 0.50 | 0.50 | 0.00 | 0.17 | 0.50 | 0.17 | 0.33 | 0.00 | 0.67 | 0.33 | 0.17 | 0.00 | 0.50 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.67 | 0.33 |  |  |  |  |  | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2724,31 +2771,31 @@ subtitle: "Persian (fa) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **0.98** | **0.88** | **0.80** | **0.85** | **0.92** | **0.88** | **0.80** | **0.87** | **0.92** | **0.88** | **0.88** | **0.89** | **0.85** | **0.83** | **0.93** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **0.84** |  | **0.81** | **0.82** |  | **0.91** | **0.84** |  |  | **0.81** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | 0.73 |  | **0.78** | **0.75** |  | **0.82** | **0.84** |  |  | **0.76** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  | **0.90** |  | **0.76** | **0.84** |  | 0.70 | 0.70 |  |  | 0.65 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.64 |  | **0.78** | 0.72 |  | **0.82** | **0.82** |  |  | 0.74 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.80** |  | **0.79** | 0.72 |  | 0.64 | 0.69 |  |  | **0.79** |
-| `multiblimp` | **0.84** | **0.79** | 0.69 | 0.62 | 0.65 | **0.84** | 0.68 | 0.68 | 0.68 | 0.67 | 0.69 | 0.67 | 0.68 | 0.64 | 0.68 |
-| `bbpb_multiblimp` |  |  |  |  |  | **0.93** |  | **0.75** | 0.61 |  | **0.89** | 0.43 |  |  | 0.49 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | **0.80** |  | 0.68 | **0.76** |  | 0.30 | **0.80** |  |  | 0.74 |
-| `bbpb_rf_belebele` |  |  |  |  |  | **0.76** |  | **0.75** | 0.56 |  | 0.73 | 0.62 |  |  | 0.64 |
-| `bbpb_include_base_44` |  |  |  |  |  | 0.52 |  | 0.66 | 0.73 |  | 0.48 | 0.67 |  |  | 0.64 |
-| `bbpb_include_v2_og` |  |  |  |  |  | 0.57 |  | 0.54 | 0.53 |  | 0.38 | 0.71 |  |  | 0.67 |
-| `rfgm_include_base_44` | 0.54 | 0.49 | 0.56 | 0.58 | 0.45 | 0.52 | 0.53 | 0.63 | 0.71 | 0.49 | 0.49 | 0.35 | 0.61 | 0.49 | 0.57 |
-| `bbpb_include_v2_en` |  |  |  |  |  | 0.57 |  | 0.42 | 0.38 |  | 0.57 | 0.67 |  |  | 0.57 |
-| `global_mmlu_full` | 0.46 | 0.56 | 0.58 | 0.46 | 0.53 | 0.52 | 0.51 | 0.42 | 0.52 | 0.61 | 0.47 | 0.57 | 0.46 | 0.64 | 0.48 |
-| `include_base_44` | 0.42 | 0.61 | 0.49 | 0.40 | 0.43 | 0.64 | 0.43 | 0.57 | 0.51 | 0.54 | 0.50 | 0.33 | 0.63 | 0.53 | 0.62 |
-| `rf_global_mmlu_full` | 0.42 | 0.52 | 0.49 | 0.52 | 0.28 | 0.51 | 0.47 | 0.47 | 0.53 | 0.57 | 0.51 | 0.54 | 0.53 | 0.60 | 0.68 |
-| `rf_include_base_44` | 0.51 | 0.38 | 0.29 | 0.42 | 0.34 | 0.58 | 0.53 | 0.59 | 0.51 | 0.55 | 0.55 | 0.62 | 0.52 | 0.64 | 0.54 |
-| `rfgm_belebele` | 0.45 | 0.52 | 0.53 | 0.64 | 0.58 | 0.38 | 0.35 | 0.47 | 0.47 | 0.56 | 0.47 | 0.50 | 0.54 | 0.44 | 0.67 |
-| `include_v2_en` | 0.55 | 0.33 | 0.38 | 0.34 | 0.47 | 0.61 | 0.56 | 0.42 | 0.57 | 0.62 | 0.57 | 0.45 | 0.57 | 0.43 | 0.57 |
-| `include_v2_og` | 0.52 | 0.50 | 0.61 | 0.42 | 0.63 | 0.53 | 0.44 | 0.40 | 0.47 | 0.47 | 0.39 | 0.40 | 0.45 | 0.64 | 0.51 |
-| `rf_belebele` | 0.26 | 0.42 | 0.44 | 0.39 | 0.37 | 0.45 | 0.44 | 0.53 | 0.71 | 0.66 | 0.48 | 0.57 | 0.59 | 0.56 | 0.49 |
-| `belebele` | 0.35 | 0.53 | 0.47 | 0.47 | 0.47 | 0.50 | 0.38 | 0.44 | 0.62 | 0.36 | 0.38 | 0.49 | 0.61 | 0.57 | 0.62 |
-| `bbpb_belebele` |  |  |  |  |  | 0.20 |  | 0.54 | 0.44 |  | 0.50 | 0.70 |  |  | 0.43 |
-| `global_piqa_parallel_cloze` | 0.53 | 0.53 | 0.45 | 0.29 | 0.47 | 0.58 | 0.42 | 0.51 | 0.42 | 0.40 | 0.42 | 0.28 | 0.33 | 0.57 | 0.46 |
+| `bpb` | **0.97** | **0.87** | **0.80** | **0.86** | **0.92** | **0.89** | **0.80** | **0.88** | **0.92** | **0.88** | **0.90** | **0.89** | **0.85** | **0.83** | **0.93** |
+| `bbpb_rfgm_include_base_44` | **0.85** | **0.83** | **0.78** | **0.76** | **0.80** | **0.86** | **0.84** | **0.80** | **0.83** | **0.84** | **0.88** | **0.84** | **0.82** | **0.86** | **0.81** |
+| `bbpb_rfgm_belebele` | **0.87** | **0.87** | 0.75 | **0.78** | **0.82** | **0.79** | **0.77** | **0.77** | **0.76** | 0.73 | **0.78** | **0.79** | **0.79** | 0.73 | 0.74 |
+| `bbpb_rf_include_base_44` | 0.71 | **0.88** | 0.70 | **0.78** | **0.77** | 0.73 | **0.80** | **0.78** | 0.73 | 0.71 | **0.78** | **0.79** | **0.80** | **0.78** | **0.76** |
+| `bbpb_global_piqa_parallel_cloze` | **0.88** | **0.76** | 0.75 | 0.71 | **0.82** | **0.84** | 0.75 | 0.70 | **0.82** | 0.69 | 0.69 | **0.77** | **0.77** | 0.75 | 0.67 |
+| `bbpb_rf_belebele` | **0.77** | **0.76** | 0.74 | 0.73 | 0.55 | **0.79** | 0.69 | 0.66 | 0.57 | 0.69 | 0.74 | 0.57 | 0.71 | 0.62 | 0.65 |
+| `bbpb_multiblimp` | **0.78** | 0.73 | **0.84** | 0.73 | 0.59 | **0.81** | 0.73 | 0.73 | 0.53 | 0.72 | **0.82** | 0.43 | 0.67 | 0.50 | 0.47 |
+| `bbpb_rf_global_mmlu_full` | 0.74 | 0.62 | **0.75** | **0.76** | 0.67 | 0.70 | 0.65 | **0.78** | 0.70 | 0.53 | 0.61 | 0.54 | 0.59 | 0.62 | **0.79** |
+| `multiblimp` | **0.76** | 0.71 | 0.67 | 0.63 | 0.65 | 0.71 | 0.61 | 0.63 | 0.69 | 0.67 | 0.59 | 0.63 | 0.65 | 0.60 | 0.67 |
+| `bbpb_global_mmlu_full` | 0.73 | 0.67 | 0.63 | 0.66 | 0.69 | 0.67 | 0.54 | 0.63 | 0.73 | 0.56 | 0.55 | 0.66 | 0.67 | 0.69 | 0.75 |
+| `bbpb_include_base_44` | 0.65 | 0.46 | 0.55 | 0.55 | 0.63 | 0.55 | 0.61 | 0.64 | 0.69 | 0.54 | 0.53 | 0.56 | 0.67 | 0.62 | 0.62 |
+| `bbpb_belebele` | 0.63 | 0.57 | 0.71 | 0.71 | 0.52 | 0.52 | 0.62 | 0.52 | 0.50 | 0.61 | 0.60 | 0.51 | 0.65 | 0.59 | 0.42 |
+| `rfgm_include_base_44` | 0.53 | 0.45 | 0.51 | 0.60 | 0.46 | 0.43 | 0.54 | 0.58 | 0.70 | 0.48 | 0.47 | 0.36 | 0.56 | 0.50 | 0.54 |
+| `rfgm_belebele` | 0.51 | 0.50 | 0.52 | 0.65 | 0.60 | 0.38 | 0.35 | 0.50 | 0.50 | 0.54 | 0.48 | 0.51 | 0.54 | 0.44 | 0.69 |
+| `include_base_44` | 0.42 | 0.55 | 0.50 | 0.39 | 0.43 | 0.63 | 0.42 | 0.58 | 0.52 | 0.54 | 0.50 | 0.33 | 0.63 | 0.54 | 0.65 |
+| `rf_global_mmlu_full` | 0.38 | 0.51 | 0.53 | 0.48 | 0.34 | 0.52 | 0.45 | 0.50 | 0.47 | 0.56 | 0.54 | 0.52 | 0.54 | 0.62 | 0.64 |
+| `global_mmlu_full` | 0.44 | 0.59 | 0.59 | 0.41 | 0.48 | 0.52 | 0.47 | 0.40 | 0.52 | 0.57 | 0.42 | 0.54 | 0.48 | 0.61 | 0.56 |
+| `bbpb_include_v2_og` | 0.54 | 0.55 | 0.36 | 0.48 | 0.51 | 0.42 | 0.54 | 0.55 | 0.53 | 0.59 | 0.31 | 0.54 | 0.45 | 0.56 | 0.66 |
+| `rf_include_base_44` | 0.51 | 0.40 | 0.30 | 0.41 | 0.36 | 0.59 | 0.55 | 0.57 | 0.49 | 0.55 | 0.52 | 0.62 | 0.52 | 0.60 | 0.52 |
+| `rf_belebele` | 0.30 | 0.38 | 0.39 | 0.39 | 0.41 | 0.49 | 0.49 | 0.56 | 0.67 | 0.70 | 0.53 | 0.54 | 0.61 | 0.54 | 0.48 |
+| `bbpb_include_v2_en` | 0.53 | 0.54 | 0.44 | 0.50 | 0.66 | 0.51 | 0.48 | 0.39 | 0.39 | 0.54 | 0.52 | 0.48 | 0.45 | 0.43 | 0.59 |
+| `include_v2_og` | 0.48 | 0.51 | 0.67 | 0.44 | 0.59 | 0.53 | 0.41 | 0.39 | 0.51 | 0.50 | 0.39 | 0.43 | 0.46 | 0.60 | 0.50 |
+| `include_v2_en` | 0.55 | 0.38 | 0.35 | 0.35 | 0.47 | 0.58 | 0.55 | 0.41 | 0.56 | 0.61 | 0.56 | 0.43 | 0.58 | 0.43 | 0.56 |
+| `belebele` | 0.46 | 0.46 | 0.50 | 0.42 | 0.41 | 0.51 | 0.40 | 0.44 | 0.58 | 0.35 | 0.44 | 0.56 | 0.56 | 0.53 | 0.67 |
+| `global_piqa_parallel_cloze` | 0.44 | 0.42 | 0.54 | 0.33 | 0.48 | 0.40 | 0.55 | 0.24 | 0.54 | 0.55 | 0.33 | 0.22 | 0.31 | 0.37 | 0.41 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2771,29 +2818,29 @@ subtitle: "Finnish (fi) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_rf_belebele` |  |  |  |  |  | **1.00** |  | **0.95** | **0.95** |  | **1.00** | **1.00** |  |  | **1.00** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **1.00** |  | **0.90** | **0.90** |  | **1.00** | **1.00** |  |  | **0.90** |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | **1.00** |  | **1.00** | **0.86** |  | **1.00** | **1.00** |  |  | **0.86** |
-| `bpb` | **1.00** | **0.90** | 0.71 | **0.90** | **0.90** | **0.90** | 0.71 | **0.90** | **0.90** | 0.71 | **1.00** | **1.00** | 0.71 | 0.71 | **1.00** |
-| `bbpb_multiblimp` |  |  |  |  |  |  |  | **0.90** | **0.76** |  |  |  |  |  | **0.86** |
-| `multiblimp` | **0.86** | **0.86** | **0.86** | **0.81** | 0.67 | **0.81** | **1.00** | **0.76** | **0.81** | **0.81** | **0.76** | **0.81** | **0.76** | **0.81** | **0.76** |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | **0.86** | **0.86** |  |  |  |  |  | 0.71 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | 0.67 |  | **0.81** | **0.76** |  | **1.00** | 0.67 |  |  | **0.76** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **0.76** | **0.86** |  |  |  |  |  | 0.71 |
-| `bbpb_arc_mt` |  |  |  |  |  |  |  | 0.62 | 0.71 |  |  |  |  |  | **0.90** |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.71 | 0.67 |  |  |  |  |  | **0.76** |
-| `rfgm_belebele` | 0.62 | 0.67 | 0.62 | 0.43 | 0.52 | **0.81** | 0.52 | 0.38 | 0.62 | 0.67 | 0.52 | 0.71 | **0.76** | **0.76** | 0.62 |
-| `arc_mt` | 0.52 | 0.57 | 0.62 | 0.67 | 0.43 | 0.71 | 0.38 | 0.62 | **0.76** | 0.52 | 0.71 | 0.67 | **0.76** | 0.43 | 0.48 |
-| `include_v2_en` | 0.33 | 0.62 | 0.71 | 0.38 | 0.57 | 0.71 | 0.33 | 0.48 | 0.57 | 0.62 | 0.57 | 0.67 | 0.67 | 0.67 | 0.71 |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.38 | **0.86** |  |  |  |  |  | 0.43 |
-| `rfgm_include_base_44` | **0.90** | 0.48 | 0.71 | 0.29 | 0.52 | 0.48 | 0.71 | 0.29 | 0.62 | 0.71 | 0.62 | 0.43 | 0.33 | 0.43 | 0.43 |
-| `belebele` | 0.48 | 0.48 | 0.33 | 0.43 | 0.48 | 0.71 | 0.29 | 0.62 | 0.29 | 0.57 | 0.62 | 0.57 | 0.57 | 0.71 | 0.48 |
-| `rf_belebele` | 0.43 | 0.67 | 0.57 | 0.33 | 0.52 | 0.57 | 0.29 | 0.43 | 0.19 | 0.71 | 0.38 | 0.48 | 0.48 | **0.76** | 0.57 |
-| `include_v2_og` | 0.57 | 0.71 | 0.38 | **0.76** | 0.48 | 0.48 | 0.43 | 0.33 | 0.57 | 0.29 | **0.86** | 0.29 | 0.43 | 0.48 | 0.33 |
-| `global_piqa_parallel_cloze` | 0.48 | 0.29 | 0.43 | 0.24 | 0.52 | 0.38 | 0.43 | 0.57 | 0.52 | 0.38 | 0.52 | 0.52 | 0.29 | **0.76** | 0.38 |
-| `rf_include_base_44` | 0.43 | 0.29 | 0.48 | 0.57 | 0.52 | 0.29 | 0.52 | 0.24 | **0.76** | 0.52 | 0.43 | 0.24 | 0.48 | 0.57 | 0.24 |
-| `include_base_44` | 0.57 | 0.29 | 0.14 | 0.52 | 0.24 | 0.38 | 0.33 | 0.52 | 0.29 | 0.52 | 0.38 | 0.43 | 0.48 | **0.76** | 0.48 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.48 | 0.33 |  |  |  |  |  | 0.38 |
+| `bbpb_rf_belebele` | **0.89** | **0.93** | **0.82** | **0.93** | **0.89** | **0.89** | **0.86** | **0.89** | **0.93** | **0.82** | **0.86** | **0.82** | **0.82** | **0.86** | **0.96** |
+| `bbpb_rf_include_base_44` | **0.93** | **0.89** | **0.89** | **0.93** | **0.82** | **0.89** | **0.82** | **0.93** | **0.82** | **0.86** | **0.96** | **0.93** | **0.82** | **0.79** | **0.89** |
+| `bpb` | **1.00** | **0.89** | **0.79** | **0.89** | **0.90** | **0.89** | **0.79** | **0.89** | **0.90** | **0.75** | **1.00** | **1.00** | **0.75** | 0.71 | **1.00** |
+| `bbpb_rfgm_belebele` | **0.96** | **0.89** | **0.79** | **0.93** | **0.90** | **0.93** | **0.82** | **0.89** | **0.90** | **0.75** | **0.82** | **0.95** | **0.79** | 0.67 | **0.90** |
+| `bbpb_include_v2_og` | **0.86** | **0.96** | **0.82** | **0.96** | **0.76** | **0.89** | **0.82** | **0.82** | **0.86** | **0.86** | **0.93** | **0.81** | **0.86** | **0.76** | 0.71 |
+| `bbpb_rfgm_include_base_44` | **0.89** | **0.86** | **0.86** | **0.86** | **0.81** | **0.89** | **0.82** | **0.82** | **0.76** | **0.79** | **0.93** | **0.76** | 0.71 | **0.81** | **0.76** |
+| `bbpb_multiblimp` | **0.82** | **0.79** | **0.93** | **0.89** | **0.82** | **0.82** | **0.82** | **0.86** | 0.71 | 0.71 | 0.68 | 0.61 | **0.96** | **0.89** | **0.86** |
+| `bbpb_arc_mt` | **0.82** | **0.79** | **0.86** | 0.64 | 0.71 | 0.68 | **0.89** | 0.68 | 0.71 | **0.79** | **0.86** | **0.90** | **0.79** | **0.76** | **0.90** |
+| `multiblimp` | **0.78** | 0.69 | **0.86** | **0.86** | 0.68 | **0.75** | **0.96** | **0.75** | **0.79** | **0.75** | 0.68 | **0.79** | **0.79** | **0.82** | **0.75** |
+| `bbpb_global_piqa_parallel_cloze` | **0.93** | **0.79** | 0.71 | 0.68 | **0.79** | **0.86** | 0.64 | 0.68 | **0.79** | 0.64 | 0.68 | **0.79** | **0.82** | 0.71 | **0.75** |
+| `bbpb_belebele` | 0.71 | 0.64 | 0.64 | 0.64 | 0.68 | 0.64 | **0.79** | 0.71 | **0.75** | **0.86** | 0.64 | 0.54 | 0.64 | 0.68 | **0.75** |
+| `rfgm_belebele` | 0.69 | 0.69 | 0.57 | 0.57 | 0.43 | **0.81** | 0.50 | 0.46 | 0.57 | 0.61 | 0.57 | 0.64 | 0.68 | **0.75** | 0.50 |
+| `arc_mt` | 0.50 | 0.50 | 0.64 | 0.68 | 0.39 | 0.58 | 0.36 | 0.61 | 0.71 | 0.57 | **0.79** | 0.64 | **0.75** | 0.39 | 0.50 |
+| `include_v2_en` | 0.36 | 0.64 | 0.71 | 0.39 | 0.61 | 0.67 | 0.29 | 0.54 | 0.54 | 0.61 | 0.57 | 0.64 | 0.61 | 0.68 | 0.71 |
+| `bbpb_include_base_44` | 0.64 | 0.50 | 0.43 | 0.57 | 0.71 | 0.36 | 0.43 | 0.43 | **0.86** | 0.71 | 0.50 | 0.36 | 0.50 | 0.43 | 0.50 |
+| `rfgm_include_base_44` | **0.78** | 0.42 | 0.68 | 0.32 | 0.50 | 0.47 | 0.64 | 0.29 | 0.54 | 0.64 | 0.57 | 0.43 | 0.25 | 0.32 | 0.54 |
+| `rf_belebele` | 0.47 | 0.72 | 0.57 | 0.36 | 0.50 | 0.58 | 0.32 | 0.43 | 0.18 | 0.64 | 0.43 | 0.43 | 0.36 | 0.64 | 0.61 |
+| `include_v2_og` | 0.50 | 0.64 | 0.32 | 0.68 | 0.50 | 0.42 | 0.57 | 0.43 | 0.50 | 0.25 | **0.75** | 0.32 | 0.50 | 0.43 | 0.39 |
+| `bbpb_include_v2_en` | 0.36 | **0.79** | 0.54 | 0.46 | 0.43 | 0.36 | 0.61 | 0.54 | 0.33 | 0.61 | 0.61 | 0.48 | 0.57 | 0.14 | 0.38 |
+| `belebele` | 0.47 | 0.44 | 0.25 | 0.43 | 0.39 | 0.61 | 0.29 | 0.57 | 0.21 | 0.46 | 0.61 | 0.54 | 0.50 | 0.71 | 0.50 |
+| `rf_include_base_44` | 0.44 | 0.22 | 0.46 | 0.57 | 0.46 | 0.33 | 0.54 | 0.29 | 0.68 | 0.50 | 0.36 | 0.39 | 0.54 | 0.50 | 0.18 |
+| `global_piqa_parallel_cloze` | 0.19 | 0.58 | **0.75** | 0.18 | 0.18 | 0.39 | 0.25 | 0.50 | 0.68 | 0.64 | 0.36 | 0.43 | 0.25 | 0.29 | 0.68 |
+| `include_base_44` | 0.53 | 0.25 | 0.14 | 0.57 | 0.21 | 0.44 | 0.32 | 0.54 | 0.25 | 0.54 | 0.43 | 0.39 | 0.46 | **0.75** | 0.39 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2816,47 +2863,47 @@ subtitle: "French (fr) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_hellaswag` |  |  |  |  |  | **1.00** |  | **0.92** | **0.85** |  | **1.00** | **1.00** |  |  | **0.88** |
-| `bpb` | **0.98** | **0.87** | **0.79** | **0.89** | **0.96** | **0.89** | **0.81** | **0.91** | **0.93** | **0.88** | **0.89** | **0.85** | **0.79** | **0.77** | **0.87** |
-| `hellaswag` | 0.71 | **0.80** | **0.84** | **0.82** | **0.84** | **0.78** | **0.81** | 0.75 | 0.73 | **0.92** | **0.82** | **0.85** | **0.84** | **0.87** | **0.84** |
-| `bbpb_arc` |  |  |  |  |  | 0.67 |  | 0.70 | 0.60 |  | **1.00** | **1.00** |  |  | 0.53 |
-| `lambada_openai_mt` | 0.70 | **0.77** | 0.54 | 0.64 | 0.66 | 0.68 | 0.73 | 0.70 | **0.78** | 0.56 | 0.66 | 0.68 | **0.76** | **0.77** | **0.86** |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | 0.67 |  | **0.80** | 0.66 |  | **1.00** | 0.33 |  |  | 0.64 |
-| `bbpb_include_base_44` |  |  |  |  |  | 0.50 |  | 0.68 | 0.64 |  | **0.80** | 0.60 |  |  | 0.63 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.79** |  | 0.68 | 0.66 |  | 0.50 | 0.57 |  |  | 0.63 |
-| `bbpb_paws` |  |  |  |  |  | 0.67 |  | **0.79** | 0.55 |  | 0.67 | 0.60 |  |  | 0.47 |
-| `bbpb_multiblimp` |  |  |  |  |  | **0.80** |  | 0.69 | 0.58 |  | 0.53 | 0.67 |  |  | 0.45 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **0.75** |  | 0.71 | 0.47 |  | 0.56 | 0.69 |  |  | 0.54 |
-| `bbpb_rf_belebele` |  |  |  |  |  | 0.57 |  | 0.71 | 0.53 |  | 0.64 | **0.79** |  |  | 0.46 |
-| `rf_belebele` | 0.65 | 0.52 | 0.71 | 0.66 | 0.60 | 0.37 | 0.64 | 0.63 | 0.48 | 0.48 | 0.58 | 0.60 | 0.74 | 0.62 | 0.73 |
-| `multiblimp` | 0.69 | 0.68 | 0.63 | 0.40 | 0.56 | **0.78** | 0.73 | 0.42 | 0.67 | 0.69 | 0.44 | 0.65 | 0.41 | 0.74 | 0.47 |
-| `bbpb_include_v2_og_french_canada` |  |  |  |  |  | 0.50 |  | 0.51 | 0.45 |  | 0.50 | **0.80** |  |  | **0.81** |
-| `rfgm_belebele` | 0.36 | 0.52 | 0.49 | 0.52 | 0.53 | 0.70 | 0.68 | **0.79** | 0.62 | 0.62 | 0.60 | 0.55 | 0.67 | 0.63 | 0.59 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | 0.53 |  | 0.65 | 0.55 |  | 0.50 | 0.44 |  |  | **0.81** |
-| `bbpb_global_piqa_parallel_cloze_fra_latn_fran` |  |  |  |  |  | 0.67 |  | 0.62 | **0.85** |  | 0.33 | 0.33 |  |  | 0.62 |
-| `rf_global_mmlu_full` | 0.55 | 0.58 | 0.49 | 0.48 | 0.43 | 0.45 | 0.43 | 0.55 | 0.59 | 0.63 | 0.70 | 0.63 | 0.64 | 0.49 | 0.66 |
-| `bbpb_belebele` |  |  |  |  |  | 0.33 |  | 0.60 | 0.45 |  | 0.67 | 0.67 |  |  | 0.58 |
-| `bbpb_global_piqa_parallel_cloze_fra_latn_cana` |  |  |  |  |  | **1.00** |  | 0.60 | **0.76** |  | 0.00 | 0.33 |  |  | 0.60 |
-| `bbpb_xnli` |  |  |  |  |  | **0.78** |  | 0.49 | 0.64 |  | 0.11 | **0.75** |  |  | 0.53 |
-| `global_mmlu_full` | 0.56 | 0.58 | 0.40 | 0.44 | 0.57 | 0.60 | 0.48 | 0.64 | 0.68 | 0.59 | 0.57 | 0.59 | 0.45 | 0.49 | 0.56 |
-| `bbpb_include_v2_og_french_france` |  |  |  |  |  | 0.50 |  | 0.70 | 0.64 |  | 0.40 | 0.50 |  |  | 0.54 |
-| `rfgm_include_base_44` | 0.47 | 0.43 | 0.62 | 0.44 | 0.62 | 0.74 | 0.49 | 0.54 | 0.64 | 0.35 | 0.52 | 0.49 | 0.62 | 0.63 | 0.58 |
-| `rf_include_base_44` | 0.68 | 0.64 | 0.40 | 0.55 | 0.59 | 0.68 | 0.51 | 0.60 | 0.56 | 0.37 | 0.55 | 0.59 | 0.40 | 0.48 | 0.54 |
-| `arc` | 0.42 | 0.73 | 0.59 | 0.64 | 0.64 | 0.43 | 0.53 | 0.37 | 0.44 | 0.41 | 0.67 | 0.63 | 0.44 | 0.58 | 0.63 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.36 |  | **0.79** | 0.74 |  | 0.29 | 0.36 |  |  | 0.68 |
-| `bbpb_include_v2_en_french_france` |  |  |  |  |  | 0.30 |  | 0.38 | 0.30 |  | **0.80** | **0.80** |  |  | 0.60 |
-| `bbpb_include_v2_en_french_canada` |  |  |  |  |  | 0.50 |  | 0.43 | 0.35 |  | **0.80** | 0.40 |  |  | 0.68 |
-| `include_v2_og_french_france` | 0.33 | 0.47 | 0.46 | 0.51 | 0.54 | 0.35 | 0.46 | 0.54 | 0.54 | 0.65 | 0.43 | 0.46 | 0.59 | 0.68 | 0.68 |
-| `xnli` | 0.46 | 0.30 | 0.64 | 0.43 | 0.43 | 0.47 | 0.58 | 0.55 | 0.66 | 0.57 | 0.45 | 0.42 | 0.40 | 0.44 | 0.49 |
-| `include_base_44` | 0.62 | 0.43 | 0.44 | 0.47 | 0.45 | 0.27 | 0.44 | 0.60 | 0.59 | 0.62 | 0.35 | 0.49 | 0.32 | 0.57 | 0.47 |
-| `paws` | 0.56 | 0.44 | 0.41 | 0.22 | 0.46 | 0.58 | 0.51 | 0.44 | 0.48 | 0.46 | 0.45 | 0.58 | 0.73 | 0.31 | 0.42 |
-| `belebele` | 0.43 | 0.51 | 0.49 | 0.47 | 0.47 | 0.43 | 0.48 | 0.49 | 0.57 | 0.35 | 0.46 | 0.51 | 0.66 | 0.26 | 0.43 |
-| `include_v2_en_french_canada` | 0.43 | 0.53 | 0.51 | 0.43 | 0.55 | 0.32 | 0.60 | 0.60 | 0.41 | 0.44 | 0.42 | 0.43 | 0.41 | 0.44 | 0.51 |
-| `include_v2_og_french_canada` | 0.36 | 0.55 | 0.48 | 0.47 | 0.45 | 0.30 | 0.49 | 0.44 | 0.34 | 0.60 | 0.64 | 0.36 | 0.57 | 0.43 | 0.49 |
-| `global_piqa_parallel_cloze_fra_latn_cana` | 0.37 | 0.44 | 0.59 | 0.43 | 0.64 | 0.44 | 0.48 | 0.23 | 0.56 | 0.70 | 0.44 | 0.36 | 0.36 | 0.49 | 0.44 |
-| `xwinograd` | 0.54 | 0.48 | 0.55 | 0.62 | 0.38 | 0.37 | 0.25 | 0.43 | 0.38 | 0.57 | 0.55 | 0.27 | 0.56 | 0.49 | 0.35 |
-| `include_v2_en_french_france` | 0.24 | 0.51 | 0.47 | 0.29 | 0.49 | 0.53 | 0.48 | 0.69 | 0.48 | 0.40 | 0.35 | 0.54 | 0.48 | 0.41 | 0.40 |
-| `global_piqa_parallel_cloze_fra_latn_fran` | 0.46 | 0.35 | 0.41 | 0.53 | 0.49 | 0.25 | 0.41 | 0.34 | 0.33 | 0.73 | 0.46 | 0.48 | 0.29 | 0.44 | 0.42 |
+| `bbpb_hellaswag` | **0.95** | **0.90** | **0.86** | **0.88** | **0.87** | **0.93** | **0.91** | **0.91** | **0.81** | **0.90** | **0.93** | **0.82** | **0.88** | **0.75** | **0.82** |
+| `bpb` | **0.99** | **0.85** | **0.78** | **0.88** | **0.96** | **0.87** | **0.79** | **0.90** | **0.93** | **0.88** | **0.91** | **0.85** | **0.81** | **0.77** | **0.87** |
+| `hellaswag` | **0.81** | 0.68 | 0.74 | **0.83** | **0.82** | **0.81** | **0.89** | **0.81** | **0.79** | **0.88** | 0.73 | **0.76** | **0.80** | **0.79** | **0.88** |
+| `bbpb_global_mmlu_full` | 0.69 | 0.66 | 0.71 | **0.78** | 0.58 | 0.68 | 0.72 | **0.79** | 0.68 | **0.78** | **0.79** | 0.67 | **0.82** | 0.60 | 0.67 |
+| `lambada_openai_mt` | **0.77** | 0.75 | 0.57 | 0.70 | 0.67 | 0.70 | 0.74 | **0.76** | 0.74 | 0.60 | 0.66 | 0.63 | **0.77** | 0.74 | **0.82** |
+| `bbpb_rfgm_include_base_44` | 0.68 | 0.68 | **0.76** | 0.74 | **0.79** | 0.68 | 0.71 | 0.68 | 0.57 | 0.60 | 0.69 | 0.66 | 0.70 | **0.75** | **0.82** |
+| `bbpb_global_piqa_parallel_cloze_fra_latn_fran` | 0.74 | 0.73 | 0.74 | 0.48 | **0.76** | **0.88** | **0.76** | 0.57 | **0.80** | **0.77** | 0.57 | **0.76** | 0.54 | 0.72 | 0.58 |
+| `bbpb_include_base_44` | **0.79** | 0.73 | **0.77** | 0.71 | 0.65 | 0.62 | 0.72 | 0.69 | 0.66 | 0.72 | 0.62 | 0.62 | 0.71 | 0.66 | 0.67 |
+| `bbpb_global_piqa_parallel_cloze_fra_latn_cana` | **0.81** | 0.70 | **0.76** | 0.49 | **0.78** | **0.86** | **0.80** | 0.57 | 0.74 | **0.78** | 0.58 | 0.70 | 0.57 | 0.64 | 0.53 |
+| `bbpb_rf_global_mmlu_full` | 0.63 | 0.51 | 0.61 | **0.79** | 0.71 | 0.72 | 0.71 | 0.69 | 0.64 | 0.70 | 0.56 | 0.63 | 0.58 | **0.76** | 0.65 |
+| `bbpb_rfgm_belebele` | **0.90** | **0.76** | **0.77** | 0.73 | 0.50 | **0.75** | **0.78** | 0.68 | 0.44 | **0.75** | 0.66 | 0.57 | 0.65 | 0.42 | 0.55 |
+| `bbpb_rf_belebele` | **0.82** | 0.69 | 0.74 | 0.71 | 0.62 | 0.65 | **0.75** | 0.73 | 0.54 | 0.62 | 0.65 | 0.62 | 0.65 | 0.57 | 0.47 |
+| `bbpb_include_v2_og_french_france` | 0.59 | 0.74 | 0.64 | 0.62 | 0.72 | **0.76** | 0.68 | 0.61 | 0.58 | 0.57 | 0.62 | 0.64 | 0.69 | 0.72 | 0.57 |
+| `bbpb_multiblimp` | 0.69 | 0.60 | 0.67 | 0.62 | 0.69 | 0.71 | 0.67 | 0.70 | 0.57 | 0.60 | 0.54 | 0.69 | 0.65 | 0.68 | 0.53 |
+| `multiblimp` | 0.75 | 0.71 | 0.66 | 0.56 | 0.66 | **0.76** | 0.67 | 0.55 | 0.68 | 0.65 | 0.49 | 0.65 | 0.49 | 0.73 | 0.57 |
+| `bbpb_paws` | 0.68 | 0.67 | 0.65 | 0.74 | 0.52 | 0.68 | 0.68 | 0.74 | 0.49 | 0.61 | 0.58 | 0.69 | 0.60 | 0.71 | 0.50 |
+| `bbpb_arc` | 0.65 | 0.58 | 0.67 | 0.68 | 0.62 | 0.58 | **0.83** | 0.65 | 0.57 | 0.53 | 0.60 | **0.76** | 0.61 | 0.68 | 0.52 |
+| `bbpb_rf_include_base_44` | 0.65 | 0.63 | 0.65 | 0.62 | 0.58 | 0.64 | 0.65 | 0.70 | 0.68 | 0.48 | 0.49 | 0.60 | 0.70 | 0.65 | 0.59 |
+| `bbpb_belebele` | 0.60 | 0.60 | 0.64 | 0.68 | 0.57 | 0.68 | 0.68 | 0.54 | 0.52 | 0.71 | 0.56 | 0.59 | 0.60 | 0.62 | 0.57 |
+| `rf_belebele` | 0.59 | 0.60 | 0.71 | 0.63 | 0.61 | 0.47 | 0.61 | 0.60 | 0.52 | 0.55 | 0.57 | 0.66 | 0.74 | 0.60 | 0.64 |
+| `bbpb_xnli` | 0.68 | 0.57 | 0.61 | 0.56 | 0.60 | 0.64 | 0.66 | 0.46 | 0.59 | 0.71 | 0.51 | 0.68 | 0.54 | 0.68 | 0.53 |
+| `rfgm_belebele` | 0.43 | 0.50 | 0.38 | 0.46 | 0.44 | 0.67 | 0.68 | **0.80** | 0.62 | 0.60 | 0.57 | 0.50 | 0.69 | 0.61 | 0.62 |
+| `rf_include_base_44` | 0.63 | 0.58 | 0.54 | 0.62 | 0.61 | 0.61 | 0.51 | 0.56 | 0.53 | 0.40 | 0.53 | 0.56 | 0.53 | 0.52 | 0.60 |
+| `rf_global_mmlu_full` | 0.51 | 0.46 | 0.51 | 0.44 | 0.40 | 0.51 | 0.43 | 0.57 | 0.60 | 0.60 | 0.71 | 0.65 | 0.57 | 0.51 | 0.68 |
+| `global_mmlu_full` | 0.54 | 0.57 | 0.41 | 0.42 | 0.54 | 0.60 | 0.48 | 0.54 | 0.61 | 0.57 | 0.51 | 0.55 | 0.53 | 0.51 | 0.59 |
+| `rfgm_include_base_44` | 0.54 | 0.43 | 0.58 | 0.42 | 0.57 | 0.60 | 0.47 | 0.55 | 0.55 | 0.38 | 0.49 | 0.47 | 0.59 | 0.62 | 0.55 |
+| `xnli` | 0.46 | 0.43 | 0.57 | 0.41 | 0.43 | 0.48 | 0.60 | 0.60 | 0.70 | 0.57 | 0.50 | 0.50 | 0.50 | 0.51 | 0.55 |
+| `arc` | 0.35 | 0.61 | 0.53 | 0.62 | 0.47 | 0.48 | 0.42 | 0.43 | 0.48 | 0.58 | 0.68 | 0.54 | 0.51 | 0.58 | 0.49 |
+| `bbpb_include_v2_og_french_canada` | 0.50 | 0.60 | 0.43 | 0.52 | 0.51 | 0.39 | 0.57 | 0.49 | 0.42 | 0.54 | 0.40 | 0.56 | 0.51 | 0.51 | **0.79** |
+| `include_v2_og_french_france` | 0.44 | 0.44 | 0.42 | 0.46 | 0.58 | 0.37 | 0.38 | 0.50 | 0.60 | 0.62 | 0.49 | 0.53 | 0.54 | 0.60 | 0.65 |
+| `bbpb_include_v2_en_french_france` | 0.31 | 0.70 | 0.61 | 0.54 | 0.61 | 0.40 | 0.43 | 0.43 | 0.29 | 0.54 | 0.53 | 0.43 | 0.56 | 0.58 | 0.58 |
+| `paws` | 0.53 | 0.50 | 0.43 | 0.34 | 0.43 | 0.62 | 0.51 | 0.45 | 0.61 | 0.49 | 0.48 | 0.57 | 0.65 | 0.33 | 0.42 |
+| `bbpb_include_v2_en_french_canada` | 0.51 | 0.43 | 0.40 | 0.49 | 0.66 | 0.50 | 0.44 | 0.44 | 0.34 | 0.62 | 0.38 | 0.26 | 0.51 | 0.43 | 0.70 |
+| `include_base_44` | 0.58 | 0.46 | 0.46 | 0.43 | 0.51 | 0.31 | 0.48 | 0.57 | 0.59 | 0.51 | 0.27 | 0.48 | 0.38 | 0.57 | 0.47 |
+| `include_v2_og_french_canada` | 0.42 | 0.47 | 0.43 | 0.45 | 0.50 | 0.32 | 0.52 | 0.47 | 0.37 | 0.64 | 0.63 | 0.38 | 0.55 | 0.43 | 0.51 |
+| `belebele` | 0.38 | 0.55 | 0.46 | 0.42 | 0.45 | 0.43 | 0.47 | 0.46 | 0.54 | 0.35 | 0.40 | 0.45 | 0.68 | 0.35 | 0.51 |
+| `xwinograd` | 0.51 | 0.49 | 0.54 | 0.55 | 0.42 | 0.41 | 0.32 | 0.48 | 0.35 | 0.52 | 0.49 | 0.29 | 0.59 | 0.53 | 0.37 |
+| `global_piqa_parallel_cloze_fra_latn_fran` | 0.52 | 0.35 | 0.38 | 0.39 | 0.38 | 0.49 | 0.43 | 0.36 | 0.47 | 0.59 | 0.36 | 0.51 | 0.54 | 0.54 | 0.54 |
+| `include_v2_en_french_france` | 0.41 | 0.44 | 0.52 | 0.38 | 0.52 | 0.49 | 0.51 | 0.66 | 0.48 | 0.30 | 0.29 | 0.52 | 0.53 | 0.41 | 0.38 |
+| `include_v2_en_french_canada` | 0.39 | 0.51 | 0.49 | 0.43 | 0.54 | 0.39 | 0.55 | 0.56 | 0.40 | 0.40 | 0.47 | 0.34 | 0.36 | 0.51 | 0.45 |
+| `global_piqa_parallel_cloze_fra_latn_cana` | 0.47 | 0.42 | 0.43 | 0.32 | 0.51 | 0.53 | 0.51 | 0.46 | 0.35 | 0.63 | 0.30 | 0.38 | 0.32 | 0.36 | 0.54 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2880,30 +2927,30 @@ subtitle: "Hebrew (he) · small→large size pair (bold ≥ 0.75)"
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `bpb` | **0.96** | **0.93** | **0.86** | **0.89** | **1.00** | **0.96** | **0.89** | **0.93** | **0.96** | **0.86** | **0.89** | **0.93** | **0.96** | **0.86** | **0.89** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **1.00** |  | **0.93** | **0.82** |  | **0.83** | 0.67 |  |  | **0.89** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **0.82** | **0.75** |  |  |  |  |  | **0.86** |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.67 |  | **0.89** | **0.86** |  | 0.67 | **0.83** |  |  | **0.82** |
-| `bbpb_rf_belebele` |  |  |  |  |  | **0.83** |  | **0.89** | **0.79** |  | **0.83** | 0.50 |  |  | **0.82** |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | 0.64 | **0.79** |  |  |  |  |  | **0.79** |
+| `bbpb_rfgm_include_base_44` | **0.96** | **0.93** | **0.93** | **0.96** | **0.86** | **0.96** | **0.96** | **0.93** | **0.82** | **0.93** | **0.89** | **0.86** | **0.89** | **0.79** | **0.89** |
+| `bbpb_rf_include_base_44` | **0.96** | **0.89** | **0.89** | **0.93** | **0.89** | **0.86** | **0.93** | **0.89** | **0.86** | **0.79** | **0.89** | **0.93** | **0.89** | **0.79** | **0.82** |
+| `bbpb_global_piqa_parallel_cloze` | **0.79** | **0.93** | **0.86** | **0.89** | **0.96** | **0.79** | **0.86** | **0.82** | **0.75** | **0.79** | **0.96** | **0.89** | **0.82** | **0.89** | **0.86** |
+| `bbpb_rf_belebele` | **0.86** | **0.82** | **0.93** | **0.89** | 0.71 | **0.75** | **0.93** | **0.89** | **0.79** | **0.75** | **0.86** | **0.75** | **0.89** | **0.79** | **0.82** |
+| `bbpb_rfgm_belebele` | **0.82** | **0.89** | **0.82** | **0.93** | 0.71 | **0.79** | 0.71 | **0.82** | **0.75** | **0.86** | **0.89** | 0.68 | **0.89** | **0.75** | 0.64 |
+| `bbpb_include_v2_og` | **0.82** | **0.86** | **0.75** | 0.68 | **0.82** | 0.68 | 0.71 | 0.64 | **0.79** | **0.82** | **0.82** | **0.89** | **0.93** | **0.79** | **0.79** |
+| `bbpb_rf_global_mmlu_full` | **0.79** | 0.71 | **0.75** | **0.93** | **0.75** | 0.71 | **0.82** | **0.79** | **0.75** | 0.68 | 0.71 | 0.61 | 0.68 | 0.57 | **0.82** |
+| `bbpb_multiblimp` | 0.64 | 0.68 | **0.82** | 0.71 | **0.75** | **0.75** | **0.82** | **0.79** | 0.46 | 0.71 | **0.82** | 0.71 | **0.82** | 0.64 | 0.68 |
 | `multiblimp` | 0.68 | 0.71 | **0.79** | **0.86** | **0.75** | 0.57 | **0.75** | 0.68 | 0.61 | 0.57 | 0.71 | **0.75** | **0.86** | 0.68 | **0.82** |
-| `bbpb_multiblimp` |  |  |  |  |  | 0.67 |  | **0.79** | 0.46 |  | **1.00** | 0.67 |  |  | 0.68 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | 0.50 |  | **0.82** | **0.75** |  | 0.67 | 0.67 |  |  | 0.64 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.83** |  | **0.79** | **0.75** |  | 0.50 | 0.33 |  |  | **0.82** |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.71 | 0.54 |  |  |  |  |  | 0.54 |
+| `bbpb_include_base_44` | **0.96** | 0.36 | 0.68 | 0.68 | 0.50 | 0.39 | 0.71 | 0.71 | 0.54 | 0.68 | 0.32 | **0.79** | 0.57 | **0.82** | 0.54 |
+| `bbpb_global_mmlu_full` | **0.82** | 0.54 | 0.71 | 0.68 | 0.61 | 0.50 | 0.54 | 0.57 | 0.50 | 0.61 | 0.36 | 0.71 | **0.75** | 0.61 | 0.57 |
 | `rf_global_mmlu_full` | 0.64 | 0.57 | 0.43 | 0.54 | 0.54 | 0.64 | 0.61 | 0.39 | 0.39 | 0.71 | **0.75** | 0.61 | 0.54 | 0.39 | **0.86** |
 | `global_mmlu_full` | 0.43 | 0.46 | 0.57 | 0.64 | 0.68 | 0.68 | 0.29 | 0.71 | 0.68 | 0.32 | 0.54 | 0.57 | 0.57 | 0.46 | **0.82** |
-| `bbpb_global_mmlu_full` |  |  |  |  |  |  |  | 0.57 | 0.50 |  |  |  |  |  | 0.57 |
+| `bbpb_belebele` | 0.46 | 0.54 | **0.79** | 0.50 | 0.68 | 0.64 | 0.39 | 0.61 | 0.43 | 0.61 | 0.46 | 0.64 | 0.57 | 0.68 | 0.32 |
+| `bbpb_include_v2_en` | 0.43 | 0.46 | 0.68 | 0.54 | **0.86** | 0.46 | 0.54 | 0.46 | 0.50 | 0.57 | 0.43 | 0.61 | 0.43 | 0.61 | 0.54 |
 | `rf_include_base_44` | 0.64 | 0.36 | 0.54 | 0.57 | **0.82** | 0.36 | 0.57 | 0.71 | 0.57 | 0.39 | 0.57 | 0.39 | 0.46 | 0.43 | 0.46 |
 | `rfgm_include_base_44` | 0.54 | 0.39 | 0.39 | 0.68 | 0.46 | 0.61 | 0.57 | 0.43 | 0.64 | 0.46 | 0.46 | 0.50 | 0.36 | **0.86** | 0.43 |
 | `belebele` | 0.57 | 0.46 | 0.54 | 0.32 | 0.46 | **0.75** | 0.54 | 0.61 | 0.32 | 0.43 | 0.50 | 0.50 | 0.50 | 0.50 | 0.61 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.46 | 0.50 |  |  |  |  |  | 0.54 |
 | `include_v2_en` | 0.46 | 0.54 | 0.21 | 0.46 | **0.75** | 0.11 | 0.29 | 0.64 | 0.36 | 0.64 | 0.46 | 0.71 | 0.61 | 0.46 | 0.50 |
+| `global_piqa_parallel_cloze` | 0.50 | 0.36 | 0.61 | 0.57 | 0.64 | 0.50 | 0.50 | 0.32 | 0.18 | 0.57 | 0.29 | 0.36 | 0.64 | 0.46 | 0.54 |
 | `include_v2_og` | 0.29 | 0.68 | 0.43 | 0.61 | 0.50 | 0.07 | 0.46 | 0.39 | 0.71 | 0.39 | 0.57 | 0.32 | 0.57 | 0.43 | 0.54 |
 | `include_base_44` | 0.36 | 0.32 | 0.68 | 0.32 | 0.57 | 0.61 | 0.43 | 0.43 | 0.43 | 0.21 | 0.71 | 0.54 | 0.18 | 0.61 | 0.50 |
 | `rf_belebele` | 0.39 | 0.36 | **0.79** | 0.61 | 0.32 | 0.25 | 0.46 | 0.54 | 0.64 | 0.29 | 0.18 | 0.50 | 0.64 | 0.36 | 0.57 |
 | `rfgm_belebele` | 0.43 | 0.14 | 0.50 | 0.43 | 0.57 | 0.50 | 0.61 | 0.54 | 0.61 | 0.39 | 0.43 | 0.43 | 0.36 | 0.25 | 0.71 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.61 | 0.43 |  |  |  |  |  | 0.32 |
-| `global_piqa_parallel_cloze` | 0.29 | 0.64 | 0.39 | 0.54 | 0.43 | 0.14 | 0.57 | 0.36 | 0.39 | 0.25 | 0.57 | 0.46 | 0.39 | 0.39 | **0.82** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2926,50 +2973,50 @@ subtitle: "Hindi (hi) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | **0.89** | **0.95** |  |  |  |  |  | **0.87** |
-| `bbpb_xstorycloze` |  |  |  |  |  | **0.86** |  | **0.89** | **0.95** |  | **0.81** | **0.95** |  |  | **0.87** |
-| `bpb` | **0.98** | **0.96** | **0.85** | **0.84** | **0.87** | **0.95** | **0.84** | **0.85** | **0.89** | **0.89** | **0.84** | **0.84** | **0.84** | 0.73 | **0.89** |
-| `bbpb_multiblimp` |  |  |  |  |  | **1.00** |  | **0.89** | 0.71 |  | **1.00** | **0.80** |  |  | 0.67 |
-| `bbpb_arc` |  |  |  |  |  |  |  | **0.80** | **0.85** |  |  |  |  |  | 0.73 |
-| `bbpb_rfgm_belebele_hin_Deva` |  |  |  |  |  | **0.86** |  | **0.76** | **0.78** |  | **0.86** | 0.67 |  |  | 0.69 |
-| `bbpb_rf_belebele_hin_Deva` |  |  |  |  |  | 0.67 |  | **0.84** | 0.75 |  | 0.71 | 0.71 |  |  | **0.91** |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.76** |  | **0.84** | **0.78** |  | 0.67 | 0.62 |  |  | **0.84** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | 0.71 |  | **0.85** | **0.78** |  | 0.62 | 0.71 |  |  | **0.78** |
-| `multiblimp` | **0.78** | 0.73 | **0.80** | 0.69 | 0.71 | 0.64 | **0.82** | **0.80** | 0.71 | 0.75 | 0.75 | 0.64 | **0.78** | 0.64 | 0.64 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **0.91** | 0.64 |  |  |  |  |  | 0.62 |
-| `bbpb_xnli` |  |  |  |  |  | **0.90** |  | **0.80** | 0.58 |  | 0.71 | 0.33 |  |  | 0.75 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.43 |  | **0.78** | **0.78** |  | 0.62 | 0.62 |  |  | 0.75 |
-| `bbpb_include_v2_og` |  |  |  |  |  | 0.67 |  | 0.65 | 0.51 |  | 0.67 | **0.83** |  |  | 0.53 |
-| `bbpb_cultural_bench_easy` |  |  |  |  |  |  |  | 0.60 | 0.65 |  |  |  |  |  | 0.65 |
-| `bbpb_rf_belebele_hin_Latn` |  |  |  |  |  | 0.62 |  | 0.67 | 0.51 |  | 0.62 | 0.67 |  |  | 0.65 |
-| `hellaswag` | 0.45 | 0.58 | 0.73 | 0.56 | 0.56 | 0.51 | 0.69 | 0.44 | 0.71 | 0.62 | 0.53 | 0.69 | 0.60 | **0.76** | 0.71 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  |  |  | 0.62 | 0.56 |  |  |  |  |  | 0.62 |
-| `bbpb_belebele_hin_Latn` |  |  |  |  |  |  |  | 0.55 | 0.64 |  |  |  |  |  | 0.51 |
-| `bbpb_belebele_hin_Deva` |  |  |  |  |  |  |  | 0.67 | 0.47 |  |  |  |  |  | 0.51 |
-| `xstorycloze` | 0.38 | 0.71 | 0.49 | 0.44 | 0.67 | 0.55 | 0.55 | 0.49 | 0.51 | 0.44 | 0.67 | 0.69 | 0.56 | 0.53 | 0.55 |
-| `rf_global_mmlu_full` | 0.58 | 0.38 | 0.64 | 0.55 | 0.62 | 0.75 | 0.58 | 0.64 | 0.56 | 0.33 | 0.55 | 0.62 | 0.38 | 0.33 | 0.71 |
-| `rf_belebele_hin_Deva` | 0.47 | 0.45 | 0.53 | 0.73 | 0.53 | 0.60 | 0.55 | 0.45 | 0.55 | 0.53 | 0.49 | 0.45 | 0.49 | 0.73 | 0.62 |
-| `include_v2_og` | 0.53 | 0.62 | 0.65 | 0.55 | 0.51 | 0.47 | 0.40 | 0.40 | 0.36 | 0.56 | 0.58 | 0.71 | 0.62 | 0.65 | 0.49 |
-| `xnli` | 0.53 | 0.58 | 0.38 | 0.60 | 0.47 | 0.44 | 0.45 | 0.53 | 0.40 | 0.65 | 0.67 | 0.60 | 0.58 | 0.44 | 0.58 |
-| `bbpb_include_base_44` |  |  |  |  |  | 0.50 |  | 0.64 | 0.47 |  | 0.50 | 0.50 |  |  | 0.47 |
-| `bbpb_rfgm_belebele_hin_Latn` |  |  |  |  |  | 0.33 |  | 0.62 | 0.65 |  | 0.52 | 0.24 |  |  | 0.64 |
-| `bbpb_rf_cultural_bench_easy` |  |  |  |  |  | **0.95** |  | 0.38 | 0.33 |  | 0.38 | 0.24 |  |  | 0.69 |
-| `include_base_44` | 0.45 | 0.42 | 0.58 | 0.51 | 0.49 | 0.45 | 0.35 | 0.58 | 0.42 | 0.58 | 0.40 | 0.69 | 0.29 | 0.38 | 0.53 |
-| `cultural_bench_easy` | 0.64 | 0.53 | 0.38 | 0.36 | 0.62 | 0.58 | 0.47 | 0.27 | 0.44 | 0.38 | 0.56 | 0.58 | 0.40 | 0.53 | 0.36 |
-| `belebele_hin_Deva` | 0.51 | 0.29 | 0.51 | 0.36 | 0.49 | 0.49 | 0.67 | 0.33 | 0.60 | 0.60 | 0.51 | 0.40 | 0.33 | 0.53 | 0.38 |
-| `global_mmlu_full` | 0.47 | 0.53 | 0.55 | 0.29 | 0.65 | 0.51 | 0.45 | 0.42 | 0.60 | 0.40 | 0.58 | 0.40 | 0.27 | 0.38 | 0.49 |
-| `bbpb_include_v2_en` |  |  |  |  |  | 0.00 |  | 0.36 | 0.36 |  | **1.00** | 0.50 |  |  | 0.53 |
-| `rfgm_include_base_44` | 0.44 | 0.62 | 0.45 | 0.49 | 0.56 | 0.55 | 0.42 | 0.35 | 0.38 | 0.40 | 0.45 | 0.44 | 0.69 | 0.36 | 0.27 |
-| `rfgm_belebele_hin_Latn` | 0.40 | 0.65 | 0.49 | 0.62 | 0.40 | 0.35 | 0.42 | 0.49 | 0.51 | 0.56 | 0.55 | 0.31 | 0.38 | 0.24 | 0.44 |
-| `rfgm_belebele_hin_Deva` | 0.45 | 0.36 | 0.60 | 0.53 | 0.42 | 0.29 | 0.40 | 0.47 | 0.40 | 0.44 | 0.53 | 0.45 | 0.44 | 0.45 | 0.56 |
-| `arc` | 0.53 | 0.31 | 0.45 | 0.36 | 0.64 | 0.35 | 0.45 | 0.47 | 0.45 | 0.40 | 0.38 | 0.40 | 0.69 | 0.53 | 0.35 |
-| `include_v2_en` | 0.27 | 0.40 | 0.56 | 0.55 | 0.64 | 0.40 | 0.33 | 0.38 | 0.38 | 0.65 | 0.40 | 0.35 | 0.62 | 0.44 | 0.38 |
-| `rf_include_base_44` | 0.45 | 0.38 | 0.73 | 0.49 | 0.35 | 0.16 | 0.42 | 0.33 | 0.69 | 0.42 | 0.55 | 0.44 | 0.53 | 0.36 | 0.44 |
-| `cultural_bench_hard` | 0.36 | 0.35 | 0.49 | 0.40 | 0.53 | 0.65 | 0.31 | 0.58 | 0.38 | 0.29 | **0.82** | 0.36 | 0.44 | 0.51 | 0.25 |
-| `belebele_hin_Latn` | 0.38 | 0.56 | 0.38 | 0.69 | 0.42 | 0.38 | 0.55 | 0.20 | 0.67 | 0.53 | 0.45 | 0.24 | 0.29 | 0.40 | 0.44 |
-| `global_piqa_parallel_cloze` | 0.35 | 0.58 | 0.56 | 0.42 | 0.42 | 0.29 | 0.49 | 0.36 | 0.40 | 0.56 | 0.38 | 0.35 | 0.44 | 0.29 | 0.56 |
-| `rf_belebele_hin_Latn` | 0.40 | 0.36 | 0.33 | 0.47 | 0.47 | 0.38 | 0.38 | 0.42 | 0.20 | 0.62 | 0.53 | 0.36 | 0.53 | 0.42 | 0.44 |
-| `rf_cultural_bench_easy` | 0.47 | 0.45 | 0.40 | 0.53 | 0.53 | 0.51 | 0.20 | 0.60 | 0.45 | 0.36 | 0.35 | 0.36 | 0.42 | 0.22 | 0.44 |
+| `bbpb_hellaswag` | **0.89** | **0.94** | **0.91** | **0.89** | **0.86** | **0.92** | **0.86** | **0.85** | **0.94** | **0.94** | **0.86** | **0.89** | **0.86** | **0.83** | **0.82** |
+| `bbpb_xstorycloze` | **0.89** | **0.85** | **0.91** | **0.89** | **0.83** | **0.92** | **0.89** | **0.85** | **0.94** | **0.85** | **0.80** | **0.92** | **0.83** | **0.83** | **0.82** |
+| `bpb` | **0.98** | **0.97** | **0.83** | **0.82** | **0.87** | **0.95** | **0.82** | **0.83** | **0.89** | **0.86** | **0.82** | **0.84** | **0.83** | 0.73 | **0.89** |
+| `bbpb_rfgm_include_base_44` | **0.86** | 0.70 | **0.88** | **0.80** | **0.82** | **0.80** | **0.92** | **0.85** | **0.78** | **0.79** | 0.68 | **0.78** | **0.83** | 0.75 | **0.78** |
+| `bbpb_rf_belebele_hin_Deva` | 0.74 | **0.82** | **0.80** | **0.80** | **0.76** | **0.80** | 0.64 | **0.82** | **0.77** | 0.74 | **0.77** | **0.79** | **0.82** | **0.83** | **0.89** |
+| `bbpb_arc` | **0.79** | **0.86** | 0.73 | **0.77** | 0.70 | 0.74 | **0.82** | **0.80** | **0.82** | **0.77** | **0.76** | **0.77** | **0.86** | **0.76** | 0.68 |
+| `bbpb_multiblimp` | **0.77** | 0.73 | **0.89** | **0.76** | 0.73 | **0.89** | **0.82** | **0.86** | 0.68 | **0.77** | **0.88** | 0.67 | **0.77** | 0.65 | 0.64 |
+| `bbpb_rfgm_belebele_hin_Deva` | **0.88** | 0.74 | 0.70 | **0.77** | **0.76** | **0.80** | 0.73 | **0.77** | **0.78** | **0.83** | **0.82** | 0.71 | 0.71 | 0.73 | 0.69 |
+| `bbpb_rf_global_mmlu_full` | 0.73 | 0.73 | 0.70 | **0.76** | 0.67 | **0.76** | **0.79** | **0.85** | **0.82** | 0.70 | **0.79** | **0.76** | **0.79** | 0.73 | **0.85** |
+| `bbpb_global_piqa_parallel_cloze` | 0.73 | **0.82** | 0.74 | 0.74 | 0.73 | 0.73 | **0.80** | **0.89** | 0.67 | 0.68 | **0.77** | 0.73 | **0.82** | 0.62 | 0.62 |
+| `bbpb_rf_include_base_44` | 0.73 | **0.82** | 0.74 | 0.73 | **0.76** | 0.61 | 0.74 | **0.76** | **0.76** | 0.56 | 0.73 | 0.73 | 0.68 | **0.83** | **0.79** |
+| `multiblimp` | **0.79** | **0.77** | **0.79** | 0.71 | 0.70 | 0.65 | **0.79** | **0.79** | 0.68 | 0.73 | 0.74 | 0.62 | **0.79** | 0.62 | 0.61 |
+| `bbpb_xnli` | **0.79** | **0.79** | **0.83** | 0.70 | 0.65 | **0.91** | 0.74 | **0.79** | 0.56 | 0.71 | **0.79** | 0.56 | 0.65 | 0.52 | 0.71 |
+| `bbpb_rf_belebele_hin_Latn` | 0.55 | 0.50 | 0.70 | 0.70 | 0.61 | 0.68 | 0.45 | 0.70 | 0.52 | 0.68 | 0.71 | 0.62 | 0.58 | 0.70 | 0.64 |
+| `bbpb_cultural_bench_easy` | 0.62 | 0.61 | 0.65 | 0.65 | 0.56 | 0.68 | 0.64 | 0.64 | 0.67 | 0.56 | 0.53 | 0.65 | 0.52 | 0.42 | 0.67 |
+| `hellaswag` | **0.82** | 0.38 | 0.61 | 0.55 | 0.45 | 0.33 | 0.61 | 0.58 | 0.44 | 0.56 | 0.61 | 0.68 | **0.86** | 0.68 | 0.74 |
+| `bbpb_rfgm_belebele_hin_Latn` | 0.48 | 0.62 | 0.53 | 0.52 | 0.42 | 0.47 | 0.62 | 0.64 | 0.65 | 0.64 | 0.56 | 0.44 | 0.56 | 0.75 | 0.64 |
+| `bbpb_global_mmlu_full` | **0.77** | 0.55 | 0.56 | 0.52 | 0.65 | 0.56 | 0.55 | 0.59 | 0.58 | 0.56 | 0.36 | 0.41 | 0.56 | 0.67 | 0.59 |
+| `rf_global_mmlu_full` | 0.60 | 0.37 | 0.59 | 0.52 | 0.59 | 0.71 | 0.61 | 0.65 | 0.58 | 0.44 | 0.56 | 0.64 | 0.42 | 0.39 | 0.71 |
+| `bbpb_include_v2_og` | 0.70 | 0.58 | 0.62 | 0.67 | 0.38 | 0.58 | 0.59 | 0.70 | 0.51 | 0.35 | 0.58 | 0.60 | 0.50 | 0.45 | 0.53 |
+| `bbpb_belebele_hin_Deva` | 0.58 | 0.55 | 0.65 | 0.56 | 0.65 | 0.64 | 0.47 | 0.62 | 0.56 | 0.59 | 0.38 | 0.47 | 0.39 | 0.55 | 0.48 |
+| `xstorycloze` | 0.40 | 0.64 | 0.52 | 0.45 | 0.64 | 0.58 | 0.50 | 0.47 | 0.52 | 0.38 | 0.62 | 0.68 | 0.59 | 0.50 | 0.53 |
+| `include_v2_og` | 0.53 | 0.56 | 0.62 | 0.53 | 0.50 | 0.45 | 0.38 | 0.39 | 0.41 | 0.55 | 0.61 | 0.70 | 0.64 | 0.62 | 0.50 |
+| `bbpb_include_base_44` | 0.67 | 0.47 | 0.59 | 0.45 | 0.42 | 0.53 | 0.71 | 0.64 | 0.45 | 0.45 | 0.53 | 0.41 | 0.56 | 0.59 | 0.45 |
+| `rf_belebele_hin_Deva` | 0.46 | 0.44 | 0.55 | 0.71 | 0.55 | 0.63 | 0.48 | 0.44 | 0.45 | 0.47 | 0.47 | 0.38 | 0.52 | 0.74 | 0.62 |
+| `bbpb_belebele_hin_Latn` | 0.53 | 0.53 | 0.48 | 0.53 | 0.33 | 0.55 | 0.38 | 0.55 | 0.68 | 0.65 | 0.70 | 0.44 | 0.59 | 0.39 | 0.53 |
+| `xnli` | 0.38 | 0.54 | 0.33 | 0.64 | 0.53 | 0.49 | 0.53 | 0.47 | 0.36 | 0.65 | 0.64 | 0.55 | 0.53 | 0.41 | 0.59 |
+| `global_mmlu_full` | 0.56 | 0.53 | 0.56 | 0.35 | 0.65 | 0.58 | 0.53 | 0.50 | 0.56 | 0.44 | 0.59 | 0.38 | 0.36 | 0.39 | 0.48 |
+| `belebele_hin_Deva` | 0.46 | 0.31 | 0.56 | 0.41 | 0.50 | 0.55 | 0.67 | 0.38 | 0.61 | 0.59 | 0.50 | 0.39 | 0.38 | 0.55 | 0.39 |
+| `bbpb_rf_cultural_bench_easy` | 0.48 | 0.42 | 0.56 | 0.32 | 0.55 | **0.76** | 0.47 | 0.38 | 0.33 | 0.35 | 0.59 | 0.40 | 0.33 | 0.56 | 0.69 |
+| `bbpb_include_v2_en` | 0.20 | 0.70 | 0.47 | 0.47 | 0.58 | 0.35 | 0.55 | 0.42 | 0.36 | 0.53 | 0.56 | 0.36 | 0.58 | 0.49 | 0.53 |
+| `include_base_44` | 0.45 | 0.45 | 0.59 | 0.47 | 0.47 | 0.49 | 0.36 | 0.56 | 0.42 | 0.59 | 0.38 | 0.68 | 0.32 | 0.38 | 0.50 |
+| `global_piqa_parallel_cloze` | 0.42 | 0.41 | 0.48 | 0.44 | 0.53 | 0.53 | 0.26 | 0.50 | 0.52 | 0.45 | 0.47 | 0.42 | 0.47 | 0.45 | 0.74 |
+| `cultural_bench_easy` | 0.55 | 0.50 | 0.39 | 0.36 | 0.56 | 0.56 | 0.52 | 0.35 | 0.52 | 0.38 | 0.50 | 0.48 | 0.41 | 0.55 | 0.44 |
+| `include_v2_en` | 0.41 | 0.44 | 0.55 | 0.52 | 0.65 | 0.49 | 0.36 | 0.39 | 0.36 | 0.67 | 0.41 | 0.33 | 0.64 | 0.42 | 0.38 |
+| `cultural_bench_hard` | 0.40 | 0.32 | 0.52 | 0.42 | 0.56 | 0.60 | 0.33 | 0.56 | 0.38 | 0.30 | **0.80** | 0.35 | 0.45 | 0.52 | 0.29 |
+| `rfgm_include_base_44` | 0.38 | 0.53 | 0.47 | 0.47 | 0.56 | 0.59 | 0.41 | 0.36 | 0.38 | 0.39 | 0.50 | 0.47 | 0.64 | 0.33 | 0.32 |
+| `rfgm_belebele_hin_Latn` | 0.41 | 0.63 | 0.56 | 0.53 | 0.35 | 0.41 | 0.39 | 0.52 | 0.48 | 0.56 | 0.53 | 0.30 | 0.35 | 0.23 | 0.48 |
+| `rf_include_base_44` | 0.45 | 0.44 | 0.68 | 0.50 | 0.36 | 0.21 | 0.36 | 0.35 | 0.74 | 0.39 | 0.53 | 0.45 | 0.50 | 0.32 | 0.44 |
+| `rfgm_belebele_hin_Deva` | 0.47 | 0.35 | 0.62 | 0.50 | 0.42 | 0.26 | 0.39 | 0.48 | 0.42 | 0.42 | 0.52 | 0.44 | 0.38 | 0.50 | 0.50 |
+| `arc` | 0.41 | 0.44 | 0.30 | 0.41 | 0.59 | 0.46 | 0.48 | 0.32 | 0.50 | 0.48 | 0.39 | 0.42 | 0.48 | 0.41 | 0.36 |
+| `belebele_hin_Latn` | 0.37 | 0.59 | 0.41 | 0.67 | 0.39 | 0.35 | 0.50 | 0.24 | 0.65 | 0.52 | 0.44 | 0.20 | 0.27 | 0.41 | 0.45 |
+| `rf_belebele_hin_Latn` | 0.44 | 0.45 | 0.36 | 0.44 | 0.45 | 0.41 | 0.38 | 0.41 | 0.23 | 0.64 | 0.50 | 0.33 | 0.52 | 0.38 | 0.45 |
+| `rf_cultural_bench_easy` | 0.46 | 0.40 | 0.42 | 0.47 | 0.56 | 0.45 | 0.20 | 0.55 | 0.42 | 0.38 | 0.30 | 0.38 | 0.36 | 0.27 | 0.39 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2992,29 +3039,29 @@ subtitle: "Croatian (hr) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_rfgm_belebele` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
-| `hellaswag` | **0.83** | **1.00** | **1.00** | **1.00** | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `bbpb_rfgm_belebele` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
 | `bpb` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | **1.00** | 0.67 |  |  |  |  |  | 0.67 |
-| `bbpb_rf_belebele` |  |  |  |  |  |  |  | **1.00** | 0.67 |  |  |  |  |  | 0.67 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | 0.67 | **0.83** |  |  |  |  |  | **0.83** |
+| `bbpb_hellaswag` | **1.00** | **0.83** | 0.67 | **1.00** | **1.00** | **0.83** | 0.67 | **1.00** | **1.00** | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | **1.00** |
+| `bbpb_rf_belebele` | **1.00** | **1.00** | **0.83** | **1.00** | 0.67 | **1.00** | **0.83** | **1.00** | 0.67 | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** | 0.67 |
+| `bbpb_rfgm_include_base_44` | **1.00** | **1.00** | 0.67 | **1.00** | **0.83** | **1.00** | 0.67 | **1.00** | **0.83** | 0.67 | **1.00** | **0.83** | 0.67 | **0.83** | **0.83** |
+| `bbpb_include_v2_og` | **1.00** | **1.00** | **0.83** | **1.00** | 0.67 | **1.00** | **0.83** | **1.00** | 0.67 | **0.83** | **1.00** | 0.67 | **0.83** | 0.50 | 0.67 |
+| `hellaswag` | **1.00** | 0.67 | **0.83** | 0.67 | 0.67 | 0.67 | **0.83** | 0.67 | 0.67 | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** |
+| `bbpb_global_piqa_parallel_cloze` | 0.67 | 0.67 | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | 0.67 | **0.83** |
+| `bbpb_arc` | **1.00** | **0.83** | **0.83** | **0.83** | 0.50 | **0.83** | **0.83** | **0.83** | 0.50 | **1.00** | **1.00** | 0.67 | **1.00** | 0.67 | 0.67 |
 | `rfgm_belebele` | **0.83** | 0.67 | 0.67 | 0.67 | 0.67 | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | **0.83** | 0.67 | 0.67 |
-| `bbpb_arc` |  |  |  |  |  |  |  | **0.83** | 0.50 |  |  |  |  |  | 0.67 |
+| `bbpb_include_base_44` | **0.83** | **0.83** | 0.67 | 0.50 | 0.67 | 0.67 | 0.50 | 0.33 | 0.50 | **0.83** | 0.67 | **0.83** | **0.83** | 0.67 | 0.50 |
+| `bbpb_belebele` | 0.67 | 0.67 | **1.00** | 0.67 | 0.50 | **1.00** | 0.67 | 0.33 | 0.50 | 0.67 | 0.33 | 0.50 | 0.67 | 0.50 | **0.83** |
+| `bbpb_rf_include_base_44` | 0.67 | **0.83** | **0.83** | 0.67 | 0.33 | 0.50 | 0.50 | 0.33 | 0.33 | **1.00** | **0.83** | 0.50 | **0.83** | 0.50 | 0.67 |
 | `include_base_44` | 0.67 | 0.33 | 0.50 | 0.67 | 0.17 | 0.67 | **0.83** | **1.00** | 0.50 | 0.50 | 0.67 | 0.67 | **0.83** | 0.67 | 0.50 |
+| `bbpb_include_v2_en` | 0.33 | 0.67 | 0.50 | **0.83** | **0.83** | 0.67 | 0.50 | 0.50 | 0.17 | 0.50 | **0.83** | 0.50 | 0.33 | 0.67 | 0.67 |
 | `include_v2_og` | 0.17 | 0.50 | 0.17 | 0.67 | 0.33 | 0.67 | **1.00** | 0.50 | **0.83** | 0.67 | 0.50 | **0.83** | 0.50 | **0.83** | 0.33 |
 | `include_v2_en` | 0.67 | 0.67 | 0.33 | **0.83** | 0.50 | 0.67 | 0.67 | **0.83** | 0.50 | 0.67 | 0.50 | 0.17 | 0.50 | 0.17 | 0.67 |
 | `rf_belebele` | **0.83** | 0.33 | 0.50 | **1.00** | 0.67 | 0.50 | 0.33 | **0.83** | 0.50 | 0.17 | 0.33 | 0.33 | 0.50 | **0.83** | 0.67 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.33 | 0.50 |  |  |  |  |  | **0.83** |
 | `rf_include_base_44` | 0.50 | 0.67 | 0.50 | 0.33 | 0.50 | **0.83** | **1.00** | 0.00 | 0.67 | **0.83** | 0.17 | 0.50 | 0.00 | 0.67 | 0.17 |
 | `belebele` | 0.67 | 0.50 | 0.33 | 0.50 | **0.83** | **0.83** | 0.33 | 0.17 | 0.50 | 0.50 | 0.33 | 0.33 | 0.50 | 0.17 | 0.67 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.50 | 0.17 |  |  |  |  |  | 0.67 |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.33 | 0.50 |  |  |  |  |  | 0.50 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  |  |  | 0.33 | 0.33 |  |  |  |  |  | 0.67 |
-| `arc` | 0.33 | 0.67 | 0.67 | 0.00 | 0.50 | 0.67 | 0.50 | 0.33 | 0.50 | 0.67 | 0.00 | **0.83** | 0.00 | 0.50 | 0.17 |
+| `arc` | 0.50 | 0.67 | 0.17 | 0.50 | **0.83** | 0.33 | 0.67 | 0.33 | 0.67 | 0.33 | 0.17 | 0.50 | 0.33 | 0.33 | 0.33 |
 | `rfgm_include_base_44` | 0.67 | 0.33 | 0.67 | 0.00 | 0.00 | 0.33 | 0.50 | 0.33 | 0.17 | 0.17 | 0.67 | 0.50 | 0.17 | 0.33 | **0.83** |
-| `global_piqa_parallel_cloze` | 0.50 | 0.17 | 0.33 | 0.17 | 0.67 | 0.00 | 0.33 | 0.67 | 0.33 | 0.17 | 0.17 | 0.17 | 0.17 | 0.50 | 0.00 |
+| `global_piqa_parallel_cloze` | 0.50 | 0.00 | 0.67 | 0.17 | 0.50 | 0.50 | 0.50 | 0.33 | 0.17 | 0.33 | **0.83** | 0.33 | 0.17 | 0.33 | 0.33 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3037,33 +3084,33 @@ subtitle: "Hungarian (hu) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | **0.89** | **0.89** |  |  |  |  |  | **0.83** |
-| `bpb` | **0.97** | **0.92** | 0.72 | **0.89** | **0.94** | **0.94** | 0.69 | **0.92** | **0.92** | **0.75** | **0.97** | **0.86** | 0.72 | 0.67 | **0.83** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | 0.70 |  | **0.89** | **0.89** |  | **0.90** | **0.80** |  |  | **0.83** |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | **0.78** |
-| `bbpb_rf_belebele` |  |  |  |  |  | **0.80** |  | **0.83** | **0.78** |  | **0.90** | 0.60 |  |  | 0.72 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | 0.72 | **0.86** |  |  |  |  |  | 0.69 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **1.00** |  | **0.83** | **0.75** |  | 0.70 | 0.40 |  |  | **0.86** |
-| `bbpb_multiblimp` |  |  |  |  |  | **1.00** |  | **0.75** | 0.64 |  | 0.67 | 0.67 |  |  | 0.72 |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | **0.86** | 0.72 |  |  |  |  |  | 0.64 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | **0.80** |  | 0.72 | 0.69 |  | 0.60 | **0.90** |  |  | 0.64 |
-| `bbpb_arc` |  |  |  |  |  |  |  | **0.81** | 0.58 |  |  |  |  |  | 0.67 |
-| `multiblimp` | **0.89** | 0.58 | 0.67 | **0.78** | 0.69 | 0.61 | 0.72 | **0.78** | 0.69 | 0.53 | 0.67 | 0.33 | 0.53 | 0.56 | 0.67 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.61 | 0.72 |  |  |  |  |  | 0.56 |
-| `bbpb_arc_mt` |  |  |  |  |  |  |  | **0.81** | 0.42 |  |  |  |  |  | 0.56 |
-| `hellaswag` | 0.47 | 0.72 | 0.33 | 0.61 | 0.53 | 0.42 | **0.75** | 0.58 | 0.72 | 0.39 | 0.56 | 0.53 | 0.67 | **0.75** | **0.86** |
-| `rf_belebele` | 0.44 | 0.58 | 0.61 | 0.61 | 0.44 | 0.61 | 0.56 | 0.33 | 0.44 | 0.72 | 0.44 | 0.39 | 0.64 | 0.67 | 0.61 |
-| `rfgm_belebele` | 0.58 | 0.58 | 0.61 | 0.61 | 0.36 | 0.69 | 0.58 | 0.50 | 0.56 | 0.50 | 0.53 | 0.56 | 0.50 | 0.33 | 0.56 |
-| `include_v2_og` | 0.58 | 0.44 | 0.36 | **0.75** | 0.50 | 0.47 | 0.64 | 0.61 | 0.67 | 0.47 | 0.47 | 0.39 | 0.44 | 0.58 | 0.53 |
-| `include_v2_en` | 0.39 | 0.31 | 0.56 | 0.22 | 0.67 | **0.75** | 0.69 | 0.44 | 0.50 | 0.64 | 0.67 | 0.47 | 0.39 | 0.58 | 0.42 |
-| `arc_mt` | 0.67 | 0.31 | 0.61 | 0.58 | 0.56 | 0.47 | 0.53 | 0.69 | 0.72 | 0.25 | 0.53 | 0.44 | 0.28 | 0.36 | 0.56 |
-| `arc` | 0.39 | 0.31 | 0.53 | 0.39 | 0.47 | 0.47 | 0.56 | **0.81** | 0.56 | 0.39 | 0.47 | 0.22 | 0.64 | 0.36 | 0.64 |
-| `rf_include_base_44` | 0.50 | 0.44 | 0.42 | 0.42 | 0.33 | 0.33 | 0.25 | 0.67 | 0.42 | 0.69 | 0.56 | 0.44 | 0.50 | 0.67 | 0.53 |
-| `rfgm_include_base_44` | 0.28 | 0.50 | 0.56 | 0.53 | 0.47 | 0.25 | 0.33 | 0.50 | 0.53 | 0.56 | 0.44 | 0.56 | 0.53 | 0.61 | 0.42 |
-| `include_base_44` | 0.50 | 0.44 | 0.39 | 0.44 | 0.33 | 0.39 | 0.47 | 0.44 | 0.42 | 0.31 | 0.56 | 0.69 | 0.39 | 0.61 | 0.56 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.44 | 0.22 |  |  |  |  |  | 0.50 |
-| `global_piqa_parallel_cloze` | 0.72 | 0.22 | 0.17 | 0.33 | 0.31 | 0.25 | 0.17 | 0.39 | 0.28 | 0.44 | 0.50 | 0.33 | 0.31 | 0.47 | 0.42 |
-| `belebele` | 0.14 | 0.14 | 0.31 | 0.06 | 0.19 | 0.25 | 0.50 | 0.42 | 0.36 | 0.22 | 0.64 | 0.47 | 0.47 | 0.61 | 0.53 |
+| `bpb` | **0.98** | **0.87** | 0.67 | **0.87** | **0.94** | **0.89** | 0.64 | **0.89** | **0.92** | 0.71 | **0.96** | **0.86** | 0.67 | 0.67 | **0.83** |
+| `bbpb_hellaswag` | **0.98** | **0.93** | **0.82** | **0.84** | **0.78** | **0.91** | **0.80** | **0.87** | **0.80** | **0.84** | **0.82** | **0.76** | **0.80** | 0.64 | **0.76** |
+| `bbpb_rfgm_belebele` | **0.91** | **0.78** | 0.71 | **0.91** | **0.86** | 0.73 | **0.76** | **0.82** | **0.89** | 0.62 | **0.87** | **0.89** | 0.67 | 0.58 | **0.83** |
+| `bbpb_rfgm_include_base_44` | **0.93** | **0.78** | **0.82** | **0.80** | **0.78** | **0.84** | **0.76** | **0.82** | **0.75** | **0.78** | 0.67 | 0.61 | 0.71 | **0.78** | **0.86** |
+| `bbpb_global_piqa_parallel_cloze` | **0.89** | **0.84** | 0.67 | 0.64 | **0.76** | **0.78** | **0.78** | 0.67 | **0.87** | 0.73 | **0.76** | **0.78** | 0.71 | 0.69 | 0.67 |
+| `bbpb_include_v2_og` | 0.73 | **0.76** | 0.67 | **0.87** | 0.53 | **0.76** | **0.84** | **0.87** | 0.72 | 0.64 | **0.84** | 0.64 | **0.76** | **0.75** | 0.64 |
+| `bbpb_rf_belebele` | 0.73 | **0.80** | 0.67 | **0.84** | **0.76** | **0.89** | 0.58 | **0.84** | **0.76** | 0.60 | **0.87** | **0.78** | 0.60 | 0.56 | 0.73 |
+| `bbpb_multiblimp` | **0.76** | **0.78** | **0.87** | 0.69 | **0.78** | **0.76** | **0.80** | **0.76** | 0.53 | 0.69 | 0.51 | 0.69 | **0.82** | 0.73 | 0.64 |
+| `bbpb_rf_include_base_44` | 0.73 | 0.60 | 0.67 | **0.78** | 0.58 | 0.73 | 0.71 | 0.69 | 0.71 | 0.71 | **0.78** | **0.80** | 0.62 | 0.60 | 0.62 |
+| `bbpb_arc` | 0.71 | 0.71 | 0.58 | **0.76** | 0.51 | 0.69 | **0.78** | **0.82** | 0.58 | 0.51 | 0.69 | 0.67 | 0.64 | 0.49 | 0.67 |
+| `bbpb_include_base_44` | 0.71 | 0.56 | 0.67 | 0.71 | 0.73 | 0.49 | 0.56 | **0.82** | **0.80** | 0.58 | 0.49 | 0.42 | 0.64 | 0.67 | **0.80** |
+| `multiblimp` | **0.82** | 0.53 | 0.69 | **0.82** | 0.71 | 0.64 | 0.69 | 0.73 | 0.67 | 0.49 | 0.60 | 0.33 | 0.58 | 0.60 | 0.69 |
+| `hellaswag` | 0.73 | **0.82** | 0.44 | 0.58 | 0.58 | **0.80** | 0.47 | 0.60 | 0.64 | 0.47 | 0.60 | 0.56 | **0.76** | 0.71 | **0.82** |
+| `bbpb_arc_mt` | 0.71 | **0.76** | 0.53 | 0.73 | 0.44 | 0.73 | 0.69 | **0.80** | 0.42 | 0.51 | 0.71 | 0.53 | 0.62 | 0.58 | 0.56 |
+| `bbpb_belebele` | 0.58 | 0.40 | 0.60 | **0.82** | 0.58 | 0.60 | 0.67 | 0.62 | **0.78** | 0.53 | 0.36 | 0.51 | 0.60 | 0.67 | 0.58 |
+| `include_v2_og` | 0.64 | 0.51 | 0.47 | 0.73 | 0.56 | 0.45 | 0.64 | 0.62 | 0.69 | 0.49 | 0.44 | 0.40 | 0.47 | 0.64 | 0.56 |
+| `include_v2_en` | 0.47 | 0.40 | 0.51 | 0.33 | 0.69 | 0.71 | 0.60 | 0.53 | 0.51 | 0.53 | 0.73 | 0.51 | 0.33 | 0.53 | 0.47 |
+| `rf_belebele` | 0.36 | 0.64 | 0.62 | 0.60 | 0.40 | 0.53 | 0.53 | 0.33 | 0.47 | 0.71 | 0.47 | 0.36 | 0.69 | 0.56 | 0.53 |
+| `rfgm_belebele` | 0.56 | 0.47 | 0.58 | 0.60 | 0.42 | 0.56 | 0.60 | 0.51 | 0.62 | 0.47 | 0.47 | 0.44 | 0.51 | 0.38 | 0.56 |
+| `arc` | 0.40 | 0.36 | 0.64 | 0.58 | 0.40 | 0.42 | 0.53 | 0.53 | 0.56 | 0.42 | 0.33 | 0.62 | 0.71 | 0.53 | 0.33 |
+| `arc_mt` | 0.65 | 0.36 | 0.60 | 0.49 | 0.51 | 0.45 | 0.49 | 0.62 | 0.69 | 0.20 | 0.58 | 0.51 | 0.27 | 0.33 | 0.60 |
+| `rf_include_base_44` | 0.45 | 0.51 | 0.47 | 0.33 | 0.42 | 0.36 | 0.24 | 0.64 | 0.40 | 0.69 | 0.44 | 0.51 | 0.47 | 0.67 | 0.44 |
+| `include_base_44` | 0.49 | 0.47 | 0.47 | 0.49 | 0.33 | 0.36 | 0.42 | 0.42 | 0.40 | 0.36 | 0.53 | 0.69 | 0.49 | 0.56 | 0.53 |
+| `global_piqa_parallel_cloze` | 0.35 | 0.45 | 0.38 | 0.42 | 0.36 | 0.51 | 0.44 | 0.47 | 0.71 | 0.64 | 0.49 | 0.33 | 0.56 | 0.40 | 0.44 |
+| `bbpb_include_v2_en` | 0.22 | 0.51 | 0.38 | 0.42 | 0.69 | 0.44 | 0.49 | 0.49 | 0.22 | 0.51 | 0.56 | 0.44 | 0.51 | 0.44 | 0.50 |
+| `rfgm_include_base_44` | 0.35 | 0.40 | 0.56 | 0.56 | 0.47 | 0.27 | 0.33 | 0.40 | 0.49 | 0.49 | 0.40 | 0.53 | 0.56 | 0.58 | 0.42 |
+| `belebele` | 0.16 | 0.18 | 0.29 | 0.04 | 0.18 | 0.36 | 0.56 | 0.36 | 0.42 | 0.31 | 0.56 | 0.53 | 0.40 | 0.62 | 0.44 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3086,37 +3133,37 @@ subtitle: "Indonesian (id) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_hellaswag` |  |  |  |  |  | **1.00** |  | **0.82** | **0.80** |  | **1.00** | **1.00** |  |  | **0.86** |
-| `bpb` | **1.00** | **0.91** | 0.74 | **0.94** | **0.92** | **0.91** | 0.74 | **0.94** | **0.92** | **0.80** | **0.97** | **0.86** | **0.80** | **0.76** | **0.89** |
-| `bbpb_xstorycloze` |  |  |  |  |  | **0.86** |  | **0.91** | **0.80** |  | **0.93** | **0.89** |  |  | **0.80** |
-| `bbpb_arc` |  |  |  |  |  | **1.00** |  | 0.74 | 0.52 |  | **1.00** | **1.00** |  |  | 0.53 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **0.89** |  | **0.79** | 0.73 |  | 0.71 | **0.75** |  |  | **0.82** |
-| `hellaswag` | 0.59 | 0.74 | 0.67 | **0.76** | **0.79** | 0.70 | 0.71 | **0.77** | **0.77** | 0.71 | **0.89** | **0.85** | 0.70 | **0.77** | **0.83** |
-| `bbpb_xcopa` |  |  |  |  |  | **0.79** |  | **0.77** | 0.68 |  | 0.71 | 0.61 |  |  | **0.76** |
-| `bbpb_include_base_44` |  |  |  |  |  | **0.80** |  | 0.59 | **0.76** |  | 0.50 | **0.90** |  |  | 0.47 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.79** |  | 0.71 | 0.61 |  | **0.75** | 0.46 |  |  | 0.68 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | 0.67 |  | 0.53 | 0.67 |  | 0.67 | 0.67 |  |  | 0.62 |
-| `include_v2_og` | 0.65 | **0.77** | 0.70 | 0.61 | 0.62 | 0.73 | 0.61 | 0.62 | 0.52 | 0.65 | 0.65 | 0.64 | 0.58 | 0.65 | 0.56 |
-| `bbpb_include_v2_og` |  |  |  |  |  | 0.60 |  | **0.85** | 0.55 |  | 0.50 | 0.70 |  |  | 0.52 |
-| `bbpb_rf_belebele` |  |  |  |  |  | 0.71 |  | 0.71 | 0.52 |  | 0.68 | 0.54 |  |  | 0.44 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **0.86** |  | 0.62 | 0.48 |  | 0.61 | 0.54 |  |  | 0.47 |
-| `rfgm_belebele` | 0.73 | 0.52 | 0.64 | 0.64 | 0.53 | 0.41 | 0.70 | **0.79** | 0.62 | 0.53 | 0.53 | 0.45 | 0.58 | 0.58 | 0.65 |
-| `xstorycloze` | 0.53 | 0.38 | 0.59 | 0.52 | 0.53 | 0.65 | 0.65 | 0.58 | 0.55 | 0.65 | 0.50 | 0.70 | 0.52 | 0.61 | 0.65 |
-| `arc` | 0.39 | 0.55 | 0.36 | 0.67 | 0.71 | 0.45 | 0.58 | 0.53 | 0.55 | 0.64 | 0.56 | **0.82** | 0.47 | 0.59 | 0.65 |
-| `xcopa` | 0.44 | 0.71 | 0.52 | 0.71 | 0.52 | 0.48 | 0.64 | 0.55 | 0.56 | 0.41 | 0.68 | 0.42 | 0.55 | 0.62 | 0.58 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.29 |  | 0.73 | 0.55 |  | 0.54 | 0.57 |  |  | 0.58 |
-| `include_v2_en` | 0.44 | 0.47 | 0.39 | 0.65 | 0.65 | 0.42 | 0.35 | 0.65 | 0.45 | 0.65 | 0.52 | 0.67 | 0.52 | 0.59 | 0.56 |
-| `rfgm_include_base_44` | 0.47 | 0.45 | 0.61 | 0.42 | 0.56 | 0.41 | 0.59 | 0.55 | 0.73 | 0.48 | 0.45 | 0.45 | 0.48 | 0.56 | 0.58 |
-| `global_mmlu_full` | 0.56 | 0.59 | 0.36 | 0.44 | 0.33 | 0.55 | 0.62 | 0.45 | 0.56 | 0.58 | 0.59 | 0.38 | 0.53 | 0.58 | 0.53 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  | 0.33 |  | **0.77** | 0.67 |  | 0.33 | 0.33 |  |  | 0.56 |
-| `include_base_44` | 0.52 | 0.62 | 0.36 | 0.61 | 0.24 | 0.53 | 0.68 | 0.52 | 0.47 | 0.47 | 0.50 | 0.30 | 0.52 | 0.61 | 0.42 |
-| `belebele` | 0.41 | 0.42 | 0.62 | 0.27 | 0.53 | 0.65 | 0.53 | 0.56 | 0.39 | 0.55 | 0.41 | 0.39 | 0.53 | 0.53 | 0.44 |
-| `bbpb_include_v2_en` |  |  |  |  |  | 0.10 |  | 0.50 | 0.47 |  | 0.60 | 0.70 |  |  | 0.52 |
-| `rf_global_mmlu_full` | 0.64 | 0.48 | 0.36 | 0.41 | 0.32 | 0.56 | 0.38 | 0.32 | 0.33 | 0.53 | 0.42 | 0.47 | 0.56 | 0.56 | **0.82** |
-| `bbpb_belebele` |  |  |  |  |  | 0.00 |  | 0.56 | 0.36 |  | 0.33 | **1.00** |  |  | 0.59 |
-| `rf_include_base_44` | 0.38 | 0.65 | 0.47 | 0.39 | 0.45 | 0.42 | 0.33 | 0.48 | 0.48 | 0.36 | 0.35 | 0.41 | 0.62 | 0.67 | 0.48 |
-| `rf_belebele` | 0.38 | 0.29 | 0.44 | 0.52 | 0.47 | 0.44 | 0.56 | 0.70 | 0.45 | 0.56 | 0.36 | 0.39 | 0.42 | 0.36 | 0.38 |
-| `global_piqa_parallel_cloze` | 0.41 | 0.52 | 0.47 | 0.48 | 0.38 | 0.42 | 0.36 | 0.41 | 0.29 | 0.35 | 0.33 | 0.67 | 0.35 | 0.39 | 0.38 |
+| `bpb` | **0.99** | **0.89** | 0.74 | **0.92** | **0.92** | **0.90** | 0.75 | **0.93** | **0.92** | **0.82** | **0.97** | **0.86** | **0.81** | **0.76** | **0.89** |
+| `bbpb_hellaswag` | **0.91** | **0.86** | **0.80** | **0.80** | **0.81** | **0.88** | **0.85** | **0.80** | **0.79** | **0.81** | **0.88** | **0.80** | 0.74 | 0.73 | **0.84** |
+| `hellaswag` | **0.78** | **0.82** | 0.74 | **0.77** | **0.82** | **0.76** | 0.68 | 0.69 | **0.80** | 0.73 | **0.81** | **0.81** | 0.69 | 0.74 | **0.87** |
+| `bbpb_xstorycloze` | **0.81** | **0.76** | 0.73 | **0.84** | 0.74 | **0.79** | 0.67 | **0.87** | **0.84** | 0.66 | **0.77** | **0.78** | 0.69 | 0.70 | **0.77** |
+| `bbpb_rfgm_include_base_44` | **0.85** | 0.70 | 0.59 | 0.73 | 0.71 | **0.77** | 0.70 | **0.81** | **0.76** | 0.71 | 0.69 | 0.63 | 0.65 | 0.53 | **0.85** |
+| `bbpb_rf_global_mmlu_full` | 0.56 | 0.69 | **0.79** | **0.76** | 0.68 | 0.65 | 0.70 | 0.74 | 0.56 | 0.62 | 0.67 | 0.44 | 0.68 | 0.63 | 0.68 |
+| `bbpb_xcopa` | **0.80** | 0.52 | 0.52 | 0.68 | 0.75 | 0.63 | 0.63 | **0.77** | 0.66 | 0.43 | 0.59 | 0.55 | 0.70 | 0.55 | 0.74 |
+| `bbpb_global_piqa_parallel_cloze` | **0.76** | 0.54 | 0.71 | 0.59 | 0.64 | 0.63 | **0.76** | 0.70 | 0.62 | 0.56 | 0.66 | 0.48 | 0.68 | 0.57 | 0.56 |
+| `include_v2_og` | 0.62 | **0.77** | 0.64 | 0.57 | 0.65 | 0.68 | 0.59 | 0.68 | 0.52 | 0.64 | 0.63 | 0.70 | 0.55 | 0.60 | 0.57 |
+| `bbpb_rfgm_belebele` | **0.84** | **0.76** | 0.59 | **0.76** | 0.58 | 0.75 | 0.67 | 0.70 | 0.51 | 0.62 | 0.56 | 0.50 | 0.57 | 0.45 | 0.49 |
+| `bbpb_arc` | 0.49 | **0.85** | 0.69 | 0.64 | 0.57 | 0.41 | 0.67 | 0.70 | 0.51 | 0.60 | 0.66 | 0.62 | 0.68 | 0.57 | 0.60 |
+| `bbpb_include_v2_og` | 0.73 | 0.65 | 0.70 | 0.65 | 0.56 | 0.53 | 0.67 | **0.79** | 0.55 | 0.51 | 0.58 | 0.62 | 0.57 | 0.60 | 0.49 |
+| `bbpb_rf_belebele` | 0.74 | 0.65 | 0.74 | 0.70 | 0.56 | 0.52 | 0.69 | 0.73 | 0.49 | 0.52 | 0.53 | 0.63 | 0.70 | 0.45 | 0.44 |
+| `bbpb_belebele` | 0.52 | 0.56 | 0.71 | 0.64 | 0.60 | 0.69 | 0.60 | 0.51 | 0.45 | 0.67 | 0.57 | 0.52 | 0.62 | 0.71 | 0.59 |
+| `bbpb_include_base_44` | **0.80** | 0.73 | 0.73 | 0.46 | 0.64 | 0.66 | 0.53 | 0.55 | 0.64 | 0.60 | 0.43 | 0.58 | 0.49 | 0.52 | 0.54 |
+| `xstorycloze` | 0.61 | 0.39 | 0.60 | 0.54 | 0.57 | 0.57 | 0.66 | 0.59 | 0.53 | 0.60 | 0.43 | 0.67 | 0.53 | 0.59 | 0.64 |
+| `rfgm_belebele` | 0.65 | 0.55 | 0.62 | 0.58 | 0.51 | 0.47 | 0.66 | 0.66 | 0.55 | 0.52 | 0.43 | 0.42 | 0.58 | 0.56 | 0.68 |
+| `bbpb_global_mmlu_full` | 0.69 | 0.58 | 0.57 | 0.62 | 0.54 | 0.49 | 0.44 | 0.46 | 0.60 | 0.64 | 0.57 | 0.54 | 0.52 | 0.53 | 0.62 |
+| `bbpb_rf_include_base_44` | 0.55 | 0.66 | 0.58 | 0.40 | 0.63 | 0.36 | 0.44 | 0.71 | 0.55 | 0.57 | 0.47 | 0.57 | 0.55 | 0.71 | 0.51 |
+| `xcopa` | 0.36 | 0.64 | 0.52 | 0.68 | 0.55 | 0.40 | 0.62 | 0.51 | 0.48 | 0.45 | 0.60 | 0.46 | 0.47 | 0.56 | 0.60 |
+| `include_v2_en` | 0.45 | 0.49 | 0.36 | 0.58 | 0.62 | 0.54 | 0.40 | 0.60 | 0.38 | 0.60 | 0.47 | 0.62 | 0.59 | 0.59 | 0.58 |
+| `rfgm_include_base_44` | 0.40 | 0.33 | 0.59 | 0.46 | 0.54 | 0.43 | 0.63 | 0.55 | **0.76** | 0.49 | 0.37 | 0.42 | 0.48 | 0.59 | 0.57 |
+| `include_base_44` | 0.55 | 0.59 | 0.35 | 0.59 | 0.34 | 0.48 | 0.68 | 0.57 | 0.55 | 0.46 | 0.47 | 0.31 | 0.52 | 0.57 | 0.48 |
+| `bbpb_include_v2_en` | 0.43 | 0.52 | 0.35 | 0.56 | 0.54 | 0.41 | 0.35 | 0.49 | 0.45 | 0.59 | 0.52 | 0.60 | 0.53 | 0.56 | 0.54 |
+| `global_mmlu_full` | 0.56 | 0.52 | 0.34 | 0.46 | 0.38 | 0.62 | 0.53 | 0.45 | 0.48 | 0.51 | 0.56 | 0.34 | 0.53 | 0.60 | 0.55 |
+| `belebele` | 0.43 | 0.44 | 0.60 | 0.31 | 0.51 | 0.68 | 0.56 | 0.57 | 0.43 | 0.52 | 0.41 | 0.37 | 0.54 | 0.56 | 0.48 |
+| `rf_global_mmlu_full` | 0.62 | 0.57 | 0.33 | 0.41 | 0.40 | 0.54 | 0.44 | 0.33 | 0.45 | 0.46 | 0.41 | 0.52 | 0.59 | 0.58 | 0.75 |
+| `arc` | 0.48 | 0.56 | 0.60 | 0.44 | 0.40 | 0.51 | 0.47 | 0.52 | 0.58 | 0.35 | 0.48 | 0.37 | 0.44 | 0.44 | 0.55 |
+| `rf_include_base_44` | 0.43 | 0.59 | 0.44 | 0.42 | 0.46 | 0.49 | 0.35 | 0.46 | 0.47 | 0.33 | 0.37 | 0.44 | 0.58 | 0.57 | 0.56 |
+| `rf_belebele` | 0.39 | 0.34 | 0.45 | 0.51 | 0.46 | 0.48 | 0.56 | 0.69 | 0.47 | 0.54 | 0.34 | 0.35 | 0.47 | 0.40 | 0.45 |
+| `global_piqa_parallel_cloze` | 0.29 | 0.51 | 0.43 | 0.46 | 0.25 | 0.38 | 0.57 | 0.45 | 0.49 | 0.43 | 0.47 | 0.25 | 0.53 | 0.56 | 0.38 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3139,40 +3186,40 @@ subtitle: "Italian (it) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **0.99** | **0.95** | **0.80** | **0.95** | **0.97** | **0.93** | **0.81** | **0.93** | **0.98** | **0.84** | **0.93** | **0.91** | **0.79** | **0.81** | **0.93** |
-| `bbpb_hellaswag` |  |  |  |  |  | **1.00** |  | **0.91** | **0.88** |  | 0.67 | **1.00** |  |  | **0.86** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **0.83** |  | **0.82** | 0.75 |  | **0.83** | 0.72 |  |  | 0.68 |
-| `bbpb_xcopa` |  |  |  |  |  | **0.83** |  | **0.84** | 0.73 |  | **0.83** | 0.58 |  |  | 0.71 |
-| `hellaswag` | 0.69 | 0.67 | 0.65 | 0.62 | 0.71 | **0.80** | 0.71 | 0.70 | **0.87** | **0.80** | **0.78** | **0.80** | **0.77** | **0.76** | **0.84** |
-| `bbpb_arc_mt` |  |  |  |  |  | 0.67 |  | 0.65 | 0.62 |  | **1.00** | **1.00** |  |  | 0.53 |
-| `bbpb_arc` |  |  |  |  |  | 0.67 |  | 0.66 | 0.64 |  | **1.00** | **1.00** |  |  | 0.45 |
-| `bbpb_rf_belebele` |  |  |  |  |  | 0.71 |  | **0.79** | 0.56 |  | **0.93** | 0.64 |  |  | 0.62 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | 0.64 |  | 0.66 | 0.70 |  | 0.69 | 0.72 |  |  | 0.74 |
-| `lambada_openai_mt` | 0.58 | 0.69 | 0.59 | 0.67 | 0.63 | 0.69 | 0.70 | 0.67 | 0.69 | 0.59 | 0.74 | 0.66 | 0.74 | 0.74 | **0.80** |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | 0.33 |  | **0.77** | 0.64 |  | 0.33 | **1.00** |  |  | **0.76** |
-| `multiblimp` | 0.65 | 0.70 | 0.65 | 0.69 | 0.64 | 0.62 | 0.56 | 0.56 | 0.55 | 0.73 | 0.64 | 0.73 | 0.57 | **0.76** | 0.54 |
-| `bbpb_include_base_44` |  |  |  |  |  | 0.40 |  | 0.65 | 0.66 |  | **0.80** | 0.60 |  |  | 0.68 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.79** |  | **0.82** | 0.55 |  | 0.61 | 0.43 |  |  | 0.57 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.54 |  | 0.68 | 0.69 |  | 0.61 | 0.64 |  |  | 0.51 |
-| `bbpb_belebele` |  |  |  |  |  | 0.33 |  | 0.63 | 0.53 |  | 0.67 | **1.00** |  |  | 0.51 |
-| `bbpb_multiblimp` |  |  |  |  |  | **0.80** |  | **0.76** | 0.55 |  | 0.47 | 0.60 |  |  | 0.46 |
-| `bbpb_include_v2_og` |  |  |  |  |  | 0.70 |  | 0.70 | 0.58 |  | 0.70 | 0.30 |  |  | 0.57 |
-| `rf_global_mmlu_full` | 0.56 | 0.37 | 0.45 | 0.43 | 0.53 | 0.64 | 0.46 | 0.53 | 0.66 | 0.67 | 0.73 | 0.70 | 0.58 | 0.57 | 0.71 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  | **1.00** |  | 0.68 | 0.62 |  | 0.00 | 0.67 |  |  | 0.45 |
-| `arc` | 0.59 | 0.48 | 0.66 | 0.54 | 0.53 | 0.44 | 0.40 | 0.56 | 0.54 | 0.57 | 0.63 | 0.65 | 0.56 | 0.54 | 0.45 |
-| `include_v2_og` | 0.45 | 0.52 | 0.40 | 0.55 | 0.46 | 0.43 | 0.46 | 0.70 | 0.62 | 0.51 | 0.44 | 0.51 | 0.63 | 0.67 | 0.64 |
-| `include_v2_en` | 0.54 | 0.40 | 0.63 | 0.66 | 0.60 | 0.43 | 0.38 | 0.55 | 0.58 | 0.48 | 0.55 | 0.30 | 0.62 | 0.47 | 0.55 |
-| `global_mmlu_full` | 0.66 | 0.69 | 0.37 | 0.49 | 0.34 | 0.57 | 0.48 | 0.64 | 0.55 | 0.42 | 0.56 | 0.27 | 0.54 | 0.47 | 0.58 |
-| `arc_mt` | 0.40 | 0.68 | 0.36 | 0.57 | 0.53 | 0.45 | 0.70 | 0.38 | 0.51 | 0.38 | 0.70 | 0.53 | 0.47 | 0.38 | 0.52 |
-| `xcopa` | 0.48 | 0.45 | 0.62 | 0.38 | 0.41 | 0.56 | 0.43 | 0.51 | 0.35 | 0.41 | 0.54 | 0.49 | 0.65 | 0.55 | 0.68 |
-| `belebele` | 0.35 | 0.35 | 0.54 | 0.43 | 0.54 | 0.51 | 0.45 | 0.49 | 0.43 | 0.55 | 0.55 | 0.52 | 0.75 | 0.48 | 0.54 |
-| `rf_belebele` | 0.48 | 0.47 | 0.62 | 0.44 | 0.49 | 0.55 | 0.47 | 0.52 | 0.51 | 0.63 | 0.62 | 0.44 | 0.41 | 0.36 | 0.47 |
-| `rfgm_belebele` | 0.46 | 0.42 | 0.46 | 0.53 | 0.48 | 0.48 | 0.45 | 0.52 | 0.52 | 0.52 | 0.63 | 0.43 | 0.47 | 0.38 | 0.65 |
-| `bbpb_include_v2_en` |  |  |  |  |  | 0.50 |  | 0.45 | 0.30 |  | 0.30 | **0.80** |  |  | 0.60 |
-| `rf_include_base_44` | 0.35 | 0.55 | 0.64 | 0.41 | 0.51 | 0.54 | 0.44 | 0.49 | 0.59 | 0.48 | 0.33 | 0.52 | 0.51 | 0.56 | 0.36 |
-| `include_base_44` | 0.41 | 0.63 | 0.27 | 0.53 | 0.45 | 0.63 | 0.52 | 0.35 | 0.64 | 0.33 | 0.42 | 0.57 | 0.35 | 0.43 | 0.49 |
-| `rfgm_include_base_44` | 0.30 | 0.40 | 0.40 | 0.31 | 0.70 | 0.56 | 0.51 | 0.55 | 0.35 | 0.52 | 0.34 | 0.36 | 0.55 | 0.48 | 0.46 |
-| `global_piqa_parallel_cloze` | 0.37 | 0.52 | 0.31 | 0.35 | 0.32 | 0.47 | 0.43 | 0.48 | 0.27 | 0.31 | 0.21 | 0.29 | 0.51 | 0.43 | 0.41 |
+| `bpb` | **0.99** | **0.90** | **0.79** | **0.93** | **0.97** | **0.90** | **0.80** | **0.92** | **0.98** | **0.86** | **0.94** | **0.91** | **0.81** | **0.81** | **0.93** |
+| `bbpb_hellaswag` | **0.98** | **0.90** | **0.84** | **0.90** | **0.86** | **0.90** | **0.85** | **0.90** | **0.88** | **0.86** | **0.86** | **0.82** | **0.82** | 0.73 | **0.82** |
+| `bbpb_rfgm_belebele` | **0.94** | **0.78** | **0.87** | **0.85** | 0.74 | **0.76** | **0.84** | **0.80** | **0.76** | 0.71 | **0.80** | 0.73 | **0.83** | 0.74 | 0.67 |
+| `hellaswag` | **0.76** | 0.73 | **0.83** | 0.72 | 0.67 | **0.79** | **0.80** | **0.88** | **0.79** | 0.71 | **0.79** | **0.76** | 0.74 | 0.72 | **0.83** |
+| `bbpb_xcopa` | **0.79** | 0.68 | 0.65 | 0.66 | **0.82** | **0.87** | 0.72 | **0.81** | 0.72 | **0.78** | **0.79** | 0.70 | 0.72 | 0.65 | 0.70 |
+| `lambada_openai_mt` | 0.67 | 0.65 | 0.62 | 0.65 | 0.65 | 0.74 | **0.76** | 0.68 | 0.71 | 0.64 | 0.74 | 0.65 | 0.74 | 0.74 | **0.75** |
+| `bbpb_global_mmlu_full` | **0.81** | 0.72 | 0.71 | **0.75** | 0.68 | 0.59 | 0.66 | 0.74 | 0.61 | 0.71 | 0.65 | 0.68 | 0.72 | 0.59 | **0.75** |
+| `bbpb_rfgm_include_base_44` | 0.67 | 0.67 | 0.68 | 0.51 | 0.72 | **0.75** | 0.63 | 0.62 | 0.70 | 0.71 | 0.65 | **0.76** | 0.62 | **0.88** | 0.71 |
+| `bbpb_rf_belebele` | 0.71 | 0.69 | 0.73 | **0.78** | 0.73 | 0.60 | 0.71 | **0.76** | 0.59 | 0.58 | 0.69 | 0.69 | 0.74 | 0.58 | 0.62 |
+| `bbpb_include_base_44` | **0.84** | 0.64 | **0.77** | 0.67 | 0.66 | 0.61 | 0.71 | 0.61 | 0.62 | 0.60 | 0.68 | 0.62 | 0.66 | 0.60 | 0.69 |
+| `multiblimp` | 0.67 | 0.75 | 0.69 | 0.71 | 0.68 | 0.64 | 0.58 | 0.54 | 0.61 | 0.72 | 0.63 | 0.71 | 0.59 | **0.76** | 0.60 |
+| `bbpb_multiblimp` | 0.68 | 0.71 | **0.76** | 0.57 | **0.78** | 0.71 | 0.56 | 0.73 | 0.55 | 0.63 | 0.58 | 0.67 | 0.57 | **0.78** | 0.53 |
+| `bbpb_include_v2_og` | 0.66 | **0.81** | 0.66 | 0.67 | 0.64 | 0.69 | 0.65 | 0.71 | 0.55 | 0.57 | 0.64 | 0.60 | 0.67 | 0.65 | 0.60 |
+| `bbpb_rf_global_mmlu_full` | 0.59 | 0.54 | 0.65 | 0.74 | 0.73 | 0.67 | 0.68 | **0.82** | 0.51 | 0.57 | 0.60 | 0.57 | 0.66 | 0.70 | 0.56 |
+| `bbpb_global_piqa_parallel_cloze` | **0.81** | 0.67 | **0.76** | 0.51 | 0.59 | **0.76** | 0.69 | 0.62 | 0.54 | 0.65 | 0.60 | 0.55 | 0.67 | 0.53 | 0.48 |
+| `bbpb_arc_mt` | 0.60 | 0.63 | 0.59 | 0.60 | 0.63 | 0.59 | **0.76** | 0.63 | 0.61 | 0.51 | 0.63 | 0.64 | 0.57 | 0.65 | 0.55 |
+| `bbpb_rf_include_base_44` | 0.56 | **0.76** | 0.62 | 0.58 | 0.68 | 0.56 | 0.56 | 0.65 | 0.63 | 0.50 | 0.61 | 0.72 | 0.49 | 0.65 | 0.50 |
+| `bbpb_belebele` | 0.58 | 0.62 | 0.66 | 0.71 | 0.59 | 0.65 | 0.68 | 0.55 | 0.57 | 0.62 | 0.58 | 0.53 | 0.63 | 0.59 | 0.51 |
+| `bbpb_arc` | 0.61 | 0.65 | 0.60 | 0.60 | 0.61 | 0.60 | 0.74 | 0.65 | 0.61 | 0.49 | 0.67 | 0.64 | 0.55 | 0.58 | 0.47 |
+| `rf_global_mmlu_full` | 0.55 | 0.39 | 0.48 | 0.42 | 0.54 | 0.63 | 0.44 | 0.54 | 0.63 | 0.65 | 0.72 | 0.71 | 0.58 | 0.60 | 0.68 |
+| `arc` | 0.45 | 0.54 | 0.47 | 0.58 | 0.57 | 0.44 | 0.67 | 0.54 | 0.68 | 0.40 | 0.61 | 0.58 | 0.62 | 0.67 | 0.64 |
+| `include_v2_og` | 0.47 | 0.53 | 0.37 | 0.48 | 0.50 | 0.49 | 0.50 | 0.67 | 0.68 | 0.51 | 0.45 | 0.53 | 0.68 | 0.65 | 0.64 |
+| `bbpb_include_v2_en` | 0.48 | 0.62 | 0.62 | 0.55 | 0.52 | 0.50 | 0.45 | 0.50 | 0.27 | 0.62 | 0.60 | 0.51 | 0.51 | 0.47 | 0.58 |
+| `arc_mt` | 0.51 | 0.63 | 0.38 | 0.49 | 0.53 | 0.54 | 0.64 | 0.40 | 0.52 | 0.43 | 0.72 | 0.52 | 0.51 | 0.36 | 0.49 |
+| `rf_belebele` | 0.48 | 0.52 | 0.57 | 0.46 | 0.44 | 0.51 | 0.46 | 0.57 | 0.56 | 0.62 | 0.57 | 0.43 | 0.43 | 0.46 | 0.54 |
+| `include_v2_en` | 0.50 | 0.44 | 0.63 | 0.66 | 0.50 | 0.40 | 0.41 | 0.57 | 0.54 | 0.43 | 0.48 | 0.33 | 0.63 | 0.49 | 0.51 |
+| `rfgm_belebele` | 0.50 | 0.42 | 0.49 | 0.56 | 0.51 | 0.48 | 0.42 | 0.48 | 0.47 | 0.50 | 0.65 | 0.40 | 0.50 | 0.49 | 0.63 |
+| `global_mmlu_full` | 0.57 | 0.58 | 0.41 | 0.47 | 0.38 | 0.56 | 0.42 | 0.54 | 0.44 | 0.48 | 0.54 | 0.32 | 0.55 | 0.55 | 0.62 |
+| `xcopa` | 0.53 | 0.37 | 0.55 | 0.36 | 0.46 | 0.49 | 0.41 | 0.49 | 0.45 | 0.42 | 0.53 | 0.44 | 0.65 | 0.53 | 0.64 |
+| `belebele` | 0.39 | 0.30 | 0.50 | 0.45 | 0.51 | 0.58 | 0.42 | 0.46 | 0.50 | 0.51 | 0.49 | 0.60 | **0.76** | 0.42 | 0.43 |
+| `rf_include_base_44` | 0.46 | 0.51 | 0.61 | 0.41 | 0.44 | 0.57 | 0.43 | 0.46 | 0.54 | 0.48 | 0.33 | 0.53 | 0.46 | 0.54 | 0.37 |
+| `global_piqa_parallel_cloze` | 0.54 | 0.59 | 0.53 | 0.42 | 0.51 | 0.60 | 0.40 | 0.46 | 0.38 | 0.43 | 0.47 | 0.45 | 0.40 | 0.43 | 0.41 |
+| `rfgm_include_base_44` | 0.33 | 0.38 | 0.44 | 0.32 | 0.63 | 0.54 | 0.52 | 0.57 | 0.38 | 0.52 | 0.36 | 0.41 | 0.57 | 0.54 | 0.50 |
+| `include_base_44` | 0.49 | 0.56 | 0.29 | 0.54 | 0.49 | 0.67 | 0.58 | 0.30 | 0.58 | 0.44 | 0.37 | 0.51 | 0.29 | 0.40 | 0.51 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3195,37 +3242,37 @@ subtitle: "Japanese (ja) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **0.97** | **0.90** | **0.86** | **0.93** | **0.95** | **0.92** | **0.88** | **0.96** | **0.97** | **0.90** | **0.93** | **0.89** | **0.90** | **0.86** | **0.94** |
-| `bbpb_rf_belebele` |  |  |  |  |  | 0.71 |  | **0.84** | **0.76** |  | 0.62 | **0.87** |  |  | 0.71 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.76** |  | **0.80** | **0.76** |  | 0.58 | 0.60 |  |  | 0.69 |
-| `bbpb_paws` |  |  |  |  |  | **0.79** |  | **0.79** | 0.62 |  | **0.82** | 0.50 |  |  | 0.62 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | 0.70 |  | 0.68 | 0.69 |  | 0.60 | 0.70 |  |  | 0.64 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | 0.65 |  | **0.78** | 0.67 |  | 0.71 | 0.49 |  |  | 0.59 |
-| `bbpb_include_base_44` |  |  |  |  |  | 0.71 |  | 0.69 | 0.52 |  | 0.71 | 0.57 |  |  | 0.63 |
-| `bbpb_cultural_bench_easy` |  |  |  |  |  | 0.60 |  | 0.61 | 0.52 |  | **0.90** | 0.50 |  |  | 0.66 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | 0.75 |  | 0.46 | 0.59 |  | 0.53 | 0.67 |  |  | 0.40 |
-| `include_v2_en` | 0.65 | 0.53 | 0.56 | 0.58 | 0.65 | 0.52 | 0.51 | 0.63 | 0.51 | 0.56 | 0.66 | 0.46 | 0.65 | 0.46 | 0.49 |
-| `rf_global_mmlu_full` | 0.42 | 0.48 | 0.59 | 0.58 | 0.55 | 0.53 | 0.37 | 0.57 | 0.46 | 0.53 | 0.58 | 0.63 | 0.67 | **0.76** | 0.71 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  | 0.70 |  | **0.80** | 0.64 |  | 0.30 | 0.30 |  |  | 0.59 |
-| `bbpb_include_v2_og` |  |  |  |  |  | 0.43 |  | 0.54 | 0.51 |  | **0.86** | 0.48 |  |  | 0.45 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.40 |  | 0.52 | 0.57 |  | **0.80** | 0.42 |  |  | 0.54 |
-| `paws` | 0.54 | 0.49 | 0.54 | 0.58 | 0.52 | 0.37 | 0.59 | 0.53 | 0.56 | 0.53 | 0.62 | 0.59 | 0.39 | 0.33 | 0.56 |
-| `xwinograd` | 0.40 | 0.44 | 0.48 | 0.39 | 0.44 | 0.46 | 0.57 | 0.66 | 0.68 | 0.40 | 0.46 | 0.45 | 0.58 | 0.66 | 0.66 |
-| `bbpb_rf_cultural_bench_easy` |  |  |  |  |  | 0.64 |  | 0.54 | 0.51 |  | 0.31 | 0.47 |  |  | 0.60 |
-| `belebele` | 0.50 | 0.42 | 0.60 | 0.60 | 0.50 | 0.62 | 0.47 | 0.44 | 0.36 | 0.47 | 0.52 | 0.25 | 0.61 | 0.59 | 0.55 |
-| `global_mmlu_full` | 0.51 | 0.48 | 0.44 | 0.52 | 0.57 | 0.71 | 0.46 | 0.41 | 0.53 | 0.43 | 0.35 | 0.57 | 0.54 | 0.42 | 0.48 |
-| `bbpb_belebele` |  |  |  |  |  | 0.20 |  | 0.67 | 0.64 |  | 0.50 | 0.30 |  |  | 0.65 |
-| `rfgm_include_base_44` | 0.52 | 0.50 | 0.36 | 0.46 | 0.39 | 0.58 | 0.53 | 0.53 | 0.54 | 0.56 | 0.52 | 0.46 | 0.59 | 0.39 | 0.47 |
-| `rf_include_base_44` | 0.55 | 0.50 | 0.54 | 0.48 | 0.51 | 0.46 | 0.38 | 0.53 | 0.53 | 0.48 | 0.53 | 0.55 | 0.40 | 0.50 | 0.48 |
-| `bbpb_include_v2_en` |  |  |  |  |  | 0.38 |  | 0.58 | 0.45 |  | 0.48 | 0.57 |  |  | 0.48 |
-| `include_base_44` | 0.42 | 0.43 | 0.67 | 0.49 | 0.50 | 0.48 | 0.52 | 0.53 | 0.57 | 0.52 | 0.42 | 0.29 | 0.42 | 0.50 | 0.53 |
-| `include_v2_og` | 0.40 | 0.47 | 0.39 | 0.48 | 0.58 | 0.39 | 0.39 | 0.53 | 0.29 | 0.50 | 0.50 | 0.65 | 0.55 | 0.65 | 0.48 |
-| `cultural_bench_easy` | 0.47 | 0.53 | 0.49 | 0.39 | 0.52 | 0.62 | 0.51 | 0.46 | 0.48 | 0.45 | 0.55 | 0.44 | 0.39 | 0.40 | 0.50 |
-| `rfgm_belebele` | 0.34 | 0.45 | 0.41 | 0.35 | 0.36 | 0.31 | 0.35 | 0.45 | 0.46 | 0.57 | 0.57 | 0.61 | 0.59 | 0.49 | 0.57 |
-| `rf_belebele` | 0.39 | 0.55 | 0.30 | 0.40 | 0.44 | 0.43 | 0.54 | 0.52 | 0.50 | 0.31 | 0.50 | 0.46 | 0.50 | 0.43 | 0.56 |
-| `cultural_bench_hard` | 0.39 | 0.41 | 0.35 | 0.33 | 0.62 | 0.44 | 0.58 | 0.59 | 0.46 | 0.42 | 0.38 | 0.31 | 0.56 | 0.38 | 0.32 |
-| `rf_cultural_bench_easy` | 0.23 | 0.40 | 0.29 | 0.22 | 0.31 | 0.24 | 0.43 | 0.48 | 0.33 | 0.32 | 0.29 | 0.45 | 0.59 | 0.45 | 0.46 |
-| `global_piqa_parallel_cloze` | 0.31 | 0.22 | 0.22 | 0.34 | 0.54 | 0.39 | 0.29 | 0.25 | 0.24 | 0.64 | 0.28 | 0.24 | 0.41 | 0.42 | 0.56 |
+| `bpb` | **0.98** | **0.90** | **0.86** | **0.93** | **0.95** | **0.92** | **0.88** | **0.95** | **0.97** | **0.91** | **0.94** | **0.89** | **0.89** | **0.86** | **0.94** |
+| `bbpb_rf_belebele` | **0.85** | **0.82** | **0.82** | **0.83** | 0.75 | 0.74 | **0.85** | **0.80** | **0.78** | **0.79** | **0.80** | **0.77** | **0.79** | **0.76** | 0.71 |
+| `bbpb_rf_global_mmlu_full` | **0.87** | 0.71 | **0.76** | **0.80** | 0.72 | 0.74 | 0.74 | **0.82** | 0.74 | **0.76** | 0.65 | 0.65 | 0.73 | 0.74 | 0.68 |
+| `bbpb_paws` | **0.80** | **0.79** | **0.81** | **0.81** | 0.62 | **0.79** | **0.78** | **0.79** | 0.61 | **0.79** | **0.80** | 0.57 | **0.79** | 0.59 | 0.58 |
+| `bbpb_global_mmlu_full` | **0.82** | 0.69 | **0.76** | 0.72 | 0.62 | 0.71 | 0.75 | 0.70 | 0.67 | 0.70 | 0.64 | 0.65 | 0.68 | 0.64 | 0.64 |
+| `bbpb_global_piqa_parallel_cloze` | 0.69 | 0.69 | **0.80** | 0.67 | 0.56 | **0.75** | 0.73 | **0.79** | 0.65 | **0.77** | 0.70 | 0.58 | **0.76** | 0.57 | 0.58 |
+| `bbpb_rfgm_belebele` | 0.67 | 0.63 | 0.64 | 0.60 | **0.78** | 0.70 | 0.65 | 0.73 | 0.65 | 0.54 | 0.69 | 0.58 | 0.67 | 0.69 | 0.60 |
+| `bbpb_rf_include_base_44` | 0.59 | **0.76** | 0.70 | 0.68 | 0.56 | 0.59 | 0.70 | 0.50 | 0.57 | 0.70 | 0.68 | 0.58 | 0.58 | 0.59 | 0.56 |
+| `bbpb_belebele` | 0.73 | 0.60 | 0.73 | 0.59 | 0.58 | 0.64 | 0.66 | 0.60 | 0.66 | 0.62 | 0.49 | 0.54 | 0.64 | 0.59 | 0.63 |
+| `bbpb_include_base_44` | **0.80** | 0.64 | 0.70 | 0.63 | 0.49 | 0.61 | 0.66 | 0.62 | 0.47 | 0.54 | 0.61 | 0.50 | 0.65 | 0.49 | 0.67 |
+| `bbpb_rfgm_include_base_44` | **0.84** | **0.80** | 0.64 | 0.53 | 0.55 | **0.78** | 0.70 | 0.44 | 0.61 | 0.69 | 0.55 | 0.56 | 0.45 | 0.49 | 0.38 |
+| `include_v2_en` | 0.63 | 0.62 | 0.51 | 0.58 | 0.65 | 0.54 | 0.49 | 0.60 | 0.51 | 0.51 | 0.65 | 0.50 | 0.64 | 0.49 | 0.51 |
+| `bbpb_cultural_bench_easy` | 0.48 | 0.56 | 0.71 | 0.56 | 0.56 | 0.60 | 0.50 | 0.60 | 0.48 | 0.60 | 0.54 | 0.57 | 0.51 | 0.45 | 0.62 |
+| `bbpb_rf_cultural_bench_easy` | 0.53 | 0.72 | 0.63 | 0.60 | 0.51 | 0.56 | 0.56 | 0.48 | 0.51 | 0.54 | 0.61 | 0.46 | 0.54 | 0.45 | 0.60 |
+| `rf_global_mmlu_full` | 0.43 | 0.49 | 0.53 | 0.58 | 0.55 | 0.52 | 0.35 | 0.60 | 0.44 | 0.54 | 0.59 | 0.57 | 0.63 | 0.74 | 0.66 |
+| `bbpb_include_v2_og` | 0.38 | 0.69 | 0.60 | 0.49 | 0.65 | 0.47 | 0.48 | 0.54 | 0.51 | 0.58 | 0.51 | 0.59 | 0.48 | 0.61 | 0.46 |
+| `bbpb_include_v2_en` | 0.68 | 0.51 | 0.52 | 0.63 | 0.56 | 0.48 | 0.52 | 0.60 | 0.45 | 0.51 | 0.41 | 0.40 | 0.56 | 0.51 | 0.46 |
+| `paws` | 0.58 | 0.55 | 0.54 | 0.50 | 0.54 | 0.40 | 0.62 | 0.53 | 0.52 | 0.52 | 0.59 | 0.57 | 0.42 | 0.32 | 0.54 |
+| `xwinograd` | 0.47 | 0.45 | 0.48 | 0.43 | 0.48 | 0.52 | 0.56 | 0.61 | 0.65 | 0.40 | 0.44 | 0.42 | 0.53 | 0.64 | 0.64 |
+| `include_v2_og` | 0.46 | 0.48 | 0.38 | 0.53 | 0.60 | 0.38 | 0.43 | 0.52 | 0.36 | 0.46 | 0.56 | 0.64 | 0.52 | 0.63 | 0.52 |
+| `belebele` | 0.51 | 0.47 | 0.59 | 0.60 | 0.50 | 0.57 | 0.47 | 0.44 | 0.37 | 0.40 | 0.55 | 0.25 | 0.56 | 0.59 | 0.50 |
+| `global_mmlu_full` | 0.53 | 0.49 | 0.42 | 0.52 | 0.57 | 0.64 | 0.48 | 0.38 | 0.53 | 0.41 | 0.37 | 0.58 | 0.53 | 0.44 | 0.44 |
+| `include_base_44` | 0.40 | 0.50 | 0.59 | 0.48 | 0.51 | 0.45 | 0.58 | 0.51 | 0.50 | 0.51 | 0.43 | 0.36 | 0.44 | 0.50 | 0.56 |
+| `rfgm_include_base_44` | 0.55 | 0.49 | 0.40 | 0.50 | 0.38 | 0.53 | 0.55 | 0.55 | 0.52 | 0.52 | 0.44 | 0.42 | 0.58 | 0.38 | 0.45 |
+| `rf_include_base_44` | 0.51 | 0.48 | 0.55 | 0.47 | 0.52 | 0.45 | 0.35 | 0.53 | 0.49 | 0.47 | 0.47 | 0.55 | 0.42 | 0.54 | 0.47 |
+| `cultural_bench_easy` | 0.50 | 0.53 | 0.49 | 0.40 | 0.47 | 0.62 | 0.49 | 0.46 | 0.45 | 0.46 | 0.49 | 0.43 | 0.43 | 0.38 | 0.50 |
+| `rf_belebele` | 0.41 | 0.58 | 0.36 | 0.41 | 0.43 | 0.46 | 0.56 | 0.50 | 0.50 | 0.40 | 0.50 | 0.47 | 0.49 | 0.48 | 0.53 |
+| `rfgm_belebele` | 0.34 | 0.45 | 0.42 | 0.37 | 0.37 | 0.36 | 0.37 | 0.45 | 0.47 | 0.51 | 0.54 | 0.52 | 0.59 | 0.46 | 0.57 |
+| `cultural_bench_hard` | 0.38 | 0.42 | 0.38 | 0.38 | 0.59 | 0.43 | 0.55 | 0.65 | 0.40 | 0.45 | 0.39 | 0.35 | 0.56 | 0.46 | 0.33 |
+| `global_piqa_parallel_cloze` | 0.63 | 0.37 | 0.35 | 0.31 | 0.41 | 0.44 | 0.39 | 0.34 | 0.45 | 0.46 | 0.57 | 0.41 | 0.44 | 0.51 | 0.50 |
+| `rf_cultural_bench_easy` | 0.31 | 0.46 | 0.33 | 0.23 | 0.32 | 0.30 | 0.42 | 0.49 | 0.31 | 0.34 | 0.30 | 0.39 | 0.59 | 0.44 | 0.42 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3248,27 +3295,27 @@ subtitle: "Georgian (ka) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `bbpb_rfgm_include_base_44` | **0.93** | **0.79** | **0.89** | **0.86** | **0.82** | **0.86** | **0.89** | **0.86** | **0.82** | **0.89** | **0.93** | **0.82** | **0.96** | **0.93** | **0.89** |
 | `bpb` | **0.89** | **0.89** | **0.86** | **0.79** | **0.93** | **0.93** | **0.89** | **0.89** | **0.89** | **0.96** | **0.89** | **0.82** | **0.86** | **0.79** | **0.79** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **0.83** |  | **0.86** | **0.82** |  | **1.00** | 0.67 |  |  | **0.89** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **0.75** | **0.82** |  |  |  |  |  | **0.93** |
-| `bbpb_multiblimp` |  |  |  |  |  | **1.00** |  | **0.82** | 0.61 |  | 0.67 | 0.67 |  |  | **0.79** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | 0.50 |  | **0.89** | **0.79** |  | 0.67 | 0.67 |  |  | **0.89** |
-| `bbpb_rf_belebele` |  |  |  |  |  | 0.50 |  | **0.82** | **0.75** |  | **1.00** | 0.50 |  |  | 0.64 |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | **0.89** | 0.54 |  |  |  |  |  | 0.57 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.33 |  | **1.00** | 0.71 |  | 0.33 | 0.33 |  |  | 0.71 |
+| `bbpb_global_piqa_parallel_cloze` | **0.82** | **0.82** | **0.86** | **0.86** | **0.86** | **0.79** | **0.89** | **0.75** | **0.82** | **0.75** | **0.82** | **0.82** | **0.86** | **0.93** | **0.93** |
+| `bbpb_rfgm_belebele` | **0.89** | 0.64 | **0.79** | **0.86** | **0.82** | **0.75** | **0.82** | **0.89** | **0.79** | **0.79** | **0.79** | **0.75** | **0.86** | **0.89** | **0.89** |
+| `bbpb_multiblimp` | **0.82** | **0.93** | **0.86** | **0.86** | **0.79** | **0.89** | **0.75** | **0.82** | 0.61 | **0.79** | **0.79** | 0.71 | **0.79** | 0.71 | **0.79** |
+| `bbpb_rf_belebele` | **0.75** | **0.89** | **0.79** | **0.86** | 0.71 | 0.71 | **0.75** | **0.82** | **0.75** | **0.82** | **0.82** | **0.75** | **0.79** | **0.86** | 0.64 |
+| `bbpb_include_v2_og` | **0.79** | 0.71 | **0.82** | **0.89** | 0.68 | **0.79** | **0.82** | **0.89** | 0.54 | **0.75** | **0.75** | 0.61 | **0.86** | 0.71 | 0.57 |
+| `bbpb_rf_include_base_44` | **0.82** | 0.61 | **0.86** | **0.82** | **0.75** | 0.64 | **0.75** | **1.00** | 0.71 | 0.54 | 0.64 | **0.79** | **0.75** | **0.75** | 0.71 |
+| `bbpb_include_base_44` | 0.68 | **0.93** | **0.79** | 0.71 | 0.57 | 0.61 | **0.89** | 0.68 | 0.46 | 0.71 | 0.64 | 0.64 | 0.71 | 0.57 | 0.43 |
+| `bbpb_belebele` | 0.64 | 0.54 | **0.82** | 0.61 | **0.75** | 0.61 | 0.46 | 0.46 | 0.46 | 0.50 | 0.57 | 0.64 | 0.71 | **0.79** | 0.50 |
+| `bbpb_include_v2_en` | 0.68 | 0.68 | 0.57 | 0.54 | 0.64 | 0.71 | 0.61 | 0.57 | 0.46 | 0.32 | 0.50 | 0.46 | 0.61 | 0.36 | 0.39 |
 | `rf_include_base_44` | 0.36 | 0.50 | 0.32 | 0.21 | 0.21 | 0.64 | 0.71 | 0.50 | 0.71 | 0.57 | 0.50 | 0.64 | 0.71 | 0.71 | 0.57 |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.68 | 0.46 |  |  |  |  |  | 0.43 |
 | `rfgm_include_base_44` | 0.18 | 0.29 | 0.57 | 0.71 | 0.61 | 0.57 | 0.43 | 0.43 | 0.36 | 0.64 | 0.32 | 0.57 | 0.61 | 0.68 | 0.64 |
 | `rfgm_belebele` | 0.68 | 0.61 | 0.43 | 0.29 | 0.50 | 0.57 | 0.32 | 0.32 | **0.75** | 0.57 | 0.54 | 0.50 | 0.71 | 0.32 | 0.46 |
 | `include_base_44` | 0.46 | 0.57 | 0.68 | **0.75** | 0.50 | 0.25 | 0.18 | 0.57 | 0.54 | 0.68 | 0.43 | 0.25 | 0.61 | 0.50 | 0.61 |
+| `global_piqa_parallel_cloze` | 0.64 | 0.54 | 0.43 | 0.54 | **0.75** | 0.68 | 0.36 | 0.57 | 0.50 | 0.43 | 0.39 | 0.39 | 0.32 | 0.46 | 0.46 |
 | `include_v2_og` | 0.36 | 0.25 | 0.21 | 0.29 | 0.36 | 0.54 | 0.61 | 0.29 | 0.61 | 0.64 | 0.61 | 0.57 | 0.61 | **0.79** | 0.54 |
 | `rf_belebele` | 0.64 | 0.29 | 0.71 | 0.50 | 0.43 | 0.43 | 0.54 | 0.43 | 0.57 | 0.46 | 0.46 | 0.18 | 0.71 | 0.36 | 0.46 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.57 | 0.46 |  |  |  |  |  | 0.39 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.46 | 0.46 |  |  |  |  |  | 0.50 |
 | `multiblimp` | 0.68 | 0.46 | 0.68 | 0.32 | 0.43 | 0.39 | 0.68 | 0.46 | 0.54 | 0.46 | 0.32 | 0.39 | 0.32 | 0.64 | 0.36 |
 | `belebele` | 0.64 | 0.57 | 0.36 | 0.32 | 0.50 | **0.75** | 0.46 | 0.14 | 0.43 | 0.32 | 0.25 | 0.54 | 0.50 | 0.32 | 0.54 |
 | `include_v2_en` | 0.25 | 0.43 | 0.39 | 0.32 | 0.64 | 0.57 | 0.43 | 0.64 | 0.39 | 0.36 | 0.68 | 0.18 | 0.57 | 0.46 | 0.14 |
-| `global_piqa_parallel_cloze` | 0.46 | 0.43 | 0.43 | 0.29 | 0.54 | 0.21 | 0.29 | 0.43 | 0.54 | 0.14 | 0.39 | 0.14 | 0.32 | 0.46 | 0.64 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3291,27 +3338,27 @@ subtitle: "Kazakh (kk) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_rf_belebele` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
-| `bbpb_rf_include_base_44` |  |  |  |  |  |  |  | **0.83** | **1.00** |  |  |  |  |  | **0.83** |
-| `bbpb_global_piqa_nonparallel_cloze` |  |  |  |  |  |  |  | **0.83** | **1.00** |  |  |  |  |  | **0.83** |
+| `bbpb_rf_belebele` | **1.00** | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **1.00** | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** |
+| `bbpb_rf_include_base_44` | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** | **0.83** | **1.00** | **0.83** |
 | `bpb` | **1.00** | **0.83** | 0.67 | **1.00** | **1.00** | **0.83** | 0.67 | **1.00** | **1.00** | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | **1.00** |
-| `global_piqa_nonparallel_cloze` | 0.67 | 0.67 | **0.83** | **0.83** | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** | **0.83** | 0.67 | **0.83** | 0.67 | **1.00** | 0.67 |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | 0.67 | **1.00** |  |  |  |  |  | 0.67 |
-| `bbpb_multiblimp` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | **0.83** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | 0.67 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | 0.67 |
+| `bbpb_global_piqa_nonparallel_cloze` | **0.83** | **0.83** | 0.67 | **1.00** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** |
+| `bbpb_include_v2_og` | **1.00** | **0.83** | **0.83** | 0.67 | **1.00** | **0.83** | **0.83** | 0.67 | **1.00** | 0.67 | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 |
+| `bbpb_multiblimp` | **1.00** | **1.00** | **0.83** | **0.83** | 0.67 | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | 0.67 | 0.67 | **0.83** | **0.83** |
+| `bbpb_rfgm_belebele` | **1.00** | **0.83** | 0.67 | **0.83** | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** | 0.67 |
+| `bbpb_rfgm_include_base_44` | 0.67 | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 |
 | `multiblimp` | 0.67 | 0.67 | 0.67 | **0.83** | 0.67 | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | **0.83** | 0.67 |
+| `global_piqa_nonparallel_cloze` | 0.67 | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 | **0.83** | 0.50 | 0.67 | **0.83** | 0.67 | 0.67 | 0.67 | 0.67 | 0.67 |
+| `bbpb_belebele` | 0.67 | 0.67 | **1.00** | 0.67 | 0.67 | 0.67 | 0.67 | 0.67 | 0.33 | 0.67 | **1.00** | 0.33 | 0.67 | 0.67 | 0.33 |
 | `rf_belebele` | 0.17 | 0.33 | 0.33 | 0.17 | 0.33 | **0.83** | **0.83** | 0.67 | 0.50 | **1.00** | **0.83** | 0.67 | **0.83** | 0.67 | **0.83** |
 | `rfgm_belebele` | 0.50 | 0.33 | **0.83** | 0.33 | **0.83** | 0.17 | 0.33 | 0.00 | 0.33 | 0.50 | **0.83** | 0.50 | 0.50 | **1.00** | 0.50 |
+| `bbpb_include_base_44` | **0.83** | **1.00** | 0.67 | 0.17 | 0.33 | **0.83** | 0.50 | 0.33 | 0.17 | 0.67 | 0.17 | 0.33 | 0.17 | 0.67 | 0.50 |
+| `bbpb_include_v2_en` | 0.17 | 0.67 | 0.17 | **0.83** | **0.83** | 0.50 | **1.00** | 0.33 | 0.00 | 0.50 | **0.83** | 0.50 | 0.33 | 0.00 | 0.67 |
 | `include_v2_en` | 0.50 | **0.83** | 0.33 | 0.50 | 0.50 | 0.67 | **0.83** | 0.67 | 0.00 | 0.50 | 0.67 | 0.33 | 0.50 | 0.17 | 0.33 |
 | `include_v2_og` | 0.50 | 0.17 | 0.17 | 0.33 | 0.33 | 0.17 | 0.17 | 0.00 | 0.33 | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 |
 | `include_base_44` | 0.17 | 0.67 | 0.33 | 0.50 | 0.50 | 0.17 | 0.50 | 0.67 | 0.67 | 0.33 | 0.17 | 0.17 | 0.50 | 0.50 | **1.00** |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.67 | 0.33 |  |  |  |  |  | 0.33 |
 | `belebele` | **0.83** | 0.67 | 0.17 | 0.50 | 0.17 | 0.50 | 0.33 | 0.33 | 0.33 | 0.17 | 0.67 | 0.17 | 0.33 | **1.00** | 0.33 |
 | `rfgm_include_base_44` | 0.17 | 0.17 | 0.67 | 0.50 | 0.50 | 0.33 | 0.50 | 0.50 | 0.17 | 0.17 | 0.33 | 0.50 | **0.83** | 0.50 | 0.33 |
 | `rf_include_base_44` | 0.67 | 0.33 | 0.17 | 0.33 | 0.50 | 0.67 | 0.33 | 0.00 | 0.17 | 0.33 | 0.33 | 0.17 | 0.50 | 0.67 | **0.83** |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.33 | 0.00 |  |  |  |  |  | 0.67 |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.33 | 0.17 |  |  |  |  |  | 0.50 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3334,31 +3381,31 @@ subtitle: "Korean (ko) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **0.98** | **0.95** | **0.84** | **0.91** | **0.98** | **0.96** | **0.85** | **0.93** | **0.96** | **0.89** | **0.93** | **0.93** | **0.85** | **0.82** | **0.93** |
-| `bbpb_paws` |  |  |  |  |  | **0.80** |  | **0.78** | 0.67 |  | **0.90** | **0.80** |  |  | 0.75 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  |  |  | **0.78** | **0.82** |  |  |  |  |  | 0.75 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | 0.67 |  | **0.78** | **0.82** |  | **0.86** | 0.71 |  |  | **0.78** |
-| `bbpb_include_base_44` |  |  |  |  |  | **0.83** |  | 0.69 | 0.60 |  | 0.67 | **1.00** |  |  | **0.76** |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | **0.86** |  | 0.75 | 0.69 |  | 0.67 | 0.71 |  |  | **0.87** |
-| `bbpb_rf_belebele` |  |  |  |  |  | 0.67 |  | **0.82** | 0.55 |  | **0.90** | 0.71 |  |  | 0.62 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.76** |  | 0.75 | 0.60 |  | 0.67 | 0.62 |  |  | 0.71 |
-| `bbpb_include_v2_og` |  |  |  |  |  | **0.83** |  | 0.60 | 0.60 |  | 0.50 | **0.83** |  |  | 0.64 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | 0.57 |  | 0.71 | 0.73 |  | 0.62 | 0.48 |  |  | 0.51 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.64 | 0.65 |  |  |  |  |  | 0.47 |
-| `include_base_44` | 0.45 | 0.44 | 0.49 | 0.31 | 0.47 | 0.49 | 0.45 | 0.56 | 0.49 | 0.55 | 0.69 | **0.76** | 0.56 | 0.53 | 0.69 |
-| `include_v2_og` | 0.64 | 0.55 | **0.80** | 0.40 | 0.47 | 0.40 | 0.69 | 0.53 | 0.67 | 0.64 | 0.27 | 0.35 | 0.35 | 0.51 | 0.56 |
-| `rf_global_mmlu_full` | 0.33 | 0.62 | 0.55 | 0.45 | 0.47 | 0.36 | 0.49 | 0.56 | 0.58 | 0.65 | 0.55 | 0.44 | 0.55 | 0.45 | **0.76** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | 0.51 | 0.49 |  |  |  |  |  | 0.55 |
-| `include_v2_en` | 0.49 | 0.31 | 0.40 | 0.62 | 0.53 | 0.51 | 0.51 | 0.35 | 0.36 | 0.75 | 0.49 | 0.64 | 0.42 | 0.58 | 0.67 |
-| `rfgm_include_base_44` | 0.56 | 0.38 | 0.53 | 0.42 | 0.55 | 0.35 | 0.65 | 0.60 | 0.64 | 0.35 | 0.47 | 0.60 | 0.53 | 0.49 | 0.47 |
-| `global_mmlu_full` | 0.53 | 0.44 | 0.40 | 0.27 | 0.64 | 0.58 | 0.51 | 0.64 | 0.60 | 0.27 | 0.51 | 0.47 | 0.55 | 0.36 | 0.56 |
-| `paws` | 0.56 | 0.35 | 0.49 | 0.45 | 0.45 | 0.53 | 0.58 | 0.27 | 0.49 | 0.53 | 0.40 | 0.47 | 0.35 | 0.62 | 0.49 |
-| `rfgm_belebele` | 0.47 | 0.31 | 0.51 | 0.35 | 0.31 | 0.42 | 0.49 | 0.31 | 0.65 | 0.49 | 0.53 | 0.64 | 0.67 | 0.45 | 0.42 |
-| `belebele` | 0.49 | 0.47 | 0.47 | 0.35 | 0.53 | 0.53 | 0.47 | 0.29 | 0.42 | 0.49 | 0.36 | 0.45 | 0.47 | 0.58 | 0.60 |
-| `global_piqa_parallel_cloze` | 0.45 | 0.56 | 0.53 | 0.47 | 0.55 | 0.29 | 0.47 | 0.18 | 0.25 | 0.42 | **0.76** | 0.51 | 0.35 | 0.53 | 0.58 |
-| `bbpb_include_v2_en` |  |  |  |  |  | 0.33 |  | 0.24 | 0.18 |  | 0.67 | 0.67 |  |  | 0.65 |
-| `rf_belebele` | 0.27 | 0.22 | 0.47 | 0.53 | 0.47 | 0.51 | 0.29 | 0.24 | 0.45 | 0.55 | 0.53 | 0.40 | 0.62 | 0.38 | 0.64 |
-| `rf_include_base_44` | 0.25 | 0.40 | 0.35 | 0.36 | 0.31 | 0.29 | 0.67 | 0.44 | 0.51 | 0.33 | 0.45 | 0.15 | 0.35 | 0.62 | 0.51 |
+| `bpb` | **0.97** | **0.92** | **0.82** | **0.92** | **0.98** | **0.95** | **0.85** | **0.92** | **0.96** | **0.89** | **0.91** | **0.93** | **0.83** | **0.82** | **0.93** |
+| `bbpb_rfgm_include_base_44` | 0.73 | **0.86** | **0.79** | **0.88** | **0.78** | 0.74 | **0.79** | **0.79** | **0.82** | **0.80** | **0.86** | **0.80** | **0.76** | **0.84** | **0.78** |
+| `bbpb_rf_include_base_44` | **0.92** | **0.85** | **0.77** | **0.76** | 0.67 | **0.83** | **0.82** | 0.74 | 0.65 | 0.71 | 0.70 | 0.73 | **0.86** | 0.74 | **0.85** |
+| `bbpb_paws` | **0.79** | **0.76** | **0.76** | **0.76** | 0.70 | **0.82** | 0.73 | **0.79** | 0.67 | **0.76** | **0.91** | 0.73 | **0.79** | 0.67 | **0.76** |
+| `bbpb_global_mmlu_full` | **0.88** | 0.62 | 0.71 | **0.76** | **0.76** | 0.71 | 0.71 | **0.76** | **0.85** | 0.61 | 0.62 | 0.71 | 0.59 | 0.68 | 0.73 |
+| `bbpb_include_v2_og` | 0.74 | **0.79** | 0.73 | **0.76** | 0.69 | **0.77** | **0.77** | 0.65 | 0.60 | **0.76** | **0.79** | 0.69 | 0.64 | 0.62 | 0.64 |
+| `bbpb_rf_belebele` | 0.68 | 0.74 | 0.70 | 0.71 | 0.71 | 0.58 | 0.62 | **0.79** | 0.55 | 0.62 | 0.67 | **0.76** | 0.71 | 0.71 | 0.61 |
+| `bbpb_rfgm_belebele` | 0.67 | 0.68 | 0.67 | 0.56 | 0.56 | 0.71 | 0.70 | 0.68 | 0.73 | 0.62 | 0.73 | 0.45 | 0.62 | 0.64 | 0.51 |
+| `bbpb_include_base_44` | 0.67 | 0.58 | 0.70 | 0.73 | 0.67 | 0.55 | 0.64 | 0.67 | 0.55 | 0.45 | 0.58 | 0.64 | 0.70 | 0.52 | 0.73 |
+| `bbpb_rf_global_mmlu_full` | 0.71 | **0.76** | 0.61 | 0.68 | 0.69 | 0.62 | 0.56 | **0.79** | 0.60 | 0.58 | 0.53 | 0.55 | 0.53 | 0.42 | 0.71 |
+| `bbpb_global_piqa_parallel_cloze` | 0.65 | 0.68 | 0.53 | 0.61 | 0.68 | 0.73 | 0.67 | 0.53 | 0.48 | **0.76** | 0.56 | 0.61 | 0.62 | 0.52 | 0.53 |
+| `bbpb_belebele` | 0.62 | 0.56 | **0.77** | 0.68 | 0.58 | 0.55 | 0.58 | 0.61 | 0.71 | 0.61 | 0.33 | 0.65 | 0.64 | 0.68 | 0.47 |
+| `include_v2_og` | 0.72 | 0.60 | **0.80** | 0.38 | 0.42 | 0.49 | 0.73 | 0.48 | 0.58 | 0.64 | 0.24 | 0.33 | 0.35 | 0.45 | 0.56 |
+| `include_base_44` | 0.44 | 0.45 | 0.47 | 0.33 | 0.47 | 0.45 | 0.44 | 0.56 | 0.48 | 0.58 | 0.62 | 0.74 | 0.50 | 0.59 | 0.59 |
+| `rf_global_mmlu_full` | 0.40 | 0.62 | 0.52 | 0.41 | 0.41 | 0.44 | 0.48 | 0.52 | 0.52 | 0.61 | 0.52 | 0.41 | 0.53 | 0.47 | **0.79** |
+| `include_v2_en` | 0.46 | 0.33 | 0.38 | 0.65 | 0.48 | 0.44 | 0.59 | 0.32 | 0.44 | 0.65 | 0.52 | 0.59 | 0.38 | 0.62 | 0.62 |
+| `rfgm_include_base_44` | 0.59 | 0.40 | 0.52 | 0.41 | 0.53 | 0.36 | 0.67 | 0.55 | 0.59 | 0.32 | 0.47 | 0.62 | 0.50 | 0.45 | 0.44 |
+| `bbpb_include_v2_en` | 0.26 | 0.52 | 0.41 | 0.64 | 0.75 | 0.59 | 0.55 | 0.26 | 0.18 | 0.65 | 0.58 | 0.42 | 0.56 | 0.36 | 0.65 |
+| `global_mmlu_full` | 0.56 | 0.42 | 0.39 | 0.27 | 0.65 | 0.60 | 0.45 | 0.67 | 0.58 | 0.29 | 0.56 | 0.44 | 0.52 | 0.36 | 0.55 |
+| `paws` | 0.63 | 0.36 | 0.52 | 0.44 | 0.47 | 0.55 | 0.53 | 0.29 | 0.44 | 0.47 | 0.44 | 0.41 | 0.35 | 0.67 | 0.48 |
+| `rfgm_belebele` | 0.53 | 0.42 | 0.44 | 0.35 | 0.29 | 0.45 | 0.42 | 0.32 | 0.58 | 0.42 | 0.50 | 0.56 | 0.65 | 0.53 | 0.42 |
+| `belebele` | 0.42 | 0.44 | 0.45 | 0.36 | 0.53 | 0.51 | 0.53 | 0.27 | 0.41 | 0.55 | 0.35 | 0.42 | 0.44 | 0.53 | 0.61 |
+| `rf_belebele` | 0.32 | 0.33 | 0.47 | 0.52 | 0.45 | 0.49 | 0.29 | 0.33 | 0.44 | 0.58 | 0.50 | 0.41 | 0.56 | 0.41 | 0.62 |
+| `global_piqa_parallel_cloze` | 0.37 | 0.33 | 0.47 | 0.48 | 0.58 | 0.47 | 0.44 | 0.50 | 0.36 | 0.55 | 0.45 | 0.39 | 0.38 | 0.17 | 0.62 |
+| `rf_include_base_44` | 0.37 | 0.44 | 0.35 | 0.41 | 0.26 | 0.32 | 0.68 | 0.50 | 0.47 | 0.36 | 0.48 | 0.14 | 0.38 | 0.61 | 0.47 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3381,20 +3428,20 @@ subtitle: "Lithuanian (lt) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_multiblimp` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
+| `bbpb_multiblimp` | **1.00** | **0.83** | **1.00** | **1.00** | **1.00** | **0.83** | **1.00** | **1.00** | **1.00** | **0.83** | **0.83** | **0.83** | **1.00** | **1.00** | **1.00** |
+| `bbpb_rfgm_include_base_44` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
 | `bpb` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **0.83** | **1.00** |  |  |  |  |  | **0.83** |
+| `bbpb_global_piqa_parallel_cloze` | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** |
+| `bbpb_rf_include_base_44` | **1.00** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 |
+| `bbpb_rf_global_mmlu_full` | **1.00** | **0.83** | **1.00** | **1.00** | 0.67 | **0.83** | **1.00** | **1.00** | 0.67 | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | 0.67 |
+| `bbpb_include_v2_og` | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** | **1.00** | 0.67 | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | 0.67 |
+| `bbpb_rf_belebele` | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | **1.00** | **0.83** | **1.00** | 0.67 | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** | 0.67 |
+| `bbpb_rfgm_belebele` | **0.83** | **1.00** | 0.67 | **0.83** | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** | 0.67 | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** |
 | `multiblimp` | 0.67 | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 | **1.00** | 0.67 | **0.83** | 0.67 | **0.83** | 0.67 |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | **1.00** | 0.67 |  |  |  |  |  | 0.67 |
-| `bbpb_rf_belebele` |  |  |  |  |  |  |  | **1.00** | 0.67 |  |  |  |  |  | 0.67 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  |  |  | **1.00** | 0.67 |  |  |  |  |  | 0.67 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | 0.67 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  |  |  | 0.67 | **0.83** |  |  |  |  |  | **0.83** |
+| `bbpb_belebele` | 0.67 | **0.83** | **0.83** | 0.50 | 0.67 | **0.83** | **0.83** | 0.50 | 0.33 | 0.67 | 0.33 | 0.50 | 0.67 | 0.50 | **0.83** |
+| `bbpb_include_base_44` | **0.83** | 0.33 | 0.33 | 0.67 | 0.50 | 0.50 | 0.50 | **0.83** | 0.33 | **1.00** | 0.67 | **0.83** | 0.67 | **0.83** | 0.50 |
+| `bbpb_global_mmlu_full` | **0.83** | 0.33 | 0.50 | 0.67 | 0.50 | 0.50 | 0.33 | **0.83** | 0.33 | 0.50 | 0.67 | **0.83** | 0.50 | 0.67 | 0.50 |
 | `rfgm_belebele` | **0.83** | **0.83** | 0.50 | 0.50 | 0.33 | **1.00** | 0.33 | 0.67 | 0.50 | 0.33 | 0.67 | 0.50 | 0.33 | 0.17 | **0.83** |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.50 | 0.33 |  |  |  |  |  | **0.83** |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | **0.83** | 0.33 |  |  |  |  |  | 0.50 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  |  |  | **0.83** | 0.33 |  |  |  |  |  | 0.50 |
 | `rf_belebele` | **1.00** | 0.33 | 0.50 | 0.50 | 0.67 | 0.33 | 0.50 | 0.50 | 0.67 | 0.50 | **0.83** | 0.50 | 0.67 | 0.17 | 0.50 |
 | `include_v2_en` | 0.67 | 0.17 | **0.83** | 0.33 | 0.33 | 0.50 | **0.83** | 0.67 | 0.67 | 0.33 | 0.50 | 0.50 | 0.50 | 0.50 | **0.83** |
 | `belebele` | **0.83** | 0.17 | 0.50 | 0.33 | **1.00** | 0.33 | 0.67 | 0.17 | **0.83** | 0.67 | 0.50 | 0.17 | 0.50 | 0.50 | 0.33 |
@@ -3403,9 +3450,9 @@ subtitle: "Lithuanian (lt) · small→large size pair (bold ≥ 0.75)"
 | `rfgm_include_base_44` | 0.33 | 0.17 | 0.50 | 0.17 | 0.17 | **0.83** | 0.67 | 0.67 | 0.50 | 0.50 | 0.67 | 0.50 | 0.33 | 0.50 | 0.50 |
 | `include_v2_og` | 0.33 | 0.33 | 0.50 | 0.50 | 0.33 | 0.67 | **0.83** | 0.33 | 0.17 | 0.50 | 0.67 | 0.50 | 0.17 | 0.00 | **0.83** |
 | `rf_global_mmlu_full` | 0.67 | 0.33 | 0.17 | 0.17 | **0.83** | 0.33 | 0.17 | 0.00 | 0.50 | **0.83** | 0.67 | 0.50 | **0.83** | 0.33 | 0.33 |
+| `global_piqa_parallel_cloze` | 0.50 | 0.33 | **1.00** | 0.33 | **0.83** | 0.00 | 0.50 | 0.50 | 0.33 | 0.33 | 0.33 | 0.33 | 0.33 | **0.83** | 0.17 |
+| `bbpb_include_v2_en` | 0.17 | 0.17 | 0.17 | 0.67 | 0.67 | 0.67 | 0.67 | 0.17 | 0.50 | 0.67 | 0.17 | 0.50 | 0.50 | 0.17 | 0.33 |
 | `rf_include_base_44` | 0.17 | 0.67 | 0.33 | 0.17 | 0.00 | 0.50 | 0.50 | 0.50 | 0.50 | 0.50 | 0.33 | 0.17 | 0.17 | 0.67 | 0.50 |
-| `global_piqa_parallel_cloze` | 0.50 | 0.50 | 0.50 | 0.67 | 0.33 | 0.33 | 0.50 | 0.17 | 0.17 | 0.67 | 0.17 | 0.00 | 0.17 | 0.00 | 0.50 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.17 | 0.50 |  |  |  |  |  | 0.33 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3428,10 +3475,10 @@ subtitle: "Latvian (lv) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_rf_belebele` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
 | `bpb` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  |  |  | **0.83** | **1.00** |  |  |  |  |  | **0.83** |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.50 | 0.67 |  |  |  |  |  | **0.83** |
+| `bbpb_rf_belebele` | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | **1.00** | **0.83** | **1.00** | **1.00** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** |
+| `bbpb_rfgm_belebele` | **1.00** | **1.00** | 0.67 | **0.83** | **1.00** | **1.00** | 0.67 | **0.83** | **1.00** | 0.67 | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** |
+| `bbpb_belebele` | **0.83** | 0.50 | 0.50 | 0.67 | **0.83** | 0.67 | 0.67 | 0.50 | 0.67 | 0.67 | 0.17 | 0.33 | 0.50 | 0.33 | **0.83** |
 | `rf_belebele` | 0.50 | 0.33 | 0.50 | 0.33 | 0.17 | 0.50 | **1.00** | 0.50 | 0.50 | 0.50 | **1.00** | 0.67 | 0.50 | 0.50 | 0.67 |
 | `rfgm_belebele` | 0.00 | 0.50 | 0.50 | 0.33 | 0.33 | 0.33 | 0.33 | 0.33 | 0.67 | **1.00** | 0.67 | 0.50 | 0.67 | 0.50 | 0.50 |
 | `belebele` | 0.33 | **0.83** | 0.17 | 0.33 | 0.33 | 0.50 | 0.33 | **1.00** | 0.50 | 0.00 | 0.50 | 0.50 | 0.33 | 0.50 | 0.50 |
@@ -3457,29 +3504,29 @@ subtitle: "Malayalam (ml) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **0.83** |  | **0.89** | **0.93** |  | **1.00** | **0.83** |  |  | **0.89** |
 | `bpb` | **0.89** | **0.86** | **0.86** | **0.82** | **0.86** | **0.96** | **0.96** | **0.93** | **0.89** | **0.93** | **0.96** | **0.86** | **0.89** | **0.86** | **0.89** |
-| `bbpb_rf_belebele` |  |  |  |  |  | **0.83** |  | **0.82** | **0.79** |  | **1.00** | **0.83** |  |  | **0.89** |
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | **0.86** | **0.89** |  |  |  |  |  | **0.82** |
-| `bbpb_arc` |  |  |  |  |  |  |  | **0.89** | **0.79** |  |  |  |  |  | **0.82** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **0.79** | **0.75** |  |  |  |  |  | **0.89** |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | 0.68 | 0.68 |  |  |  |  |  | **0.86** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | 0.67 |  | **0.79** | **0.89** |  | **1.00** | 0.33 |  |  | 0.68 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | **0.83** |  | **0.75** | **0.75** |  | 0.33 | 0.17 |  |  | **0.86** |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.71 | 0.43 |  |  |  |  |  | 0.57 |
-| `arc` | 0.43 | 0.71 | 0.54 | **0.93** | 0.61 | 0.54 | 0.39 | 0.43 | 0.61 | 0.46 | 0.64 | 0.61 | 0.61 | 0.32 | 0.54 |
+| `bbpb_rfgm_include_base_44` | **0.89** | **0.75** | **0.89** | **0.86** | **0.82** | **0.86** | **0.86** | **0.89** | **0.93** | **0.86** | **0.89** | **0.93** | **0.89** | **0.79** | **0.89** |
+| `bbpb_global_piqa_parallel_cloze` | **0.79** | **0.93** | **0.93** | **0.93** | **0.82** | **0.79** | **0.86** | **0.79** | **0.75** | **0.93** | **0.93** | **0.82** | **0.93** | **0.82** | **0.89** |
+| `bbpb_hellaswag` | **0.75** | **0.75** | **0.79** | **0.82** | **0.86** | **0.93** | **0.96** | **0.86** | **0.89** | **0.89** | **0.86** | **0.82** | **0.89** | **0.93** | **0.82** |
+| `bbpb_rfgm_belebele` | **0.89** | **0.93** | **0.86** | **0.89** | **0.79** | **0.82** | **0.89** | **0.79** | **0.89** | **0.93** | **0.89** | **0.79** | **0.82** | **0.86** | 0.68 |
+| `bbpb_rf_belebele` | 0.71 | **0.79** | **0.79** | **0.89** | **0.86** | **0.79** | **0.79** | **0.82** | **0.79** | **0.86** | **0.89** | **0.93** | **0.82** | **0.86** | **0.89** |
+| `bbpb_arc` | **0.82** | **0.82** | 0.64 | **0.86** | 0.68 | **0.79** | **0.75** | **0.89** | **0.79** | **0.82** | **0.89** | **0.79** | **0.79** | **0.89** | **0.82** |
+| `bbpb_include_v2_og` | **0.79** | 0.68 | 0.71 | **0.75** | **0.82** | **0.82** | 0.64 | 0.68 | 0.68 | **0.75** | 0.64 | 0.71 | **0.89** | **0.89** | **0.86** |
+| `bbpb_rf_include_base_44` | 0.64 | 0.71 | 0.54 | **0.75** | **0.82** | **0.79** | **0.82** | **0.75** | **0.75** | **0.75** | 0.61 | 0.54 | **0.79** | 0.64 | **0.86** |
+| `bbpb_include_base_44` | 0.64 | 0.57 | 0.71 | 0.57 | 0.57 | 0.57 | 0.71 | 0.71 | 0.43 | 0.64 | 0.64 | 0.71 | **0.86** | 0.71 | 0.57 |
+| `bbpb_belebele` | 0.50 | 0.64 | **0.89** | 0.50 | 0.71 | 0.57 | 0.39 | 0.43 | 0.43 | 0.61 | 0.43 | 0.64 | 0.61 | **0.75** | 0.50 |
 | `include_v2_en` | 0.57 | 0.64 | 0.54 | 0.43 | 0.54 | 0.50 | 0.54 | **0.75** | 0.61 | 0.36 | 0.54 | 0.54 | 0.39 | 0.54 | 0.61 |
 | `rfgm_include_base_44` | 0.32 | 0.50 | 0.64 | 0.71 | 0.57 | 0.50 | 0.43 | 0.39 | 0.32 | 0.64 | 0.54 | 0.61 | 0.61 | 0.54 | 0.61 |
+| `bbpb_include_v2_en` | 0.32 | 0.68 | 0.46 | 0.68 | 0.61 | 0.29 | 0.36 | 0.36 | 0.29 | 0.64 | 0.71 | 0.57 | 0.57 | 0.50 | 0.64 |
+| `arc` | 0.61 | 0.57 | 0.57 | 0.43 | 0.43 | 0.57 | 0.36 | 0.46 | 0.39 | 0.43 | 0.64 | 0.39 | 0.46 | 0.43 | 0.61 |
 | `include_base_44` | 0.46 | 0.50 | 0.32 | 0.50 | 0.46 | 0.36 | 0.61 | 0.68 | 0.61 | 0.50 | 0.50 | 0.32 | 0.36 | 0.64 | 0.46 |
 | `rf_belebele` | 0.57 | 0.21 | 0.32 | **0.75** | 0.50 | 0.50 | 0.61 | 0.36 | 0.61 | 0.54 | 0.36 | 0.68 | 0.43 | 0.36 | 0.43 |
 | `rfgm_belebele` | 0.21 | 0.21 | 0.61 | 0.39 | 0.43 | 0.61 | 0.50 | 0.50 | 0.68 | 0.43 | 0.64 | 0.39 | 0.46 | 0.61 | 0.36 |
-| `hellaswag` | 0.50 | 0.54 | 0.32 | 0.54 | 0.43 | 0.32 | 0.50 | 0.43 | 0.50 | 0.50 | 0.39 | 0.61 | 0.50 | 0.46 | 0.36 |
 | `belebele` | 0.50 | 0.36 | 0.54 | 0.71 | 0.29 | 0.39 | 0.46 | 0.32 | 0.39 | 0.32 | 0.36 | **0.89** | **0.75** | 0.25 | 0.25 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.43 | 0.43 |  |  |  |  |  | 0.50 |
 | `include_v2_og` | 0.32 | 0.07 | 0.39 | 0.57 | 0.39 | 0.46 | 0.43 | 0.36 | 0.54 | 0.57 | 0.36 | 0.46 | 0.57 | 0.57 | 0.68 |
 | `rf_include_base_44` | 0.32 | 0.32 | 0.36 | 0.32 | 0.43 | 0.46 | 0.46 | 0.61 | 0.57 | 0.14 | 0.25 | 0.39 | **0.75** | 0.61 | 0.61 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.36 | 0.29 |  |  |  |  |  | 0.64 |
-| `global_piqa_parallel_cloze` | 0.57 | 0.43 | 0.57 | 0.32 | 0.36 | 0.11 | 0.50 | 0.50 | 0.61 | 0.25 | 0.25 | 0.21 | 0.54 | 0.54 | 0.50 |
+| `hellaswag` | 0.25 | 0.43 | 0.46 | 0.43 | 0.39 | 0.39 | 0.54 | 0.57 | 0.71 | 0.64 | 0.07 | 0.25 | 0.39 | 0.39 | 0.64 |
+| `global_piqa_parallel_cloze` | 0.36 | 0.61 | 0.54 | 0.36 | 0.29 | 0.43 | 0.21 | 0.18 | 0.18 | 0.43 | 0.29 | 0.25 | 0.43 | 0.46 | 0.57 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3502,24 +3549,24 @@ subtitle: "Marathi (mr) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `bbpb_rf_belebele` | **1.00** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** |
+| `bbpb_arc` | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** |
+| `bbpb_hellaswag` | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** |
 | `bpb` | **1.00** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_multiblimp` |  |  |  |  |  |  |  | **0.83** | **1.00** |  |  |  |  |  | **0.83** |
-| `bbpb_rf_belebele` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | **1.00** |
-| `bbpb_arc` |  |  |  |  |  |  |  | **0.83** | **1.00** |  |  |  |  |  | **0.83** |
+| `bbpb_rfgm_belebele` | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** | 0.67 | **0.83** |
+| `bbpb_global_piqa_parallel_cloze` | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | 0.67 | 0.67 | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 |
+| `bbpb_multiblimp` | 0.67 | **0.83** | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | **1.00** | **0.83** | 0.67 | **0.83** | **0.83** |
 | `multiblimp` | **0.83** | 0.67 | 0.67 | 0.67 | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | **1.00** | **0.83** | 0.67 | **0.83** | **0.83** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | 0.67 |
-| `hellaswag` | **0.83** | 0.67 | **0.83** | 0.67 | **0.83** | 0.50 | 0.67 | **0.83** | 0.67 | **0.83** | 0.33 | 0.50 | 0.50 | 0.67 | **0.83** |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | 0.67 | 0.67 |  |  |  |  |  | 0.67 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.67 | 0.50 |  |  |  |  |  | **0.83** |
+| `bbpb_include_v2_en` | 0.33 | **0.83** | **1.00** | **0.83** | **0.83** | 0.50 | 0.33 | 0.50 | 0.17 | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** | 0.67 |
+| `bbpb_include_v2_og` | **0.83** | 0.33 | **0.83** | **0.83** | 0.50 | 0.50 | **1.00** | 0.67 | 0.67 | 0.50 | 0.50 | **0.83** | 0.67 | 0.67 | 0.67 |
+| `bbpb_belebele` | 0.67 | **0.83** | 0.67 | 0.67 | 0.50 | **0.83** | 0.33 | 0.67 | 0.50 | 0.50 | **0.83** | 0.67 | 0.33 | 0.50 | **0.83** |
 | `rf_belebele` | 0.17 | 0.50 | **0.83** | 0.67 | 0.33 | 0.67 | 0.33 | 0.50 | 0.67 | 0.67 | **0.83** | 0.67 | **0.83** | 0.50 | 0.50 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.50 | 0.17 |  |  |  |  |  | 0.67 |
+| `hellaswag` | 0.67 | 0.50 | 0.67 | 0.50 | **0.83** | 0.50 | 0.67 | 0.17 | **0.83** | 0.17 | 0.67 | 0.33 | 0.50 | **0.83** | 0.33 |
 | `belebele` | **0.83** | 0.50 | 0.50 | 0.00 | 0.50 | 0.67 | 0.33 | 0.17 | 0.67 | 0.00 | 0.50 | 0.33 | 0.50 | 0.67 | 0.50 |
-| `arc` | 0.50 | 0.33 | 0.33 | **0.83** | 0.33 | 0.50 | **0.83** | 0.33 | 0.17 | 0.33 | 0.50 | 0.67 | 0.17 | 0.33 | 0.50 |
-| `global_piqa_parallel_cloze` | 0.17 | 0.50 | 0.17 | 0.67 | 0.17 | 0.17 | 0.67 | 0.17 | **0.83** | 0.50 | **0.83** | 0.17 | 0.50 | 0.67 | 0.17 |
+| `arc` | 0.33 | 0.67 | 0.17 | 0.33 | 0.50 | 0.33 | 0.50 | 0.67 | 0.50 | 0.50 | 0.00 | 0.17 | 0.50 | 0.17 | 0.67 |
 | `rfgm_belebele` | 0.33 | 0.50 | 0.50 | 0.17 | 0.50 | 0.17 | 0.50 | **0.83** | 0.50 | 0.33 | 0.17 | 0.67 | 0.50 | 0.00 | 0.33 |
 | `include_v2_og` | 0.33 | 0.17 | 0.67 | **0.83** | 0.17 | 0.67 | 0.17 | 0.50 | 0.17 | 0.00 | 0.33 | 0.50 | 0.67 | 0.50 | 0.17 |
+| `global_piqa_parallel_cloze` | 0.33 | 0.50 | 0.00 | 0.00 | 0.17 | 0.50 | 0.67 | 0.67 | 0.17 | 0.33 | 0.50 | 0.33 | **0.83** | 0.33 | 0.50 |
 | `include_v2_en` | 0.33 | 0.67 | 0.33 | 0.50 | 0.33 | 0.00 | 0.00 | 0.00 | 0.00 | 0.33 | 0.50 | 0.33 | **0.83** | 0.67 | **0.83** |
 
 <style>
@@ -3544,31 +3591,31 @@ subtitle: "Malay (ms) · small→large size pair (bold ≥ 0.75)"
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `bpb` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | **1.00** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **0.83** | **1.00** |  |  |  |  |  | **0.83** |
-| `bbpb_include_v2_en_malay_singapore` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | **1.00** |
-| `bbpb_include_v2_og_malay_malaysia` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | **1.00** |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_rf_belebele` |  |  |  |  |  |  |  | **1.00** | 0.67 |  |  |  |  |  | 0.67 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  |  |  | 0.67 | 0.67 |  |  |  |  |  | **1.00** |
-| `bbpb_include_v2_og_malay_singapore` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | 0.67 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | **0.83** |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.67 | 0.50 |  |  |  |  |  | **0.83** |
-| `bbpb_global_mmlu_full` |  |  |  |  |  |  |  | 0.50 | 0.50 |  |  |  |  |  | **1.00** |
+| `bbpb_rfgm_include_base_44` | **0.83** | **1.00** | **0.83** | **1.00** | **1.00** | **0.83** | 0.67 | **0.83** | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** |
+| `bbpb_rf_global_mmlu_full` | **1.00** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** |
+| `bbpb_rf_include_base_44` | 0.67 | **1.00** | **0.83** | **1.00** | **1.00** | 0.67 | **0.83** | 0.67 | 0.67 | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** |
+| `bbpb_include_v2_og_malay_malaysia` | **1.00** | **0.83** | 0.67 | **0.83** | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** |
+| `bbpb_global_piqa_parallel_cloze` | **0.83** | **0.83** | **0.83** | **1.00** | **0.83** | 0.67 | 0.67 | **0.83** | **1.00** | **1.00** | **0.83** | 0.67 | **0.83** | 0.67 | **0.83** |
+| `bbpb_rfgm_belebele` | **0.83** | **0.83** | 0.67 | **1.00** | **0.83** | 0.67 | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** |
+| `bbpb_rf_belebele` | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | 0.67 | **0.83** | **1.00** | 0.67 | **0.83** | 0.67 | **1.00** | **0.83** | **0.83** | 0.67 |
+| `bbpb_belebele` | 0.50 | 0.50 | 0.67 | **0.83** | **1.00** | **1.00** | **0.83** | 0.67 | 0.50 | **0.83** | 0.67 | 0.50 | **0.83** | 0.67 | **0.83** |
+| `bbpb_include_v2_en_malay_singapore` | 0.67 | 0.33 | **0.83** | **0.83** | **0.83** | 0.67 | 0.50 | **0.83** | **0.83** | 0.17 | 0.50 | 0.50 | 0.67 | 0.67 | **1.00** |
 | `rfgm_include_base_44` | **0.83** | 0.50 | 0.67 | 0.50 | 0.50 | 0.50 | 0.50 | 0.50 | 0.50 | 0.17 | **1.00** | **1.00** | 0.17 | 0.17 | **1.00** |
+| `bbpb_include_v2_og_malay_singapore` | 0.50 | 0.50 | 0.17 | 0.33 | 0.33 | 0.67 | 0.67 | **0.83** | **0.83** | 0.33 | 0.50 | **0.83** | **0.83** | 0.50 | 0.67 |
 | `include_base_44` | 0.50 | 0.67 | 0.50 | 0.67 | **0.83** | **0.83** | 0.67 | 0.17 | 0.33 | **0.83** | 0.33 | 0.50 | 0.50 | 0.33 | **0.83** |
 | `belebele` | 0.67 | 0.17 | **0.83** | **0.83** | **0.83** | 0.17 | 0.50 | **0.83** | 0.50 | 0.33 | 0.00 | 0.33 | 0.67 | **1.00** | 0.67 |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.33 | 0.50 |  |  |  |  |  | **0.83** |
+| `bbpb_include_base_44` | 0.67 | 0.67 | 0.17 | 0.67 | **0.83** | 0.67 | 0.17 | 0.33 | 0.50 | 0.50 | 0.33 | 0.50 | 0.50 | 0.33 | **0.83** |
+| `bbpb_global_mmlu_full` | 0.67 | 0.33 | 0.33 | **0.83** | **0.83** | 0.67 | 0.33 | 0.50 | 0.50 | 0.33 | 0.17 | 0.17 | 0.50 | 0.50 | **1.00** |
 | `include_v2_en_malay_malaysia` | 0.33 | 0.50 | 0.67 | 0.67 | 0.33 | 0.17 | 0.33 | 0.00 | 0.67 | 0.50 | 0.67 | 0.50 | 0.67 | 0.67 | 0.33 |
 | `global_mmlu_full` | 0.50 | 0.50 | 0.17 | 0.00 | 0.17 | 0.33 | 0.33 | 0.50 | 0.67 | 0.67 | 0.50 | 0.33 | **0.83** | 0.67 | **0.83** |
 | `rf_belebele` | 0.33 | 0.67 | 0.33 | **1.00** | 0.17 | 0.33 | 0.33 | 0.33 | 0.50 | 0.33 | 0.67 | 0.50 | 0.33 | **0.83** | 0.17 |
+| `bbpb_include_v2_en_malay_malaysia` | 0.33 | 0.67 | 0.17 | 0.67 | **0.83** | 0.67 | 0.50 | 0.33 | 0.17 | 0.50 | 0.33 | 0.50 | 0.17 | 0.33 | 0.50 |
 | `rf_global_mmlu_full` | **0.83** | 0.50 | 0.50 | 0.17 | 0.00 | 0.67 | 0.33 | 0.33 | 0.17 | 0.67 | 0.33 | 0.50 | 0.33 | 0.50 | **0.83** |
+| `global_piqa_parallel_cloze` | 0.00 | 0.67 | 0.67 | 0.33 | 0.33 | 0.33 | 0.00 | 0.50 | 0.50 | 0.50 | 0.67 | 0.67 | 0.17 | 0.17 | **1.00** |
 | `rf_include_base_44` | 0.00 | 0.67 | 0.33 | 0.33 | 0.50 | 0.17 | 0.67 | 0.67 | 0.33 | 0.17 | 0.50 | 0.33 | 0.33 | 0.67 | 0.33 |
 | `include_v2_og_malay_malaysia` | 0.17 | 0.50 | 0.50 | 0.33 | 0.33 | 0.17 | 0.17 | 0.67 | 0.50 | 0.50 | 0.50 | 0.50 | 0.00 | 0.67 | 0.33 |
 | `include_v2_og_malay_singapore` | 0.50 | 0.33 | 0.50 | 0.17 | 0.50 | 0.50 | 0.33 | 0.17 | **1.00** | 0.50 | 0.00 | 0.50 | 0.17 | 0.33 | 0.17 |
 | `rfgm_belebele` | 0.33 | 0.33 | 0.50 | 0.67 | 0.17 | 0.33 | 0.50 | 0.67 | 0.17 | 0.00 | 0.50 | 0.33 | 0.50 | 0.17 | 0.00 |
-| `bbpb_include_v2_en_malay_malaysia` |  |  |  |  |  |  |  | 0.33 | 0.17 |  |  |  |  |  | 0.50 |
-| `global_piqa_parallel_cloze` | 0.33 | 0.50 | 0.50 | 0.33 | 0.00 | 0.00 | 0.67 | 0.33 | 0.50 | 0.00 | 0.00 | 0.33 | 0.67 | 0.33 | 0.17 |
 | `include_v2_en_malay_singapore` | 0.33 | 0.17 | 0.17 | 0.50 | 0.33 | 0.33 | 0.33 | 0.17 | 0.50 | 0.17 | 0.17 | 0.17 | 0.17 | 0.33 | 0.33 |
 
 <style>
@@ -3592,39 +3639,39 @@ subtitle: "Nepali (ne) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_rf_belebele_npi_Deva` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | **1.00** |
-| `bbpb_arc` |  |  |  |  |  |  |  | **0.83** | **1.00** |  |  |  |  |  | **0.83** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
+| `bbpb_hellaswag` | **1.00** | **0.83** | **1.00** | **1.00** | **1.00** | **0.83** | **1.00** | **1.00** | **1.00** | **0.83** | **0.83** | **0.83** | **1.00** | **1.00** | **1.00** |
+| `bbpb_rf_include_base_44` | **1.00** | **1.00** | **1.00** | **0.83** | 0.67 | **1.00** | **1.00** | **0.83** | 0.67 | **1.00** | **0.83** | 0.67 | **0.83** | 0.67 | **0.83** |
+| `bbpb_rf_belebele_npi_Deva` | **1.00** | 0.67 | **0.83** | **1.00** | **1.00** | 0.67 | **0.83** | **1.00** | **1.00** | **0.83** | 0.67 | 0.67 | **0.83** | **0.83** | **1.00** |
+| `bbpb_global_piqa_parallel_cloze` | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | 0.67 | **1.00** | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** |
+| `bbpb_rfgm_include_base_44` | 0.67 | **1.00** | **1.00** | **0.83** | **0.83** | 0.67 | 0.67 | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** |
 | `bpb` | **1.00** | **0.83** | 0.67 | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** |
-| `bbpb_rfgm_belebele_npi_Deva` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | **0.83** |
-| `bbpb_rf_include_base_44` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | **0.83** |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | **0.83** |
-| `bbpb_rf_belebele_npi_Latn` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | 0.67 |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | 0.67 |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | 0.50 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  |  |  | 0.50 | 0.50 |  |  |  |  |  | **1.00** |
-| `bbpb_belebele_npi_Latn` |  |  |  |  |  |  |  | **0.83** | 0.50 |  |  |  |  |  | 0.67 |
+| `bbpb_rfgm_belebele_npi_Deva` | **1.00** | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** |
+| `bbpb_arc` | **0.83** | 0.67 | 0.67 | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** | **1.00** | 0.67 | **0.83** | 0.67 | **0.83** | **0.83** |
+| `bbpb_rf_global_mmlu_full` | **1.00** | **1.00** | **0.83** | **0.83** | 0.67 | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | 0.67 | 0.67 | **0.83** | **0.83** |
+| `bbpb_include_v2_og` | **0.83** | **1.00** | **0.83** | **1.00** | 0.67 | **0.83** | 0.67 | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** | 0.67 |
+| `bbpb_belebele_npi_Latn` | **1.00** | 0.67 | 0.33 | **0.83** | 0.50 | 0.67 | 0.33 | **0.83** | 0.50 | 0.33 | **0.83** | 0.50 | 0.50 | **0.83** | 0.67 |
 | `include_base_44` | 0.50 | 0.67 | **0.83** | 0.33 | 0.33 | 0.50 | 0.33 | **0.83** | **0.83** | 0.50 | 0.67 | 0.67 | 0.17 | 0.17 | **1.00** |
-| `hellaswag` | 0.50 | 0.00 | 0.17 | 0.33 | 0.00 | 0.50 | 0.67 | **0.83** | 0.50 | **0.83** | 0.67 | **1.00** | **0.83** | **0.83** | 0.67 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | **0.83** | 0.33 |  |  |  |  |  | 0.50 |
+| `bbpb_belebele_npi_Deva` | 0.50 | **0.83** | **0.83** | 0.67 | 0.50 | 0.67 | 0.33 | 0.50 | 0.00 | 0.67 | **0.83** | 0.33 | 0.50 | 0.67 | 0.50 |
 | `global_mmlu_full` | 0.67 | 0.50 | 0.67 | 0.33 | 0.67 | 0.17 | 0.33 | 0.67 | 0.67 | **0.83** | 0.50 | 0.50 | 0.33 | 0.67 | 0.67 |
+| `bbpb_rf_belebele_npi_Latn` | 0.17 | 0.17 | 0.50 | 0.00 | 0.33 | **1.00** | 0.33 | **0.83** | **0.83** | 0.33 | **0.83** | **0.83** | 0.50 | 0.50 | 0.67 |
 | `rf_include_base_44` | 0.67 | **0.83** | **1.00** | 0.00 | 0.50 | 0.50 | 0.67 | 0.33 | 0.50 | **0.83** | 0.17 | 0.67 | 0.00 | 0.50 | 0.50 |
-| `global_piqa_parallel_cloze` | **0.83** | 0.17 | 0.33 | 0.33 | 0.33 | 0.17 | 0.33 | 0.33 | 0.33 | **0.83** | 0.67 | **0.83** | 0.67 | 0.67 | **0.83** |
+| `bbpb_include_v2_en` | 0.33 | 0.33 | 0.17 | 0.50 | 0.67 | **1.00** | 0.50 | **0.83** | 0.33 | 0.50 | **0.83** | 0.33 | 0.33 | 0.50 | 0.50 |
+| `hellaswag` | **0.83** | **0.83** | 0.33 | 0.50 | 0.17 | 0.67 | 0.50 | 0.67 | 0.33 | 0.17 | 0.50 | 0.17 | 0.50 | 0.50 | 0.67 |
+| `arc` | 0.67 | 0.50 | **0.83** | 0.33 | 0.00 | 0.50 | **0.83** | 0.67 | 0.33 | 0.67 | 0.17 | 0.50 | 0.50 | 0.17 | 0.67 |
+| `bbpb_global_mmlu_full` | 0.67 | 0.67 | 0.50 | 0.17 | 0.17 | 0.67 | 0.50 | 0.50 | 0.50 | **0.83** | 0.17 | 0.17 | 0.33 | 0.33 | **1.00** |
 | `rf_global_mmlu_full` | 0.67 | 0.33 | 0.33 | 0.50 | 0.33 | 0.50 | 0.17 | 0.33 | 0.17 | 0.33 | 0.50 | 0.33 | **0.83** | **1.00** | **0.83** |
 | `belebele_npi_Deva` | **0.83** | 0.33 | **1.00** | 0.17 | 0.50 | 0.50 | **0.83** | 0.00 | 0.33 | 0.33 | 0.50 | 0.17 | 0.17 | 0.50 | 0.67 |
+| `bbpb_include_base_44` | 0.17 | 0.00 | 0.67 | 0.33 | 0.17 | **0.83** | 0.17 | **0.83** | 0.67 | 0.33 | 0.67 | **0.83** | 0.00 | 0.50 | 0.50 |
 | `rf_belebele_npi_Latn` | 0.50 | 0.17 | 0.33 | 0.33 | 0.33 | 0.33 | 0.50 | 0.17 | **0.83** | 0.50 | **0.83** | 0.50 | 0.67 | 0.33 | 0.33 |
-| `arc` | 0.50 | 0.67 | **0.83** | 0.50 | 0.00 | 0.17 | 0.67 | 0.67 | 0.33 | 0.50 | 0.17 | 0.33 | 0.67 | 0.17 | 0.33 |
-| `include_v2_og` | 0.00 | 0.67 | 0.67 | 0.17 | 0.17 | 0.33 | 0.33 | 0.67 | **0.83** | **1.00** | 0.00 | 0.50 | 0.00 | 0.50 | 0.50 |
 | `belebele_npi_Latn` | **0.83** | 0.17 | 0.17 | 0.33 | 0.17 | 0.00 | 0.00 | 0.33 | 0.17 | **1.00** | 0.50 | 0.67 | 0.50 | 0.67 | **0.83** |
+| `include_v2_og` | 0.00 | 0.67 | 0.67 | 0.17 | 0.17 | 0.33 | 0.33 | 0.67 | **0.83** | **1.00** | 0.00 | 0.50 | 0.00 | 0.50 | 0.50 |
+| `global_piqa_parallel_cloze` | 0.50 | 0.50 | 0.67 | 0.33 | 0.17 | 0.50 | 0.33 | 0.50 | 0.67 | 0.50 | 0.50 | 0.33 | 0.00 | 0.00 | 0.67 |
+| `bbpb_rfgm_belebele_npi_Latn` | 0.50 | 0.50 | 0.00 | 0.33 | **0.83** | 0.00 | 0.50 | 0.17 | 0.67 | 0.50 | **0.83** | 0.33 | 0.67 | 0.17 | 0.17 |
 | `include_v2_en` | 0.33 | 0.33 | 0.33 | 0.67 | 0.67 | 0.67 | 0.33 | 0.67 | 0.33 | 0.17 | 0.67 | 0.00 | 0.00 | 0.67 | 0.33 |
 | `rf_belebele_npi_Deva` | 0.50 | 0.50 | 0.33 | 0.50 | 0.67 | 0.33 | 0.67 | 0.33 | 0.17 | 0.50 | 0.33 | 0.50 | 0.00 | 0.00 | **0.83** |
 | `rfgm_belebele_npi_Deva` | 0.50 | 0.33 | 0.17 | 0.50 | 0.17 | 0.17 | 0.50 | 0.67 | 0.50 | 0.33 | 0.17 | 0.33 | 0.67 | 0.67 | 0.33 |
 | `rfgm_include_base_44` | 0.50 | 0.50 | 0.50 | 0.00 | 0.67 | 0.00 | 0.67 | 0.33 | 0.17 | 0.17 | 0.50 | **0.83** | 0.33 | 0.17 | 0.33 |
 | `rfgm_belebele_npi_Latn` | 0.33 | **1.00** | 0.33 | 0.17 | 0.33 | 0.33 | 0.17 | 0.33 | **0.83** | 0.33 | 0.17 | 0.33 | 0.50 | 0.00 | 0.17 |
-| `bbpb_rfgm_belebele_npi_Latn` |  |  |  |  |  |  |  | 0.17 | 0.67 |  |  |  |  |  | 0.17 |
-| `bbpb_belebele_npi_Deva` |  |  |  |  |  |  |  | 0.50 | 0.00 |  |  |  |  |  | 0.50 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3647,33 +3694,33 @@ subtitle: "Dutch (nl) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_hellaswag` |  |  |  |  |  | **1.00** |  | **0.89** | **0.88** |  | **1.00** | **1.00** |  |  | **0.83** |
-| `bbpb_include_v2_og_dutch_netherlands` |  |  |  |  |  | **1.00** |  | **0.76** | 0.74 |  | **1.00** | **0.90** |  |  | 0.74 |
-| `bpb` | **0.95** | **0.89** | 0.71 | **0.88** | **0.89** | **0.94** | **0.76** | **0.89** | **0.91** | **0.82** | **0.92** | **0.88** | **0.77** | 0.73 | **0.83** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **0.86** |  | **0.80** | 0.73 |  | **0.93** | **0.86** |  |  | **0.77** |
-| `bbpb_rf_belebele` |  |  |  |  |  | **0.86** |  | **0.82** | **0.79** |  | **0.86** | **0.75** |  |  | **0.76** |
-| `bbpb_arc` |  |  |  |  |  | **1.00** |  | 0.70 | 0.52 |  | **1.00** | **1.00** |  |  | 0.55 |
-| `hellaswag` | 0.53 | 0.58 | 0.55 | 0.58 | 0.48 | **0.76** | 0.74 | **0.77** | **0.76** | **0.83** | **0.88** | **0.88** | 0.74 | **0.83** | **0.88** |
-| `bbpb_multiblimp` |  |  |  |  |  | **0.87** |  | **0.76** | 0.64 |  | 0.53 | 0.67 |  |  | 0.73 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.96** |  | **0.77** | 0.59 |  | 0.71 | 0.46 |  |  | 0.61 |
-| `multiblimp` | 0.62 | **0.82** | 0.64 | 0.68 | 0.62 | 0.56 | 0.58 | 0.70 | 0.58 | 0.65 | 0.68 | 0.53 | **0.76** | 0.74 | 0.67 |
-| `bbpb_include_v2_og_dutch_belgium` |  |  |  |  |  | **0.80** |  | 0.74 | 0.59 |  | 0.60 | 0.40 |  |  | 0.67 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | 0.33 |  | 0.64 | 0.62 |  | 0.67 | 0.67 |  |  | 0.68 |
-| `rfgm_belebele` | 0.35 | 0.56 | 0.58 | 0.62 | 0.67 | 0.58 | 0.59 | 0.53 | 0.61 | 0.61 | 0.64 | 0.59 | 0.52 | 0.55 | 0.59 |
-| `include_v2_og_dutch_netherlands` | 0.45 | 0.45 | 0.39 | 0.36 | 0.24 | 0.67 | 0.61 | 0.59 | 0.67 | 0.71 | **0.77** | 0.64 | 0.65 | 0.65 | 0.65 |
-| `rf_belebele` | 0.48 | 0.55 | 0.68 | **0.76** | 0.50 | 0.50 | 0.64 | 0.44 | 0.53 | 0.56 | 0.47 | 0.59 | 0.65 | 0.41 | 0.45 |
-| `arc` | 0.61 | 0.62 | **0.85** | 0.53 | 0.55 | 0.48 | 0.56 | 0.26 | 0.41 | 0.52 | 0.70 | 0.50 | 0.52 | 0.48 | 0.52 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  | 0.67 |  | **0.79** | 0.58 |  | 0.00 | 0.67 |  |  | 0.52 |
-| `global_mmlu_full` | 0.56 | 0.62 | 0.41 | 0.50 | 0.47 | 0.50 | 0.48 | 0.70 | 0.48 | 0.47 | 0.52 | 0.48 | 0.55 | 0.45 | 0.56 |
-| `belebele` | 0.38 | 0.38 | 0.38 | 0.67 | 0.50 | 0.52 | 0.39 | 0.35 | 0.55 | 0.58 | 0.50 | 0.50 | 0.64 | 0.65 | 0.58 |
-| `bbpb_include_v2_en_dutch_netherlands` |  |  |  |  |  | 0.40 |  | 0.64 | 0.30 |  | 0.40 | **0.80** |  |  | 0.45 |
-| `bbpb_belebele` |  |  |  |  |  | 0.00 |  | 0.55 | 0.50 |  | 0.33 | **1.00** |  |  | 0.56 |
-| `rf_global_mmlu_full` | 0.47 | 0.47 | 0.53 | 0.45 | 0.41 | 0.30 | 0.55 | 0.32 | 0.44 | 0.33 | 0.62 | 0.56 | 0.52 | 0.55 | 0.73 |
-| `bbpb_include_v2_en_dutch_belgium` |  |  |  |  |  | 0.30 |  | 0.45 | 0.42 |  | 0.30 | **0.80** |  |  | 0.52 |
-| `include_v2_en_dutch_netherlands` | 0.29 | 0.50 | 0.41 | 0.56 | 0.39 | 0.45 | 0.44 | 0.27 | 0.55 | 0.36 | 0.56 | 0.45 | 0.42 | 0.65 | 0.42 |
-| `include_v2_og_dutch_belgium` | 0.58 | 0.61 | 0.36 | 0.33 | 0.48 | 0.41 | 0.42 | 0.44 | 0.29 | 0.44 | 0.32 | 0.61 | 0.36 | 0.38 | 0.53 |
-| `global_piqa_parallel_cloze` | 0.18 | 0.53 | 0.39 | 0.58 | 0.41 | 0.12 | 0.33 | 0.35 | 0.56 | 0.48 | 0.44 | 0.41 | 0.33 | 0.41 | 0.45 |
-| `include_v2_en_dutch_belgium` | 0.44 | 0.44 | 0.47 | 0.42 | 0.32 | 0.15 | 0.53 | 0.52 | 0.36 | 0.27 | 0.39 | 0.53 | 0.41 | 0.33 | 0.23 |
+| `bpb` | **0.97** | **0.87** | 0.71 | **0.89** | **0.89** | **0.90** | 0.75 | **0.90** | **0.91** | **0.82** | **0.91** | **0.88** | **0.78** | 0.73 | **0.83** |
+| `bbpb_hellaswag` | **0.91** | **0.81** | **0.77** | **0.79** | **0.86** | **0.90** | **0.86** | **0.86** | **0.88** | **0.85** | **0.91** | **0.85** | **0.85** | **0.78** | **0.80** |
+| `bbpb_rfgm_belebele` | **0.86** | **0.87** | 0.74 | **0.84** | **0.86** | **0.84** | **0.81** | **0.78** | **0.76** | 0.74 | **0.84** | **0.86** | 0.75 | 0.64 | **0.78** |
+| `hellaswag` | 0.65 | 0.67 | **0.79** | 0.67 | 0.73 | 0.69 | 0.66 | 0.62 | 0.70 | 0.59 | **0.80** | **0.78** | 0.58 | 0.64 | **0.87** |
+| `bbpb_rf_belebele` | 0.75 | 0.73 | 0.68 | **0.78** | 0.74 | 0.67 | 0.65 | 0.75 | 0.73 | 0.52 | 0.66 | 0.53 | 0.68 | 0.70 | **0.78** |
+| `bbpb_global_mmlu_full` | **0.77** | 0.65 | 0.64 | 0.75 | 0.63 | 0.64 | 0.60 | 0.65 | 0.62 | **0.81** | 0.68 | 0.69 | 0.69 | 0.68 | 0.68 |
+| `bbpb_include_v2_og_dutch_netherlands` | 0.60 | 0.53 | 0.55 | **0.80** | 0.59 | 0.70 | **0.81** | **0.76** | 0.72 | 0.56 | 0.62 | 0.62 | 0.73 | **0.78** | **0.76** |
+| `bbpb_include_v2_og_dutch_belgium` | 0.74 | **0.82** | 0.69 | 0.64 | 0.53 | 0.67 | 0.71 | 0.73 | 0.56 | 0.71 | 0.59 | 0.50 | 0.68 | 0.67 | 0.71 |
+| `bbpb_multiblimp` | 0.71 | 0.64 | 0.73 | 0.65 | 0.73 | 0.70 | 0.68 | 0.71 | 0.62 | 0.56 | 0.53 | 0.52 | 0.70 | 0.74 | 0.70 |
+| `bbpb_rf_global_mmlu_full` | 0.68 | 0.65 | 0.68 | 0.73 | 0.64 | **0.81** | 0.67 | **0.82** | 0.56 | 0.70 | 0.68 | 0.41 | 0.56 | 0.60 | 0.59 |
+| `bbpb_global_piqa_parallel_cloze` | 0.75 | 0.68 | 0.64 | 0.59 | 0.52 | **0.78** | 0.71 | 0.71 | 0.55 | 0.67 | **0.76** | 0.68 | 0.63 | 0.53 | 0.59 |
+| `multiblimp` | 0.56 | 0.60 | 0.63 | 0.63 | 0.47 | 0.61 | 0.55 | 0.68 | 0.59 | 0.60 | 0.63 | 0.63 | 0.74 | 0.65 | 0.58 |
+| `bbpb_arc` | 0.55 | 0.73 | 0.56 | 0.60 | 0.56 | 0.56 | 0.73 | 0.70 | 0.48 | 0.44 | 0.66 | 0.62 | 0.65 | 0.45 | 0.54 |
+| `bbpb_belebele` | 0.45 | 0.41 | 0.58 | 0.73 | 0.56 | 0.58 | 0.63 | 0.51 | 0.58 | 0.60 | 0.57 | 0.60 | 0.62 | 0.69 | 0.55 |
+| `rfgm_belebele` | 0.42 | 0.53 | 0.60 | 0.58 | 0.63 | 0.57 | 0.55 | 0.49 | 0.63 | 0.60 | 0.54 | 0.58 | 0.45 | 0.52 | 0.60 |
+| `include_v2_og_dutch_netherlands` | 0.44 | 0.53 | 0.38 | 0.36 | 0.26 | 0.54 | 0.59 | 0.58 | 0.56 | 0.62 | 0.64 | 0.68 | 0.71 | 0.55 | 0.56 |
+| `rf_belebele` | 0.53 | 0.48 | 0.64 | 0.67 | 0.51 | 0.48 | 0.54 | 0.40 | 0.46 | 0.53 | 0.43 | 0.57 | 0.69 | 0.46 | 0.51 |
+| `bbpb_include_v2_en_dutch_netherlands` | 0.54 | 0.68 | 0.48 | 0.41 | 0.72 | 0.51 | 0.51 | 0.58 | 0.29 | 0.49 | 0.48 | 0.59 | 0.48 | 0.55 | 0.46 |
+| `rf_global_mmlu_full` | 0.53 | 0.44 | 0.54 | 0.47 | 0.46 | 0.40 | 0.57 | 0.35 | 0.53 | 0.42 | 0.59 | 0.55 | 0.48 | 0.57 | 0.67 |
+| `belebele` | 0.38 | 0.42 | 0.42 | 0.59 | 0.45 | 0.57 | 0.45 | 0.37 | 0.57 | 0.56 | 0.52 | 0.54 | 0.56 | 0.62 | 0.55 |
+| `global_mmlu_full` | 0.58 | 0.57 | 0.40 | 0.48 | 0.45 | 0.46 | 0.49 | 0.59 | 0.45 | 0.47 | 0.51 | 0.47 | 0.52 | 0.44 | 0.67 |
+| `arc` | 0.57 | 0.58 | 0.46 | 0.46 | 0.49 | 0.51 | 0.44 | 0.48 | 0.37 | 0.45 | 0.57 | 0.37 | 0.67 | 0.44 | 0.65 |
+| `bbpb_include_v2_en_dutch_belgium` | 0.31 | 0.65 | 0.54 | 0.42 | 0.47 | 0.46 | 0.48 | 0.52 | 0.44 | 0.49 | 0.42 | 0.29 | 0.57 | 0.47 | 0.55 |
+| `include_v2_en_dutch_netherlands` | 0.35 | 0.52 | 0.36 | 0.48 | 0.38 | 0.55 | 0.42 | 0.27 | 0.55 | 0.34 | 0.48 | 0.42 | 0.47 | 0.66 | 0.47 |
+| `include_v2_og_dutch_belgium` | 0.53 | 0.52 | 0.31 | 0.35 | 0.52 | 0.33 | 0.46 | 0.45 | 0.24 | 0.46 | 0.34 | 0.63 | 0.41 | 0.36 | 0.52 |
+| `include_v2_en_dutch_belgium` | 0.38 | 0.51 | 0.48 | 0.42 | 0.31 | 0.18 | 0.53 | 0.54 | 0.38 | 0.27 | 0.38 | 0.48 | 0.41 | 0.33 | 0.32 |
+| `global_piqa_parallel_cloze` | 0.13 | 0.54 | 0.35 | 0.23 | 0.56 | 0.33 | 0.43 | 0.47 | 0.35 | 0.51 | 0.22 | 0.52 | 0.29 | 0.30 | 0.36 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3696,17 +3743,17 @@ subtitle: "Norwegian (Bokmål) (no) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_rf_belebele` |  |  |  |  |  | **1.00** |  | **0.86** | **0.90** |  | **1.00** | **1.00** |  |  | **0.76** |
-| `bpb` | **1.00** | **0.95** | **0.76** | **0.95** | **1.00** | **0.95** | **0.76** | **0.95** | **1.00** | 0.71 | **1.00** | **0.95** | 0.71 | **0.76** | **0.95** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | 0.67 |  | **0.81** | **0.86** |  | **1.00** | 0.67 |  |  | 0.67 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.71 | 0.62 |  |  |  |  |  | 0.62 |
-| `bbpb_arc_mt` |  |  |  |  |  |  |  | 0.62 | 0.48 |  |  |  |  |  | **0.86** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | 0.57 | 0.67 |  |  |  |  |  | 0.52 |
-| `belebele` | 0.48 | 0.38 | 0.67 | **0.76** | 0.57 | 0.52 | 0.57 | 0.24 | 0.62 | 0.43 | 0.52 | 0.71 | 0.62 | 0.52 | 0.62 |
-| `arc_mt` | **0.81** | 0.52 | 0.48 | 0.52 | 0.52 | 0.48 | 0.38 | 0.48 | 0.71 | 0.43 | 0.71 | 0.38 | 0.38 | 0.48 | 0.48 |
-| `rfgm_belebele` | 0.62 | 0.48 | 0.52 | **0.76** | 0.48 | 0.24 | 0.52 | 0.62 | 0.48 | 0.43 | 0.62 | 0.48 | 0.62 | 0.29 | 0.38 |
-| `global_piqa_parallel_cloze` | 0.38 | 0.38 | 0.43 | 0.52 | 0.52 | 0.19 | 0.33 | 0.38 | 0.43 | 0.71 | 0.52 | 0.48 | 0.67 | 0.62 | **0.76** |
-| `rf_belebele` | 0.57 | 0.29 | 0.71 | 0.48 | 0.48 | 0.19 | 0.48 | 0.43 | 0.62 | 0.24 | 0.62 | 0.48 | 0.43 | 0.38 | 0.67 |
+| `bpb` | **1.00** | **0.89** | **0.75** | **0.93** | **1.00** | **0.89** | **0.75** | **0.93** | **1.00** | 0.64 | **0.96** | **0.95** | 0.68 | **0.76** | **0.95** |
+| `bbpb_rfgm_belebele` | **0.96** | **0.79** | **0.79** | **0.82** | **0.86** | **0.82** | **0.82** | **0.86** | **0.86** | 0.71 | **0.82** | **0.76** | **0.82** | 0.62 | 0.67 |
+| `bbpb_global_piqa_parallel_cloze` | **0.89** | **0.89** | **0.79** | 0.64 | 0.57 | **0.86** | **0.75** | 0.54 | 0.61 | **0.75** | 0.68 | 0.61 | 0.71 | 0.57 | 0.57 |
+| `bbpb_rf_belebele` | **0.86** | **0.82** | 0.43 | **0.86** | 0.68 | **0.82** | 0.50 | **0.86** | **0.82** | 0.46 | **0.75** | 0.71 | 0.50 | 0.54 | 0.68 |
+| `bbpb_belebele` | 0.64 | 0.57 | 0.54 | 0.57 | **0.79** | 0.71 | **0.82** | 0.71 | 0.71 | 0.68 | 0.64 | 0.57 | 0.54 | 0.68 | 0.64 |
+| `bbpb_arc_mt` | 0.54 | **0.79** | 0.64 | 0.68 | 0.52 | 0.54 | 0.61 | 0.57 | 0.48 | 0.71 | **0.75** | 0.71 | **0.75** | 0.62 | **0.86** |
+| `rfgm_belebele` | 0.72 | 0.53 | 0.61 | 0.68 | 0.43 | 0.39 | 0.54 | 0.57 | 0.43 | 0.43 | 0.68 | 0.61 | 0.61 | 0.32 | 0.50 |
+| `belebele` | 0.36 | 0.47 | 0.68 | 0.64 | 0.50 | 0.50 | 0.54 | 0.29 | 0.61 | 0.50 | 0.50 | 0.68 | 0.50 | 0.46 | 0.68 |
+| `arc_mt` | 0.67 | 0.58 | 0.46 | 0.50 | 0.61 | 0.44 | 0.36 | 0.43 | 0.64 | 0.43 | 0.71 | 0.43 | 0.46 | 0.50 | 0.43 |
+| `rf_belebele` | 0.58 | 0.36 | 0.71 | 0.46 | 0.46 | 0.33 | 0.57 | 0.32 | 0.46 | 0.36 | 0.50 | 0.39 | 0.36 | 0.32 | **0.75** |
+| `global_piqa_parallel_cloze` | 0.36 | 0.47 | 0.43 | 0.50 | 0.36 | 0.56 | 0.29 | 0.43 | 0.32 | 0.36 | 0.50 | 0.61 | 0.54 | 0.54 | 0.57 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3729,33 +3776,33 @@ subtitle: "Polish (pl) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **0.95** | **0.88** | 0.71 | **0.88** | **0.97** | **0.92** | 0.70 | **0.89** | **0.92** | 0.71 | **0.91** | **0.85** | 0.71 | 0.68 | **0.85** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **0.86** |  | 0.73 | 0.71 |  | 0.68 | **0.75** |  |  | 0.74 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **0.89** |  | 0.74 | 0.74 |  | 0.64 | **0.75** |  |  | 0.70 |
-| `bbpb_rf_belebele` |  |  |  |  |  | **0.82** |  | 0.71 | 0.68 |  | **0.89** | **0.75** |  |  | 0.52 |
-| `bbpb_include_base_44` |  |  |  |  |  | **0.80** |  | 0.71 | 0.59 |  | **0.80** | 0.70 |  |  | **0.76** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  | 0.67 |  | 0.59 | 0.73 |  | 0.67 | **1.00** |  |  | 0.65 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.89** |  | 0.74 | 0.59 |  | 0.68 | 0.54 |  |  | 0.70 |
-| `multiblimp` | **0.77** | 0.68 | 0.74 | 0.67 | 0.59 | 0.67 | 0.70 | **0.77** | 0.61 | 0.68 | **0.80** | 0.58 | 0.70 | 0.65 | 0.62 |
-| `bbpb_multiblimp` |  |  |  |  |  | **1.00** |  | 0.65 | 0.58 |  | 0.53 | 0.73 |  |  | 0.56 |
-| `bbpb_arc_mt` |  |  |  |  |  | 0.67 |  | 0.71 | 0.44 |  | **1.00** | 0.67 |  |  | 0.52 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | 0.67 |  | 0.61 | 0.61 |  | 0.67 | 0.67 |  |  | 0.70 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.46 |  | **0.77** | 0.56 |  | 0.57 | 0.57 |  |  | 0.48 |
-| `bbpb_belebele` |  |  |  |  |  | 0.33 |  | 0.59 | 0.47 |  | 0.67 | 0.67 |  |  | 0.67 |
-| `rf_belebele` | 0.44 | 0.58 | 0.70 | 0.65 | 0.52 | 0.44 | 0.50 | 0.53 | **0.79** | 0.44 | 0.42 | 0.41 | 0.61 | 0.52 | 0.58 |
-| `rfgm_include_base_44` | 0.53 | 0.41 | 0.62 | 0.53 | 0.38 | 0.52 | 0.67 | 0.45 | 0.36 | 0.53 | 0.64 | 0.56 | 0.50 | 0.56 | 0.67 |
-| `bbpb_include_v2_og` |  |  |  |  |  | 0.60 |  | 0.61 | 0.38 |  | 0.60 | 0.40 |  |  | 0.56 |
-| `arc_mt` | 0.47 | 0.55 | 0.47 | 0.32 | 0.61 | 0.62 | 0.50 | 0.45 | 0.58 | 0.58 | 0.55 | 0.59 | 0.56 | 0.47 | 0.52 |
-| `rf_include_base_44` | 0.38 | 0.33 | 0.65 | 0.50 | 0.41 | 0.53 | 0.45 | 0.68 | 0.58 | 0.48 | 0.62 | 0.53 | 0.39 | 0.35 | **0.77** |
-| `include_v2_en` | 0.58 | 0.45 | 0.52 | 0.44 | 0.64 | 0.33 | 0.59 | 0.41 | 0.61 | 0.65 | 0.71 | 0.38 | 0.50 | 0.36 | 0.47 |
-| `global_mmlu_full` | **0.76** | 0.50 | 0.38 | 0.52 | 0.39 | 0.35 | 0.56 | 0.67 | 0.33 | 0.45 | 0.56 | 0.56 | 0.53 | 0.53 | 0.39 |
-| `belebele` | 0.61 | 0.45 | 0.44 | 0.48 | 0.55 | 0.33 | 0.29 | 0.36 | 0.45 | 0.47 | 0.45 | 0.44 | 0.61 | 0.53 | **0.80** |
-| `include_v2_og` | 0.58 | 0.70 | 0.48 | 0.55 | 0.29 | 0.48 | 0.42 | 0.55 | 0.47 | 0.45 | 0.62 | 0.27 | 0.55 | 0.42 | 0.39 |
-| `bbpb_include_v2_en` |  |  |  |  |  | 0.20 |  | 0.36 | 0.30 |  | **0.90** | 0.60 |  |  | 0.52 |
-| `rf_global_mmlu_full` | 0.47 | 0.47 | 0.32 | 0.38 | 0.36 | 0.29 | 0.36 | 0.53 | 0.55 | 0.65 | 0.55 | 0.39 | 0.48 | 0.55 | 0.58 |
-| `rfgm_belebele` | 0.44 | 0.52 | 0.53 | 0.33 | 0.45 | 0.70 | 0.47 | 0.38 | 0.48 | 0.24 | 0.45 | 0.41 | 0.41 | 0.62 | 0.36 |
-| `include_base_44` | 0.39 | 0.61 | 0.38 | 0.27 | 0.56 | 0.38 | 0.41 | 0.58 | 0.38 | 0.52 | 0.53 | 0.48 | 0.56 | 0.35 | 0.39 |
-| `global_piqa_parallel_cloze` | 0.47 | 0.23 | 0.50 | 0.45 | 0.35 | 0.32 | 0.38 | 0.26 | 0.35 | 0.50 | 0.27 | 0.38 | 0.29 | 0.42 | 0.61 |
+| `bpb` | **0.96** | **0.85** | 0.69 | **0.88** | **0.97** | **0.87** | 0.69 | **0.88** | **0.92** | 0.74 | **0.90** | **0.85** | 0.73 | 0.68 | **0.85** |
+| `bbpb_rfgm_include_base_44` | 0.68 | 0.62 | 0.68 | 0.68 | **0.82** | **0.76** | 0.56 | 0.74 | 0.73 | 0.69 | 0.69 | 0.65 | 0.63 | 0.59 | **0.76** |
+| `bbpb_include_base_44` | 0.71 | 0.75 | **0.77** | 0.71 | **0.77** | 0.64 | 0.66 | 0.65 | 0.57 | 0.58 | 0.66 | 0.67 | 0.75 | 0.67 | 0.70 |
+| `bbpb_rfgm_belebele` | **0.77** | 0.70 | 0.57 | 0.63 | **0.87** | 0.71 | 0.69 | 0.66 | 0.73 | 0.52 | 0.75 | 0.69 | 0.62 | 0.59 | 0.67 |
+| `bbpb_rf_global_mmlu_full` | 0.64 | 0.62 | 0.65 | 0.68 | **0.76** | 0.71 | 0.68 | **0.78** | 0.62 | 0.51 | 0.65 | 0.51 | 0.64 | 0.74 | 0.68 |
+| `bbpb_rf_belebele` | **0.76** | 0.66 | 0.69 | **0.81** | 0.67 | 0.66 | 0.63 | 0.73 | 0.69 | 0.48 | 0.63 | 0.59 | 0.62 | 0.56 | 0.55 |
+| `multiblimp` | 0.67 | 0.55 | 0.70 | 0.63 | 0.56 | 0.61 | 0.66 | **0.78** | 0.60 | 0.59 | **0.78** | 0.55 | 0.65 | 0.71 | 0.60 |
+| `bbpb_global_mmlu_full` | 0.58 | 0.66 | 0.68 | 0.73 | 0.65 | 0.53 | 0.62 | 0.59 | 0.65 | 0.65 | 0.60 | 0.57 | 0.63 | 0.59 | 0.70 |
+| `bbpb_global_piqa_parallel_cloze` | **0.77** | 0.45 | 0.69 | 0.49 | 0.74 | 0.40 | 0.62 | 0.53 | 0.75 | 0.67 | 0.65 | 0.54 | 0.67 | 0.71 | 0.63 |
+| `bbpb_arc_mt` | 0.60 | 0.69 | 0.54 | 0.67 | 0.58 | 0.58 | **0.87** | 0.67 | 0.45 | 0.58 | 0.52 | **0.77** | 0.65 | 0.51 | 0.53 |
+| `bbpb_multiblimp` | 0.58 | 0.48 | 0.75 | 0.57 | 0.54 | 0.66 | 0.57 | 0.66 | 0.58 | 0.52 | 0.45 | 0.64 | 0.63 | 0.66 | 0.57 |
+| `bbpb_belebele` | 0.54 | 0.42 | 0.65 | 0.60 | 0.58 | 0.59 | 0.54 | 0.54 | 0.54 | 0.55 | 0.53 | 0.48 | 0.60 | 0.63 | 0.65 |
+| `bbpb_include_v2_og` | 0.63 | 0.62 | 0.63 | 0.49 | 0.46 | 0.62 | 0.67 | 0.60 | 0.36 | 0.59 | 0.53 | 0.49 | 0.69 | 0.47 | 0.56 |
+| `bbpb_rf_include_base_44` | 0.66 | 0.55 | 0.65 | 0.55 | 0.42 | 0.52 | 0.64 | 0.71 | 0.54 | 0.37 | 0.41 | 0.58 | 0.53 | 0.51 | 0.52 |
+| `rf_belebele` | 0.41 | 0.58 | 0.68 | 0.59 | 0.45 | 0.41 | 0.52 | 0.55 | 0.74 | 0.44 | 0.41 | 0.47 | 0.59 | 0.49 | 0.58 |
+| `arc_mt` | 0.50 | 0.50 | 0.47 | 0.31 | 0.62 | 0.62 | 0.51 | 0.44 | 0.60 | 0.55 | 0.56 | 0.56 | 0.59 | 0.51 | 0.48 |
+| `rfgm_include_base_44` | 0.41 | 0.44 | 0.63 | 0.52 | 0.36 | 0.45 | 0.58 | 0.42 | 0.47 | 0.58 | 0.64 | 0.55 | 0.52 | 0.55 | 0.59 |
+| `bbpb_include_v2_en` | 0.33 | 0.55 | 0.53 | 0.49 | 0.58 | 0.47 | 0.49 | 0.35 | 0.35 | 0.60 | 0.66 | 0.56 | 0.59 | 0.60 | 0.50 |
+| `include_v2_en` | 0.55 | 0.43 | 0.56 | 0.44 | 0.60 | 0.38 | 0.62 | 0.40 | 0.65 | 0.58 | 0.64 | 0.43 | 0.51 | 0.41 | 0.42 |
+| `rf_include_base_44` | 0.47 | 0.30 | 0.62 | 0.52 | 0.37 | 0.46 | 0.46 | 0.70 | 0.56 | 0.48 | 0.55 | 0.53 | 0.36 | 0.36 | 0.69 |
+| `global_mmlu_full` | 0.68 | 0.51 | 0.34 | 0.48 | 0.36 | 0.45 | 0.48 | 0.60 | 0.31 | 0.44 | 0.52 | 0.53 | 0.57 | 0.60 | 0.48 |
+| `belebele` | 0.62 | 0.53 | 0.46 | 0.43 | 0.49 | 0.42 | 0.29 | 0.40 | 0.48 | 0.53 | 0.37 | 0.37 | 0.52 | 0.45 | **0.84** |
+| `rf_global_mmlu_full` | 0.47 | 0.43 | 0.35 | 0.37 | 0.41 | 0.44 | 0.40 | 0.49 | 0.53 | 0.65 | 0.58 | 0.41 | 0.52 | 0.56 | 0.58 |
+| `include_v2_og` | 0.48 | 0.59 | 0.49 | 0.48 | 0.36 | 0.53 | 0.40 | 0.57 | 0.44 | 0.43 | 0.66 | 0.32 | 0.49 | 0.43 | 0.41 |
+| `rfgm_belebele` | 0.50 | 0.62 | 0.46 | 0.38 | 0.42 | 0.68 | 0.41 | 0.41 | 0.44 | 0.33 | 0.41 | 0.47 | 0.37 | 0.70 | 0.33 |
+| `include_base_44` | 0.50 | 0.60 | 0.38 | 0.26 | 0.51 | 0.47 | 0.36 | 0.53 | 0.36 | 0.44 | 0.48 | 0.44 | 0.51 | 0.38 | 0.46 |
+| `global_piqa_parallel_cloze` | 0.39 | 0.38 | 0.49 | 0.38 | 0.40 | 0.54 | 0.25 | 0.51 | 0.54 | 0.42 | 0.44 | 0.37 | 0.48 | 0.32 | 0.46 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3778,44 +3825,44 @@ subtitle: "Portuguese (pt) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_hellaswag` |  |  |  |  |  | **1.00** |  | **0.85** | **0.85** |  | **1.00** | **1.00** |  |  | **0.85** |
-| `bpb` | **0.97** | **0.92** | **0.77** | **0.91** | **0.95** | **0.95** | **0.80** | **0.91** | **0.95** | **0.82** | **0.92** | **0.91** | 0.74 | **0.76** | **0.89** |
-| `bbpb_arc` |  |  |  |  |  | **1.00** |  | 0.67 | 0.73 |  | **1.00** | **1.00** |  |  | 0.48 |
-| `hellaswag` | 0.71 | **0.80** | 0.65 | 0.71 | 0.70 | 0.74 | **0.83** | **0.91** | **0.86** | **0.76** | **0.76** | 0.71 | **0.85** | **0.80** | **0.94** |
-| `bbpb_arc_mt` |  |  |  |  |  | 0.67 |  | 0.73 | 0.67 |  | **1.00** | **1.00** |  |  | 0.48 |
-| `bbpb_global_piqa_parallel_cloze_por_latn_port` |  |  |  |  |  | **1.00** |  | 0.70 | 0.70 |  | 0.67 | 0.67 |  |  | 0.70 |
-| `bbpb_rf_belebele` |  |  |  |  |  | **0.82** |  | **0.82** | 0.70 |  | **0.82** | 0.61 |  |  | 0.64 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.82** |  | **0.77** | 0.65 |  | 0.54 | 0.50 |  |  | 0.70 |
-| `bbpb_global_piqa_parallel_cloze_por_latn_braz` |  |  |  |  |  | 0.67 |  | **0.77** | 0.73 |  | 0.00 | **1.00** |  |  | 0.65 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | 0.67 |  | 0.48 | 0.55 |  | 0.33 | **1.00** |  |  | **0.76** |
-| `bbpb_multiblimp` |  |  |  |  |  | 0.73 |  | 0.59 | 0.45 |  | 0.60 | 0.73 |  |  | 0.44 |
-| `bbpb_include_v2_en_portuguese_portugal` |  |  |  |  |  | 0.60 |  | 0.44 | 0.26 |  | **0.90** | 0.70 |  |  | 0.64 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | 0.64 |  | 0.58 | 0.59 |  | 0.46 | 0.71 |  |  | 0.53 |
-| `arc` | 0.58 | 0.73 | **0.76** | 0.68 | 0.61 | 0.48 | 0.61 | 0.39 | 0.50 | 0.59 | 0.65 | 0.47 | 0.64 | 0.48 | 0.59 |
-| `rf_global_mmlu_full` | 0.55 | 0.59 | 0.56 | 0.71 | 0.44 | 0.44 | 0.56 | 0.59 | 0.65 | 0.47 | 0.52 | 0.68 | 0.67 | 0.58 | 0.55 |
-| `multiblimp` | 0.50 | 0.56 | 0.56 | 0.47 | 0.53 | 0.42 | 0.59 | 0.55 | 0.55 | 0.55 | 0.55 | 0.61 | 0.59 | 0.68 | 0.61 |
-| `rf_belebele` | 0.48 | 0.48 | 0.55 | 0.48 | 0.50 | 0.73 | 0.62 | 0.52 | 0.38 | 0.74 | 0.62 | 0.41 | 0.65 | 0.47 | 0.62 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | 0.46 |  | 0.74 | 0.62 |  | 0.25 | 0.61 |  |  | 0.55 |
-| `bbpb_belebele` |  |  |  |  |  | 0.33 |  | 0.58 | 0.39 |  | 0.67 | 0.67 |  |  | 0.58 |
-| `rf_include_base_44` | 0.61 | 0.24 | 0.56 | 0.30 | 0.50 | 0.42 | 0.73 | 0.55 | 0.67 | 0.53 | 0.61 | 0.44 | 0.45 | 0.61 | 0.47 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.39 |  | 0.52 | 0.62 |  | 0.61 | 0.57 |  |  | 0.35 |
-| `global_mmlu_full` | 0.56 | 0.55 | 0.48 | 0.53 | 0.33 | 0.59 | 0.62 | 0.39 | 0.47 | 0.67 | 0.44 | 0.64 | 0.35 | 0.42 | 0.59 |
-| `bbpb_include_base_44` |  |  |  |  |  | 0.10 |  | 0.41 | 0.59 |  | **0.80** | 0.60 |  |  | 0.55 |
-| `arc_mt` | 0.39 | 0.20 | 0.42 | 0.41 | 0.35 | 0.62 | 0.41 | 0.47 | 0.36 | 0.42 | 0.52 | 0.48 | 0.67 | 0.74 | **0.76** |
-| `rfgm_belebele` | 0.45 | 0.53 | 0.27 | 0.32 | 0.44 | 0.55 | 0.62 | 0.62 | 0.52 | 0.33 | 0.35 | 0.45 | 0.64 | 0.56 | 0.55 |
-| `rfgm_include_base_44` | 0.45 | 0.41 | 0.56 | 0.45 | 0.33 | 0.48 | 0.42 | 0.58 | 0.50 | 0.52 | 0.42 | 0.58 | 0.36 | 0.67 | 0.45 |
-| `bbpb_include_v2_en_portuguese_brazil` |  |  |  |  |  | 0.30 |  | 0.33 | 0.45 |  | 0.70 | 0.60 |  |  | 0.48 |
-| `include_base_44` | 0.39 | 0.71 | 0.35 | 0.55 | 0.27 | 0.35 | 0.70 | 0.61 | 0.50 | 0.35 | 0.45 | 0.39 | 0.55 | 0.44 | 0.42 |
-| `bbpb_include_v2_og_portuguese_brazil` |  |  |  |  |  | 0.20 |  | 0.38 | 0.45 |  | 0.70 | 0.60 |  |  | 0.44 |
-| `include_v2_og_portuguese_portugal` | 0.41 | 0.29 | 0.53 | 0.39 | 0.50 | 0.56 | 0.38 | 0.55 | 0.38 | 0.50 | 0.55 | 0.47 | 0.44 | 0.53 | 0.45 |
-| `include_v2_og_portuguese_brazil` | 0.36 | 0.42 | 0.41 | 0.33 | 0.23 | 0.38 | 0.55 | 0.53 | 0.50 | 0.44 | 0.47 | 0.55 | 0.62 | 0.42 | 0.67 |
-| `xwinograd` | 0.56 | 0.41 | 0.47 | 0.30 | 0.44 | 0.29 | 0.53 | 0.41 | 0.56 | 0.33 | 0.50 | 0.45 | 0.50 | 0.50 | 0.41 |
-| `bbpb_include_v2_og_portuguese_portugal` |  |  |  |  |  | 0.50 |  | 0.61 | 0.41 |  | 0.40 | 0.20 |  |  | 0.53 |
-| `include_v2_en_portuguese_portugal` | 0.35 | 0.53 | 0.45 | 0.48 | 0.29 | 0.53 | 0.30 | 0.35 | 0.64 | 0.38 | 0.44 | 0.36 | 0.65 | 0.53 | 0.30 |
-| `belebele` | 0.24 | 0.24 | 0.27 | 0.33 | 0.41 | 0.53 | 0.55 | 0.39 | 0.23 | 0.53 | 0.52 | 0.29 | 0.59 | 0.52 | 0.59 |
-| `global_piqa_parallel_cloze_por_latn_port` | 0.50 | 0.47 | 0.42 | 0.36 | 0.39 | 0.45 | 0.27 | 0.59 | 0.33 | 0.47 | 0.33 | 0.44 | 0.35 | 0.47 | 0.32 |
-| `global_piqa_parallel_cloze_por_latn_braz` | 0.36 | 0.38 | 0.38 | 0.36 | 0.53 | 0.35 | 0.41 | 0.30 | 0.41 | 0.24 | 0.50 | 0.41 | 0.53 | 0.30 | 0.42 |
-| `include_v2_en_portuguese_brazil` | 0.59 | 0.14 | 0.39 | 0.35 | 0.33 | 0.26 | 0.32 | 0.36 | 0.33 | 0.39 | 0.65 | 0.44 | 0.24 | 0.64 | 0.29 |
+| `bpb` | **0.98** | **0.89** | **0.76** | **0.90** | **0.95** | **0.91** | **0.78** | **0.90** | **0.95** | **0.82** | **0.92** | **0.91** | **0.77** | **0.76** | **0.89** |
+| `bbpb_hellaswag` | **0.97** | **0.82** | 0.75 | **0.79** | **0.84** | **0.84** | **0.76** | **0.82** | **0.85** | **0.90** | **0.79** | 0.73 | 0.71 | 0.67 | **0.78** |
+| `hellaswag` | **0.78** | 0.66 | 0.67 | 0.71 | 0.75 | **0.80** | 0.74 | **0.82** | **0.86** | **0.76** | **0.78** | 0.75 | **0.80** | **0.79** | **0.92** |
+| `bbpb_rf_belebele` | **0.78** | **0.77** | 0.66 | 0.71 | 0.65 | 0.70 | 0.66 | **0.82** | 0.65 | 0.56 | 0.70 | 0.70 | 0.66 | 0.59 | 0.63 |
+| `bbpb_rf_global_mmlu_full` | 0.63 | 0.53 | 0.68 | **0.78** | 0.68 | 0.66 | 0.68 | **0.78** | 0.68 | 0.63 | 0.53 | 0.63 | 0.66 | **0.76** | 0.70 |
+| `bbpb_global_piqa_parallel_cloze_por_latn_port` | **0.82** | 0.75 | 0.67 | 0.59 | 0.63 | **0.81** | 0.69 | 0.59 | 0.60 | 0.66 | 0.63 | 0.66 | 0.59 | 0.49 | 0.75 |
+| `bbpb_arc_mt` | 0.64 | 0.73 | **0.81** | 0.62 | 0.67 | 0.63 | 0.69 | 0.71 | 0.67 | 0.63 | 0.60 | 0.71 | 0.60 | 0.65 | 0.50 |
+| `bbpb_global_piqa_parallel_cloze_por_latn_braz` | **0.78** | 0.69 | 0.66 | 0.57 | 0.70 | **0.76** | 0.70 | 0.68 | 0.66 | 0.62 | 0.62 | 0.62 | 0.56 | 0.47 | 0.69 |
+| `bbpb_arc` | 0.60 | 0.71 | **0.78** | 0.62 | 0.65 | 0.60 | 0.69 | 0.66 | 0.67 | 0.60 | 0.55 | 0.71 | 0.64 | 0.60 | 0.51 |
+| `bbpb_global_mmlu_full` | 0.59 | 0.65 | 0.63 | 0.71 | 0.68 | 0.57 | 0.51 | 0.48 | 0.56 | 0.60 | 0.67 | 0.64 | **0.78** | 0.62 | 0.70 |
+| `bbpb_rfgm_belebele` | **0.81** | **0.78** | 0.64 | 0.62 | 0.63 | 0.64 | 0.63 | 0.65 | 0.59 | 0.64 | 0.46 | 0.59 | 0.65 | 0.36 | 0.53 |
+| `bbpb_belebele` | 0.57 | 0.48 | 0.64 | **0.76** | 0.63 | 0.65 | 0.65 | 0.57 | 0.46 | 0.63 | 0.51 | 0.51 | 0.64 | 0.62 | 0.63 |
+| `bbpb_rf_include_base_44` | 0.43 | 0.75 | 0.67 | 0.52 | 0.54 | 0.48 | 0.63 | 0.52 | 0.63 | 0.68 | 0.66 | 0.62 | 0.60 | **0.76** | 0.45 |
+| `bbpb_include_base_44` | **0.77** | 0.56 | 0.63 | 0.52 | 0.70 | 0.46 | 0.64 | 0.42 | 0.56 | 0.58 | 0.69 | 0.55 | 0.65 | 0.55 | 0.59 |
+| `bbpb_rfgm_include_base_44` | 0.68 | 0.63 | 0.57 | 0.66 | 0.72 | 0.59 | 0.52 | 0.71 | 0.60 | 0.40 | 0.51 | 0.67 | 0.47 | 0.49 | 0.53 |
+| `bbpb_include_v2_og_portuguese_portugal` | 0.67 | 0.71 | 0.75 | 0.53 | 0.40 | 0.60 | 0.68 | 0.66 | 0.44 | 0.66 | 0.59 | 0.42 | 0.49 | 0.56 | 0.53 |
+| `rf_global_mmlu_full` | 0.61 | 0.57 | 0.52 | 0.73 | 0.53 | 0.48 | 0.51 | 0.60 | 0.67 | 0.51 | 0.53 | 0.65 | 0.64 | 0.48 | 0.56 |
+| `multiblimp` | 0.47 | 0.60 | 0.62 | 0.58 | 0.59 | 0.39 | 0.58 | 0.54 | 0.57 | 0.52 | 0.51 | 0.54 | 0.65 | 0.73 | 0.64 |
+| `bbpb_include_v2_og_portuguese_brazil` | 0.56 | 0.65 | 0.65 | 0.43 | 0.50 | 0.52 | 0.58 | 0.45 | 0.49 | 0.63 | 0.54 | 0.62 | 0.58 | 0.51 | 0.44 |
+| `rf_belebele` | 0.49 | 0.46 | 0.51 | 0.52 | 0.45 | 0.62 | 0.58 | 0.51 | 0.40 | **0.76** | 0.60 | 0.47 | 0.64 | 0.49 | 0.60 |
+| `arc` | 0.51 | 0.43 | 0.49 | 0.48 | 0.63 | 0.54 | 0.57 | 0.54 | 0.55 | 0.54 | 0.46 | 0.44 | 0.53 | 0.59 | 0.70 |
+| `bbpb_include_v2_en_portuguese_portugal` | 0.38 | 0.55 | 0.51 | 0.60 | 0.58 | 0.48 | 0.48 | 0.43 | 0.27 | 0.63 | 0.68 | 0.64 | 0.44 | 0.53 | 0.62 |
+| `rf_include_base_44` | 0.54 | 0.22 | 0.52 | 0.31 | 0.51 | 0.48 | 0.75 | 0.56 | 0.71 | 0.57 | 0.58 | 0.45 | 0.47 | 0.62 | 0.53 |
+| `bbpb_multiblimp` | 0.55 | 0.45 | 0.51 | 0.43 | 0.53 | 0.46 | 0.41 | 0.53 | 0.41 | 0.62 | 0.38 | 0.55 | 0.48 | **0.80** | 0.53 |
+| `global_mmlu_full` | 0.58 | 0.53 | 0.52 | 0.56 | 0.34 | 0.53 | 0.56 | 0.41 | 0.41 | 0.57 | 0.40 | 0.59 | 0.45 | 0.49 | 0.60 |
+| `include_v2_og_portuguese_portugal` | 0.42 | 0.32 | 0.49 | 0.43 | 0.48 | 0.56 | 0.41 | 0.52 | 0.42 | 0.56 | 0.62 | 0.58 | 0.48 | 0.59 | 0.54 |
+| `include_base_44` | 0.46 | 0.74 | 0.40 | 0.56 | 0.31 | 0.40 | 0.67 | 0.59 | 0.52 | 0.41 | 0.44 | 0.40 | 0.54 | 0.41 | 0.44 |
+| `global_piqa_parallel_cloze_por_latn_braz` | 0.58 | 0.58 | 0.58 | 0.51 | 0.43 | 0.53 | 0.52 | 0.33 | 0.48 | 0.47 | 0.41 | 0.40 | 0.52 | 0.54 | 0.34 |
+| `rfgm_belebele` | 0.42 | 0.48 | 0.34 | 0.34 | 0.42 | 0.50 | 0.56 | 0.55 | 0.47 | 0.35 | 0.40 | 0.46 | 0.66 | 0.60 | 0.62 |
+| `rfgm_include_base_44` | 0.45 | 0.43 | 0.54 | 0.45 | 0.32 | 0.54 | 0.42 | 0.56 | 0.42 | 0.48 | 0.41 | 0.52 | 0.38 | 0.64 | 0.44 |
+| `xwinograd` | 0.53 | 0.38 | 0.55 | 0.37 | 0.49 | 0.38 | 0.55 | 0.41 | 0.54 | 0.34 | 0.46 | 0.44 | 0.51 | 0.55 | 0.43 |
+| `bbpb_include_v2_en_portuguese_brazil` | 0.54 | 0.45 | 0.56 | 0.30 | 0.49 | 0.36 | 0.34 | 0.41 | 0.44 | 0.69 | 0.58 | 0.41 | 0.47 | 0.40 | 0.49 |
+| `arc_mt` | 0.32 | 0.33 | 0.38 | 0.34 | 0.33 | 0.50 | 0.36 | 0.46 | 0.38 | 0.44 | 0.51 | 0.48 | 0.68 | 0.66 | 0.64 |
+| `include_v2_en_portuguese_portugal` | 0.36 | 0.49 | 0.38 | 0.52 | 0.38 | 0.64 | 0.47 | 0.37 | 0.48 | 0.52 | 0.43 | 0.33 | 0.59 | 0.42 | 0.33 |
+| `include_v2_og_portuguese_brazil` | 0.40 | 0.44 | 0.32 | 0.31 | 0.21 | 0.37 | 0.52 | 0.52 | 0.47 | 0.41 | 0.40 | 0.51 | 0.65 | 0.48 | 0.63 |
+| `belebele` | 0.27 | 0.36 | 0.35 | 0.26 | 0.34 | 0.57 | 0.54 | 0.35 | 0.19 | 0.56 | 0.45 | 0.26 | 0.52 | 0.48 | 0.66 |
+| `global_piqa_parallel_cloze_por_latn_port` | 0.53 | 0.48 | 0.37 | 0.24 | 0.48 | 0.41 | 0.51 | 0.41 | 0.44 | 0.36 | 0.26 | 0.46 | 0.42 | 0.36 | 0.40 |
+| `include_v2_en_portuguese_brazil` | 0.54 | 0.28 | 0.31 | 0.37 | 0.36 | 0.23 | 0.32 | 0.36 | 0.37 | 0.37 | 0.68 | 0.42 | 0.26 | 0.63 | 0.33 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3838,25 +3885,25 @@ subtitle: "Romanian (ro) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **1.00** | **0.97** | **0.75** | **0.94** | **0.97** | **0.97** | **0.75** | **0.94** | **0.97** | **0.78** | **0.92** | **0.94** | 0.69 | 0.72 | **0.92** |
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | **0.86** | **0.89** |  |  |  |  |  | **0.86** |
-| `bbpb_multiblimp` |  |  |  |  |  | **1.00** |  | **0.83** | 0.58 |  | **1.00** | 0.67 |  |  | 0.53 |
-| `hellaswag` | **0.75** | 0.67 | 0.69 | 0.72 | **0.78** | **0.81** | 0.72 | **0.75** | **0.81** | 0.64 | 0.61 | 0.67 | 0.72 | **0.75** | **0.92** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **0.80** |  | **0.81** | 0.64 |  | 0.70 | **0.80** |  |  | 0.56 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  |  |  | 0.56 | 0.72 |  |  |  |  |  | **0.78** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **0.78** | 0.64 |  |  |  |  |  | 0.58 |
-| `bbpb_rf_belebele` |  |  |  |  |  | **0.90** |  | 0.72 | 0.58 |  | 0.70 | 0.60 |  |  | 0.42 |
-| `multiblimp` | **0.75** | **0.83** | 0.61 | 0.67 | 0.56 | **0.81** | 0.56 | 0.69 | 0.47 | 0.67 | 0.72 | 0.50 | 0.67 | 0.58 | 0.50 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **1.00** |  | **0.75** | 0.36 |  | 0.70 | 0.30 |  |  | 0.44 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.42 | 0.58 |  |  |  |  |  | 0.56 |
-| `belebele` | 0.39 | 0.47 | 0.67 | 0.72 | 0.50 | 0.36 | 0.42 | 0.61 | 0.56 | 0.50 | 0.47 | 0.50 | 0.47 | 0.61 | 0.44 |
-| `global_mmlu_full` | 0.44 | 0.72 | 0.25 | 0.53 | 0.33 | 0.44 | 0.47 | 0.42 | 0.72 | 0.42 | 0.42 | 0.56 | 0.56 | 0.64 | 0.47 |
-| `arc` | 0.39 | 0.47 | **0.75** | 0.50 | 0.31 | 0.44 | 0.50 | 0.44 | 0.61 | 0.39 | 0.44 | **0.75** | 0.56 | 0.36 | 0.44 |
-| `bbpb_arc` |  |  |  |  |  |  |  | 0.61 | 0.33 |  |  |  |  |  | 0.44 |
-| `rfgm_belebele` | 0.31 | 0.39 | 0.50 | 0.58 | 0.64 | 0.28 | 0.36 | 0.42 | 0.28 | 0.67 | 0.56 | 0.47 | 0.56 | 0.44 | 0.47 |
-| `rf_belebele` | 0.53 | 0.22 | 0.36 | 0.36 | 0.56 | 0.17 | 0.64 | 0.28 | 0.39 | 0.42 | **0.75** | 0.53 | 0.42 | 0.47 | 0.67 |
-| `rf_global_mmlu_full` | 0.53 | 0.53 | 0.31 | 0.36 | 0.25 | 0.22 | 0.56 | 0.33 | 0.61 | 0.28 | 0.44 | 0.61 | **0.78** | 0.50 | 0.44 |
-| `global_piqa_parallel_cloze` | 0.42 | 0.42 | 0.58 | 0.31 | 0.39 | 0.14 | 0.50 | 0.44 | 0.53 | 0.31 | 0.42 | 0.25 | 0.22 | 0.47 | 0.42 |
+| `bpb` | **1.00** | **0.96** | 0.73 | **0.93** | **0.97** | **0.96** | 0.73 | **0.93** | **0.97** | **0.78** | **0.89** | **0.94** | 0.67 | 0.72 | **0.92** |
+| `bbpb_hellaswag` | **1.00** | **0.84** | **0.87** | **0.80** | **0.87** | **0.84** | **0.87** | **0.80** | **0.87** | **0.93** | **0.87** | **0.80** | **0.80** | 0.73 | **0.84** |
+| `bbpb_global_piqa_parallel_cloze` | **0.93** | **0.87** | **0.76** | 0.67 | 0.64 | **0.89** | 0.73 | 0.73 | 0.62 | 0.62 | 0.62 | 0.64 | **0.82** | 0.58 | 0.58 |
+| `hellaswag` | **0.76** | 0.58 | 0.60 | 0.71 | 0.67 | 0.65 | 0.60 | 0.67 | 0.71 | 0.69 | **0.84** | **0.80** | 0.71 | 0.71 | **0.91** |
+| `bbpb_multiblimp` | **0.80** | 0.73 | **0.82** | **0.89** | 0.60 | **0.76** | **0.76** | **0.78** | 0.53 | 0.73 | 0.71 | 0.47 | **0.80** | 0.64 | 0.53 |
+| `bbpb_rfgm_belebele` | **0.84** | **0.80** | 0.62 | **0.82** | **0.75** | **0.78** | 0.64 | **0.84** | 0.64 | 0.73 | **0.76** | 0.67 | 0.67 | 0.39 | 0.56 |
+| `bbpb_global_mmlu_full` | **0.80** | 0.56 | 0.53 | 0.51 | 0.62 | 0.67 | 0.56 | 0.53 | 0.64 | **0.80** | 0.73 | 0.71 | **0.76** | 0.73 | **0.80** |
+| `bbpb_rf_belebele` | **0.76** | **0.78** | 0.62 | 0.71 | 0.64 | 0.67 | **0.82** | 0.73 | 0.58 | 0.62 | 0.71 | 0.60 | 0.69 | 0.49 | 0.49 |
+| `multiblimp` | 0.73 | **0.82** | 0.64 | 0.62 | 0.56 | **0.80** | 0.60 | 0.69 | 0.49 | 0.71 | 0.69 | 0.49 | 0.62 | 0.53 | 0.58 |
+| `bbpb_belebele` | 0.67 | 0.38 | 0.64 | 0.67 | 0.69 | 0.58 | 0.53 | 0.47 | 0.67 | 0.47 | 0.40 | 0.38 | 0.58 | **0.78** | 0.58 |
+| `bbpb_arc` | 0.67 | 0.69 | 0.60 | 0.49 | 0.51 | 0.58 | 0.71 | 0.56 | 0.27 | 0.51 | 0.71 | 0.60 | 0.62 | 0.29 | 0.49 |
+| `bbpb_rf_global_mmlu_full` | **0.76** | 0.73 | 0.40 | **0.78** | 0.47 | 0.71 | 0.56 | **0.76** | 0.36 | 0.53 | 0.56 | 0.19 | 0.36 | 0.36 | 0.44 |
+| `arc` | 0.62 | 0.55 | 0.44 | 0.73 | 0.53 | **0.76** | 0.44 | 0.44 | 0.42 | 0.56 | 0.40 | 0.53 | 0.53 | 0.51 | 0.40 |
+| `belebele` | 0.31 | 0.42 | 0.56 | 0.73 | 0.40 | 0.36 | 0.47 | 0.53 | 0.60 | 0.51 | 0.47 | 0.53 | 0.44 | 0.67 | 0.40 |
+| `global_mmlu_full` | 0.40 | 0.62 | 0.27 | 0.56 | 0.31 | 0.56 | 0.47 | 0.36 | 0.64 | 0.42 | 0.40 | 0.56 | 0.53 | 0.64 | 0.49 |
+| `rfgm_belebele` | 0.36 | 0.35 | 0.60 | 0.58 | 0.64 | 0.25 | 0.42 | 0.44 | 0.29 | 0.56 | 0.51 | 0.47 | 0.56 | 0.49 | 0.42 |
+| `rf_global_mmlu_full` | 0.55 | 0.47 | 0.33 | 0.38 | 0.27 | 0.24 | 0.47 | 0.42 | 0.56 | 0.40 | 0.40 | 0.60 | 0.64 | 0.53 | 0.42 |
+| `rf_belebele` | 0.44 | 0.24 | 0.31 | 0.38 | 0.60 | 0.27 | 0.69 | 0.29 | 0.33 | 0.51 | 0.71 | 0.44 | 0.42 | 0.38 | 0.62 |
+| `global_piqa_parallel_cloze` | 0.49 | 0.51 | 0.33 | 0.22 | 0.40 | 0.24 | 0.29 | 0.38 | 0.18 | 0.58 | 0.31 | 0.53 | 0.71 | 0.40 | 0.36 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3879,45 +3926,45 @@ subtitle: "Russian (ru) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **1.00** | **0.95** | **0.89** | **0.96** | **0.99** | **0.95** | **0.89** | **0.96** | **0.99** | **0.91** | **0.95** | **0.95** | **0.90** | **0.89** | **0.96** |
-| `bbpb_xstorycloze` |  |  |  |  |  | **0.94** |  | **0.95** | **0.93** |  | **0.92** | **0.90** |  |  | **0.92** |
-| `bbpb_hellaswag` |  |  |  |  |  | **0.95** |  | **0.91** | **0.90** |  | **0.90** | **0.95** |  |  | **0.87** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **0.87** |  | **0.93** | **0.84** |  | **0.86** | **0.85** |  |  | **0.82** |
-| `hellaswag` | **0.78** | **0.85** | **0.77** | **0.85** | **0.82** | **0.84** | **0.84** | **0.90** | **0.85** | **0.82** | **0.91** | **0.86** | **0.83** | **0.86** | **0.88** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **0.88** |  | **0.85** | **0.76** |  | **0.83** | **0.77** |  |  | **0.82** |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | **0.82** |  | **0.89** | **0.82** |  | **0.86** | 0.73 |  |  | **0.78** |
-| `multiblimp` | **0.81** | **0.85** | **0.86** | 0.73 | **0.76** | **0.83** | **0.86** | **0.77** | 0.74 | **0.90** | 0.74 | **0.80** | **0.77** | 0.74 | 0.72 |
-| `bbpb_multiblimp` |  |  |  |  |  | **0.91** |  | **0.88** | 0.66 |  | **0.91** | 0.73 |  |  | 0.63 |
-| `bbpb_rf_belebele` |  |  |  |  |  | **0.79** |  | **0.80** | 0.75 |  | **0.79** | 0.70 |  |  | 0.72 |
-| `xstorycloze` | 0.72 | **0.83** | **0.77** | 0.74 | **0.78** | 0.71 | 0.75 | 0.69 | **0.82** | 0.73 | 0.68 | **0.76** | 0.75 | **0.82** | 0.72 |
-| `include_v2_og` | 0.66 | 0.62 | 0.65 | 0.72 | 0.69 | **0.75** | **0.82** | **0.84** | **0.81** | **0.78** | 0.75 | **0.79** | **0.78** | **0.76** | **0.82** |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.79** |  | **0.84** | 0.69 |  | 0.71 | 0.73 |  |  | 0.64 |
-| `bbpb_include_v2_og` |  |  |  |  |  | 0.69 |  | 0.66 | 0.61 |  | **0.86** | **0.86** |  |  | 0.69 |
-| `bbpb_xnli` |  |  |  |  |  | **0.78** |  | **0.79** | 0.74 |  | 0.69 | 0.67 |  |  | 0.69 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  | **0.86** |  | **0.77** | 0.65 |  | 0.67 | 0.57 |  |  | 0.70 |
-| `bbpb_arc` |  |  |  |  |  | 0.71 |  | 0.66 | 0.70 |  | 0.52 | **0.81** |  |  | 0.59 |
-| `rfgm_belebele` | 0.66 | 0.63 | 0.65 | 0.63 | 0.52 | 0.67 | 0.69 | 0.58 | 0.66 | 0.65 | 0.67 | 0.65 | 0.68 | 0.64 | 0.64 |
-| `rf_global_mmlu_full` | 0.47 | 0.48 | 0.55 | 0.58 | 0.49 | 0.51 | 0.55 | 0.61 | 0.65 | 0.74 | 0.75 | **0.76** | **0.83** | 0.75 | **0.87** |
-| `rfgm_include_base_44` | 0.53 | 0.62 | 0.63 | 0.61 | 0.61 | 0.53 | 0.58 | 0.59 | 0.59 | 0.72 | 0.65 | 0.66 | 0.61 | 0.64 | 0.65 |
-| `bbpb_rf_cultural_bench_easy` |  |  |  |  |  | 0.65 |  | 0.53 | 0.49 |  | **0.77** | 0.52 |  |  | 0.61 |
-| `rf_belebele` | 0.54 | 0.62 | 0.52 | 0.58 | 0.65 | 0.54 | 0.61 | 0.62 | 0.56 | 0.56 | 0.72 | 0.59 | 0.60 | 0.56 | 0.63 |
-| `rf_include_base_44` | 0.54 | 0.51 | 0.47 | 0.61 | 0.74 | 0.49 | 0.64 | 0.64 | 0.55 | 0.63 | 0.55 | 0.63 | 0.57 | 0.64 | 0.66 |
-| `bbpb_cultural_bench_easy` |  |  |  |  |  | 0.62 |  | 0.66 | 0.58 |  | 0.57 | 0.62 |  |  | 0.49 |
-| `arc` | 0.57 | 0.54 | 0.62 | 0.62 | 0.68 | 0.35 | 0.54 | 0.56 | 0.47 | 0.62 | 0.58 | 0.61 | 0.75 | 0.59 | 0.74 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | 0.48 |  | 0.58 | 0.65 |  | 0.38 | **0.76** |  |  | 0.59 |
-| `xnli` | 0.59 | 0.48 | 0.64 | 0.56 | 0.61 | 0.68 | 0.57 | 0.58 | 0.61 | 0.45 | 0.51 | 0.44 | 0.58 | **0.76** | 0.53 |
-| `bbpb_include_v2_en` |  |  |  |  |  | 0.56 |  | 0.48 | 0.43 |  | 0.56 | 0.67 |  |  | 0.69 |
-| `bbpb_include_base_44` |  |  |  |  |  | 0.47 |  | 0.56 | 0.55 |  | 0.44 | **0.78** |  |  | 0.51 |
-| `include_v2_en` | 0.55 | 0.48 | 0.51 | 0.61 | 0.48 | 0.43 | 0.44 | 0.45 | 0.55 | 0.59 | 0.62 | 0.49 | 0.61 | 0.54 | 0.59 |
-| `bbpb_belebele` |  |  |  |  |  | 0.33 |  | 0.65 | 0.59 |  | 0.52 | 0.48 |  |  | 0.53 |
-| `global_mmlu_full` | 0.43 | 0.58 | 0.45 | 0.57 | 0.49 | 0.46 | 0.61 | 0.37 | 0.55 | 0.48 | 0.47 | 0.54 | 0.44 | 0.49 | 0.54 |
-| `include_base_44` | 0.51 | 0.58 | 0.47 | 0.64 | 0.32 | 0.32 | 0.38 | 0.36 | 0.48 | 0.64 | 0.58 | 0.54 | 0.45 | 0.54 | 0.32 |
-| `cultural_bench_easy` | 0.38 | 0.49 | 0.38 | 0.42 | 0.37 | 0.54 | 0.48 | 0.40 | 0.70 | 0.51 | 0.40 | 0.45 | 0.36 | 0.57 | 0.47 |
-| `belebele` | 0.51 | 0.36 | 0.41 | 0.39 | 0.42 | 0.52 | 0.45 | 0.45 | 0.48 | 0.42 | 0.45 | 0.36 | 0.62 | 0.60 | 0.39 |
-| `xwinograd` | 0.51 | 0.36 | 0.47 | 0.44 | 0.34 | 0.29 | 0.56 | 0.45 | 0.43 | 0.47 | 0.51 | 0.58 | 0.31 | 0.53 | 0.51 |
-| `global_piqa_parallel_cloze` | 0.41 | 0.38 | 0.47 | 0.59 | 0.52 | 0.28 | 0.46 | 0.40 | 0.63 | 0.35 | 0.51 | 0.35 | 0.55 | 0.37 | 0.45 |
-| `cultural_bench_hard` | 0.41 | 0.38 | 0.53 | 0.31 | 0.58 | 0.45 | 0.50 | 0.48 | 0.48 | 0.38 | 0.44 | 0.45 | 0.50 | 0.48 | 0.27 |
-| `rf_cultural_bench_easy` | 0.26 | 0.36 | 0.53 | 0.35 | 0.35 | 0.34 | 0.37 | 0.44 | 0.29 | 0.41 | 0.35 | 0.30 | 0.26 | 0.26 | 0.36 |
+| `bpb` | **0.99** | **0.92** | **0.88** | **0.95** | **0.99** | **0.92** | **0.88** | **0.95** | **0.99** | **0.91** | **0.95** | **0.95** | **0.90** | **0.89** | **0.96** |
+| `bbpb_xstorycloze` | **0.92** | **0.86** | **0.90** | **0.91** | **0.93** | **0.88** | **0.92** | **0.92** | **0.92** | **0.87** | **0.89** | **0.90** | **0.91** | **0.91** | **0.89** |
+| `bbpb_hellaswag` | **0.97** | **0.92** | **0.88** | **0.91** | **0.90** | **0.95** | **0.89** | **0.91** | **0.89** | **0.91** | **0.90** | **0.89** | **0.86** | **0.86** | **0.86** |
+| `hellaswag` | **0.88** | **0.81** | **0.85** | **0.86** | **0.82** | **0.84** | **0.89** | **0.89** | **0.87** | **0.86** | **0.78** | **0.88** | **0.86** | **0.86** | **0.82** |
+| `bbpb_rfgm_include_base_44` | **0.88** | **0.80** | **0.85** | **0.90** | **0.81** | **0.84** | **0.85** | **0.92** | **0.84** | **0.83** | **0.87** | **0.80** | **0.87** | **0.82** | **0.82** |
+| `bbpb_rfgm_belebele` | **0.93** | **0.91** | **0.84** | **0.86** | **0.79** | **0.90** | **0.83** | **0.85** | 0.75 | **0.81** | **0.83** | **0.78** | **0.87** | **0.82** | **0.81** |
+| `bbpb_rf_belebele` | **0.86** | **0.85** | **0.86** | **0.77** | **0.76** | **0.78** | **0.83** | **0.77** | 0.74 | **0.80** | **0.76** | **0.77** | **0.84** | 0.75 | 0.71 |
+| `bbpb_xnli` | **0.81** | **0.80** | **0.85** | **0.75** | 0.70 | **0.80** | **0.82** | **0.76** | 0.72 | **0.83** | **0.78** | **0.77** | **0.77** | 0.74 | 0.69 |
+| `multiblimp` | **0.76** | 0.74 | **0.84** | 0.72 | 0.70 | **0.78** | **0.85** | 0.74 | 0.71 | **0.84** | 0.71 | **0.81** | **0.76** | 0.72 | 0.70 |
+| `bbpb_multiblimp` | **0.78** | **0.81** | **0.87** | **0.77** | 0.63 | **0.85** | **0.81** | **0.85** | 0.66 | **0.79** | **0.83** | 0.68 | **0.81** | 0.63 | 0.61 |
+| `bbpb_rf_include_base_44` | **0.85** | **0.81** | 0.68 | **0.79** | **0.77** | **0.79** | 0.67 | **0.88** | **0.77** | 0.60 | **0.79** | 0.73 | 0.69 | **0.76** | 0.74 |
+| `bbpb_global_piqa_parallel_cloze` | **0.89** | **0.81** | **0.77** | 0.69 | 0.67 | **0.87** | 0.73 | 0.71 | 0.65 | **0.76** | **0.79** | 0.69 | **0.79** | 0.68 | 0.70 |
+| `bbpb_rf_global_mmlu_full` | **0.79** | **0.76** | **0.79** | 0.70 | **0.77** | 0.70 | **0.79** | **0.83** | 0.69 | **0.79** | 0.60 | 0.75 | 0.70 | 0.75 | 0.66 |
+| `include_v2_og` | 0.65 | 0.64 | 0.65 | 0.70 | 0.69 | 0.71 | **0.78** | **0.83** | **0.81** | **0.76** | 0.72 | **0.76** | **0.75** | 0.72 | **0.81** |
+| `xstorycloze` | 0.70 | **0.80** | 0.73 | 0.70 | **0.77** | 0.66 | 0.66 | 0.64 | **0.77** | 0.69 | 0.66 | 0.72 | 0.72 | **0.80** | 0.67 |
+| `bbpb_include_v2_og` | 0.65 | **0.79** | 0.67 | 0.70 | **0.82** | 0.68 | 0.72 | 0.68 | 0.59 | 0.55 | **0.80** | 0.70 | 0.63 | 0.70 | 0.69 |
+| `bbpb_arc` | 0.68 | 0.75 | 0.66 | 0.62 | 0.68 | **0.76** | 0.74 | 0.68 | 0.70 | 0.73 | 0.62 | 0.71 | 0.64 | 0.54 | 0.59 |
+| `rf_global_mmlu_full` | 0.53 | 0.44 | 0.57 | 0.58 | 0.46 | 0.48 | 0.57 | 0.62 | 0.64 | 0.72 | 0.73 | **0.76** | **0.83** | 0.72 | **0.81** |
+| `rfgm_belebele` | 0.69 | 0.59 | 0.66 | 0.60 | 0.51 | 0.65 | 0.67 | 0.56 | 0.66 | 0.60 | 0.63 | 0.62 | 0.70 | 0.62 | 0.59 |
+| `bbpb_belebele` | 0.65 | 0.65 | 0.65 | 0.67 | 0.56 | 0.62 | 0.66 | 0.62 | 0.61 | 0.52 | 0.57 | 0.48 | 0.72 | 0.66 | 0.52 |
+| `bbpb_global_mmlu_full` | 0.68 | 0.60 | 0.68 | 0.61 | 0.64 | 0.58 | 0.56 | 0.58 | 0.65 | 0.51 | 0.56 | 0.56 | 0.59 | 0.61 | 0.59 |
+| `rfgm_include_base_44` | 0.48 | 0.57 | 0.61 | 0.59 | 0.63 | 0.51 | 0.51 | 0.57 | 0.56 | 0.71 | 0.67 | 0.63 | 0.60 | 0.61 | 0.61 |
+| `rf_belebele` | 0.55 | 0.55 | 0.52 | 0.56 | 0.65 | 0.52 | 0.57 | 0.59 | 0.53 | 0.53 | 0.69 | 0.55 | 0.61 | 0.62 | 0.62 |
+| `rf_include_base_44` | 0.55 | 0.46 | 0.51 | 0.60 | 0.64 | 0.53 | 0.63 | 0.62 | 0.51 | 0.59 | 0.51 | 0.60 | 0.56 | 0.58 | 0.64 |
+| `bbpb_rf_cultural_bench_easy` | 0.60 | 0.60 | 0.61 | 0.62 | 0.49 | 0.60 | 0.55 | 0.49 | 0.51 | 0.46 | 0.58 | 0.40 | 0.65 | 0.64 | 0.62 |
+| `xnli` | 0.56 | 0.51 | 0.62 | 0.55 | 0.58 | 0.64 | 0.53 | 0.51 | 0.62 | 0.48 | 0.54 | 0.44 | 0.58 | 0.73 | 0.49 |
+| `bbpb_include_base_44` | 0.63 | 0.47 | 0.57 | 0.50 | 0.68 | 0.47 | 0.57 | 0.53 | 0.58 | 0.45 | 0.62 | 0.55 | 0.48 | 0.59 | 0.52 |
+| `arc` | 0.56 | 0.34 | 0.60 | 0.68 | 0.70 | 0.41 | 0.53 | 0.51 | 0.51 | 0.56 | 0.43 | 0.51 | 0.56 | 0.62 | 0.64 |
+| `bbpb_cultural_bench_easy` | 0.39 | 0.52 | 0.56 | 0.54 | 0.51 | 0.64 | 0.48 | 0.61 | 0.56 | 0.53 | 0.61 | 0.58 | 0.45 | 0.59 | 0.52 |
+| `include_v2_en` | 0.53 | 0.50 | 0.51 | 0.60 | 0.49 | 0.49 | 0.47 | 0.44 | 0.52 | 0.57 | 0.62 | 0.47 | 0.57 | 0.52 | 0.57 |
+| `bbpb_include_v2_en` | 0.36 | 0.55 | 0.58 | 0.51 | 0.61 | 0.53 | 0.46 | 0.48 | 0.41 | 0.43 | 0.59 | 0.64 | 0.51 | 0.46 | 0.69 |
+| `global_mmlu_full` | 0.43 | 0.55 | 0.48 | 0.53 | 0.45 | 0.47 | 0.54 | 0.38 | 0.54 | 0.47 | 0.40 | 0.47 | 0.49 | 0.49 | 0.58 |
+| `include_base_44` | 0.47 | 0.58 | 0.43 | 0.60 | 0.35 | 0.31 | 0.45 | 0.40 | 0.49 | 0.54 | 0.53 | 0.51 | 0.52 | 0.60 | 0.40 |
+| `belebele` | 0.43 | 0.34 | 0.38 | 0.39 | 0.43 | 0.55 | 0.44 | 0.51 | 0.53 | 0.45 | 0.49 | 0.41 | 0.58 | 0.56 | 0.44 |
+| `cultural_bench_hard` | 0.45 | 0.40 | 0.53 | 0.37 | 0.60 | 0.44 | 0.49 | 0.53 | 0.45 | 0.38 | 0.42 | 0.45 | 0.49 | 0.47 | 0.31 |
+| `cultural_bench_easy` | 0.38 | 0.47 | 0.42 | 0.44 | 0.36 | 0.55 | 0.49 | 0.36 | 0.61 | 0.50 | 0.39 | 0.39 | 0.38 | 0.53 | 0.51 |
+| `global_piqa_parallel_cloze` | 0.50 | 0.32 | 0.27 | 0.43 | 0.47 | 0.47 | 0.38 | 0.38 | 0.38 | 0.56 | 0.56 | 0.51 | 0.47 | 0.53 | 0.52 |
+| `xwinograd` | 0.51 | 0.39 | 0.45 | 0.37 | 0.34 | 0.34 | 0.55 | 0.43 | 0.42 | 0.45 | 0.45 | 0.53 | 0.39 | 0.51 | 0.55 |
+| `rf_cultural_bench_easy` | 0.30 | 0.35 | 0.47 | 0.38 | 0.38 | 0.32 | 0.35 | 0.42 | 0.30 | 0.34 | 0.34 | 0.36 | 0.27 | 0.22 | 0.37 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3940,27 +3987,27 @@ subtitle: "Slovak (sk) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
+| `bbpb_hellaswag` | **1.00** | **1.00** | **0.83** | **1.00** | **1.00** | **1.00** | **0.83** | **1.00** | **1.00** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** |
 | `multiblimp` | **1.00** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** |
+| `bbpb_multiblimp` | **1.00** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** |
 | `bpb` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_global_piqa_parallel_cloze_slk_latn_sari` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_multiblimp` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | **1.00** |
-| `bbpb_arc` |  |  |  |  |  |  |  | **1.00** | 0.67 |  |  |  |  |  | 0.67 |
-| `bbpb_global_piqa_parallel_cloze_slk_latn` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | **0.83** |
-| `hellaswag` | **0.83** | 0.67 | **0.83** | 0.67 | **0.83** | 0.50 | 0.67 | **0.83** | **1.00** | **0.83** | 0.33 | 0.50 | 0.50 | 0.67 | **0.83** |
-| `bbpb_belebele` |  |  |  |  |  |  |  | **0.83** | 0.50 |  |  |  |  |  | 0.67 |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | 0.50 |
-| `bbpb_rf_belebele` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | 0.50 |
+| `bbpb_rfgm_belebele` | **1.00** | **1.00** | 0.67 | **1.00** | **0.83** | **1.00** | 0.67 | **1.00** | **0.83** | 0.67 | **1.00** | **0.83** | 0.67 | **0.83** | **0.83** |
+| `bbpb_global_piqa_parallel_cloze_slk_latn` | 0.67 | **0.83** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | 0.67 | **1.00** | **1.00** | **0.83** | **1.00** | **0.83** | **0.83** |
+| `bbpb_rf_belebele` | **1.00** | **1.00** | **0.83** | **0.83** | 0.67 | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | 0.67 | 0.67 | **0.83** | 0.50 |
+| `bbpb_arc` | **0.83** | **0.83** | 0.67 | **0.83** | 0.50 | **1.00** | **0.83** | **1.00** | 0.67 | **0.83** | **1.00** | 0.67 | **0.83** | 0.50 | 0.67 |
+| `bbpb_global_piqa_parallel_cloze_slk_latn_sari` | 0.67 | 0.67 | **0.83** | 0.67 | **0.83** | 0.67 | **0.83** | **1.00** | **0.83** | 0.50 | 0.67 | **0.83** | **0.83** | 0.67 | **0.83** |
+| `bbpb_include_v2_og` | **1.00** | **0.83** | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | 0.67 | 0.50 | **1.00** | 0.50 | 0.50 |
+| `hellaswag` | 0.50 | 0.33 | 0.67 | 0.50 | 0.33 | 0.67 | **0.83** | **1.00** | **0.83** | 0.50 | 0.67 | **0.83** | **0.83** | 0.67 | **0.83** |
+| `bbpb_belebele` | 0.67 | 0.67 | 0.50 | 0.50 | **0.83** | 0.67 | **0.83** | **0.83** | 0.50 | **0.83** | 0.50 | 0.50 | 0.67 | 0.33 | 0.67 |
 | `rfgm_belebele` | 0.33 | 0.67 | 0.50 | 0.67 | 0.67 | 0.33 | **0.83** | 0.33 | 0.33 | 0.50 | **1.00** | **1.00** | 0.50 | 0.50 | **1.00** |
+| `arc` | **0.83** | 0.33 | **0.83** | 0.33 | 0.67 | 0.50 | 0.67 | 0.50 | **0.83** | 0.17 | 0.67 | 0.67 | 0.50 | 0.50 | 0.67 |
+| `bbpb_include_v2_en` | 0.17 | 0.50 | **0.83** | 0.50 | **0.83** | 0.33 | 0.00 | 0.67 | 0.00 | 0.67 | 0.67 | 0.67 | 0.33 | **1.00** | 0.33 |
 | `rf_belebele` | 0.50 | 0.33 | 0.50 | 0.50 | 0.67 | 0.17 | **0.83** | 0.17 | 0.33 | 0.00 | 0.67 | 0.50 | 0.33 | 0.50 | **0.83** |
-| `arc` | **0.83** | 0.17 | 0.00 | 0.33 | 0.67 | 0.17 | 0.17 | 0.33 | 0.67 | 0.67 | **0.83** | 0.50 | 0.50 | 0.17 | 0.67 |
-| `global_piqa_parallel_cloze_slk_latn_sari` | 0.17 | 0.67 | **0.83** | 0.00 | 0.17 | 0.17 | 0.00 | **0.83** | 0.67 | 0.67 | 0.33 | 0.50 | 0.00 | 0.17 | **0.83** |
+| `global_piqa_parallel_cloze_slk_latn` | 0.67 | 0.50 | 0.33 | 0.17 | **1.00** | 0.33 | 0.17 | 0.00 | 0.67 | 0.67 | 0.33 | 0.50 | 0.17 | 0.33 | 0.17 |
 | `belebele` | 0.17 | 0.33 | 0.33 | 0.67 | **0.83** | 0.33 | 0.67 | 0.17 | 0.17 | 0.00 | 0.67 | 0.33 | 0.17 | 0.50 | 0.67 |
+| `global_piqa_parallel_cloze_slk_latn_sari` | 0.50 | 0.17 | 0.50 | 0.00 | 0.67 | 0.17 | 0.00 | 0.50 | 0.50 | 0.50 | 0.67 | 0.17 | 0.33 | 0.50 | 0.17 |
 | `include_v2_en` | 0.50 | 0.00 | 0.67 | 0.50 | 0.17 | 0.00 | 0.67 | 0.50 | 0.50 | 0.17 | 0.17 | 0.50 | 0.33 | 0.50 | 0.17 |
 | `include_v2_og` | 0.50 | 0.33 | 0.50 | 0.00 | 0.17 | **0.83** | 0.33 | 0.17 | 0.50 | 0.50 | 0.17 | 0.50 | 0.00 | 0.50 | 0.17 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.67 | 0.00 |  |  |  |  |  | 0.33 |
-| `global_piqa_parallel_cloze_slk_latn` | 0.00 | 0.33 | 0.33 | 0.67 | 0.33 | 0.17 | 0.00 | 0.17 | 0.17 | 0.50 | 0.50 | 0.33 | 0.17 | 0.50 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -3983,19 +4030,19 @@ subtitle: "Slovene (sl) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_multiblimp` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
 | `multiblimp` | **1.00** | **1.00** | **1.00** | **1.00** | **0.83** | **1.00** | **1.00** | **1.00** | **0.83** | **1.00** | **1.00** | **0.83** | **1.00** | **0.83** | **0.83** |
+| `bbpb_multiblimp` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
+| `bbpb_rfgm_belebele` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
 | `bpb` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
-| `bbpb_global_piqa_parallel_cloze_slv_latn` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_rf_belebele` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_global_piqa_parallel_cloze_slv_latn_cerk` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | **0.83** |
-| `bbpb_belebele` |  |  |  |  |  |  |  | **0.83** | 0.50 |  |  |  |  |  | 0.67 |
+| `bbpb_rf_belebele` | **1.00** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** |
+| `bbpb_global_piqa_parallel_cloze_slv_latn` | **0.83** | **1.00** | 0.67 | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** |
+| `bbpb_global_piqa_parallel_cloze_slv_latn_cerk` | **1.00** | 0.67 | 0.67 | **0.83** | 0.67 | 0.67 | 0.67 | **0.83** | 0.67 | 0.67 | 0.50 | 0.67 | **0.83** | **1.00** | **0.83** |
+| `bbpb_belebele` | **0.83** | 0.50 | **0.83** | **1.00** | 0.67 | 0.67 | **1.00** | **0.83** | 0.50 | 0.67 | 0.50 | 0.50 | **0.83** | 0.50 | 0.67 |
 | `rfgm_belebele` | 0.67 | 0.33 | 0.67 | **1.00** | 0.33 | 0.67 | 0.67 | 0.67 | 0.67 | 0.50 | 0.33 | 0.67 | 0.67 | 0.67 | 0.33 |
+| `global_piqa_parallel_cloze_slv_latn` | 0.33 | 0.50 | 0.33 | 0.33 | 0.50 | 0.33 | 0.17 | 0.17 | 0.00 | **0.83** | **0.83** | 0.67 | **1.00** | 0.67 | 0.67 |
 | `belebele` | 0.50 | 0.33 | 0.50 | **1.00** | 0.67 | 0.50 | 0.33 | 0.50 | 0.50 | 0.67 | 0.33 | 0.00 | 0.50 | 0.17 | 0.67 |
 | `rf_belebele` | 0.33 | 0.33 | 0.50 | 0.67 | **1.00** | 0.67 | **0.83** | 0.00 | 0.33 | 0.50 | 0.33 | 0.33 | 0.17 | 0.50 | 0.67 |
-| `global_piqa_parallel_cloze_slv_latn` | 0.00 | 0.50 | 0.50 | 0.50 | 0.50 | 0.50 | 0.33 | 0.17 | 0.17 | 0.33 | 0.67 | 0.17 | 0.17 | 0.33 | 0.17 |
-| `global_piqa_parallel_cloze_slv_latn_cerk` | 0.50 | 0.17 | 0.00 | 0.67 | 0.33 | 0.33 | 0.00 | 0.33 | 0.17 | 0.33 | 0.00 | 0.17 | 0.33 | 0.50 | 0.50 |
+| `global_piqa_parallel_cloze_slv_latn_cerk` | 0.67 | 0.17 | 0.00 | 0.50 | 0.67 | 0.00 | 0.33 | **0.83** | 0.33 | 0.50 | 0.00 | 0.33 | 0.50 | 0.17 | 0.17 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -4018,22 +4065,22 @@ subtitle: "Albanian (sq) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
+| `bbpb_rfgm_include_base_44` | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `bbpb_rf_include_base_44` | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** | **1.00** | **0.83** |
 | `bpb` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
-| `bbpb_rf_include_base_44` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | **1.00** |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | **1.00** | 0.67 |  |  |  |  |  | 0.67 |
-| `bbpb_rf_belebele` |  |  |  |  |  |  |  | **1.00** | 0.67 |  |  |  |  |  | 0.67 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  |  |  | 0.67 | **0.83** |  |  |  |  |  | **0.83** |
+| `bbpb_global_piqa_parallel_cloze` | **0.83** | **0.83** | **0.83** | **1.00** | **1.00** | **1.00** | 0.67 | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** |
+| `bbpb_include_v2_og` | **0.83** | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** | **1.00** | 0.67 | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | 0.67 |
+| `bbpb_rfgm_belebele` | **0.83** | **1.00** | 0.67 | **0.83** | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** | 0.67 | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** |
+| `bbpb_rf_belebele` | **0.83** | 0.67 | 0.67 | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 |
 | `include_v2_og` | 0.50 | **0.83** | 0.67 | 0.33 | **0.83** | 0.67 | **0.83** | **0.83** | 0.50 | 0.50 | 0.50 | **0.83** | 0.67 | 0.50 | 0.33 |
+| `bbpb_belebele` | 0.67 | 0.50 | **0.83** | 0.67 | 0.50 | **0.83** | **0.83** | 0.33 | 0.50 | 0.67 | 0.17 | 0.33 | 0.50 | 0.33 | **0.83** |
+| `bbpb_include_base_44` | **1.00** | 0.33 | 0.50 | 0.33 | 0.67 | 0.33 | 0.50 | 0.33 | 0.67 | **0.83** | 0.67 | 0.33 | **0.83** | 0.50 | 0.67 |
 | `rfgm_include_base_44` | 0.17 | 0.17 | 0.17 | 0.33 | 0.17 | 0.67 | 0.67 | **0.83** | 0.67 | 0.67 | 0.50 | 0.67 | **0.83** | **1.00** | **0.83** |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.33 | 0.67 |  |  |  |  |  | 0.67 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.33 | 0.50 |  |  |  |  |  | **0.83** |
 | `rf_include_base_44` | 0.17 | 0.67 | 0.67 | **0.83** | **0.83** | 0.50 | 0.00 | 0.00 | 0.00 | 0.33 | 0.50 | 0.50 | **0.83** | **0.83** | **1.00** |
-| `global_piqa_parallel_cloze` | 0.67 | 0.50 | 0.50 | 0.33 | 0.00 | **0.83** | 0.67 | 0.67 | 0.17 | **0.83** | 0.67 | 0.33 | 0.50 | 0.50 | 0.33 |
 | `rf_belebele` | 0.50 | 0.33 | 0.67 | **0.83** | 0.33 | 0.17 | 0.17 | 0.67 | 0.50 | 0.67 | 0.50 | 0.67 | 0.50 | 0.33 | 0.50 |
+| `global_piqa_parallel_cloze` | 0.33 | 0.33 | 0.33 | 0.50 | 0.33 | 0.50 | 0.67 | 0.17 | 0.33 | **0.83** | 0.50 | 0.67 | 0.50 | 0.67 | 0.67 |
+| `bbpb_include_v2_en` | 0.33 | 0.17 | 0.50 | 0.33 | 0.17 | 0.50 | 0.17 | 0.33 | 0.50 | 0.67 | **0.83** | 0.67 | **0.83** | 0.33 | 0.50 |
 | `include_base_44` | 0.67 | 0.50 | 0.67 | 0.17 | 0.50 | 0.50 | 0.33 | 0.33 | 0.50 | 0.17 | 0.67 | **0.83** | 0.17 | 0.17 | 0.50 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.33 | 0.50 |  |  |  |  |  | 0.50 |
 | `rfgm_belebele` | 0.67 | 0.50 | 0.33 | 0.17 | 0.33 | 0.17 | 0.33 | 0.17 | 0.00 | 0.33 | 0.67 | **0.83** | 0.67 | 0.50 | **0.83** |
 | `include_v2_en` | **0.83** | 0.00 | 0.50 | 0.00 | 0.33 | 0.00 | 0.50 | 0.00 | 0.33 | 0.50 | **1.00** | 0.67 | 0.50 | 0.50 | 0.67 |
 | `belebele` | 0.17 | 0.67 | 0.17 | 0.67 | 0.67 | 0.50 | 0.50 | 0.00 | 0.50 | 0.00 | 0.33 | 0.33 | 0.33 | 0.50 | 0.50 |
@@ -4059,35 +4106,35 @@ subtitle: "Serbian (sr) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
+| `bbpb_rf_global_mmlu_full` | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `bbpb_global_piqa_parallel_cloze_srp_latn` | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** |
+| `bbpb_rfgm_include_base_44` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
 | `bpb` | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
-| `bbpb_global_piqa_parallel_cloze_srp_latn` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  |  |  | **0.83** | **1.00** |  |  |  |  |  | **0.83** |
-| `bbpb_rf_belebele` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_global_piqa_parallel_cloze_srp_cyrl` |  |  |  |  |  |  |  | 0.67 | 0.67 |  |  |  |  |  | **1.00** |
-| `bbpb_rf_include_base_44` |  |  |  |  |  |  |  | 0.67 | 0.67 |  |  |  |  |  | **1.00** |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | 0.67 | 0.67 |  |  |  |  |  | **1.00** |
-| `bbpb_arc` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | **0.83** |
-| `arc` | **1.00** | **0.83** | 0.50 | 0.67 | 0.50 | **0.83** | 0.50 | 0.67 | 0.50 | 0.67 | **0.83** | 0.67 | **0.83** | 0.33 | 0.50 |
-| `hellaswag` | 0.33 | 0.33 | 0.17 | 0.50 | 0.50 | 0.67 | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | **1.00** |
+| `bbpb_rfgm_belebele` | **1.00** | **1.00** | 0.67 | **0.83** | **1.00** | **1.00** | 0.67 | **0.83** | **1.00** | 0.67 | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** |
+| `bbpb_global_piqa_parallel_cloze_srp_cyrl` | 0.67 | **1.00** | **0.83** | **1.00** | **1.00** | 0.67 | **0.83** | 0.67 | 0.67 | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** |
+| `bbpb_hellaswag` | **1.00** | **0.83** | 0.67 | **1.00** | **1.00** | **0.83** | 0.67 | **1.00** | **1.00** | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | **1.00** |
+| `bbpb_arc` | **1.00** | **0.83** | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | **0.83** | 0.67 | **1.00** | **1.00** | **0.83** | **1.00** | **0.83** | **0.83** |
+| `bbpb_rf_belebele` | **0.83** | **0.83** | 0.67 | **0.83** | 0.67 | **1.00** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** |
+| `bbpb_rf_include_base_44` | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | **1.00** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** |
+| `bbpb_include_v2_og` | 0.67 | **0.83** | 0.67 | **1.00** | **1.00** | **0.83** | **1.00** | 0.67 | 0.67 | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | **1.00** |
+| `hellaswag` | 0.33 | 0.33 | 0.50 | 0.33 | 0.33 | **1.00** | **0.83** | **1.00** | **1.00** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** |
+| `bbpb_belebele` | 0.50 | **0.83** | **1.00** | 0.67 | **0.83** | 0.67 | 0.50 | **0.83** | 0.33 | **0.83** | **0.83** | 0.67 | 0.67 | **0.83** | 0.50 |
+| `arc` | **0.83** | 0.33 | 0.17 | 0.33 | 0.50 | 0.50 | 0.33 | 0.50 | 0.67 | **0.83** | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** |
 | `rfgm_belebele` | 0.50 | 0.50 | 0.67 | 0.67 | 0.33 | 0.67 | 0.50 | 0.50 | 0.50 | **0.83** | 0.67 | 0.67 | **0.83** | 0.50 | 0.67 |
 | `belebele` | **0.83** | **0.83** | 0.50 | 0.50 | 0.50 | 0.67 | 0.67 | 0.33 | 0.67 | 0.67 | 0.67 | 0.33 | 0.67 | 0.67 | 0.33 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | **0.83** | 0.33 |  |  |  |  |  | 0.50 |
+| `bbpb_include_v2_en` | 0.33 | **0.83** | 0.50 | 0.67 | **0.83** | 0.50 | 0.50 | 0.67 | 0.17 | 0.33 | **0.83** | 0.67 | 0.50 | 0.67 | 0.50 |
 | `include_v2_en` | 0.50 | **1.00** | 0.67 | 0.67 | 0.50 | 0.50 | **0.83** | 0.50 | 0.00 | 0.67 | 0.67 | 0.50 | 0.33 | 0.17 | 0.50 |
 | `global_mmlu_full` | 0.50 | 0.50 | 0.50 | 0.67 | 0.50 | 0.67 | 0.33 | **0.83** | 0.67 | 0.00 | 0.50 | 0.33 | 0.50 | 0.67 | **0.83** |
 | `rf_global_mmlu_full` | **1.00** | 0.50 | 0.33 | 0.33 | 0.17 | 0.50 | 0.33 | 0.33 | 0.17 | 0.50 | 0.50 | 0.33 | **1.00** | **0.83** | **0.83** |
-| `global_piqa_parallel_cloze_srp_latn` | 0.17 | 0.50 | 0.67 | 0.33 | **0.83** | 0.67 | 0.00 | **0.83** | 0.33 | 0.33 | 0.50 | 0.67 | 0.17 | 0.67 | 0.50 |
 | `include_v2_og` | **0.83** | 0.50 | 0.67 | 0.33 | 0.50 | 0.50 | 0.67 | 0.33 | 0.33 | 0.50 | 0.67 | 0.00 | 0.67 | 0.50 | 0.17 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.67 | 0.17 |  |  |  |  |  | 0.50 |
+| `bbpb_include_base_44` | 0.67 | 0.33 | 0.67 | 0.50 | 0.50 | 0.67 | 0.33 | 0.17 | 0.50 | 0.33 | 0.17 | 0.50 | 0.50 | **0.83** | 0.33 |
+| `bbpb_global_mmlu_full` | **1.00** | 0.50 | 0.00 | 0.17 | 0.33 | 0.50 | 0.00 | 0.17 | 0.33 | 0.50 | 0.67 | 0.50 | **0.83** | 0.67 | **0.83** |
+| `global_piqa_parallel_cloze_srp_latn` | 0.17 | 0.50 | 0.00 | 0.17 | 0.17 | 0.67 | **0.83** | **1.00** | 0.33 | 0.50 | 0.67 | 0.00 | **0.83** | 0.50 | 0.33 |
 | `rf_include_base_44` | 0.33 | 0.33 | 0.67 | **0.83** | **0.83** | 0.17 | 0.17 | 0.50 | 0.17 | 0.33 | 0.17 | 0.33 | 0.50 | 0.67 | 0.67 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  |  |  | 0.17 | 0.33 |  |  |  |  |  | **0.83** |
 | `include_base_44` | 0.33 | 0.50 | 0.17 | 0.33 | 0.17 | 0.50 | 0.50 | 0.33 | 0.50 | 0.67 | 0.17 | 0.33 | 0.50 | 0.67 | **0.83** |
 | `rf_belebele` | 0.50 | 0.67 | 0.33 | 0.33 | 0.00 | **0.83** | 0.17 | 0.33 | 0.17 | 0.17 | 0.33 | 0.17 | 0.67 | 0.67 | 0.50 |
+| `global_piqa_parallel_cloze_srp_cyrl` | 0.17 | 0.17 | 0.67 | 0.00 | 0.00 | 0.50 | 0.50 | **0.83** | 0.33 | 0.33 | 0.67 | 0.50 | 0.33 | 0.00 | 0.50 |
 | `rfgm_include_base_44` | 0.17 | 0.17 | **0.83** | 0.17 | 0.17 | 0.50 | 0.00 | 0.50 | 0.33 | 0.17 | 0.67 | 0.50 | 0.17 | 0.17 | **0.83** |
-| `global_piqa_parallel_cloze_srp_cyrl` | 0.50 | 0.17 | 0.33 | 0.50 | 0.33 | 0.17 | 0.17 | 0.17 | 0.00 | 0.33 | 0.33 | **0.83** | 0.33 | 0.50 | 0.50 |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.17 | 0.50 |  |  |  |  |  | 0.33 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -4110,31 +4157,31 @@ subtitle: "Swedish (sv) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | **0.94** | **0.94** |  |  |  |  |  | **0.94** |
-| `bpb` | **1.00** | **0.97** | **0.81** | **0.97** | **0.97** | **0.97** | **0.81** | **0.97** | **0.97** | **0.83** | **1.00** | **0.94** | **0.83** | **0.78** | **0.94** |
-| `bbpb_rf_belebele` |  |  |  |  |  | **1.00** |  | **0.97** | 0.69 |  | **0.90** | 0.50 |  |  | 0.72 |
-| `bbpb_multiblimp` |  |  |  |  |  | **1.00** |  | **0.94** | 0.61 |  | 0.67 | 0.67 |  |  | 0.67 |
-| `bbpb_arc` |  |  |  |  |  |  |  | **0.86** | 0.64 |  |  |  |  |  | **0.78** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | 0.69 | **0.78** |  |  |  |  |  | **0.81** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **0.90** |  | **0.89** | 0.72 |  | 0.70 | 0.60 |  |  | 0.72 |
-| `bbpb_arc_mt` |  |  |  |  |  |  |  | **0.81** | 0.64 |  |  |  |  |  | **0.78** |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | 0.72 | **0.75** |  |  |  |  |  | **0.75** |
-| `bbpb_global_mmlu_full` |  |  |  |  |  |  |  | 0.67 | 0.69 |  |  |  |  |  | 0.64 |
-| `hellaswag` | 0.50 | 0.44 | 0.58 | 0.61 | 0.61 | 0.61 | 0.58 | **0.78** | 0.72 | **0.75** | 0.72 | 0.72 | **0.75** | **0.75** | **0.83** |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.90** |  | **0.81** | 0.44 |  | **0.90** | 0.40 |  |  | 0.53 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.64 | 0.56 |  |  |  |  |  | 0.53 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.58 | 0.42 |  |  |  |  |  | 0.72 |
-| `rf_global_mmlu_full` | 0.33 | 0.58 | 0.47 | 0.33 | 0.25 | 0.61 | 0.67 | 0.67 | **0.81** | 0.72 | 0.47 | 0.58 | 0.64 | 0.69 | 0.69 |
-| `include_v2_og` | 0.50 | 0.19 | 0.39 | 0.39 | 0.28 | 0.67 | 0.42 | 0.67 | 0.67 | 0.53 | 0.58 | **0.78** | 0.44 | 0.67 | **0.75** |
-| `rfgm_belebele` | 0.67 | 0.72 | 0.58 | 0.33 | 0.36 | 0.58 | 0.58 | 0.64 | 0.36 | 0.53 | 0.47 | 0.33 | 0.58 | 0.64 | 0.42 |
-| `rf_belebele` | 0.42 | 0.44 | 0.50 | 0.47 | 0.61 | 0.39 | 0.47 | 0.67 | 0.50 | 0.50 | 0.61 | 0.53 | 0.42 | 0.64 | 0.56 |
-| `include_v2_en` | 0.44 | 0.61 | 0.42 | 0.47 | 0.36 | 0.42 | 0.56 | 0.58 | 0.69 | 0.44 | 0.42 | 0.28 | 0.58 | 0.64 | 0.72 |
-| `global_mmlu_full` | 0.36 | 0.69 | 0.47 | 0.42 | 0.64 | 0.50 | 0.39 | 0.56 | 0.28 | 0.56 | 0.33 | 0.39 | 0.67 | 0.61 | 0.56 |
-| `arc_mt` | 0.50 | 0.33 | 0.69 | 0.44 | 0.19 | 0.53 | 0.56 | 0.39 | 0.28 | 0.61 | 0.61 | 0.53 | 0.64 | 0.25 | 0.58 |
-| `belebele` | 0.36 | 0.19 | 0.33 | 0.53 | 0.39 | **0.78** | 0.47 | 0.64 | 0.56 | 0.53 | 0.42 | 0.67 | 0.47 | 0.33 | 0.44 |
-| `arc` | 0.58 | 0.44 | 0.47 | 0.39 | 0.50 | 0.56 | 0.50 | 0.50 | 0.17 | 0.33 | 0.56 | 0.42 | 0.50 | 0.50 | 0.58 |
-| `multiblimp` | 0.61 | 0.58 | 0.36 | 0.22 | 0.25 | 0.47 | 0.36 | 0.28 | 0.36 | **0.78** | 0.31 | 0.42 | 0.44 | 0.58 | 0.44 |
-| `global_piqa_parallel_cloze` | 0.39 | 0.33 | 0.44 | 0.33 | 0.36 | 0.25 | 0.36 | 0.11 | 0.39 | 0.61 | 0.53 | 0.42 | 0.53 | 0.36 | 0.53 |
+| `bbpb_hellaswag` | **0.96** | **0.91** | **0.82** | **0.91** | **0.87** | **0.96** | **0.87** | **0.96** | **0.91** | **0.91** | **0.91** | **0.91** | **0.87** | **0.91** | **0.91** |
+| `bpb` | **1.00** | **0.93** | **0.78** | **0.93** | **0.97** | **0.93** | **0.78** | **0.93** | **0.97** | **0.80** | **1.00** | **0.94** | **0.80** | **0.78** | **0.94** |
+| `bbpb_rfgm_belebele` | **0.96** | **0.93** | **0.82** | **0.96** | **0.78** | **0.93** | **0.78** | **0.91** | 0.72 | **0.80** | **0.89** | **0.75** | **0.87** | 0.69 | 0.72 |
+| `hellaswag` | **0.78** | **0.82** | 0.60 | **0.80** | **0.84** | **0.89** | 0.73 | **0.89** | **0.84** | 0.69 | **0.89** | **0.84** | **0.76** | **0.76** | **0.96** |
+| `bbpb_rf_belebele` | **0.96** | **0.91** | **0.78** | **0.93** | 0.67 | **0.91** | **0.78** | **0.98** | 0.67 | 0.73 | **0.93** | 0.62 | **0.76** | 0.67 | 0.69 |
+| `bbpb_global_piqa_parallel_cloze` | **0.89** | **0.84** | **0.76** | 0.67 | **0.82** | **0.82** | 0.73 | 0.64 | **0.76** | **0.82** | 0.69 | **0.89** | **0.78** | **0.80** | **0.76** |
+| `bbpb_arc_mt` | 0.73 | **0.84** | 0.71 | 0.73 | 0.61 | 0.71 | **0.84** | **0.82** | 0.64 | 0.69 | 0.71 | 0.72 | **0.84** | 0.72 | **0.78** |
+| `bbpb_multiblimp` | **0.87** | **0.84** | **0.80** | **0.80** | 0.69 | **0.76** | 0.71 | **0.93** | 0.60 | **0.78** | 0.69 | 0.67 | 0.69 | 0.67 | 0.62 |
+| `bbpb_arc` | 0.69 | **0.82** | 0.73 | 0.73 | 0.56 | 0.73 | **0.82** | **0.87** | 0.60 | 0.69 | 0.73 | 0.69 | **0.82** | 0.60 | 0.73 |
+| `bbpb_include_v2_og` | **0.78** | **0.84** | 0.69 | 0.69 | 0.67 | **0.84** | 0.69 | 0.73 | **0.75** | 0.67 | **0.80** | 0.69 | 0.51 | 0.69 | **0.75** |
+| `bbpb_rf_global_mmlu_full` | **0.78** | **0.80** | 0.56 | **0.89** | 0.58 | **0.84** | 0.69 | **0.80** | 0.44 | 0.62 | **0.82** | 0.44 | 0.53 | 0.33 | 0.53 |
+| `bbpb_global_mmlu_full` | **0.82** | 0.60 | 0.47 | 0.58 | 0.56 | 0.69 | 0.51 | 0.62 | 0.64 | 0.56 | 0.62 | 0.73 | 0.62 | 0.60 | 0.71 |
+| `bbpb_belebele` | 0.60 | 0.49 | 0.56 | 0.71 | 0.64 | 0.58 | 0.56 | 0.67 | 0.64 | 0.67 | 0.56 | 0.62 | 0.67 | 0.64 | 0.58 |
+| `rf_global_mmlu_full` | 0.42 | 0.55 | 0.56 | 0.44 | 0.38 | 0.53 | 0.62 | 0.62 | 0.73 | 0.69 | 0.49 | 0.62 | 0.71 | 0.71 | 0.71 |
+| `bbpb_include_v2_en` | 0.40 | **0.80** | 0.62 | 0.49 | 0.67 | 0.38 | 0.42 | 0.60 | 0.42 | 0.42 | 0.38 | 0.64 | 0.64 | 0.67 | 0.72 |
+| `include_v2_og` | 0.49 | 0.20 | 0.36 | 0.36 | 0.27 | 0.60 | 0.47 | 0.71 | 0.73 | 0.53 | 0.58 | **0.76** | 0.47 | 0.67 | **0.78** |
+| `include_v2_en` | 0.44 | 0.53 | 0.44 | 0.51 | 0.33 | 0.42 | 0.58 | 0.58 | 0.69 | 0.42 | 0.38 | 0.38 | 0.60 | 0.58 | 0.62 |
+| `rfgm_belebele` | 0.64 | 0.58 | 0.49 | 0.36 | 0.44 | 0.56 | 0.49 | 0.64 | 0.49 | 0.53 | 0.47 | 0.29 | 0.51 | 0.53 | 0.47 |
+| `rf_belebele` | 0.36 | 0.40 | 0.44 | 0.49 | 0.62 | 0.44 | 0.49 | 0.62 | 0.42 | 0.51 | 0.60 | 0.44 | 0.42 | 0.56 | 0.56 |
+| `global_mmlu_full` | 0.40 | 0.58 | 0.44 | 0.40 | 0.60 | 0.56 | 0.36 | 0.49 | 0.24 | 0.53 | 0.31 | 0.38 | 0.69 | 0.67 | 0.62 |
+| `global_piqa_parallel_cloze` | 0.51 | 0.69 | 0.40 | 0.42 | 0.40 | 0.44 | 0.47 | 0.47 | 0.64 | 0.51 | 0.49 | 0.36 | 0.42 | 0.44 | 0.53 |
+| `arc_mt` | 0.45 | 0.44 | 0.69 | 0.42 | 0.18 | 0.56 | 0.53 | 0.40 | 0.31 | 0.62 | 0.56 | 0.49 | 0.64 | 0.29 | 0.58 |
+| `belebele` | 0.36 | 0.29 | 0.33 | 0.51 | 0.38 | 0.60 | 0.53 | 0.64 | 0.51 | 0.49 | 0.38 | 0.69 | 0.51 | 0.33 | 0.44 |
+| `multiblimp` | 0.65 | 0.56 | 0.40 | 0.22 | 0.27 | 0.45 | 0.40 | 0.31 | 0.40 | **0.80** | 0.36 | 0.47 | 0.49 | 0.62 | 0.49 |
+| `arc` | 0.25 | 0.49 | 0.36 | 0.36 | 0.36 | 0.40 | 0.49 | 0.42 | 0.27 | 0.40 | **0.76** | 0.49 | 0.49 | 0.40 | 0.58 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -4158,32 +4205,32 @@ subtitle: "Tamil (ta) · small→large size pair (bold ≥ 0.75)"
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `bpb` | **0.93** | **0.96** | **0.86** | **0.93** | **0.93** | **0.89** | **0.86** | **0.93** | **0.93** | **0.89** | **0.89** | **0.89** | **0.93** | **0.79** | **0.86** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **0.83** |  | **0.89** | **0.93** |  | **0.83** | **0.83** |  |  | **0.96** |
-| `bbpb_multiblimp` |  |  |  |  |  | **1.00** |  | **0.93** | 0.64 |  | **1.00** | 0.67 |  |  | 0.57 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | 0.67 |  | **0.82** | **0.82** |  | 0.67 | **0.83** |  |  | **0.93** |
-| `bbpb_xcopa` |  |  |  |  |  | **0.83** |  | **0.79** | **0.89** |  | 0.67 | 0.67 |  |  | **0.89** |
-| `bbpb_arc` |  |  |  |  |  |  |  | **0.82** | **0.79** |  |  |  |  |  | **0.75** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **0.79** | 0.71 |  |  |  |  |  | **0.86** |
-| `bbpb_rf_belebele` |  |  |  |  |  | 0.67 |  | **0.79** | **0.89** |  | 0.67 | **0.83** |  |  | **0.82** |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.67 |  | **0.96** | **0.75** |  | 0.67 | **0.83** |  |  | 0.71 |
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | 0.71 | 0.61 |  |  |  |  |  | **0.82** |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | **0.79** | 0.64 |  |  |  |  |  | 0.71 |
+| `bbpb_rfgm_belebele` | **0.79** | **0.86** | **0.93** | **0.89** | **0.86** | **0.86** | **0.79** | **0.89** | **0.93** | **0.86** | **0.89** | **0.86** | **0.89** | **0.86** | **0.96** |
+| `bbpb_global_piqa_parallel_cloze` | **0.82** | **0.96** | **0.93** | **0.89** | **0.89** | **0.86** | **0.89** | **0.79** | 0.71 | **0.96** | **0.86** | **0.86** | **0.82** | **0.82** | **0.86** |
+| `bbpb_xcopa` | **0.93** | **0.96** | **0.93** | **0.79** | **0.82** | **0.89** | **0.86** | **0.79** | **0.89** | **0.89** | **0.82** | **0.79** | **0.86** | **0.82** | **0.89** |
+| `bbpb_rfgm_include_base_44` | **0.86** | **0.89** | **0.96** | **0.75** | **0.75** | **0.89** | **0.89** | **0.82** | **0.82** | **0.93** | **0.79** | **0.79** | **0.79** | **0.79** | **0.93** |
+| `bbpb_rf_belebele` | **0.86** | **0.86** | 0.71 | **0.93** | **0.89** | **0.86** | **0.79** | **0.79** | **0.89** | **0.79** | **0.86** | **0.82** | 0.64 | **0.82** | **0.82** |
+| `bbpb_rf_include_base_44` | **0.93** | 0.68 | **0.89** | **0.89** | **0.82** | **0.75** | **0.82** | **0.96** | **0.75** | **0.79** | 0.71 | **0.79** | **0.79** | **0.93** | 0.71 |
+| `bbpb_hellaswag` | **0.89** | **0.86** | **0.82** | **0.75** | 0.71 | **0.75** | **0.86** | 0.71 | 0.61 | **0.89** | **0.89** | **0.86** | **0.86** | **0.75** | **0.82** |
+| `bbpb_include_v2_og` | **0.75** | 0.71 | **0.86** | **0.82** | **0.89** | **0.75** | **0.75** | **0.79** | 0.64 | 0.64 | **0.75** | **0.75** | **0.89** | **0.75** | 0.71 |
+| `bbpb_multiblimp` | **0.86** | **0.75** | **0.82** | **0.86** | 0.57 | **0.82** | **0.75** | **0.93** | 0.64 | 0.64 | **0.75** | 0.68 | **0.82** | 0.46 | 0.57 |
+| `bbpb_arc` | **0.89** | 0.61 | 0.64 | **0.86** | **0.82** | 0.64 | **0.75** | **0.82** | **0.79** | 0.68 | 0.54 | 0.71 | 0.64 | 0.68 | **0.75** |
 | `multiblimp` | 0.68 | 0.64 | **0.79** | 0.61 | 0.64 | 0.54 | **0.75** | 0.68 | 0.57 | 0.68 | 0.54 | 0.46 | 0.61 | 0.46 | 0.61 |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.57 | 0.57 |  |  |  |  |  | 0.43 |
+| `arc` | 0.71 | 0.50 | **0.82** | 0.64 | **0.79** | 0.68 | 0.61 | 0.43 | **0.93** | 0.46 | 0.50 | 0.61 | 0.54 | 0.61 | 0.43 |
+| `bbpb_belebele` | 0.43 | 0.68 | **0.89** | 0.54 | 0.68 | 0.54 | 0.32 | 0.54 | 0.39 | 0.57 | 0.64 | 0.71 | 0.50 | 0.64 | 0.43 |
+| `bbpb_include_base_44` | 0.68 | 0.32 | 0.61 | 0.61 | 0.25 | 0.64 | 0.57 | 0.57 | 0.57 | 0.57 | 0.64 | **0.79** | 0.50 | 0.64 | 0.43 |
 | `rfgm_belebele` | 0.61 | 0.50 | 0.36 | 0.32 | 0.36 | 0.39 | 0.61 | 0.57 | 0.50 | 0.43 | 0.61 | 0.32 | 0.64 | **0.79** | 0.54 |
 | `rf_belebele` | 0.71 | **0.82** | 0.46 | 0.32 | 0.46 | 0.68 | 0.32 | 0.39 | 0.61 | 0.54 | 0.36 | 0.39 | 0.43 | 0.36 | 0.68 |
 | `belebele` | 0.43 | 0.43 | 0.46 | 0.54 | 0.46 | 0.46 | 0.57 | 0.32 | **0.82** | 0.71 | 0.32 | 0.54 | 0.46 | 0.57 | 0.36 |
-| `hellaswag` | 0.57 | 0.25 | 0.36 | 0.32 | 0.57 | 0.46 | 0.57 | 0.46 | 0.36 | 0.61 | 0.54 | 0.46 | 0.61 | 0.29 | 0.39 |
+| `bbpb_include_v2_en` | 0.29 | 0.50 | 0.50 | 0.57 | 0.61 | 0.36 | 0.29 | 0.36 | 0.25 | 0.57 | 0.57 | 0.46 | 0.57 | 0.61 | 0.61 |
 | `include_v2_en` | 0.39 | 0.43 | 0.50 | 0.64 | 0.32 | 0.29 | 0.68 | 0.57 | 0.54 | 0.18 | 0.43 | 0.36 | 0.57 | 0.43 | 0.50 |
-| `arc` | 0.46 | 0.57 | 0.64 | 0.21 | 0.64 | 0.46 | 0.43 | 0.36 | 0.36 | 0.54 | 0.39 | 0.50 | 0.25 | 0.68 | 0.29 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.54 | 0.39 |  |  |  |  |  | 0.43 |
 | `include_base_44` | 0.50 | 0.61 | 0.50 | 0.39 | 0.54 | 0.68 | 0.39 | 0.29 | 0.50 | 0.46 | 0.39 | 0.39 | 0.21 | 0.18 | 0.71 |
 | `include_v2_og` | 0.54 | 0.43 | 0.43 | 0.61 | 0.21 | 0.25 | 0.29 | 0.54 | 0.43 | 0.54 | 0.36 | 0.54 | 0.61 | 0.50 | 0.39 |
+| `hellaswag` | 0.54 | 0.54 | 0.32 | 0.43 | 0.54 | 0.57 | 0.36 | 0.25 | 0.54 | 0.50 | 0.32 | 0.36 | 0.39 | 0.54 | 0.39 |
 | `xcopa` | 0.54 | 0.32 | 0.46 | 0.50 | 0.57 | 0.43 | 0.32 | 0.36 | 0.43 | 0.68 | 0.21 | 0.39 | 0.25 | 0.57 | 0.32 |
 | `rf_include_base_44` | 0.46 | 0.21 | 0.54 | 0.54 | 0.32 | 0.36 | 0.39 | 0.36 | 0.43 | 0.39 | 0.46 | 0.64 | 0.18 | 0.57 | 0.36 |
 | `rfgm_include_base_44` | 0.50 | 0.68 | 0.18 | 0.46 | 0.29 | 0.39 | 0.29 | 0.61 | 0.14 | 0.25 | 0.36 | 0.36 | 0.57 | 0.71 | 0.43 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.36 | 0.25 |  |  |  |  |  | 0.61 |
-| `global_piqa_parallel_cloze` | 0.32 | 0.39 | 0.21 | 0.46 | 0.32 | 0.25 | 0.68 | 0.36 | 0.64 | 0.46 | 0.43 | 0.39 | 0.25 | 0.43 | 0.46 |
+| `global_piqa_parallel_cloze` | 0.57 | 0.57 | 0.46 | 0.46 | 0.18 | 0.36 | 0.21 | 0.25 | 0.36 | **0.75** | 0.43 | 0.29 | 0.50 | 0.25 | 0.21 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -4206,19 +4253,19 @@ subtitle: "Thai (th) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **0.94** | **0.87** | **0.83** | **0.95** | **0.95** | **0.94** | **0.87** | **0.96** | **0.96** | **0.86** | **0.90** | **0.90** | **0.86** | **0.83** | **0.95** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | 0.73 | **0.87** |  |  |  |  |  | 0.73 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | 0.71 |  | **0.78** | **0.78** |  | **0.81** | 0.67 |  |  | 0.74 |
-| `bbpb_xnli` |  |  |  |  |  | **0.81** |  | **0.86** | 0.73 |  | **0.86** | 0.57 |  |  | 0.64 |
-| `bbpb_rf_belebele` |  |  |  |  |  | **0.81** |  | 0.71 | 0.53 |  | **0.76** | 0.62 |  |  | 0.49 |
-| `bbpb_xcopa` |  |  |  |  |  | 0.48 |  | **0.88** | 0.63 |  | 0.52 | **0.76** |  |  | 0.59 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.59 | 0.58 |  |  |  |  |  | 0.58 |
-| `belebele` | 0.59 | 0.42 | 0.65 | 0.68 | 0.49 | 0.41 | 0.56 | 0.65 | 0.50 | 0.40 | 0.44 | 0.68 | 0.65 | 0.47 | 0.56 |
-| `xnli` | 0.56 | 0.65 | 0.46 | 0.53 | 0.50 | 0.58 | 0.55 | 0.50 | 0.59 | 0.54 | 0.46 | 0.33 | 0.49 | 0.51 | 0.53 |
-| `rfgm_belebele` | 0.32 | 0.33 | 0.37 | 0.41 | 0.18 | 0.55 | 0.46 | 0.55 | 0.60 | 0.63 | 0.51 | 0.56 | 0.40 | 0.63 | 0.56 |
-| `rf_belebele` | 0.58 | 0.69 | 0.49 | 0.44 | 0.31 | 0.41 | 0.60 | 0.40 | 0.42 | 0.41 | 0.46 | 0.41 | 0.45 | 0.54 | 0.41 |
-| `xcopa` | 0.40 | 0.55 | 0.42 | 0.35 | 0.37 | 0.38 | 0.42 | 0.35 | 0.23 | 0.37 | 0.26 | 0.38 | 0.49 | 0.41 | 0.58 |
-| `global_piqa_parallel_cloze` | 0.14 | 0.27 | 0.60 | 0.35 | 0.44 | 0.51 | 0.27 | 0.41 | 0.24 | 0.35 | 0.36 | 0.44 | 0.44 | 0.44 | 0.46 |
+| `bpb` | **0.95** | **0.88** | **0.82** | **0.95** | **0.95** | **0.93** | **0.86** | **0.96** | **0.96** | **0.86** | **0.91** | **0.90** | **0.86** | **0.83** | **0.95** |
+| `bbpb_xcopa` | **0.79** | 0.75 | **0.81** | **0.76** | 0.67 | 0.60 | 0.69 | **0.86** | 0.64 | 0.71 | 0.59 | **0.81** | 0.73 | 0.73 | 0.56 |
+| `bbpb_global_piqa_parallel_cloze` | 0.69 | 0.60 | 0.67 | 0.65 | 0.68 | 0.71 | **0.78** | 0.71 | **0.88** | 0.67 | **0.78** | 0.68 | 0.71 | 0.73 | 0.70 |
+| `bbpb_rfgm_belebele` | **0.79** | 0.67 | 0.66 | 0.66 | **0.81** | 0.66 | **0.76** | **0.76** | **0.78** | 0.64 | 0.66 | 0.59 | **0.76** | 0.69 | 0.74 |
+| `bbpb_xnli` | **0.77** | 0.66 | 0.65 | 0.67 | **0.76** | **0.82** | 0.68 | **0.84** | 0.73 | 0.55 | **0.84** | 0.64 | 0.58 | 0.60 | 0.65 |
+| `bbpb_rf_belebele` | 0.70 | 0.75 | 0.74 | 0.63 | 0.48 | **0.76** | 0.64 | 0.73 | 0.56 | 0.70 | 0.64 | 0.58 | 0.60 | 0.33 | 0.55 |
+| `bbpb_belebele` | 0.66 | 0.54 | 0.70 | 0.66 | 0.65 | 0.62 | 0.49 | 0.56 | 0.62 | 0.42 | 0.46 | 0.56 | 0.69 | 0.55 | 0.55 |
+| `belebele` | 0.45 | 0.51 | 0.62 | 0.59 | 0.42 | 0.37 | 0.57 | 0.68 | 0.57 | 0.42 | 0.41 | 0.60 | 0.66 | 0.49 | 0.60 |
+| `xnli` | 0.64 | 0.61 | 0.42 | 0.54 | 0.56 | 0.59 | 0.53 | 0.51 | 0.60 | 0.56 | 0.45 | 0.30 | 0.47 | 0.47 | 0.55 |
+| `rfgm_belebele` | 0.32 | 0.38 | 0.36 | 0.43 | 0.20 | 0.50 | 0.48 | 0.54 | 0.62 | 0.55 | 0.55 | 0.57 | 0.36 | 0.59 | 0.57 |
+| `rf_belebele` | 0.54 | 0.67 | 0.48 | 0.43 | 0.32 | 0.39 | 0.63 | 0.41 | 0.44 | 0.36 | 0.44 | 0.44 | 0.48 | 0.53 | 0.42 |
+| `xcopa` | 0.50 | 0.57 | 0.43 | 0.32 | 0.32 | 0.44 | 0.43 | 0.33 | 0.20 | 0.37 | 0.26 | 0.36 | 0.47 | 0.41 | 0.60 |
+| `global_piqa_parallel_cloze` | 0.55 | 0.30 | 0.31 | 0.46 | 0.36 | 0.39 | 0.31 | 0.54 | 0.29 | 0.40 | 0.54 | 0.41 | 0.18 | 0.36 | 0.26 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -4241,35 +4288,35 @@ subtitle: "Turkish (tr) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **1.00** | **0.94** | 0.69 | **0.92** | **0.94** | **0.94** | 0.69 | **0.92** | **0.94** | **0.75** | **0.97** | **0.89** | 0.72 | 0.69 | **0.86** |
-| `bbpb_rf_belebele` |  |  |  |  |  | **0.90** |  | **0.81** | 0.72 |  | **0.90** | 0.60 |  |  | **0.75** |
-| `bbpb_xcopa` |  |  |  |  |  | 0.70 |  | **0.75** | 0.72 |  | **0.90** | 0.60 |  |  | **0.81** |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | **0.78** | **0.75** |  |  |  |  |  | 0.69 |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | **0.75** | **0.78** |  |  |  |  |  | 0.64 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | 0.60 |  | 0.72 | **0.75** |  | **0.90** | 0.50 |  |  | **0.86** |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **0.75** | 0.69 |  |  |  |  |  | 0.67 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **0.80** |  | 0.69 | 0.64 |  | 0.60 | **0.80** |  |  | 0.67 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | **0.80** |  | **0.75** | 0.56 |  | 0.70 | 0.60 |  |  | 0.69 |
-| `bbpb_xnli` |  |  |  |  |  | **0.80** |  | 0.69 | 0.67 |  | 0.70 | 0.50 |  |  | 0.69 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  |  |  | 0.64 | 0.64 |  |  |  |  |  | 0.61 |
-| `bbpb_multiblimp` |  |  |  |  |  | **1.00** |  | 0.69 | 0.47 |  | 0.33 | 0.67 |  |  | 0.50 |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.53 | 0.56 |  |  |  |  |  | 0.64 |
-| `rf_belebele` | 0.64 | 0.64 | 0.42 | 0.64 | **0.81** | 0.36 | 0.61 | **0.81** | 0.67 | 0.42 | 0.39 | 0.53 | 0.56 | 0.47 | 0.58 |
-| `multiblimp` | 0.42 | 0.36 | 0.53 | **0.78** | 0.31 | **0.86** | 0.56 | 0.58 | 0.61 | 0.58 | 0.50 | 0.69 | 0.69 | 0.56 | 0.44 |
-| `include_v2_og` | 0.33 | 0.64 | 0.53 | 0.53 | 0.58 | 0.61 | 0.56 | 0.64 | 0.53 | 0.50 | 0.56 | 0.61 | 0.64 | 0.67 | 0.50 |
-| `xnli` | 0.44 | 0.64 | 0.42 | 0.47 | 0.56 | 0.69 | 0.47 | 0.53 | 0.56 | 0.36 | 0.50 | 0.64 | 0.64 | 0.64 | 0.64 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.80** |  | 0.72 | 0.36 |  | 0.70 | 0.10 |  |  | 0.53 |
-| `include_base_44` | 0.44 | 0.42 | 0.56 | 0.64 | 0.56 | 0.36 | 0.64 | 0.64 | 0.53 | 0.33 | 0.47 | 0.53 | 0.61 | 0.67 | 0.50 |
-| `rfgm_include_base_44` | 0.47 | 0.53 | 0.47 | 0.69 | 0.67 | 0.72 | 0.08 | 0.50 | 0.61 | 0.28 | 0.61 | 0.72 | 0.36 | 0.39 | 0.58 |
-| `rf_global_mmlu_full` | 0.64 | 0.64 | 0.56 | 0.36 | 0.44 | 0.56 | 0.56 | 0.42 | 0.50 | 0.47 | 0.56 | 0.33 | 0.64 | 0.36 | 0.56 |
-| `global_mmlu_full` | 0.67 | 0.72 | 0.36 | 0.22 | 0.42 | 0.53 | 0.53 | 0.39 | 0.69 | 0.36 | 0.28 | 0.36 | 0.69 | 0.67 | 0.69 |
-| `belebele` | 0.39 | 0.36 | 0.50 | 0.44 | 0.47 | 0.47 | 0.50 | 0.56 | 0.50 | 0.50 | 0.56 | 0.47 | 0.50 | 0.53 | **0.75** |
-| `rfgm_belebele` | 0.44 | 0.61 | 0.39 | 0.56 | 0.61 | 0.36 | 0.36 | 0.58 | 0.56 | 0.58 | 0.56 | 0.64 | 0.19 | 0.31 | 0.56 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.39 | 0.58 |  |  |  |  |  | 0.47 |
-| `include_v2_en` | 0.50 | 0.53 | 0.39 | 0.53 | 0.50 | 0.44 | 0.47 | 0.56 | 0.61 | 0.47 | 0.28 | 0.39 | 0.56 | 0.19 | 0.42 |
-| `xcopa` | 0.31 | 0.42 | 0.31 | 0.53 | 0.47 | 0.56 | 0.47 | 0.31 | 0.39 | 0.28 | 0.28 | 0.47 | **0.75** | 0.53 | 0.67 |
-| `rf_include_base_44` | 0.47 | 0.39 | 0.25 | 0.50 | 0.53 | 0.47 | 0.36 | 0.22 | 0.64 | 0.42 | 0.36 | 0.42 | 0.44 | 0.58 | 0.42 |
-| `global_piqa_parallel_cloze` | 0.47 | 0.22 | 0.50 | 0.31 | 0.25 | 0.19 | 0.56 | 0.39 | 0.22 | 0.33 | 0.67 | 0.53 | 0.42 | 0.31 | 0.61 |
+| `bpb` | **1.00** | **0.89** | 0.62 | **0.89** | **0.94** | **0.89** | 0.62 | **0.89** | **0.94** | 0.73 | **0.91** | **0.89** | 0.69 | 0.69 | **0.86** |
+| `bbpb_rfgm_include_base_44` | **0.89** | 0.67 | **0.76** | 0.73 | 0.72 | 0.64 | 0.69 | 0.71 | **0.75** | 0.73 | **0.84** | **0.75** | **0.80** | **0.89** | **0.86** |
+| `bbpb_rf_belebele` | **0.80** | 0.71 | **0.80** | 0.67 | 0.71 | **0.78** | **0.82** | **0.78** | 0.73 | 0.64 | **0.78** | **0.78** | 0.73 | 0.60 | 0.73 |
+| `bbpb_xcopa` | **0.76** | 0.60 | **0.78** | **0.80** | **0.84** | 0.71 | 0.62 | 0.73 | 0.69 | 0.69 | **0.80** | 0.67 | **0.76** | 0.71 | **0.78** |
+| `bbpb_rfgm_belebele` | **0.87** | **0.78** | 0.60 | 0.64 | 0.69 | 0.73 | 0.73 | 0.69 | 0.64 | 0.69 | 0.73 | **0.78** | **0.82** | 0.61 | 0.67 |
+| `bbpb_include_v2_og` | 0.73 | 0.69 | **0.82** | **0.76** | 0.64 | 0.51 | **0.82** | 0.71 | **0.78** | 0.69 | 0.67 | 0.47 | **0.76** | **0.75** | 0.64 |
+| `bbpb_global_piqa_parallel_cloze` | 0.71 | 0.71 | 0.64 | 0.60 | 0.73 | 0.69 | **0.84** | 0.67 | 0.62 | 0.67 | 0.67 | 0.67 | **0.78** | 0.60 | 0.73 |
+| `bbpb_xnli` | **0.91** | 0.62 | 0.62 | **0.76** | 0.62 | 0.71 | 0.71 | 0.71 | 0.62 | 0.56 | 0.73 | 0.60 | 0.47 | 0.51 | 0.64 |
+| `bbpb_include_base_44` | 0.71 | 0.51 | **0.87** | 0.71 | 0.64 | 0.49 | **0.76** | **0.78** | 0.71 | 0.56 | 0.44 | 0.38 | **0.80** | 0.69 | 0.71 |
+| `bbpb_rf_global_mmlu_full` | 0.67 | 0.69 | 0.67 | **0.82** | 0.67 | 0.62 | 0.56 | 0.67 | 0.38 | 0.58 | **0.82** | 0.53 | 0.62 | 0.47 | 0.62 |
+| `bbpb_global_mmlu_full` | 0.67 | 0.47 | 0.53 | 0.64 | 0.60 | 0.67 | 0.73 | 0.67 | 0.67 | 0.67 | 0.47 | 0.42 | 0.67 | 0.53 | 0.69 |
+| `bbpb_rf_include_base_44` | 0.56 | 0.47 | 0.73 | 0.60 | 0.40 | 0.47 | 0.64 | 0.60 | 0.44 | 0.51 | 0.60 | 0.49 | 0.64 | 0.58 | **0.76** |
+| `bbpb_belebele` | 0.56 | 0.40 | 0.62 | **0.78** | 0.53 | 0.58 | 0.67 | 0.47 | 0.67 | 0.47 | 0.31 | 0.47 | 0.67 | 0.69 | 0.53 |
+| `multiblimp` | 0.53 | 0.47 | 0.49 | 0.71 | 0.31 | **0.78** | 0.47 | 0.47 | 0.60 | 0.58 | 0.53 | 0.67 | 0.73 | 0.56 | 0.44 |
+| `include_v2_og` | 0.45 | 0.56 | 0.53 | 0.53 | 0.60 | 0.45 | 0.58 | 0.64 | 0.62 | 0.42 | 0.51 | 0.51 | 0.64 | 0.67 | 0.53 |
+| `bbpb_multiblimp` | 0.60 | 0.51 | 0.64 | 0.71 | 0.49 | 0.69 | 0.51 | 0.58 | 0.44 | 0.56 | 0.53 | 0.49 | 0.44 | 0.49 | 0.51 |
+| `rf_belebele` | 0.47 | 0.67 | 0.40 | 0.69 | **0.80** | 0.33 | 0.58 | 0.69 | 0.60 | 0.42 | 0.40 | 0.51 | 0.53 | 0.44 | 0.60 |
+| `global_piqa_parallel_cloze` | 0.51 | 0.60 | 0.47 | 0.69 | 0.58 | 0.53 | 0.31 | 0.49 | 0.51 | 0.51 | 0.53 | 0.53 | 0.36 | 0.56 | 0.73 |
+| `global_mmlu_full` | 0.58 | 0.75 | 0.33 | 0.22 | 0.40 | 0.56 | 0.60 | 0.49 | 0.71 | 0.36 | 0.29 | 0.38 | **0.76** | 0.71 | 0.73 |
+| `xnli` | 0.49 | 0.51 | 0.38 | 0.42 | 0.47 | 0.65 | 0.47 | 0.56 | 0.51 | 0.38 | 0.49 | 0.58 | 0.62 | 0.69 | 0.64 |
+| `include_base_44` | 0.55 | 0.35 | 0.47 | 0.62 | 0.53 | 0.33 | 0.56 | 0.64 | 0.49 | 0.44 | 0.47 | 0.58 | 0.60 | 0.67 | 0.49 |
+| `rf_global_mmlu_full` | 0.56 | 0.60 | 0.60 | 0.49 | 0.56 | 0.53 | 0.49 | 0.33 | 0.40 | 0.47 | 0.58 | 0.40 | 0.67 | 0.44 | 0.64 |
+| `bbpb_include_v2_en` | 0.36 | 0.51 | 0.40 | 0.47 | 0.67 | 0.49 | 0.47 | 0.58 | 0.56 | 0.67 | 0.60 | 0.39 | 0.58 | 0.36 | 0.64 |
+| `rfgm_include_base_44` | 0.53 | 0.47 | 0.51 | 0.71 | 0.71 | 0.58 | 0.16 | 0.56 | 0.62 | 0.27 | 0.49 | 0.60 | 0.42 | 0.44 | 0.62 |
+| `belebele` | 0.47 | 0.42 | 0.49 | 0.44 | 0.44 | 0.55 | 0.42 | 0.51 | 0.40 | 0.56 | 0.56 | 0.51 | 0.51 | 0.60 | 0.73 |
+| `rfgm_belebele` | 0.51 | 0.64 | 0.36 | 0.58 | 0.60 | 0.40 | 0.31 | 0.56 | 0.58 | 0.53 | 0.58 | 0.67 | 0.20 | 0.31 | 0.56 |
+| `include_v2_en` | 0.55 | 0.55 | 0.38 | 0.56 | 0.51 | 0.51 | 0.47 | 0.58 | 0.62 | 0.47 | 0.29 | 0.38 | 0.56 | 0.18 | 0.42 |
+| `rf_include_base_44` | 0.38 | 0.33 | 0.27 | 0.49 | 0.49 | 0.55 | 0.40 | 0.27 | 0.67 | 0.42 | 0.40 | 0.42 | 0.49 | 0.58 | 0.47 |
+| `xcopa` | 0.33 | 0.31 | 0.27 | 0.51 | 0.42 | 0.62 | 0.49 | 0.33 | 0.31 | 0.31 | 0.29 | 0.38 | 0.73 | 0.49 | 0.64 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -4292,35 +4339,35 @@ subtitle: "Ukrainian (uk) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **1.00** | **0.94** | 0.72 | **0.86** | **1.00** | **0.94** | 0.72 | **0.86** | **1.00** | 0.72 | **0.92** | **0.94** | 0.64 | 0.72 | **0.86** |
-| `bbpb_hellaswag` |  |  |  |  |  |  |  | **0.75** | **0.89** |  |  |  |  |  | **0.81** |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | **0.90** |  | **0.86** | 0.61 |  | **0.80** | **0.90** |  |  | 0.58 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  |  |  | **0.78** | 0.72 |  |  |  |  |  | **0.78** |
-| `multiblimp` | **0.78** | **0.86** | **0.78** | **0.75** | 0.72 | **0.75** | **0.75** | **0.81** | 0.67 | 0.69 | 0.61 | 0.64 | **0.81** | 0.67 | **0.75** |
-| `bbpb_rf_belebele` |  |  |  |  |  | **0.80** |  | **0.89** | 0.64 |  | **0.90** | 0.50 |  |  | 0.58 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **0.90** |  | **0.75** | 0.69 |  | **0.80** | 0.60 |  |  | 0.56 |
-| `bbpb_multiblimp` |  |  |  |  |  | **1.00** |  | **0.81** | 0.56 |  | 0.67 | 0.67 |  |  | 0.53 |
-| `hellaswag` | 0.42 | 0.61 | 0.61 | 0.64 | 0.72 | 0.69 | **0.81** | 0.61 | 0.61 | **0.78** | 0.58 | **0.75** | 0.64 | **0.75** | 0.72 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  |  |  | 0.67 | 0.56 |  |  |  |  |  | 0.72 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.60 |  | 0.72 | 0.58 |  | **0.80** | 0.60 |  |  | 0.53 |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.67 | 0.64 |  |  |  |  |  | 0.58 |
-| `bbpb_arc` |  |  |  |  |  |  |  | 0.69 | 0.44 |  |  |  |  |  | 0.58 |
-| `include_v2_og` | 0.50 | **0.78** | 0.67 | 0.53 | 0.72 | 0.42 | 0.69 | 0.56 | 0.44 | 0.47 | 0.53 | 0.67 | 0.42 | 0.50 | 0.64 |
-| `bbpb_include_v2_og` |  |  |  |  |  |  |  | 0.69 | 0.58 |  |  |  |  |  | 0.39 |
-| `include_v2_en` | 0.64 | 0.58 | **0.78** | 0.39 | 0.47 | 0.72 | 0.64 | 0.50 | 0.33 | **0.75** | 0.50 | 0.39 | 0.39 | 0.44 | 0.47 |
-| `rf_belebele` | **0.78** | 0.61 | 0.53 | 0.56 | 0.50 | 0.56 | 0.61 | 0.50 | 0.53 | 0.58 | 0.56 | 0.50 | 0.56 | 0.47 | 0.14 |
-| `rfgm_include_base_44` | **0.75** | 0.33 | 0.39 | 0.58 | 0.58 | 0.39 | 0.53 | 0.61 | 0.64 | 0.58 | 0.33 | 0.47 | 0.58 | 0.47 | 0.56 |
-| `bbpb_belebele` |  |  |  |  |  |  |  | 0.50 | 0.61 |  |  |  |  |  | 0.44 |
-| `global_mmlu_full` | 0.36 | 0.44 | 0.42 | 0.44 | 0.33 | 0.58 | 0.56 | 0.58 | **0.75** | 0.47 | 0.67 | 0.44 | 0.58 | 0.42 | 0.50 |
-| `arc` | 0.67 | 0.39 | 0.58 | 0.39 | 0.50 | 0.44 | 0.72 | 0.61 | 0.39 | 0.58 | 0.47 | 0.58 | 0.50 | 0.33 | 0.39 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | 0.50 |  | **0.78** | 0.33 |  | 0.60 | 0.40 |  |  | 0.39 |
-| `rfgm_belebele` | **0.81** | 0.50 | 0.56 | 0.28 | 0.44 | 0.61 | 0.56 | 0.39 | 0.36 | 0.61 | 0.61 | 0.47 | 0.28 | 0.67 | 0.31 |
-| `include_base_44` | 0.50 | 0.36 | 0.36 | 0.53 | 0.44 | 0.58 | 0.47 | 0.56 | 0.67 | 0.36 | 0.22 | **0.81** | 0.67 | 0.50 | 0.36 |
-| `rf_include_base_44` | 0.39 | 0.39 | 0.56 | 0.61 | 0.39 | 0.47 | 0.25 | 0.42 | 0.58 | 0.44 | 0.42 | 0.56 | 0.64 | 0.61 | 0.39 |
-| `belebele` | 0.58 | 0.39 | 0.47 | 0.36 | 0.53 | 0.64 | 0.33 | 0.50 | 0.17 | 0.42 | 0.69 | 0.31 | 0.67 | 0.61 | 0.33 |
-| `global_piqa_parallel_cloze` | 0.53 | 0.56 | 0.50 | 0.61 | 0.53 | 0.36 | 0.56 | 0.33 | 0.50 | 0.17 | 0.47 | 0.31 | 0.50 | 0.64 | 0.36 |
-| `rf_global_mmlu_full` | 0.44 | 0.61 | 0.36 | 0.47 | 0.47 | 0.47 | 0.53 | 0.19 | 0.36 | 0.50 | 0.36 | 0.42 | 0.44 | 0.44 | **0.83** |
-| `bbpb_include_v2_en` |  |  |  |  |  |  |  | 0.44 | 0.19 |  |  |  |  |  | 0.47 |
+| `bpb` | **0.98** | **0.93** | 0.71 | **0.87** | **1.00** | **0.91** | 0.73 | **0.84** | **1.00** | 0.69 | **0.93** | **0.94** | 0.62 | 0.72 | **0.86** |
+| `bbpb_hellaswag` | **0.93** | **0.87** | **0.84** | **0.78** | **0.76** | **0.89** | **0.82** | **0.76** | **0.82** | **0.89** | **0.82** | **0.80** | **0.84** | 0.69 | 0.71 |
+| `multiblimp` | **0.76** | **0.78** | **0.76** | **0.78** | 0.64 | 0.73 | 0.73 | **0.82** | 0.60 | 0.69 | 0.62 | 0.67 | **0.80** | 0.67 | 0.69 |
+| `bbpb_rfgm_include_base_44` | **0.91** | **0.76** | 0.67 | 0.73 | **0.75** | **0.84** | 0.58 | 0.73 | 0.69 | 0.56 | 0.71 | 0.67 | 0.62 | **0.75** | 0.56 |
+| `bbpb_global_piqa_parallel_cloze` | **0.89** | 0.64 | 0.64 | 0.64 | 0.73 | 0.67 | **0.76** | 0.71 | 0.67 | 0.56 | 0.60 | 0.56 | **0.78** | **0.78** | **0.82** |
+| `bbpb_multiblimp` | **0.82** | 0.67 | **0.84** | **0.82** | 0.56 | 0.67 | 0.71 | **0.78** | 0.51 | 0.69 | 0.62 | 0.62 | **0.80** | 0.58 | 0.51 |
+| `bbpb_rfgm_belebele` | **0.76** | **0.78** | 0.62 | 0.67 | **0.78** | 0.58 | **0.78** | **0.87** | 0.61 | 0.49 | 0.58 | **0.81** | 0.73 | 0.39 | 0.58 |
+| `hellaswag` | 0.56 | 0.67 | 0.53 | 0.49 | 0.49 | 0.75 | 0.69 | **0.78** | 0.73 | 0.60 | **0.78** | **0.82** | 0.64 | 0.56 | **0.91** |
+| `bbpb_rf_belebele` | **0.82** | 0.69 | 0.49 | 0.73 | 0.71 | **0.78** | 0.49 | **0.82** | 0.67 | 0.58 | 0.73 | 0.44 | 0.62 | 0.47 | 0.58 |
+| `bbpb_include_v2_og` | 0.58 | **0.76** | 0.51 | 0.49 | **0.75** | 0.69 | **0.89** | 0.69 | 0.58 | 0.58 | 0.64 | 0.67 | 0.62 | 0.53 | 0.39 |
+| `bbpb_rf_include_base_44` | 0.69 | 0.67 | 0.47 | 0.69 | 0.71 | 0.44 | 0.73 | 0.69 | 0.58 | 0.40 | 0.53 | 0.69 | 0.64 | 0.36 | 0.53 |
+| `bbpb_belebele` | 0.44 | 0.49 | **0.82** | 0.53 | 0.62 | 0.60 | 0.62 | 0.56 | 0.69 | 0.49 | 0.33 | 0.56 | 0.67 | 0.71 | 0.51 |
+| `include_v2_og` | 0.55 | 0.75 | 0.56 | 0.44 | 0.62 | 0.42 | 0.62 | 0.51 | 0.40 | 0.49 | 0.53 | 0.67 | 0.53 | 0.58 | 0.69 |
+| `bbpb_arc` | 0.71 | 0.49 | 0.49 | 0.71 | 0.73 | 0.29 | 0.56 | 0.69 | 0.44 | 0.38 | 0.51 | 0.53 | 0.64 | 0.44 | 0.53 |
+| `bbpb_rf_global_mmlu_full` | **0.76** | 0.51 | 0.47 | **0.82** | 0.44 | 0.58 | 0.58 | **0.80** | 0.33 | 0.64 | 0.60 | 0.42 | 0.47 | 0.33 | 0.39 |
+| `bbpb_global_mmlu_full` | **0.84** | 0.42 | 0.38 | 0.69 | 0.56 | 0.40 | 0.40 | 0.67 | 0.53 | 0.47 | 0.51 | 0.38 | 0.56 | 0.56 | 0.69 |
+| `bbpb_include_base_44` | 0.60 | 0.60 | 0.51 | 0.38 | 0.51 | 0.42 | 0.51 | 0.69 | 0.60 | 0.38 | 0.47 | 0.60 | 0.64 | 0.51 | 0.56 |
+| `rfgm_include_base_44` | 0.71 | 0.36 | 0.40 | 0.62 | 0.62 | 0.40 | 0.53 | 0.58 | 0.58 | 0.58 | 0.36 | 0.51 | 0.60 | 0.47 | 0.60 |
+| `arc` | 0.40 | 0.45 | 0.40 | 0.51 | 0.58 | 0.73 | 0.51 | 0.53 | 0.42 | 0.47 | 0.62 | 0.47 | **0.82** | 0.40 | 0.47 |
+| `rfgm_belebele` | **0.85** | 0.49 | 0.56 | 0.36 | 0.49 | 0.56 | 0.56 | 0.44 | 0.42 | 0.60 | 0.58 | 0.47 | 0.31 | 0.62 | 0.44 |
+| `include_v2_en` | 0.62 | 0.58 | 0.67 | 0.36 | 0.51 | 0.73 | 0.56 | 0.53 | 0.40 | 0.60 | 0.49 | 0.47 | 0.42 | 0.36 | 0.47 |
+| `rf_belebele` | 0.65 | 0.62 | 0.49 | 0.49 | 0.53 | 0.45 | 0.62 | 0.56 | 0.44 | 0.58 | 0.53 | 0.51 | 0.62 | 0.42 | 0.13 |
+| `bbpb_include_v2_en` | 0.13 | 0.62 | 0.56 | 0.53 | **0.75** | 0.42 | 0.44 | 0.47 | 0.19 | 0.58 | 0.64 | 0.39 | 0.71 | 0.50 | 0.47 |
+| `global_mmlu_full` | 0.42 | 0.51 | 0.47 | 0.38 | 0.31 | 0.47 | 0.49 | 0.62 | **0.78** | 0.56 | 0.56 | 0.36 | 0.51 | 0.36 | 0.58 |
+| `include_base_44` | 0.44 | 0.45 | 0.44 | 0.47 | 0.47 | 0.44 | 0.40 | 0.62 | 0.64 | 0.47 | 0.20 | 0.73 | 0.58 | 0.51 | 0.38 |
+| `rf_include_base_44` | 0.38 | 0.49 | 0.53 | 0.58 | 0.38 | 0.47 | 0.27 | 0.44 | 0.58 | 0.44 | 0.42 | 0.56 | 0.60 | 0.58 | 0.42 |
+| `belebele` | 0.56 | 0.40 | 0.42 | 0.31 | 0.62 | 0.47 | 0.29 | 0.40 | 0.31 | 0.49 | 0.73 | 0.29 | 0.71 | 0.53 | 0.29 |
+| `rf_global_mmlu_full` | 0.44 | 0.58 | 0.38 | 0.47 | 0.44 | 0.44 | 0.53 | 0.22 | 0.38 | 0.42 | 0.49 | 0.38 | 0.38 | 0.53 | 0.71 |
+| `global_piqa_parallel_cloze` | 0.58 | 0.38 | 0.44 | 0.20 | 0.60 | 0.58 | 0.22 | 0.40 | 0.67 | 0.36 | 0.60 | 0.40 | 0.62 | 0.29 | 0.27 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -4343,41 +4390,41 @@ subtitle: "Urdu (ur) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bbpb_rf_belebele_urd_Arab` |  |  |  |  |  |  |  | **1.00** | **1.00** |  |  |  |  |  | **1.00** |
-| `bbpb_multiblimp` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_global_piqa_parallel_cloze_urd_arab` |  |  |  |  |  |  |  | **0.83** | **1.00** |  |  |  |  |  | **0.83** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  |  |  | **1.00** | **0.83** |  |  |  |  |  | **0.83** |
+| `bbpb_global_piqa_parallel_cloze_urd_arab` | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** |
+| `bbpb_rf_belebele_urd_Arab` | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | **1.00** | **1.00** | 0.67 | 0.67 | **1.00** |
+| `bbpb_rfgm_include_base_44` | **0.83** | 0.67 | **1.00** | **0.83** | **1.00** | **0.83** | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** | 0.67 | **0.83** | **1.00** | **0.83** |
 | `bpb` | **0.83** | **0.83** | **0.83** | **1.00** | **0.83** | **1.00** | 0.67 | **0.83** | **1.00** | 0.67 | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** |
 | `multiblimp` | **1.00** | **0.83** | 0.67 | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** | **1.00** | **0.83** | 0.67 | **0.83** | **0.83** | 0.67 | **0.83** |
-| `bbpb_xnli` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | **0.83** |
-| `bbpb_rfgm_belebele_urd_Arab` |  |  |  |  |  |  |  | **0.83** | **0.83** |  |  |  |  |  | 0.67 |
-| `bbpb_include_v2_og_urdu_pakistan` |  |  |  |  |  |  |  | 0.67 | **0.83** |  |  |  |  |  | **0.83** |
-| `bbpb_belebele_urd_Latn` |  |  |  |  |  |  |  | **0.83** | 0.67 |  |  |  |  |  | 0.50 |
-| `bbpb_global_piqa_parallel_cloze_urd_latn` |  |  |  |  |  |  |  | 0.50 | **1.00** |  |  |  |  |  | 0.50 |
-| `bbpb_rf_belebele_urd_Latn` |  |  |  |  |  |  |  | 0.33 | 0.67 |  |  |  |  |  | 0.67 |
-| `bbpb_include_base_44` |  |  |  |  |  |  |  | 0.67 | 0.50 |  |  |  |  |  | 0.50 |
+| `bbpb_multiblimp` | **0.83** | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** | 0.67 | **1.00** | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | **0.83** | **0.83** |
+| `bbpb_xnli` | 0.67 | 0.67 | **0.83** | **0.83** | **1.00** | **1.00** | **0.83** | **0.83** | 0.67 | **0.83** | **0.83** | 0.67 | 0.67 | **0.83** | **0.83** |
+| `bbpb_rfgm_belebele_urd_Arab` | **0.83** | **0.83** | 0.67 | 0.67 | **1.00** | 0.67 | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **0.83** | **1.00** | 0.67 | 0.67 |
+| `bbpb_include_v2_og_urdu_pakistan` | 0.50 | **0.83** | 0.50 | **0.83** | 0.67 | 0.67 | **1.00** | 0.67 | **0.83** | 0.67 | **1.00** | **0.83** | 0.67 | **0.83** | **0.83** |
+| `bbpb_rf_belebele_urd_Latn` | 0.67 | 0.67 | **0.83** | 0.67 | **1.00** | 0.33 | 0.50 | 0.33 | 0.67 | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** | 0.67 |
+| `bbpb_belebele_urd_Latn` | **1.00** | 0.67 | 0.50 | **0.83** | 0.67 | 0.67 | 0.50 | **0.83** | 0.67 | 0.50 | **0.83** | 0.33 | 0.67 | 0.50 | 0.50 |
+| `bbpb_belebele_urd_Arab` | 0.67 | **0.83** | **0.83** | 0.67 | 0.50 | **0.83** | 0.50 | 0.67 | 0.17 | 0.67 | **0.83** | 0.33 | 0.50 | 0.67 | 0.50 |
+| `bbpb_rfgm_belebele_urd_Latn` | 0.17 | **0.83** | **1.00** | **0.83** | **0.83** | 0.00 | 0.17 | 0.00 | 0.33 | **0.83** | **1.00** | 0.67 | **0.83** | **0.83** | 0.67 |
+| `bbpb_include_base_44` | 0.50 | 0.17 | 0.33 | 0.50 | 0.33 | 0.67 | 0.50 | 0.67 | 0.50 | **0.83** | 0.67 | **0.83** | 0.50 | **1.00** | 0.50 |
 | `belebele_urd_Latn` | 0.33 | **0.83** | 0.67 | 0.67 | 0.50 | 0.50 | 0.33 | 0.33 | **0.83** | 0.50 | **0.83** | 0.67 | 0.33 | 0.50 | 0.50 |
 | `rf_belebele_urd_Latn` | 0.50 | 0.33 | 0.50 | 0.33 | 0.33 | 0.67 | **1.00** | 0.33 | 0.33 | 0.67 | 0.67 | 0.67 | 0.33 | 0.33 | **1.00** |
 | `include_base_44` | 0.67 | 0.50 | 0.50 | 0.67 | 0.67 | **0.83** | 0.17 | **1.00** | 0.33 | 0.00 | **0.83** | 0.17 | 0.17 | 0.67 | 0.33 |
+| `bbpb_include_v2_en_urdu_pakistan` | 0.50 | 0.67 | 0.00 | 0.50 | **1.00** | 0.50 | 0.50 | 0.33 | 0.50 | 0.33 | **0.83** | 0.67 | 0.50 | 0.00 | 0.50 |
+| `bbpb_rf_include_base_44` | 0.50 | **0.83** | 0.17 | 0.33 | **0.83** | 0.33 | 0.33 | 0.50 | 0.67 | 0.33 | 0.50 | 0.67 | **0.83** | 0.00 | 0.17 |
 | `belebele_urd_Arab` | **0.83** | **0.83** | 0.33 | 0.50 | 0.17 | **1.00** | 0.17 | 0.33 | 0.33 | 0.17 | 0.33 | 0.33 | **0.83** | 0.50 | 0.33 |
+| `bbpb_global_piqa_parallel_cloze_urd_latn` | 0.33 | **0.83** | 0.33 | 0.50 | 0.33 | 0.50 | 0.33 | 0.50 | **1.00** | 0.17 | 0.33 | 0.50 | 0.50 | 0.33 | 0.50 |
+| `bbpb_include_v2_og_urdu_india` | 0.50 | 0.67 | 0.33 | 0.33 | 0.67 | 0.17 | **0.83** | 0.17 | **0.83** | 0.00 | 0.67 | 0.33 | 0.33 | 0.67 | 0.33 |
 | `rfgm_include_base_44` | 0.33 | 0.17 | 0.67 | 0.17 | 0.67 | 0.50 | 0.67 | 0.67 | 0.33 | 0.33 | **0.83** | 0.33 | 0.50 | 0.33 | 0.33 |
 | `xnli` | 0.00 | 0.67 | 0.50 | 0.33 | 0.67 | 0.33 | 0.50 | 0.67 | 0.33 | 0.50 | 0.33 | 0.33 | **0.83** | 0.50 | 0.33 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  |  |  | 0.50 | 0.67 |  |  |  |  |  | 0.17 |
-| `bbpb_belebele_urd_Arab` |  |  |  |  |  |  |  | 0.67 | 0.17 |  |  |  |  |  | 0.50 |
 | `rfgm_belebele_urd_Arab` | 0.67 | 0.33 | 0.67 | 0.67 | 0.50 | 0.17 | 0.67 | 0.33 | 0.17 | 0.00 | 0.67 | 0.50 | 0.33 | 0.50 | 0.50 |
+| `bbpb_include_v2_en_urdu_india` | 0.00 | 0.67 | 0.17 | 0.67 | 0.50 | 0.33 | **0.83** | 0.33 | 0.50 | 0.50 | **1.00** | 0.17 | 0.50 | 0.33 | 0.17 |
 | `rfgm_belebele_urd_Latn` | 0.33 | **0.83** | 0.33 | 0.50 | 0.67 | 0.17 | 0.33 | 0.00 | 0.17 | 0.50 | 0.67 | 0.50 | 0.50 | 0.33 | **0.83** |
-| `bbpb_include_v2_og_urdu_india` |  |  |  |  |  |  |  | 0.17 | **0.83** |  |  |  |  |  | 0.33 |
-| `bbpb_include_v2_en_urdu_pakistan` |  |  |  |  |  |  |  | 0.33 | 0.50 |  |  |  |  |  | 0.50 |
-| `global_piqa_parallel_cloze_urd_arab` | 0.67 | 0.33 | 0.67 | 0.00 | **0.83** | 0.67 | 0.67 | 0.00 | 0.67 | 0.67 | 0.17 | 0.33 | 0.00 | 0.50 | 0.17 |
+| `global_piqa_parallel_cloze_urd_latn` | 0.50 | 0.00 | 0.00 | 0.50 | 0.33 | 0.17 | 0.33 | **1.00** | **0.83** | **0.83** | 0.17 | 0.33 | 0.33 | 0.50 | **0.83** |
 | `include_v2_en_urdu_pakistan` | 0.33 | **0.83** | 0.17 | 0.33 | 0.00 | 0.17 | **0.83** | 0.67 | 0.50 | 0.00 | 0.50 | 0.17 | 0.50 | 0.67 | 0.50 |
 | `include_v2_og_urdu_pakistan` | 0.67 | 0.17 | 0.50 | 0.00 | 0.17 | 0.17 | 0.50 | 0.33 | 0.50 | 0.50 | 0.67 | 0.67 | 0.17 | 0.17 | **0.83** |
 | `rf_belebele_urd_Arab` | 0.33 | 0.50 | 0.67 | 0.67 | 0.33 | 0.50 | 0.00 | 0.33 | 0.33 | 0.50 | 0.17 | 0.00 | 0.67 | 0.33 | 0.67 |
 | `include_v2_og_urdu_india` | 0.17 | 0.17 | 0.17 | 0.33 | 0.00 | 0.50 | **1.00** | 0.17 | 0.50 | 0.50 | 0.17 | 0.67 | 0.17 | 0.50 | 0.50 |
 | `include_v2_en_urdu_india` | 0.67 | 0.17 | 0.33 | 0.17 | 0.67 | 0.17 | 0.00 | 0.17 | 0.50 | 0.50 | 0.33 | 0.33 | **0.83** | 0.33 | 0.17 |
 | `rf_include_base_44` | 0.17 | 0.17 | 0.17 | 0.67 | 0.17 | 0.50 | 0.50 | 0.17 | 0.50 | 0.67 | 0.33 | 0.33 | 0.33 | 0.50 | 0.00 |
-| `bbpb_rfgm_belebele_urd_Latn` |  |  |  |  |  |  |  | 0.00 | 0.33 |  |  |  |  |  | 0.67 |
-| `bbpb_include_v2_en_urdu_india` |  |  |  |  |  |  |  | 0.33 | 0.50 |  |  |  |  |  | 0.17 |
-| `global_piqa_parallel_cloze_urd_latn` | 0.00 | 0.00 | 0.17 | 0.17 | 0.50 | 0.33 | 0.50 | 0.33 | 0.33 | 0.17 | 0.50 | 0.33 | 0.00 | 0.17 | 0.67 |
+| `global_piqa_parallel_cloze_urd_arab` | 0.50 | 0.00 | 0.17 | 0.33 | 0.33 | 0.00 | 0.00 | 0.00 | 0.17 | **0.83** | 0.67 | 0.50 | 0.50 | 0.33 | 0.50 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -4400,44 +4447,44 @@ subtitle: "Vietnamese (vi) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **0.95** | **0.91** | **0.85** | **0.95** | **0.98** | **0.92** | **0.86** | **0.91** | **0.97** | **0.91** | **0.89** | **0.92** | **0.80** | **0.86** | **0.94** |
-| `bbpb_hellaswag` |  |  |  |  |  | **1.00** |  | **0.86** | **0.91** |  | 0.67 | **1.00** |  |  | **0.89** |
-| `bbpb_xcopa` |  |  |  |  |  | **0.86** |  | **0.80** | **0.80** |  | **0.75** | 0.71 |  |  | **0.82** |
-| `bbpb_include_v2_og` |  |  |  |  |  | **0.80** |  | **0.83** | 0.70 |  | **0.80** | **0.90** |  |  | 0.65 |
-| `bbpb_arc` |  |  |  |  |  | 0.67 |  | 0.68 | 0.55 |  | **1.00** | **1.00** |  |  | 0.71 |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **0.79** |  | **0.79** | 0.74 |  | **0.89** | 0.61 |  |  | 0.74 |
-| `bbpb_rf_belebele` |  |  |  |  |  | 0.71 |  | 0.73 | 0.64 |  | **0.86** | **0.75** |  |  | 0.73 |
-| `bbpb_rfgm_belebele` |  |  |  |  |  | 0.71 |  | 0.74 | **0.76** |  | 0.68 | 0.71 |  |  | 0.68 |
-| `bbpb_xnli` |  |  |  |  |  | 0.64 |  | **0.76** | **0.76** |  | 0.46 | **0.89** |  |  | 0.67 |
-| `bbpb_global_piqa_parallel_cloze` |  |  |  |  |  | 0.67 |  | 0.74 | 0.73 |  | 0.67 | 0.67 |  |  | 0.71 |
-| `hellaswag` | 0.71 | 0.58 | 0.65 | 0.67 | 0.65 | 0.58 | 0.68 | 0.71 | 0.71 | 0.59 | 0.70 | 0.70 | 0.71 | 0.67 | **0.89** |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | 0.68 |  | 0.70 | 0.68 |  | **0.75** | 0.54 |  |  | 0.68 |
-| `bbpb_include_base_44` |  |  |  |  |  | 0.70 |  | 0.56 | 0.62 |  | **0.80** | 0.70 |  |  | 0.64 |
-| `include_v2_og` | 0.62 | **0.79** | 0.52 | 0.67 | **0.76** | 0.61 | **0.77** | **0.83** | 0.62 | 0.52 | 0.59 | **0.76** | 0.73 | 0.55 | 0.65 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.50 |  | 0.68 | 0.68 |  | 0.54 | 0.64 |  |  | **0.76** |
-| `bbpb_truthfulqa_mc2` |  |  |  |  |  | 0.68 |  | 0.61 | 0.65 |  | 0.46 | 0.68 |  |  | 0.65 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | 0.67 |  | 0.52 | 0.71 |  | 0.33 | 0.67 |  |  | 0.68 |
-| `bbpb_rf_cultural_bench_easy` |  |  |  |  |  | 0.64 |  | 0.61 | 0.39 |  | 0.64 | 0.61 |  |  | 0.52 |
-| `bbpb_cultural_bench_easy` |  |  |  |  |  | 0.67 |  | 0.48 | 0.67 |  | **1.00** | 0.00 |  |  | 0.52 |
-| `bbpb_include_v2_en` |  |  |  |  |  | 0.60 |  | 0.44 | 0.41 |  | 0.50 | **0.80** |  |  | 0.55 |
-| `truthfulqa_mc2` | **0.80** | 0.62 | 0.45 | 0.55 | 0.45 | 0.64 | 0.41 | 0.62 | 0.38 | 0.50 | 0.68 | 0.53 | 0.45 | 0.45 | 0.61 |
-| `bbpb_belebele` |  |  |  |  |  | 0.00 |  | 0.52 | 0.47 |  | 0.67 | **1.00** |  |  | 0.56 |
-| `include_v2_en` | 0.26 | 0.44 | 0.59 | 0.53 | 0.50 | 0.50 | 0.58 | 0.62 | 0.59 | 0.44 | 0.36 | 0.61 | 0.59 | 0.62 | 0.61 |
-| `xnli` | 0.53 | 0.38 | 0.65 | 0.53 | 0.53 | 0.55 | 0.64 | 0.44 | 0.41 | 0.62 | 0.53 | 0.50 | 0.50 | 0.52 | 0.35 |
-| `rf_include_base_44` | 0.33 | 0.47 | 0.36 | 0.42 | 0.41 | 0.36 | 0.58 | 0.62 | 0.68 | 0.35 | 0.50 | 0.42 | 0.64 | 0.73 | **0.77** |
-| `rfgm_belebele` | 0.41 | 0.47 | 0.39 | 0.38 | 0.59 | 0.70 | 0.59 | 0.55 | 0.53 | 0.61 | 0.41 | 0.48 | 0.42 | 0.52 | 0.42 |
-| `rf_belebele` | 0.36 | 0.44 | 0.62 | 0.44 | 0.41 | 0.61 | 0.48 | 0.56 | 0.68 | 0.45 | 0.47 | 0.44 | 0.53 | 0.41 | 0.53 |
-| `xcopa` | 0.50 | 0.32 | 0.39 | 0.42 | 0.23 | 0.55 | 0.62 | 0.56 | 0.64 | 0.45 | 0.50 | 0.56 | 0.39 | 0.47 | **0.79** |
-| `include_base_44` | 0.39 | 0.52 | 0.65 | 0.30 | 0.52 | 0.71 | 0.44 | 0.55 | 0.42 | 0.56 | 0.52 | 0.47 | 0.36 | 0.56 | 0.38 |
-| `rf_global_mmlu_full` | 0.48 | 0.50 | 0.70 | 0.39 | 0.39 | 0.27 | 0.35 | 0.44 | 0.59 | 0.65 | 0.50 | 0.45 | 0.48 | 0.39 | 0.74 |
-| `arc` | 0.47 | 0.64 | 0.42 | 0.39 | 0.45 | 0.39 | 0.50 | 0.44 | **0.79** | 0.47 | 0.44 | 0.41 | 0.44 | 0.45 | 0.52 |
-| `rfgm_include_base_44` | 0.33 | 0.48 | 0.41 | 0.47 | 0.47 | 0.33 | 0.47 | 0.62 | 0.48 | 0.50 | 0.50 | 0.38 | 0.71 | 0.48 | 0.53 |
-| `belebele` | 0.39 | 0.58 | 0.36 | 0.59 | 0.62 | 0.53 | 0.56 | 0.45 | 0.24 | 0.45 | 0.74 | 0.35 | 0.48 | 0.35 | 0.44 |
-| `global_mmlu_full` | 0.42 | 0.45 | 0.32 | 0.55 | 0.35 | 0.61 | 0.71 | 0.29 | 0.56 | 0.62 | 0.32 | 0.52 | 0.39 | 0.61 | 0.42 |
-| `cultural_bench_hard` | 0.36 | 0.50 | 0.42 | 0.35 | 0.52 | 0.52 | 0.52 | 0.33 | 0.50 | 0.23 | 0.36 | 0.33 | 0.39 | 0.59 | 0.38 |
-| `cultural_bench_easy` | 0.35 | 0.29 | 0.30 | 0.42 | 0.55 | 0.62 | 0.42 | 0.58 | 0.32 | 0.41 | 0.36 | 0.29 | 0.39 | 0.36 | 0.47 |
-| `rf_cultural_bench_easy` | 0.39 | 0.38 | 0.33 | 0.52 | 0.29 | 0.33 | 0.36 | 0.61 | 0.23 | 0.70 | 0.39 | 0.39 | 0.53 | 0.38 | 0.30 |
-| `global_piqa_parallel_cloze` | 0.35 | 0.41 | 0.36 | 0.38 | 0.35 | 0.26 | 0.32 | 0.53 | 0.44 | 0.30 | 0.39 | 0.33 | 0.30 | 0.45 | 0.42 |
+| `bpb` | **0.93** | **0.89** | **0.81** | **0.95** | **0.98** | **0.93** | **0.86** | **0.90** | **0.97** | **0.90** | **0.90** | **0.92** | **0.80** | **0.86** | **0.94** |
+| `bbpb_hellaswag` | **0.97** | **0.87** | **0.81** | **0.79** | **0.88** | **0.88** | **0.82** | **0.80** | **0.89** | **0.81** | **0.88** | **0.88** | **0.85** | **0.78** | **0.82** |
+| `bbpb_rfgm_include_base_44` | **0.76** | 0.69 | **0.79** | **0.81** | **0.87** | **0.80** | 0.73 | **0.77** | **0.76** | **0.79** | **0.81** | 0.68 | **0.87** | 0.73 | **0.77** |
+| `bbpb_xcopa` | **0.79** | 0.73 | 0.70 | **0.77** | **0.81** | **0.82** | 0.74 | **0.80** | **0.78** | 0.71 | **0.76** | **0.78** | **0.76** | **0.80** | **0.82** |
+| `bbpb_rfgm_belebele` | **0.87** | **0.76** | **0.76** | 0.68 | **0.83** | 0.69 | **0.80** | 0.66 | 0.74 | 0.71 | 0.66 | 0.73 | 0.73 | 0.68 | 0.65 |
+| `hellaswag` | 0.70 | **0.75** | 0.58 | 0.65 | **0.80** | **0.79** | 0.69 | **0.76** | **0.80** | 0.69 | 0.71 | 0.75 | 0.74 | 0.63 | **0.82** |
+| `bbpb_global_piqa_parallel_cloze` | 0.65 | **0.79** | **0.78** | 0.64 | 0.66 | 0.73 | **0.76** | 0.75 | 0.73 | 0.75 | 0.63 | 0.74 | **0.84** | 0.66 | 0.71 |
+| `bbpb_rf_belebele` | **0.76** | 0.73 | **0.77** | **0.82** | 0.70 | 0.57 | 0.73 | 0.69 | 0.64 | 0.69 | 0.73 | 0.74 | **0.81** | 0.67 | 0.70 |
+| `bbpb_xnli` | 0.68 | 0.64 | **0.76** | 0.64 | 0.68 | 0.69 | 0.66 | 0.69 | 0.69 | 0.75 | 0.58 | 0.74 | 0.64 | 0.73 | 0.65 |
+| `bbpb_include_v2_og` | 0.62 | 0.69 | 0.69 | 0.62 | 0.63 | 0.59 | **0.79** | **0.76** | 0.68 | 0.60 | 0.64 | 0.69 | 0.73 | 0.72 | 0.62 |
+| `bbpb_rf_global_mmlu_full` | 0.65 | 0.67 | 0.69 | 0.56 | 0.69 | 0.74 | 0.67 | 0.74 | 0.67 | 0.56 | 0.60 | 0.56 | 0.67 | **0.82** | 0.69 |
+| `bbpb_arc` | 0.71 | **0.76** | 0.62 | 0.70 | 0.70 | 0.69 | 0.70 | 0.68 | 0.55 | 0.59 | 0.62 | 0.62 | 0.67 | 0.49 | 0.71 |
+| `bbpb_rf_include_base_44` | 0.65 | 0.58 | 0.68 | 0.69 | 0.64 | 0.47 | 0.75 | 0.60 | 0.64 | 0.64 | 0.67 | 0.68 | 0.66 | 0.65 | **0.79** |
+| `include_v2_og` | 0.54 | 0.64 | 0.54 | 0.63 | 0.69 | 0.65 | 0.68 | **0.84** | 0.54 | 0.48 | 0.59 | 0.68 | 0.65 | 0.58 | 0.60 |
+| `bbpb_truthfulqa_mc2` | 0.60 | 0.54 | 0.73 | 0.70 | 0.53 | 0.69 | 0.55 | 0.55 | 0.68 | 0.55 | 0.37 | 0.57 | 0.58 | 0.67 | 0.60 |
+| `bbpb_include_base_44` | 0.75 | 0.67 | 0.62 | 0.56 | 0.56 | 0.62 | 0.47 | 0.59 | 0.59 | 0.57 | 0.63 | 0.47 | 0.64 | 0.53 | 0.63 |
+| `bbpb_global_mmlu_full` | 0.69 | 0.69 | 0.56 | 0.65 | 0.54 | 0.67 | 0.45 | 0.49 | 0.63 | 0.58 | 0.54 | 0.56 | 0.60 | 0.54 | 0.65 |
+| `arc` | 0.51 | 0.41 | 0.51 | 0.55 | 0.41 | 0.64 | 0.66 | 0.66 | 0.67 | 0.51 | 0.65 | 0.68 | 0.56 | 0.53 | 0.74 |
+| `bbpb_belebele` | 0.43 | 0.57 | 0.68 | 0.60 | 0.46 | 0.62 | 0.51 | 0.54 | 0.51 | 0.74 | 0.59 | 0.49 | 0.64 | 0.58 | 0.57 |
+| `truthfulqa_mc2` | 0.74 | 0.63 | 0.46 | 0.51 | 0.42 | 0.71 | 0.44 | 0.59 | 0.40 | 0.51 | 0.66 | 0.51 | 0.54 | 0.54 | 0.65 |
+| `bbpb_cultural_bench_easy` | 0.60 | 0.59 | 0.41 | 0.59 | 0.56 | 0.46 | 0.52 | 0.48 | 0.65 | 0.62 | 0.65 | 0.42 | 0.57 | 0.41 | 0.48 |
+| `bbpb_rf_cultural_bench_easy` | 0.63 | 0.60 | 0.37 | 0.51 | 0.62 | 0.63 | 0.46 | 0.62 | 0.41 | 0.44 | 0.57 | 0.62 | 0.45 | 0.40 | 0.55 |
+| `xnli` | 0.55 | 0.41 | 0.63 | 0.54 | 0.56 | 0.46 | 0.62 | 0.42 | 0.37 | 0.62 | 0.59 | 0.55 | 0.48 | 0.52 | 0.40 |
+| `include_v2_en` | 0.33 | 0.42 | 0.55 | 0.52 | 0.55 | 0.57 | 0.55 | 0.57 | 0.56 | 0.41 | 0.36 | 0.55 | 0.67 | 0.55 | 0.53 |
+| `bbpb_include_v2_en` | 0.44 | 0.63 | 0.53 | 0.51 | 0.64 | 0.48 | 0.52 | 0.43 | 0.47 | 0.59 | 0.51 | 0.46 | 0.38 | 0.45 | 0.50 |
+| `xcopa` | 0.53 | 0.33 | 0.44 | 0.47 | 0.29 | 0.56 | 0.64 | 0.53 | 0.57 | 0.47 | 0.48 | 0.56 | 0.41 | 0.43 | 0.75 |
+| `rf_global_mmlu_full` | 0.57 | 0.41 | 0.65 | 0.43 | 0.42 | 0.24 | 0.34 | 0.48 | 0.55 | 0.66 | 0.51 | 0.52 | 0.47 | 0.43 | 0.75 |
+| `include_base_44` | 0.39 | 0.50 | 0.66 | 0.31 | 0.49 | 0.68 | 0.47 | 0.55 | 0.42 | 0.53 | 0.45 | 0.45 | 0.41 | 0.56 | 0.47 |
+| `rf_include_base_44` | 0.38 | 0.37 | 0.40 | 0.42 | 0.44 | 0.35 | 0.49 | 0.65 | 0.62 | 0.35 | 0.44 | 0.37 | 0.59 | 0.74 | 0.74 |
+| `belebele` | 0.39 | 0.59 | 0.43 | 0.58 | 0.62 | 0.50 | 0.52 | 0.49 | 0.24 | 0.47 | 0.67 | 0.42 | 0.48 | 0.48 | 0.43 |
+| `rf_belebele` | 0.37 | 0.45 | 0.60 | 0.45 | 0.40 | 0.62 | 0.47 | 0.58 | 0.56 | 0.48 | 0.49 | 0.43 | 0.52 | 0.40 | 0.43 |
+| `rfgm_include_base_44` | 0.42 | 0.41 | 0.40 | 0.43 | 0.43 | 0.31 | 0.43 | 0.55 | 0.41 | 0.53 | 0.53 | 0.43 | 0.75 | 0.56 | 0.59 |
+| `global_mmlu_full` | 0.49 | 0.45 | 0.31 | 0.49 | 0.37 | 0.62 | 0.66 | 0.31 | 0.46 | 0.59 | 0.29 | 0.45 | 0.47 | 0.63 | 0.54 |
+| `rfgm_belebele` | 0.49 | 0.42 | 0.36 | 0.36 | 0.59 | 0.55 | 0.54 | 0.54 | 0.51 | 0.57 | 0.38 | 0.47 | 0.44 | 0.47 | 0.41 |
+| `global_piqa_parallel_cloze` | 0.49 | 0.53 | 0.49 | 0.46 | 0.31 | 0.47 | 0.60 | 0.63 | 0.30 | 0.44 | 0.38 | 0.23 | 0.59 | 0.44 | 0.41 |
+| `cultural_bench_hard` | 0.35 | 0.47 | 0.42 | 0.41 | 0.54 | 0.44 | 0.40 | 0.34 | 0.45 | 0.32 | 0.35 | 0.32 | 0.42 | 0.58 | 0.47 |
+| `cultural_bench_easy` | 0.38 | 0.27 | 0.32 | 0.42 | 0.54 | 0.55 | 0.48 | 0.52 | 0.32 | 0.38 | 0.43 | 0.23 | 0.35 | 0.37 | 0.42 |
+| `rf_cultural_bench_easy` | 0.32 | 0.45 | 0.35 | 0.47 | 0.29 | 0.33 | 0.30 | 0.60 | 0.30 | 0.57 | 0.34 | 0.42 | 0.46 | 0.33 | 0.32 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -4460,65 +4507,65 @@ subtitle: "Mandarin Chinese (zh) · small→large size pair (bold ≥ 0.75)"
 
 | benchmark | 90M→175M | 90M→350M | 90M→600M | 90M→1B | 90M→1.7B | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `bpb` | **0.99** | **0.94** | **0.88** | **0.95** | **0.96** | **0.95** | **0.89** | **0.96** | **0.95** | **0.92** | **0.96** | **0.90** | **0.89** | **0.87** | **0.91** |
-| `bbpb_xstorycloze` |  |  |  |  |  | **0.91** |  | **0.93** | **0.94** |  | **0.82** | **0.91** |  |  | **0.88** |
-| `bbpb_rfgm_belebele_zho_Hant` |  |  |  |  |  | **0.85** |  | **0.88** | **0.84** |  | **0.89** | **0.88** |  |  | **0.83** |
-| `bbpb_rfgm_include_base_44` |  |  |  |  |  | **0.85** |  | **0.88** | **0.86** |  | **0.76** | **0.76** |  |  | **0.85** |
-| `bbpb_paws` |  |  |  |  |  | **0.92** |  | **0.84** | **0.82** |  | **0.81** | 0.72 |  |  | **0.82** |
-| `bbpb_rfgm_belebele_zho_Hans` |  |  |  |  |  | **0.79** |  | **0.87** | **0.79** |  | **0.92** | **0.79** |  |  | 0.74 |
-| `bbpb_xnli` |  |  |  |  |  | **0.95** |  | **0.78** | **0.81** |  | 0.73 | **0.80** |  |  | 0.65 |
-| `bbpb_global_piqa_parallel_cloze_cmn_hant` |  |  |  |  |  | **0.87** |  | **0.85** | 0.75 |  | **0.87** | 0.67 |  |  | 0.71 |
-| `bbpb_rf_belebele_zho_Hant` |  |  |  |  |  | **0.82** |  | **0.81** | **0.80** |  | 0.73 | 0.75 |  |  | 0.73 |
-| `bbpb_rf_global_mmlu_full` |  |  |  |  |  | **0.82** |  | **0.85** | **0.80** |  | 0.67 | 0.65 |  |  | **0.77** |
-| `bbpb_xcopa` |  |  |  |  |  | **0.82** |  | **0.88** | 0.62 |  | **0.79** | 0.74 |  |  | 0.67 |
-| `include_v2_og_chinese_china` | 0.73 | 0.74 | 0.75 | 0.73 | 0.72 | 0.64 | 0.68 | 0.69 | 0.74 | **0.84** | **0.78** | **0.81** | **0.80** | **0.78** | 0.74 |
-| `bbpb_rf_include_base_44` |  |  |  |  |  | 0.62 |  | **0.80** | **0.87** |  | 0.73 | 0.55 |  |  | 0.74 |
-| `bbpb_arc` |  |  |  |  |  | 0.67 |  | **0.83** | **0.80** |  | 0.67 | 0.47 |  |  | **0.79** |
-| `bbpb_global_piqa_parallel_cloze_cmn_hans` |  |  |  |  |  | **0.93** |  | 0.66 | **0.76** |  | 0.47 | 0.60 |  |  | 0.60 |
-| `rfgm_include_base_44` | 0.70 | 0.58 | 0.67 | 0.64 | 0.64 | 0.72 | 0.68 | 0.70 | 0.68 | 0.58 | 0.65 | 0.65 | 0.74 | 0.73 | 0.67 |
-| `rf_global_mmlu_full` | 0.60 | 0.57 | 0.74 | 0.64 | 0.62 | 0.63 | 0.67 | 0.61 | 0.61 | 0.58 | 0.73 | **0.78** | **0.75** | 0.69 | **0.78** |
-| `bbpb_rf_belebele_zho_Hans` |  |  |  |  |  | 0.75 |  | 0.71 | 0.61 |  | 0.56 | 0.67 |  |  | 0.62 |
-| `bbpb_include_v2_og_chinese_singapore` |  |  |  |  |  | **0.82** |  | 0.57 | 0.64 |  | **0.79** | 0.64 |  |  | 0.38 |
-| `bbpb_include_v2_og_chinese_china` |  |  |  |  |  | 0.46 |  | 0.69 | 0.64 |  | 0.57 | **0.79** |  |  | 0.65 |
-| `rf_include_base_44` | 0.49 | 0.60 | 0.72 | 0.61 | **0.78** | 0.57 | 0.52 | 0.65 | 0.49 | 0.68 | 0.70 | 0.66 | 0.64 | 0.73 | 0.65 |
-| `bbpb_include_v2_en_chinese_singapore` |  |  |  |  |  | 0.68 |  | 0.51 | 0.50 |  | 0.71 | 0.68 |  |  | 0.53 |
-| `bbpb_truthfulqa_mc2` |  |  |  |  |  | 0.55 |  | 0.70 | 0.61 |  | 0.61 | 0.48 |  |  | 0.64 |
-| `xstorycloze` | 0.50 | 0.43 | 0.57 | 0.57 | 0.50 | 0.67 | 0.58 | 0.65 | 0.61 | 0.60 | 0.71 | 0.67 | 0.64 | 0.60 | 0.64 |
-| `arc` | 0.48 | 0.62 | 0.59 | 0.57 | 0.54 | 0.63 | 0.61 | 0.54 | 0.57 | 0.61 | 0.71 | 0.53 | 0.60 | 0.70 | 0.61 |
-| `bbpb_include_v2_og_chinese_hong_kong` |  |  |  |  |  | 0.50 |  | 0.66 | 0.56 |  | 0.68 | 0.57 |  |  | 0.58 |
-| `bbpb_cultural_bench_easy` |  |  |  |  |  | 0.67 |  | 0.73 | 0.52 |  | 0.60 | 0.47 |  |  | 0.55 |
-| `bbpb_include_v2_en_chinese_china` |  |  |  |  |  | 0.64 |  | 0.46 | 0.43 |  | 0.71 | 0.61 |  |  | 0.65 |
-| `bbpb_global_mmlu_full` |  |  |  |  |  | 0.33 |  | 0.61 | 0.62 |  | 0.73 | 0.53 |  |  | 0.63 |
-| `rfgm_belebele_zho_Hant` | 0.61 | 0.44 | 0.46 | 0.66 | 0.65 | 0.45 | 0.60 | 0.68 | 0.61 | 0.35 | 0.54 | 0.49 | 0.56 | 0.61 | 0.65 |
-| `bbpb_rf_cultural_bench_easy` |  |  |  |  |  | 0.53 |  | 0.55 | 0.49 |  | 0.60 | 0.58 |  |  | 0.56 |
-| `bbpb_include_v2_en_chinese_hong_kong` |  |  |  |  |  | 0.71 |  | 0.60 | 0.42 |  | 0.50 | 0.61 |  |  | 0.46 |
-| `truthfulqa_mc2` | 0.65 | 0.66 | 0.57 | 0.59 | 0.50 | 0.58 | 0.75 | 0.55 | 0.41 | 0.49 | 0.49 | 0.57 | 0.67 | 0.38 | 0.37 |
-| `bbpb_belebele_zho_Hans` |  |  |  |  |  | 0.53 |  | 0.65 | 0.59 |  | 0.47 | 0.33 |  |  | 0.69 |
-| `rfgm_belebele_zho_Hans` | 0.63 | 0.62 | 0.51 | 0.61 | 0.63 | 0.49 | 0.27 | 0.51 | 0.58 | 0.42 | 0.49 | 0.49 | 0.67 | 0.60 | 0.63 |
-| `paws` | 0.60 | 0.59 | 0.47 | 0.44 | 0.53 | 0.61 | 0.55 | 0.54 | 0.64 | 0.65 | 0.47 | 0.51 | 0.58 | 0.44 | 0.39 |
-| `bbpb_include_base_44` |  |  |  |  |  | 0.54 |  | 0.57 | 0.49 |  | 0.54 | 0.50 |  |  | 0.55 |
-| `bbpb_belebele_zho_Hant` |  |  |  |  |  | 0.47 |  | 0.70 | 0.57 |  | 0.53 | 0.27 |  |  | 0.64 |
-| `xwinograd` | 0.50 | 0.47 | 0.60 | 0.67 | 0.41 | 0.42 | 0.64 | 0.57 | 0.50 | 0.43 | 0.49 | 0.44 | 0.61 | 0.51 | 0.50 |
-| `rf_belebele_zho_Hant` | 0.47 | 0.55 | 0.50 | 0.45 | 0.51 | 0.40 | 0.56 | 0.49 | 0.54 | 0.53 | 0.54 | 0.55 | 0.61 | 0.55 | 0.50 |
-| `bbpb_blend_sample` |  |  |  |  |  | 0.27 |  | 0.51 | 0.46 |  | 0.47 | **0.87** |  |  | 0.51 |
-| `include_v2_en_chinese_china` | 0.45 | 0.46 | 0.44 | 0.48 | 0.53 | 0.57 | 0.51 | 0.49 | 0.47 | 0.40 | 0.46 | 0.36 | 0.64 | **0.80** | 0.64 |
-| `blend_sample` | 0.52 | 0.41 | 0.41 | 0.54 | 0.50 | 0.56 | 0.42 | 0.56 | 0.69 | 0.39 | 0.52 | 0.64 | 0.36 | 0.54 | 0.55 |
-| `global_mmlu_full` | 0.46 | 0.64 | 0.54 | 0.50 | 0.41 | 0.51 | 0.51 | 0.32 | 0.43 | 0.50 | 0.46 | 0.53 | 0.52 | 0.57 | 0.58 |
-| `xcopa` | 0.43 | 0.47 | 0.44 | 0.43 | 0.42 | 0.46 | 0.50 | 0.57 | 0.60 | 0.39 | 0.52 | 0.46 | 0.51 | 0.63 | 0.61 |
-| `belebele_zho_Hans` | 0.26 | 0.47 | 0.53 | 0.54 | 0.36 | 0.53 | 0.42 | 0.56 | 0.45 | 0.41 | 0.47 | 0.43 | 0.65 | 0.57 | 0.65 |
-| `cultural_bench_hard` | 0.53 | 0.49 | 0.48 | 0.37 | 0.70 | 0.38 | 0.47 | 0.53 | 0.53 | 0.39 | 0.30 | 0.46 | 0.71 | 0.50 | 0.40 |
-| `belebele_zho_Hant` | 0.39 | 0.55 | 0.48 | 0.46 | 0.44 | 0.34 | 0.37 | 0.34 | 0.52 | 0.56 | 0.55 | 0.55 | 0.62 | 0.56 | 0.50 |
-| `include_v2_en_chinese_hong_kong` | 0.37 | 0.49 | 0.47 | 0.49 | 0.46 | 0.50 | 0.36 | 0.40 | 0.59 | 0.54 | 0.41 | 0.58 | 0.57 | 0.51 | 0.48 |
-| `xnli` | 0.40 | 0.50 | 0.65 | 0.47 | 0.53 | 0.43 | 0.44 | 0.46 | 0.47 | 0.50 | 0.47 | 0.39 | 0.63 | 0.42 | 0.43 |
-| `rf_belebele_zho_Hans` | 0.32 | 0.53 | 0.44 | 0.46 | 0.50 | 0.41 | 0.50 | 0.45 | 0.39 | 0.51 | 0.47 | 0.37 | 0.70 | 0.48 | 0.58 |
-| `cultural_bench_easy` | 0.42 | 0.47 | 0.47 | 0.35 | 0.56 | 0.54 | 0.54 | 0.30 | 0.64 | 0.43 | 0.27 | 0.49 | 0.47 | 0.48 | 0.35 |
-| `include_base_44` | 0.54 | 0.37 | 0.51 | 0.47 | 0.39 | 0.34 | 0.49 | 0.37 | 0.46 | 0.52 | 0.51 | 0.46 | 0.39 | 0.34 | 0.40 |
-| `include_v2_og_chinese_hong_kong` | 0.49 | 0.56 | 0.44 | 0.53 | 0.25 | 0.32 | 0.47 | 0.37 | 0.40 | 0.46 | 0.52 | 0.35 | 0.53 | 0.41 | 0.28 |
-| `global_piqa_parallel_cloze_cmn_hant` | 0.46 | 0.39 | 0.46 | 0.36 | 0.49 | 0.37 | 0.36 | 0.51 | 0.53 | 0.33 | 0.42 | 0.48 | 0.42 | 0.32 | 0.44 |
-| `global_piqa_parallel_cloze_cmn_hans` | 0.32 | 0.38 | 0.37 | 0.40 | 0.50 | 0.30 | 0.30 | 0.43 | 0.28 | 0.36 | 0.37 | 0.37 | 0.34 | 0.37 | 0.34 |
-| `rf_cultural_bench_easy` | 0.33 | 0.43 | 0.21 | 0.36 | 0.43 | 0.32 | 0.47 | 0.36 | 0.35 | 0.29 | 0.47 | 0.33 | 0.37 | 0.34 | 0.37 |
-| `include_v2_og_chinese_singapore` | 0.25 | 0.37 | 0.23 | 0.35 | 0.32 | 0.40 | 0.43 | 0.42 | 0.26 | 0.43 | 0.40 | 0.32 | 0.48 | 0.37 | 0.33 |
-| `include_v2_en_chinese_singapore` | 0.17 | 0.35 | 0.46 | 0.29 | 0.36 | 0.27 | 0.27 | 0.36 | 0.32 | 0.28 | 0.36 | 0.33 | 0.52 | 0.19 | 0.26 |
+| `bpb` | **0.99** | **0.94** | **0.86** | **0.95** | **0.96** | **0.93** | **0.87** | **0.95** | **0.95** | **0.91** | **0.96** | **0.90** | **0.89** | **0.87** | **0.91** |
+| `bbpb_xstorycloze` | **0.91** | **0.86** | **0.88** | **0.87** | **0.91** | **0.88** | **0.90** | **0.93** | **0.92** | **0.85** | **0.82** | **0.91** | **0.89** | **0.90** | **0.85** |
+| `bbpb_rfgm_include_base_44` | **0.89** | **0.87** | **0.89** | **0.85** | **0.82** | **0.87** | **0.91** | **0.87** | **0.83** | **0.85** | **0.83** | **0.79** | **0.90** | **0.85** | **0.83** |
+| `bbpb_rfgm_belebele_zho_Hant` | **0.88** | **0.81** | **0.82** | **0.83** | **0.80** | **0.86** | **0.85** | **0.85** | **0.83** | **0.86** | **0.89** | **0.85** | **0.87** | **0.87** | **0.83** |
+| `bbpb_rfgm_belebele_zho_Hans` | **0.91** | **0.87** | **0.87** | **0.84** | **0.81** | **0.87** | **0.88** | **0.85** | **0.77** | **0.88** | **0.92** | 0.73 | **0.85** | 0.75 | 0.73 |
+| `bbpb_paws` | **0.85** | **0.78** | **0.82** | **0.85** | **0.76** | **0.90** | **0.84** | **0.84** | **0.82** | **0.81** | **0.79** | **0.82** | **0.86** | **0.80** | **0.81** |
+| `bbpb_rf_belebele_zho_Hant` | **0.83** | **0.84** | **0.87** | **0.81** | **0.76** | **0.88** | **0.88** | **0.82** | **0.78** | **0.85** | **0.80** | **0.80** | **0.77** | **0.76** | 0.70 |
+| `bbpb_global_piqa_parallel_cloze_cmn_hant` | **0.82** | **0.81** | **0.81** | 0.74 | **0.77** | **0.90** | **0.76** | **0.83** | **0.75** | **0.78** | **0.86** | **0.76** | **0.80** | 0.70 | 0.72 |
+| `bbpb_rf_global_mmlu_full` | **0.82** | **0.79** | **0.82** | **0.80** | 0.73 | **0.80** | **0.80** | **0.84** | **0.79** | **0.85** | 0.71 | 0.71 | 0.74 | **0.78** | 0.75 |
+| `bbpb_arc` | 0.68 | **0.77** | 0.69 | **0.77** | 0.66 | **0.80** | **0.78** | **0.82** | **0.79** | **0.76** | **0.81** | 0.70 | **0.80** | 0.74 | **0.78** |
+| `bbpb_xcopa` | **0.81** | **0.79** | 0.69 | **0.81** | **0.76** | **0.79** | 0.68 | **0.87** | 0.62 | **0.79** | **0.81** | 0.72 | 0.69 | 0.74 | 0.67 |
+| `bbpb_rf_include_base_44` | 0.72 | **0.76** | 0.71 | **0.77** | 0.68 | 0.74 | **0.76** | **0.78** | **0.85** | 0.65 | 0.74 | 0.71 | **0.77** | **0.77** | 0.75 |
+| `bbpb_xnli` | 0.74 | **0.77** | **0.79** | 0.72 | 0.70 | **0.79** | 0.73 | **0.77** | **0.80** | 0.74 | 0.71 | **0.76** | 0.67 | 0.70 | 0.64 |
+| `include_v2_og_chinese_china` | 0.68 | 0.72 | 0.69 | 0.70 | 0.70 | 0.64 | 0.68 | 0.67 | 0.70 | **0.81** | **0.77** | **0.80** | **0.78** | **0.77** | **0.77** |
+| `bbpb_rf_belebele_zho_Hans` | **0.79** | **0.79** | **0.81** | 0.71 | 0.59 | **0.81** | **0.86** | 0.73 | 0.61 | **0.81** | 0.69 | 0.69 | 0.69 | 0.60 | 0.61 |
+| `bbpb_global_piqa_parallel_cloze_cmn_hans` | **0.84** | **0.81** | **0.77** | 0.64 | 0.69 | **0.82** | **0.77** | 0.68 | 0.73 | **0.76** | 0.64 | 0.66 | 0.63 | 0.58 | 0.63 |
+| `bbpb_global_mmlu_full` | **0.77** | 0.75 | 0.71 | 0.63 | 0.60 | 0.63 | 0.67 | 0.58 | 0.60 | 0.74 | 0.69 | 0.62 | 0.70 | 0.64 | 0.63 |
+| `rf_global_mmlu_full` | 0.57 | 0.58 | 0.73 | 0.64 | 0.56 | 0.56 | 0.68 | 0.57 | 0.58 | 0.58 | 0.73 | 0.72 | 0.75 | 0.65 | 0.75 |
+| `rfgm_include_base_44` | 0.67 | 0.59 | 0.65 | 0.61 | 0.62 | 0.65 | 0.61 | 0.65 | 0.66 | 0.58 | 0.66 | 0.64 | 0.69 | 0.67 | 0.66 |
+| `bbpb_truthfulqa_mc2` | **0.75** | 0.61 | 0.66 | 0.63 | 0.51 | 0.58 | **0.81** | 0.68 | 0.61 | 0.57 | 0.61 | 0.58 | 0.63 | 0.69 | 0.63 |
+| `bbpb_include_v2_og_chinese_china` | 0.53 | 0.66 | 0.61 | 0.54 | 0.66 | 0.51 | 0.69 | 0.66 | 0.62 | 0.59 | 0.61 | 0.67 | 0.65 | 0.72 | 0.65 |
+| `bbpb_include_v2_og_chinese_hong_kong` | 0.56 | **0.79** | 0.69 | 0.59 | 0.60 | 0.59 | 0.60 | 0.68 | 0.55 | 0.64 | 0.63 | 0.55 | 0.61 | 0.65 | 0.59 |
+| `bbpb_belebele_zho_Hant` | 0.74 | 0.64 | 0.73 | 0.58 | 0.60 | 0.63 | 0.69 | 0.63 | 0.60 | 0.60 | 0.46 | 0.58 | 0.65 | 0.61 | 0.58 |
+| `rf_include_base_44` | 0.53 | 0.59 | 0.67 | 0.62 | 0.73 | 0.57 | 0.53 | 0.66 | 0.46 | 0.69 | 0.69 | 0.66 | 0.61 | 0.68 | 0.61 |
+| `bbpb_belebele_zho_Hans` | 0.70 | 0.59 | 0.72 | 0.58 | 0.53 | 0.65 | 0.71 | 0.61 | 0.62 | 0.57 | 0.47 | 0.55 | 0.64 | 0.61 | 0.66 |
+| `arc` | 0.51 | 0.68 | 0.39 | 0.56 | 0.51 | 0.61 | 0.63 | 0.69 | 0.69 | 0.55 | 0.65 | 0.58 | 0.60 | 0.71 | 0.69 |
+| `xstorycloze` | 0.52 | 0.46 | 0.50 | 0.58 | 0.52 | 0.67 | 0.54 | 0.64 | 0.61 | 0.53 | 0.72 | 0.67 | 0.54 | 0.50 | 0.66 |
+| `bbpb_cultural_bench_easy` | 0.55 | 0.51 | 0.58 | 0.60 | 0.64 | 0.59 | 0.51 | 0.66 | 0.49 | 0.58 | 0.61 | 0.51 | 0.61 | 0.50 | 0.58 |
+| `bbpb_include_v2_en_chinese_china` | 0.39 | 0.60 | 0.55 | 0.65 | 0.55 | 0.55 | 0.54 | 0.47 | 0.42 | 0.58 | 0.63 | 0.49 | 0.68 | 0.69 | 0.63 |
+| `bbpb_include_base_44` | 0.70 | 0.59 | 0.58 | 0.52 | 0.46 | 0.57 | 0.56 | 0.52 | 0.46 | 0.64 | 0.52 | 0.54 | 0.60 | 0.49 | 0.58 |
+| `truthfulqa_mc2` | 0.66 | 0.70 | 0.56 | 0.61 | 0.50 | 0.56 | 0.70 | 0.52 | 0.44 | 0.48 | 0.52 | 0.54 | 0.65 | 0.47 | 0.40 |
+| `bbpb_include_v2_en_chinese_singapore` | 0.48 | 0.52 | 0.55 | 0.62 | 0.73 | 0.47 | 0.46 | 0.51 | 0.48 | 0.57 | 0.63 | 0.55 | 0.66 | 0.49 | 0.53 |
+| `rfgm_belebele_zho_Hant` | 0.64 | 0.47 | 0.45 | 0.66 | 0.62 | 0.52 | 0.55 | 0.68 | 0.54 | 0.37 | 0.55 | 0.47 | 0.51 | 0.62 | 0.59 |
+| `rfgm_belebele_zho_Hans` | 0.67 | 0.59 | 0.52 | 0.62 | 0.61 | 0.45 | 0.33 | 0.52 | 0.59 | 0.39 | 0.47 | 0.49 | 0.68 | 0.60 | 0.64 |
+| `bbpb_include_v2_og_chinese_singapore` | 0.50 | 0.62 | 0.44 | 0.57 | 0.56 | 0.61 | 0.53 | 0.58 | 0.64 | 0.55 | 0.60 | 0.43 | 0.55 | 0.56 | 0.38 |
+| `paws` | 0.60 | 0.58 | 0.50 | 0.45 | 0.55 | 0.58 | 0.55 | 0.56 | 0.61 | 0.65 | 0.49 | 0.54 | 0.55 | 0.48 | 0.40 |
+| `bbpb_rf_cultural_bench_easy` | 0.55 | 0.54 | 0.51 | 0.60 | 0.60 | 0.62 | 0.40 | 0.55 | 0.53 | 0.49 | 0.50 | 0.54 | 0.58 | 0.43 | 0.55 |
+| `rf_belebele_zho_Hant` | 0.41 | 0.50 | 0.51 | 0.46 | 0.56 | 0.40 | 0.55 | 0.52 | 0.52 | 0.57 | 0.58 | 0.55 | 0.64 | 0.58 | 0.52 |
+| `bbpb_include_v2_en_chinese_hong_kong` | 0.51 | 0.39 | 0.51 | 0.58 | 0.48 | 0.59 | 0.54 | 0.58 | 0.41 | 0.49 | 0.56 | 0.49 | 0.55 | 0.61 | 0.46 |
+| `xwinograd` | 0.43 | 0.45 | 0.52 | 0.64 | 0.35 | 0.49 | 0.65 | 0.52 | 0.57 | 0.49 | 0.49 | 0.50 | 0.60 | 0.56 | 0.47 |
+| `include_v2_en_chinese_china` | 0.45 | 0.45 | 0.40 | 0.48 | 0.49 | 0.56 | 0.52 | 0.51 | 0.46 | 0.42 | 0.42 | 0.42 | 0.61 | **0.76** | 0.61 |
+| `bbpb_blend_sample` | 0.58 | 0.48 | 0.51 | 0.42 | 0.59 | 0.45 | 0.48 | 0.48 | 0.50 | 0.66 | 0.39 | 0.50 | 0.38 | 0.61 | 0.47 |
+| `xnli` | 0.42 | 0.51 | 0.68 | 0.50 | 0.53 | 0.45 | 0.48 | 0.49 | 0.48 | 0.52 | 0.47 | 0.44 | 0.63 | 0.44 | 0.42 |
+| `blend_sample` | 0.55 | 0.38 | 0.41 | 0.51 | 0.50 | 0.45 | 0.42 | 0.56 | 0.67 | 0.40 | 0.52 | 0.64 | 0.36 | 0.49 | 0.53 |
+| `belebele_zho_Hans` | 0.32 | 0.45 | 0.49 | 0.54 | 0.40 | 0.49 | 0.45 | 0.55 | 0.42 | 0.41 | 0.52 | 0.49 | 0.62 | 0.55 | 0.63 |
+| `global_mmlu_full` | 0.50 | 0.58 | 0.53 | 0.47 | 0.37 | 0.48 | 0.51 | 0.33 | 0.43 | 0.48 | 0.47 | 0.48 | 0.57 | 0.55 | 0.57 |
+| `xcopa` | 0.40 | 0.47 | 0.42 | 0.43 | 0.45 | 0.41 | 0.47 | 0.56 | 0.59 | 0.45 | 0.49 | 0.45 | 0.48 | 0.57 | 0.63 |
+| `cultural_bench_hard` | 0.54 | 0.46 | 0.46 | 0.46 | 0.69 | 0.39 | 0.47 | 0.55 | 0.48 | 0.42 | 0.29 | 0.45 | 0.67 | 0.49 | 0.44 |
+| `rf_belebele_zho_Hans` | 0.33 | 0.51 | 0.47 | 0.50 | 0.48 | 0.42 | 0.47 | 0.46 | 0.40 | 0.51 | 0.50 | 0.39 | 0.64 | 0.47 | 0.59 |
+| `belebele_zho_Hant` | 0.37 | 0.61 | 0.42 | 0.43 | 0.48 | 0.37 | 0.39 | 0.41 | 0.50 | 0.47 | 0.52 | 0.56 | 0.57 | 0.52 | 0.51 |
+| `include_v2_en_chinese_hong_kong` | 0.38 | 0.50 | 0.46 | 0.50 | 0.40 | 0.51 | 0.36 | 0.40 | 0.56 | 0.55 | 0.41 | 0.53 | 0.52 | 0.52 | 0.49 |
+| `include_base_44` | 0.58 | 0.41 | 0.50 | 0.54 | 0.43 | 0.34 | 0.48 | 0.45 | 0.47 | 0.50 | 0.53 | 0.45 | 0.46 | 0.42 | 0.47 |
+| `cultural_bench_easy` | 0.43 | 0.46 | 0.48 | 0.39 | 0.48 | 0.63 | 0.54 | 0.35 | 0.55 | 0.42 | 0.30 | 0.42 | 0.51 | 0.48 | 0.39 |
+| `include_v2_og_chinese_hong_kong` | 0.49 | 0.55 | 0.46 | 0.53 | 0.30 | 0.32 | 0.43 | 0.46 | 0.43 | 0.46 | 0.46 | 0.35 | 0.49 | 0.37 | 0.35 |
+| `global_piqa_parallel_cloze_cmn_hant` | 0.46 | 0.42 | 0.32 | 0.42 | 0.23 | 0.49 | 0.32 | 0.32 | 0.35 | 0.38 | 0.54 | 0.55 | 0.53 | 0.41 | 0.62 |
+| `global_piqa_parallel_cloze_cmn_hans` | 0.34 | 0.42 | 0.33 | 0.47 | 0.45 | 0.37 | 0.50 | 0.42 | 0.35 | 0.40 | 0.41 | 0.43 | 0.47 | 0.45 | 0.35 |
+| `rf_cultural_bench_easy` | 0.36 | 0.41 | 0.23 | 0.35 | 0.43 | 0.36 | 0.46 | 0.37 | 0.38 | 0.30 | 0.44 | 0.29 | 0.35 | 0.36 | 0.39 |
+| `include_v2_og_chinese_singapore` | 0.27 | 0.36 | 0.26 | 0.36 | 0.33 | 0.38 | 0.45 | 0.41 | 0.24 | 0.36 | 0.35 | 0.33 | 0.50 | 0.35 | 0.34 |
+| `include_v2_en_chinese_singapore` | 0.21 | 0.32 | 0.47 | 0.29 | 0.37 | 0.24 | 0.31 | 0.35 | 0.30 | 0.29 | 0.34 | 0.33 | 0.46 | 0.20 | 0.27 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }

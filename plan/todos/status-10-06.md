@@ -253,3 +253,48 @@ Other findings:
 ### Docs
 - keep as is 
 
+
+
+---
+---
+
+- CulturalBench-easy: the original beats its RF versions only at 90M. That looks like a bias towards particular answer letters, not knowledge.
+- CommonsenseQA and MMLU: each is a single English task, so their share can only be 0 or 1. Your guess was right.
+- The 37 tasks: these are the 37 of the 86 tasks shared with the public models that are below chance at every ladder size. "A public model reads it" means it passes the same Wilson test, at the same 0.5 share per size bucket; the paper version uses base releases only.
+- rq2 paper figure (5c9c7d35): both bugs found and fixed. The three panels each read a different task population, and DA-size plotted a pair-weighted ratio instead of the mean over tasks. -> explain exactly how it was implemented before and how it is now
+
+Here is how the rq2 paper figure was built before `5c9c7d35` and how it is built now. The figure is `rq2_da_all_above_66_either_transformation_mono_axis`, on the `predictivity` pool. All three DA definitions were already computed correctly per task; the bugs were in how the figure picked and averaged tasks.
+
+Each panel shows only the "reliable" tasks: a task counts as reliable when its median DA, across the proxy sizes or checkpoints, is at least 0.66. `reliable_tasks.py` offers several versions of that filter:
+
+- **`above_66_size`**: reliable on DA-size.
+- **`above_66_ckpt`**: reliable on DA-ckpt.
+- **`above_66_either`**: reliable on DA-size or DA-ckpt.
+
+| | Before | Now |
+|---|---|---|
+| **DA-size panel (left)**: tasks | `above_66_size` | `above_66_either` |
+| **DA-size panel**: y value | `reliability` = Σ matching pairs ÷ Σ comparable pairs over all tasks. This pools the pairs, so a task with more pairs weighs more. | `reliability_macro` = mean of the per-task DA, each task weighted equally |
+| **DA-ckpt panel (centre)**: tasks | `above_66_ckpt` (65 tasks at 1.7B) | `above_66_either` (83 tasks) |
+| **DA-ckpt panel**: y value | mean over tasks | mean over tasks (unchanged) |
+| **DA-goal panel (right)**: tasks | `above_66_either` (83 tasks at 1.7B) | `above_66_either` (unchanged) |
+| **DA-goal panel**: y value | mean over tasks | mean over tasks (unchanged) |
+| **1.7B line, DA-ckpt vs DA-goal** | 0.615…0.816 vs 0.597…0.798: different, because they cover different tasks | identical at all 9 checkpoints (0.597…0.798, 83 tasks in both) |
+| **DA-size "all pairs" vs DA-goal at 5C** (90M / 175M / 350M / 600M / 1B) | 0.708 / 0.690 / 0.699 / 0.682 / 0.711 vs 0.700 / 0.682 / 0.673 / 0.658 / 0.683 | both 0.700 / 0.682 / 0.673 / 0.658 / 0.683, largest difference 0 |
+| **Task counts, DA-size vs DA-goal 5C** | different populations | 148 / 156 / 160 / 164 / 176 in both |
+
+Why the two equalities now hold:
+- **DA-size vs DA-goal at 5C:** both compare the proxy's final checkpoint against the 1.7B final over the same pairs. That was checked task by task: 600 of 600 cells match. So once both panels use the same tasks and the same averaging, the lines coincide.
+- **DA-ckpt vs DA-goal at 1.7B:** at 1.7B both use the 1.7B final as the reference. All 8,082 per-task rows match, so the lines coincide once the tasks are the same.
+
+Code changes:
+- `paper_rq2.py` reads `above_66_either` for all three panels and plots `reliability_macro`.
+- `scale_convergence.py` and `by_L.py` now also write the `above_66_either` variant, which the left and centre panels need.
+
+Two consequences:
+- **DA-size moves down slightly**, from about 0.68–0.71 to 0.66–0.70: the per-task mean gives less weight to tasks with many pairs. The paper's rq2 caption and the decision-accuracy README were updated to match. Re-read the numbers in `04_analysis.tex` once the second regeneration lands.
+- **Other figures differ:** the standalone `scale_convergence` figures outside the paper still plot the pooled ratio, so DA-size is quoted two ways in the repo. Tell me if those should switch to the mean too.
+
+---
+---
+

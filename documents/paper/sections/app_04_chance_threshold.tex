@@ -24,12 +24,12 @@ Smaller evaluation sets require a larger margin above chance, while larger sets 
 For example, the median required margins are 9.00 percentage points for nonparallel Global PIQA (100 items per language), 2.44 for Belebele (900), 0.74 for HellaSwag (about 9,000), and 0.60 for Global-MMLU (about 14,000).
 
 \textbf{The formulation effect.}
-The corresponding fractions of benchmark-language-size cells that pass the filter over the six sizes from 90M to 1.7B are 25.0\%, 1.1\%, 79.0\% and 4.1\%, respectively. The reformulated variants of Belebele and Global-MMLU pass in 75.4\% and 73.4\% of their cells.
+The corresponding fractions of benchmark-language-size cells that pass the filter over the six sizes from 90M to 1.7B are 37.5\%, 1.1\%, 100.0\% and 4.1\%, respectively. The reformulated variants of Belebele and Global-MMLU pass in 75.4\% and 73.9\% of their cells.
 
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=\linewidth]{figures/app_chance_share.png}
+    \includegraphics[width=\linewidth]{figures/app_rq00_chance_share.png}
 \caption{Share of language tasks that pass the chance threshold per benchmark. The number in parentheses is the total number of language tasks available per benchmark.}
     \label{fig:app_chance_share}
 \end{figure}
@@ -37,14 +37,14 @@ The corresponding fractions of benchmark-language-size cells that pass the filte
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=\linewidth]{figures/app_chance_reformulation.png}
+    \includegraphics[width=\linewidth]{figures/app_rq00_chance_reformulation.png}
 \caption{Share of language tasks that pass the chance threshold per benchmark, depending on the evaluation format.}
     \label{fig:app_chance_reformulation}
 \end{figure}
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=\linewidth]{figures/app_chance_full.png}
+    \includegraphics[width=\linewidth]{figures/app_rq00_chance_full.png}
 \caption{Language tasks that pass the chance threshold per benchmark.}
     \label{fig:app_chance_full}
 \end{figure*}

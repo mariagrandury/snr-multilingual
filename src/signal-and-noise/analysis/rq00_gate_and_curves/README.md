@@ -14,41 +14,44 @@
 ## Highlighted result
 
 - **The benchmarks that separate the language settings most: `cultural_bench_easy`, `bbpb_bbh_cloze`, `bbpb_bbh_mcq`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1.7B.
-- **Above-random gate.** Of **1373 benchmarks, 821 clear chance at ≥1 size** and 778 at 1.7B (552 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
+- **Above-random gate.** Of **1679 benchmarks, 997 clear chance at ≥1 size** and 954 at 1.7B (682 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
 <!-- END auto:highlight -->
 
 ## Setup
 
-- **Snapshot.** Every hand-written number is from the ladder report
-  2026-10-06 04:26, as regenerated on 2026-10-07 (commit `b316f53b`).
+- **Snapshot.** Every hand-written number is from the ladder-report snapshot
+  2026-10-08 12:06 (regenerated locally: acc_norm on the cloze-format
+  originals) and the outputs of the 2026-10-08 refresh (detrended checkpoint
+  noise).
 - **Gate pool.** `predictivity`: seed 1904, every cell of every ladder and
-  data build, 161 runs with benchmark scores at 90M–1.7B (26–29 per size;
-  deep 96, shallow 60, swiglu 5). By data scheme: A at T 1 77 runs, A at T 3
-  24, B 48, C 12.
+  data build, 187 runs with benchmark scores at 90M–1.7B (29–33 per size;
+  deep 96, shallow 60, swiglu 19, muon 12). By data scheme: A at T 1 103 runs,
+  A at T 3 24, B 48, C 12.
 - **Curves pool.** `predictivity_seeds` (every seed) for the loss and
   benchmark curves of figure 5; sizes 90M–1.7B throughout (rule 10).
-- **The gate covers every task the pool evaluates.** That includes the 532
+- **The gate covers every task the pool evaluates.** That includes the 838
   chance-level tasks no cell trains, read on every run; rule 2 drops them
-  downstream, so the trained population is 841 of the 1,373 tasks with a
+  downstream, so the trained population is 841 of the 1,679 tasks with a
   chance level.
-- **bBPB twins.** The `bbpb_` twins enter only the Signal ranking of figure
-  2, and only as final-checkpoint values; nothing here reads them earlier in
-  a run.
+- **bBPB twins.** The per-item store now holds the `bbpb_` twins at all 12
+  checkpoints of 173 of the 187 seed-1904 ladder cells (not the 12 muon cells
+  and two swiglu cells) and of the 20 replicate-seed cells. Here they enter
+  only the Signal ranking of figure 2, which reads final scores for every task.
 
-## Key findings (ladder report 2026-10-06 04:26)
+## Key findings (ladder report 2026-10-08 12:06)
 
 ![The gate in one figure](pretraining/predictivity/highlights.png)
 
-*Pool `predictivity` (161 runs, seed 1904, 90M–1.7B). One-sided 95 % Wilson
+*Pool `predictivity` (187 runs, seed 1904, 90M–1.7B). One-sided 95 % Wilson
 gate; a (task, size) cell passes when at least half of the size's runs that
-train the language clear chance (4 to 26 runs per cell).*
+train the language clear chance (4 to 32 runs per cell).*
 
 - **The gate removes most of the evaluation somewhere on the ladder.** On
-  the 841 trained tasks, 312 (37 %) are above chance at 90M and 489 (58 %) at
-  1.7B; 550 (65 %) are at chance at one size or more, 326 (39 %) at every size.
-- **Over all 1,373 chance-level tasks the picture is the same.** 552 of
-  1,372 (40 %) pass at 90M and 778 of 1,373 (57 %) at 1.7B; 552 (40 %) never
-  pass.
+  the 841 trained tasks, 311 (37 %) are above chance at 90M and 507 (60 %) at
+  1.7B; 547 (65 %) are at chance at one size or more, 313 (37 %) at every size.
+- **Over all 1,679 chance-level tasks the picture is the same.** 565 of
+  1,433 scored (39 %) pass at 90M and 954 of 1,663 (57 %) at 1.7B; 682 (41 %)
+  never pass, 16 of them never scored.
 - **It is an answer-format effect, not an option-count one.** On the trained
   languages at 1.7B the letter-answer families nearly vanish while their cloze
   twins pass: `belebele` 3 / 59 tasks against 57 / 59, `global_mmlu_full`
@@ -56,21 +59,20 @@ train the language clear chance (4 to 26 runs per cell).*
 - **The format effect is not chance.** Over every language of each family,
   McNemar's discordant counts are 82 : 1, 34 : 0 and 29 : 1 (p < 10⁻⁷ each).
   Two- and four-option trained tasks pass alike at 1.7B (64 / 103, 62 %,
-  against 402 / 691, 58 %).
+  against 420 / 691, 61 %).
 - **The item count sets the bar.** The margin over chance a run needs for
   its Wilson bound to clear chance runs from +0.006 (the 14,042-item MMLU
   families) to +0.157 (`cultural_bench_easy`, 25 items), median task per
   family.
 - **Much of what the ladder cannot read is a size floor or the majority
-  rule (provisional).** Of the 86 tasks shared with the public models, 38 are
-  at chance at every ladder size; public models read 27 of them at ≤ 1.7B and
-  3 (`arc_eu`, `paws_ja`, `xnli_ar`) not up to 70B. The public models' mask
-  still uses the retired +0.05 rule (figure 4).
-- **Near misses.** Of the 29 of those 38 that a 1.7B cell trains, 23 have at
-  least one 1.7B run whose Wilson bound clears chance. There the verdict is
-  the half-of-the-runs rule, not only a floor.
+  rule (provisional).** Of the 73 tasks shared with the public models, 27 are
+  at chance at every ladder size; public models read 24 of them at ≤ 1.7B and
+  2 (`paws_ja`, `xnli_ar`) not up to 70B. The public models' mask still uses
+  the retired +0.05 rule (figure 4).
+- **Near misses.** All 27 have a 1.7B cell that trains them, and 24 have at least one 1.7B run whose Wilson bound clears chance. There the
+  verdict is the half-of-the-runs rule, not only a floor.
 - **Signal without the gate is not reliability.** The top task by Signal at
-  1.7B, `rf_bbh_mcq_temporal_sequences` (3.39), scores 0.000–0.052 over the 26
+  1.7B, `rf_bbh_mcq_temporal_sequences` (3.39), scores 0.000–0.068 over the 29
   runs at 1.7B against a 0.25 chance: a large relative spread over a near-zero
   mean.
 
@@ -111,16 +113,16 @@ An educational reading of the rule above on one benchmark-language task (the gat
 Key findings:
 
 - `include_v2_og_hungarian_hungary` has 4 options (0.25 chance) and 1,386 items, so a single run needs 0.270 (+0.020 over chance) for its LCB to clear chance; at n = 1,386 the bound sits 0.019 below the score.
-- Verdict per size (runs passing / runs that train the language, ≥ 50% needed): 90M 1/9 → at chance, 175M 3/9 → at chance, 350M 4/9 → at chance, 600M 4/9 → at chance, 1B 5/9 → above, 1.7B 7/9 → above; the task enters every RQ from **1B** on and is grey below it.
-- What that means in rq02 (panel c): a DA-size cell needs the proxy and the reference above chance, so `include_v2_og_hungarian_hungary` contributes only the 1B → 1.7B DA-size cell(s); a DA-ckpt cell needs the run's own size above chance, so it contributes only the 1B, 1.7B run(s). 8 of 11 cells are blanked; the task is never a decision at 90M, 175M, 350M, 600M.
+- Verdict per size (runs passing / runs that train the language, ≥ 50% needed): 90M 1/11 → at chance, 175M 5/11 → at chance, 350M 6/11 → above, 600M 5/10 → above, 1B 6/10 → above, 1.7B 8/10 → above; the task enters every RQ from **350M** on and is grey below it.
+- What that means in rq02 (panel c): a DA-size cell needs the proxy and the reference above chance, so `include_v2_og_hungarian_hungary` contributes only the 350M → 1.7B, 600M → 1.7B, 1B → 1.7B DA-size cell(s); a DA-ckpt cell needs the run's own size above chance, so it contributes only the 350M, 600M, 1B, 1.7B run(s). 4 of 11 cells are blanked; the task is never a decision at 90M, 175M.
 - The highlighted run `lm-350M-L30-deep-seed1904` ends at 0.258 with LCB 0.239: not above chance — a score above the dotted line is not enough, the band's lower edge has to be.
-- Population: 54 runs over 6 sizes (rule 2: only the runs that train the language count; a run scored on a language it never saw sits at chance and would drag the share down). The six runs of a size answer the same items, so their verdicts are correlated, not six independent trials.
-- What the gate is not: chance is uniform guessing (1/4), so a run that always picks the majority gold label is not caught (on `include_v2_og_hungarian_hungary` that scores the majority label's share, above 0.25); and the gate is not a filter on DA — it blanks a cell by the gate alone, whatever the DA there (DA-size per proxy: 90M 0.50 gated; 175M 0.67 gated; 350M 0.39 gated; 600M 0.58 gated; 1B 0.53).
+- Population: 63 runs over 6 sizes (rule 2: only the runs that train the language count; a run scored on a language it never saw sits at chance and would drag the share down). The six runs of a size answer the same items, so their verdicts are correlated, not six independent trials.
+- What the gate is not: chance is uniform guessing (1/4), so a run that always picks the majority gold label is not caught (on `include_v2_og_hungarian_hungary` that scores the majority label's share, above 0.25); and the gate is not a filter on DA — it blanks a cell by the gate alone, whatever the DA there (DA-size per proxy: 90M 0.56 gated; 175M 0.69 gated; 350M 0.40; 600M 0.64; 1B 0.56).
 
 Follow-ups:
 
 - `--task hellaswag_ta`: the clean step (0/6 at 175M–600M, 5/6 at 1B, 6/6 at 1.7B), with no run near the limit.
-- `--task hellaswag_eu`: a task whose verdict is not monotone in size (mask 0/0/1/0/0/1), to show the share moving with the runs.
+- `--task hellaswag_eu`: a task whose verdict is not monotone in size (mask 1/1/1/1/1/1), to show the share moving with the runs.
 - The same figure on a 35-item task (`cultural_bench_easy_argentina`), where the needed margin is +0.12: the item count, not the model, decides.
 - A `--pool predictivity_seeds` version with the replicate seeds, to see how much the per-run verdict moves with the seed.
 
@@ -131,7 +133,7 @@ Files: [`above_random_example.png`](https://github.com/mariagrandury/snr-multili
 
 ### 1. Which cells carry any information: the gate per family and language
 
-*Pool `predictivity` (161 runs, seed 1904, every ladder and data build),
+*Pool `predictivity` (187 runs, seed 1904, every ladder and data build),
 sizes 90M–1.7B, one-sided 95 % Wilson gate (`MIN_SHARE` = half of the size's
 runs that train the language); no task filter, and BPB and the loss have no
 chance level.* The gate every later figure reads (on its 841 trained tasks),
@@ -159,70 +161,72 @@ Score along the run, one figure per language (50 languages, one subplot per benc
 
 **Key findings**
 
-- Most of the evaluation is at chance somewhere on the ladder: of the 1,373
-  benchmark-language tasks with a chance level (`above_random_mask.csv`),
-  552 / 589 / 629 / 676 / 731 / 778 are above chance at 90M / 175M / 350M /
-  600M / 1B / 1.7B (1,372 tasks are scored below 600M). 851 (62 %) fail at
-  one size or more and only 521 pass at all six.
-- 821 clear the gate at ≥ 1 size and 552 nowhere; 43 are above chance at a
-  smaller size but at chance at 1.7B (coded "never" in
-  `first_size_above_random`, a different fact).
-- On the 841 trained tasks alone the counts are 312 / 336 / 373 / 409 / 450 /
-  489 at 90M … 1.7B; 515 pass at ≥ 1 size, 291 at all six. The other 532 are
-  read on every run because no cell trains their language, and never reach a
-  later table.
-- Of the 862 (family, language) cells of `first_size_above_random.csv` (57
-  families, the probe families and the `rfgm_` twins among them), 305 hold
-  from 90M on, 33 from 175M, 30 from 350M, 36 from 600M, 42 from 1B, 50 only
-  at 1.7B and 366 never.
-- At 1.7B the letter-answer four-option families are nearly absent over all
-  their languages: `global_mmlu_full` 1 / 37, `include_base_44` 3 / 43,
-  `belebele` 5 / 105. Against them `multiblimp` passes 57 / 57, `xwinograd`
-  6 / 6, `hellaswag` 26 / 31 and `xnli` 15 / 18.
-- One cloze four-option family also stays at chance: `global_piqa_parallel_cloze`
-  (103 items per task) passes 1 / 91 at 1.7B, 1 / 63 on trained languages.
-- The reformulated twins pass where the originals fail: `rf_global_mmlu_full`
-  35 / 37, `rf_belebele` 86 / 105, `rfgm_belebele` 59 / 59,
-  `rf_include_base_44` 31 / 43, `rfgm_include_base_44` 32 / 43 (figure 3).
-- The 80 % / 49 % two- / four-option split of figure 2's table is not an
-  option-count effect: on the trained tasks at 1.7B the two kinds pass alike
-  (64 / 103 against 402 / 691). The gap comes from 255 untrained two-option
+- **Most of the evaluation is at chance somewhere on the ladder.** Of the
+  1,679 benchmark-language tasks with a chance level (`above_random_mask.csv`),
+  565 / 605 / 645 / 818 / 886 / 954 are above chance at 90M / 175M / 350M /
+  600M / 1B / 1.7B (1,433 tasks are scored below 600M, 1,663 from 600M on);
+  1,020 (61 %) fail at one size or more and only 536 pass at all six.
+- **997 clear the gate at ≥ 1 size and 682 nowhere (16 of them never
+  scored).** 43 are above chance at a smaller size but at chance at 1.7B
+  (coded "never" in `first_size_above_random`, a different fact).
+- **On the 841 trained tasks alone the counts are 311 / 340 / 378 / 424 / 468 /
+  507 at 90M … 1.7B.** 528 pass at ≥ 1 size, 294 at all six; the other 838 are
+  read on every run because the gate finds no cell that trains their
+  language, and never reach a later table.
+- **Of the 634 (family, language) cells of `first_size_above_random.csv` (40
+  families, the `rfgm_` twins among them), 244 hold from 90M on.** 31 hold
+  from 175M, 28 from 350M, 43 from 600M, 37 from 1B, 38 only at 1.7B and 213
+  never.
+- **At 1.7B the letter-answer four-option families are nearly absent over all
+  their languages.** `global_mmlu_full` passes 1 / 37, `include_base_44` 3 / 43,
+  `belebele` 5 / 105; against them `multiblimp` passes 57 / 57, `xwinograd`
+  6 / 6, `hellaswag` 31 / 31 and `xnli` 15 / 18.
+- **One cloze four-option family also stays mostly at chance.**
+  `global_piqa_parallel_cloze` (103 items per task) passes 10 / 91 at 1.7B,
+  10 / 63 on trained languages.
+- **The reformulated twins pass where the originals fail.** At 1.7B
+  `rf_global_mmlu_full` passes 35 / 37, `rf_belebele` 86 / 105,
+  `rfgm_belebele` 59 / 59, `rf_include_base_44` 31 / 43,
+  `rfgm_include_base_44` 32 / 43 (figure 3).
+- **The 77 % / 51 % two- / four-option split of figure 2's table is not an
+  option-count effect.** On the trained tasks at 1.7B the two kinds pass alike
+  (64 / 103 against 420 / 691); the gap comes from 313 untrained two-option
   tasks, mostly BLiMP-style minimal pairs (`zhoblimp` 118, `blimp_nl` 84).
-- What the Wilson bound asks (`above_random_thresholds.csv`, median task per
-  family): +0.006 on the 14,042-item MMLU families, +0.007 on `hellaswag`
-  (9,275), +0.043 on `xwinograd` (409), +0.046–0.077 on the 130–250-item
-  `bbh` / `acp_bench` probes, +0.09 on the 100-item
-  `global_piqa_nonparallel_cloze` and `cultural_bench_hard`, +0.157 on
-  `cultural_bench_easy` (25 items).
-- A model below 1B rarely delivers the last on a four-option task in a
-  non-English language, so the gate measures the format's floor more than the
-  languages' difficulty.
-- Statistically above chance is not usefully above chance: the thinnest
-  passing HellaSwag cell is `hellaswag_mr` at 90M, mean 0.257 against 0.25
-  over 9,279 items (+0.007). `above_random_thresholds.png` shows what each
-  rule keeps; an effect floor on top of the test is the paper's call.
-- The gate does not catch a letter preference: `cultural_bench_easy` passes
-  at 90M in 14 of its 19 languages and in none from 175M on. The 26 runs at
-  90M that train its languages have median scores (over the languages) from
-  0.07 to 0.65 against a 0.25 chance, the
-  signature of an answer-letter bias meeting an unbalanced gold key rather
-  than knowledge (not checked item by item).
+- **The fewer the items, the larger the margin the Wilson bound asks.** Per
+  family (`above_random_thresholds.csv`, median task): +0.006 on the
+  14,042-item MMLU families, +0.007 on `hellaswag` (9,275), +0.043 on
+  `xwinograd` (409), +0.046–0.077 on the 130–250-item `bbh` / `acp_bench`
+  probes, +0.09 on the 100-item `global_piqa_nonparallel_cloze` and
+  `cultural_bench_hard`, +0.157 on `cultural_bench_easy` (25 items).
+- **The gate measures the format's floor more than the languages'
+  difficulty.** A model below 1B rarely delivers the last on a four-option
+  letter-answer task in a non-English language.
+- **Statistically above chance is not usefully above chance.** The thinnest
+  passing HellaSwag cell is `hellaswag_hy` at 175M, mean 0.269 against 0.25
+  over 8,632 items (+0.019); `above_random_thresholds.png` shows what each
+  rule keeps, and an effect floor on top of the test is the paper's call.
+- **The gate does not catch a letter preference.** `cultural_bench_easy`
+  passes at 90M in 10 of its 19 languages and in none from 175M on; the 32
+  runs at 90M that train its languages have median scores (over the
+  languages) from 0.07 to 0.65 against a 0.25 chance, the signature of an
+  answer-letter bias meeting an unbalanced gold key rather than knowledge (not
+  checked item by item).
 
 **Follow-ups**
 
 - Draw the run count per cell on the gate figures: a trained cell rests on 4
-  to 26 runs, and no figure shows it. The 16 languages only the L50 cells
+  to 32 runs, and no figure shows it. The 16 languages only the L50 cells
   train (`az`, `bs`, `ca`, `et`, `hr`, `kk`, `lt`, `lv`, `mr`, `ms`, `ne`,
   `sk`, `sl`, `sq`, `sr`, `ur`) have four runs per size, so two runs decide.
 - The runs of a size share the test set, so "at least half of the runs" is a
-  majority rule, not a pooled test. The six TruthfulQA tasks have a variable
+  majority rule, not a pooled test. The seven TruthfulQA tasks have a variable
   option count per item, so their chance is an approximation (mc1 0.2253, mc2
   0.449); a pooled test per cell is the rigorous variant.
 - A letter-bias control: score each task's pick-one-letter rate per run and
   gate against it, which would test the `cultural_bench_easy` 90M passes above.
 - The population can change along the size axis (a size with no cell that
   trained the language falls back to every cell; `above_random_share.csv`
-  carries a `population` column, 5 046 cells `trained`, 3 189 `all`); a figure
+  carries a `population` column, 5 046 cells `trained`, 4 242 `all`); a figure
   variant that greys the fallback cells would make the switch visible.
 - Bug #16 (`../CLAUDE.md`): these panels are drawn from the mask at the time
   the driver reaches them; on 2026-09-23 the mask was rewritten after the
@@ -239,6 +243,39 @@ GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/
 [above_random_mask.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv) ·
 [score_curves.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/score_curves.csv)
 
+**The map condensed, for the paper** (`first_size_share_paper.png`, one bar
+per benchmark, and its full-width twin `first_size_share_paper_horizontal.png`,
+the same bars standing along x; `panels.py --paper`). *Pool `predictivity`,
+sizes 90M–1.7B, the same gate; the trained languages of the L50 list only, a
+benchmark's languages in brackets; 40 benchmarks, the `rf_`/`rfgm_` twins
+among them. The two CSVs are identical.*
+
+![Share of languages above chance from each size](pretraining/predictivity/first_size_share_paper.png)
+
+![Share of languages above chance from each size, horizontal](pretraining/predictivity/first_size_share_paper_horizontal.png)
+
+**Key findings** (`first_size_share_paper_horizontal.csv`)
+
+- **12 of the 40 benchmarks never clear the gate in any trained language,
+  7 clear it from 90M in all of them.** The 12: `mmlu`, `commonsense_qa`,
+  `bbh_mcq` / `bbh_cloze`, `acp_bench_mcq` / `acp_bench_cloze`,
+  `cultural_bench_easy` / `_hard`, `blend_sample`, `toxigen` and both
+  TruthfulQA families; the 7: `hellaswag`, `multiblimp`, `mathqa`,
+  `openbookqa`, `rfgm_belebele`, `rf_mmlu`, `rf_commonsense_qa`.
+- **The twins flip the verdict.** `belebele` never clears in 0.94 of its
+  languages, `rf_belebele` in none (0.86 from 90M); `global_mmlu_full` never
+  in 0.97, `rf_global_mmlu_full` in none (figure 3).
+
+**Follow-ups**
+
+- Order the bars by benchmark kind (original, `rf_`, `rfgm_`) beside the
+  share order, so each twin sits next to its original.
+
+GitHub: [first_size_share_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/first_size_share_paper.png) ·
+[first_size_share_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/first_size_share_paper.csv) ·
+[first_size_share_paper_horizontal.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/first_size_share_paper_horizontal.png) ·
+[first_size_share_paper_horizontal.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/first_size_share_paper_horizontal.csv)
+
 What the gate leaves open — whether the at-chance families are unreadable
 for any model of these sizes or only for this ladder — is figure 4; whether
 the format is the cause is figure 3.
@@ -248,8 +285,7 @@ the format is the cause is figure 3.
 *Pool `predictivity`; the Signal of a task is (max − min) / mean of the
 per-setting final scores at 1.7B over the six L1 … L50 deep scheme-A (T 1)
 seed-1904 cells, computed on every task **without the gate**. 1,279 of the
-1,714 parent tasks have a value, the `bbpb_` twins (final checkpoint) among
-them.*
+1,714 parent tasks have a value, the `bbpb_` twins among them.*
 
 <!-- BEGIN auto:results (run_apertus.py --pool predictivity) -->
 ## Results
@@ -272,11 +308,11 @@ Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00
 
 | options | chance | above ≥1 size | above @1.7B |
 |---|---|---|---|
-| 2 | 0.50 | 289 / 358 | 285 / 358 |
-| 3 | 0.33 | 19 / 24 | 17 / 24 |
-| 4 | 0.25 | 494 / 932 | 459 / 932 |
-| 5 | 0.20 | 14 / 43 | 13 / 43 |
-| 6 | 0.17 | 1 / 4 | 1 / 4 |
+| 2 | 0.50 | 314 / 416 | 309 / 416 |
+| 3 | 0.33 | 24 / 33 | 22 / 33 |
+| 4 | 0.25 | 611 / 1141 | 577 / 1141 |
+| 5 | 0.20 | 16 / 46 | 15 / 46 |
+| 6 | 0.17 | 28 / 31 | 28 / 31 |
 | 7 | 0.14 | 1 / 7 | 1 / 7 |
 | 8 | 0.12 | 2 / 2 | 1 / 2 |
 | 10 | 0.10 | 0 / 2 | 0 / 2 |
@@ -285,21 +321,23 @@ Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00
 
 **Key findings**
 
-- Over all 1,373 tasks the table splits two- from four-option tasks: at 1.7B
-  285 / 358 (80 %) against 459 / 932 (49 %), at 90M 241 / 358 against
-  289 / 932. The split is the population, not the option count: on the trained
-  tasks the two pass alike (figure 1).
-- The Signal ranking is a selection on noise, not a reliability ranking. Its
-  top families by mean Signal are `cultural_bench_easy` (1.35, 19 tasks of
+- **Over all 1,679 tasks the table splits two- from four-option tasks.** Of
+  the tasks scored at the size, at 1.7B 309 / 400 (77 %) pass against
+  577 / 1,141 (51 %), at 90M 247 / 368 against 298 / 981; the split is the
+  population, not the option count: on the trained tasks the two pass alike
+  (figure 1).
+- **The Signal ranking is a selection on noise, not a reliability ranking.**
+  Its top families by mean Signal are `cultural_bench_easy` (1.35, 19 tasks of
   7–59 items), `bbpb_bbh_cloze` (0.78, 6) and `bbpb_bbh_mcq` (0.60, 17).
-- The first is at chance at 1.7B on all 19 of its tasks; the other two are
-  bits-per-byte twins of short BBH answers. The top task,
-  `rf_bbh_mcq_temporal_sequences` (3.39), scores at most 0.052 against a 0.25
+- **The first is at chance at 1.7B on all 19 of its tasks.** The other two are
+  bits-per-byte twins of short BBH answers, and the top task,
+  `rf_bbh_mcq_temporal_sequences` (3.39), scores at most 0.068 against a 0.25
   chance.
-- Read on the tasks above chance at 1.7B, the ranking tops out at 0.42
-  (`include_v2_og_spanish_rep_blica_dominicana`), then 0.38 and 0.35 for two
-  more `include_v2_og` regional tasks and ≤ 0.29 for the `rf_` cultural, BBH
-  and ACP twins. The gated readings are
+- **Read on the tasks above chance at 1.7B, the ranking tops out at 0.65
+  (`include_v2_og_spanish_nicaragua`).** Then come 0.42, 0.38 and 0.35 for
+  three more `include_v2_og` regional tasks, 0.32 for
+  `global_piqa_parallel_cloze_eng_latn` and ≤ 0.29 for the other Global PIQA
+  tasks and the `rf_` cultural, BBH and ACP twins; the gated readings are
   [decision accuracy](../rq02_decision_accuracy/README.md) and
   [noise and SNR](../rq03_noise_and_snr/README.md).
 
@@ -321,7 +359,7 @@ Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00
 
 ### 3. The reformulated twins move whole families across the gate
 
-*Pool `predictivity` (the gate mask over its 161 runs, seed 1904, every
+*Pool `predictivity` (the gate mask over its 187 runs, seed 1904, every
 ladder and data build), the `rf_` (letters → answer strings) and `rfgm_`
 (Gemini-rewritten items) twins against their originals, paired on the
 language over every language of the family; McNemar's exact test on the
@@ -350,36 +388,38 @@ excluded; the R² column is the scaling-predictability fit on
 
 | population | gate at 90M → 1.7B | mean DA-size 90M → 1B (gated at both sizes) | tasks with median DA-size ≥ 0.66 | scaling-fit median R² (tasks) |
 |---|---|---|---|---|
-| every task | 0.40 → 0.57 | 0.52 → 0.57 | 18 % of 520 | 0.887 (342) |
-| originals only | 0.37 → 0.49 | 0.55 → 0.59 | 23 % of 292 | 0.911 (199) |
-| twins only | 0.52 → 0.80 | 0.49 → 0.55 | 11 % of 228 | 0.854 (143) |
+| every task | 0.39 → 0.57 | 0.51 → 0.57 | 17 % of 533 | 0.880 (322) |
+| originals only | 0.36 → 0.50 | 0.55 → 0.59 | 23 % of 304 | 0.901 (180) |
+| twins only | 0.52 → 0.82 | 0.48 → 0.55 | 9 % of 229 | 0.856 (142) |
 
 **Key findings**
 
-- The twins' effect on the gate is not chance. At 1.7B the cloze twin clears
+- **The twins' effect on the gate is not chance.** At 1.7B the cloze twin clears
   the gate in 82 Belebele languages where the original does not against 1 the
   other way (the rewritten `rfgm_` twin 56 against 0 over its 59 languages),
   34 against 0 for Global-MMLU and 29 against 1 for INCLUDE (30 against 1 for
   `rfgm_`), McNemar p < 10⁻⁷ each.
-- The smaller families point the same way at 1.7B: BBH 10 against 0
+- **The smaller families point the same way at 1.7B.** BBH reads 10 against 0
   (p = 0.002), `cultural_bench_easy` 7 against 0 (p = 0.016), `acp_bench_mcq`
-  5 against 0 (p = 0.06) (`reformulations_gate_mcnemar.csv`). At 90M
-  `cultural_bench_easy` runs the other way (0 against 13), the letter-bias
+  5 against 0 (p = 0.06) (`reformulations_gate_mcnemar.csv`); at 90M
+  `cultural_bench_easy` runs the other way (1 against 10), the letter-bias
   passes of figure 1.
-- The twins pass the gate far more often and are read from 90M, but they do
-  not rank the design variants better: gated at both sizes they read mean
-  DA-size 0.49–0.55 across the proxies against 0.55–0.60 for the originals.
-  Half as many clear the 0.66 cut (11 % of 228 against 23 % of 292).
-- Their spread across variants is larger: median relative signal
-  (`signal_rel_std`) 0.026 on 214 twins against 0.022 on 236 originals at 1B,
-  on the tasks above chance at 1B (noise-and-SNR `snr_variants_per_task.csv`).
-- The family mix moves the twins' mean: at 1B `rf_belebele` reads DA-size
-  0.54 on 57 tasks and `rf_global_mmlu_full` 0.69 on 28
-  (`agreement_da_size_per_cell_multi_axes.csv`). The tie null is ≈ 0.49 today
-  (2.9 % one-sided ties per multi-axis cell), above the 0.47 the figure's red
+- **The twins pass the gate far more often and are read from 90M, but they do
+  not rank the design variants better.** Gated at both sizes they read mean
+  DA-size 0.48–0.55 across the proxies against 0.55–0.59 for the originals,
+  and fewer than half as many clear the 0.66 cut (9 % of 229 against 23 % of
+  304).
+- **Their spread across variants is larger.** Median relative signal
+  (`signal_rel_std`) is 0.027 on 215 twins against 0.024 on 253 originals at
+  1B, on the tasks above chance at 1B (noise-and-SNR
+  `snr_variants_per_task.csv`).
+- **The family mix moves the twins' mean.** At 1B `rf_belebele` reads DA-size
+  0.54 on 57 tasks and `rf_global_mmlu_full` 0.68 on 28
+  (`agreement_da_size_per_cell_multi_axes.csv`); the tie null is ≈ 0.49 today
+  (2.0 % one-sided ties per multi-axis cell), above the 0.47 the figure's red
   line still hard-codes.
-- The reformulation decides whether a family exists for the rest of the
-  analysis: on the trained languages at 1.7B `belebele` passes 3 / 59 tasks
+- **The reformulation decides whether a family exists for the rest of the
+  analysis.** On the trained languages at 1.7B `belebele` passes 3 / 59 tasks
   and `global_mmlu_full` 1 / 29, against 57 / 59 and 29 / 29 for their `rf_`
   twins ([scaling predictability, figure 2](../rq01_scaling_predictability/README.md#2-survivorship-what-the-gate-and-the-fit-minimum-removed)).
   In all three rows of the table the gate share and DA-size rise from 90M to
@@ -392,7 +432,7 @@ excluded; the R² column is the scaling-predictability fit on
   one figure; the `rfgm_` evals now cover INCLUDE (43 languages) and Belebele
   (59) at every size.
 - Redraw the red line of panel (c) at today's tie null (≈ 0.49 from the
-  2.9 % one-sided tie share) instead of the hard-coded 0.47.
+  2.0 % one-sided tie share) instead of the hard-coded 0.47.
 - The twins are the same items in another formulation, so a language can
   clear rule 8's three-task floor with the twins of one benchmark; a
   per-language panel that rests on twins alone should say so (RULES.md).
@@ -406,9 +446,10 @@ GitHub: [reformulations_gate.png](https://github.com/mariagrandury/snr-multiling
 
 ### 4. Benchmark floors: is a gated task a size problem or a benchmark problem?
 
-*Pool `predictivity` (161 runs, seed 1904, final checkpoint, trained
+*Pool `predictivity` (187 runs, seed 1904, final checkpoint, trained
 languages) against the external tier's mask (`all/external/`, public base and
-post-trained models 270M–70B); the overlap is the 36-sweep's 86-task list (no
+post-trained models 270M–70B); the overlap is the 36-sweep's 86-task list less
+the tasks in a language no ladder cell trains at some size, 73 tasks (no
 twins, no probe families). The external floor is a model floor, not a
 parameters-at-5C floor.*
 
@@ -419,32 +460,29 @@ rule on 1,169 of its 1,171 cells), not the Wilson gate the auto block names.*
 <!-- BEGIN auto:above-random-external (above_random_external.py --pool predictivity) -->
 ## Benchmark floors: the ladder's gate against the public models'
 
-Of the 86 tasks both tiers score, 38 are at chance at every ladder size. Where the external models (270M–70B, every release the external tier holds, base and post-trained, same gate) first read them: ≤ 600M 8, 1B–1.7B 19, 3B–4B 1, 7B–14B 5, ≥ 27B 2, never 3. A task readable at ≤ 1.7B by a public model is a size/recipe floor (the 5×-Chinchilla ladder does not reach it; public models of that size train on 10–36 T tokens); a task that needs ≥ 3B or is never read is a benchmark or language-resource floor. "Never reads" is the gate's verdict: at every ladder size fewer than 50% of the size's runs that train the task's language clear the one-sided 95 % Wilson bound over chance; single runs may clear it. Overlap is the 36-sweep's 86-task list only. Regenerate with `python analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity`.
+Of the 73 tasks both tiers score, 27 are at chance at every ladder size. Where the external models (270M–70B, every release the external tier holds, base and post-trained, same gate) first read them: ≤ 600M 8, 1B–1.7B 16, 3B–4B 0, 7B–14B 1, ≥ 27B 0, never 2. A task readable at ≤ 1.7B by a public model is a size/recipe floor (the 5×-Chinchilla ladder does not reach it; public models of that size train on 10–36 T tokens); a task that needs ≥ 3B or is never read is a benchmark or language-resource floor. "Never reads" is the gate's verdict: at every ladder size fewer than 50% of the size's runs that train the task's language clear the one-sided 95 % Wilson bound over chance; single runs may clear it. Overlap is the 36-sweep's 86-task list only, less the 25 tasks in a language no ladder cell trains at some size (there the gate reads untrained runs, a transfer measurement, rule 2). Regenerate with `python analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity`.
 
 | family | ≤ 600M | 1B–1.7B | 3B–4B | 7B–14B | ≥ 27B | never |
 |---|---|---|---|---|---|---|
-| belebele | 3 | 9 | 0 | 0 | 0 | 0 |
-| global_mmlu_full | 1 | 9 | 0 | 0 | 0 | 0 |
-| arc | 0 | 0 | 0 | 2 | 0 | 1 |
-| xnli | 0 | 0 | 0 | 2 | 0 | 1 |
+| belebele | 3 | 7 | 0 | 0 | 0 | 0 |
+| global_mmlu_full | 1 | 8 | 0 | 0 | 0 | 0 |
 | paws | 0 | 1 | 0 | 0 | 0 | 1 |
 | truthfulqa_mc2 | 2 | 0 | 0 | 0 | 0 | 0 |
-| xstorycloze | 0 | 0 | 0 | 1 | 1 | 0 |
+| arc | 0 | 0 | 0 | 1 | 0 | 0 |
 | commonsense_qa | 1 | 0 | 0 | 0 | 0 | 0 |
 | mmlu | 1 | 0 | 0 | 0 | 0 | 0 |
-| openbookqa | 0 | 0 | 1 | 0 | 0 | 0 |
-| xcopa | 0 | 0 | 0 | 0 | 1 | 0 |
+| xnli | 0 | 0 | 0 | 0 | 0 | 1 |
 
 ![The gate on the public models](pretraining/predictivity/above_random_external.png)
 
-The paper version, `above_random_external_paper.png` (alternatives `_paper_b`, one cell per task, and `_paper_c`, a family by bucket grid), recomputes the floor on the public base releases alone (no post-trained release, none of apertus3-a06, ap-from8b-TOP256): ≤ 600M 19, 1B–1.7B 9, 3B–4B 4, 7B–14B 0, ≥ 27B 4, never 2. `above_random_external_models.tex` lists those models per line and size bucket.
+The paper version, `above_random_external_paper.png` (alternatives `_paper_b`, one cell per task, and `_paper_c`, a family by bucket grid), recomputes the floor on the public base releases alone (no post-trained release, none of apertus3-a06, ap-from8b-TOP256): ≤ 600M 16, 1B–1.7B 6, 3B–4B 1, 7B–14B 0, ≥ 27B 2, never 2. `above_random_external_models.tex` lists those models per line and size bucket.
 
-Population: the `predictivity` pool (seed 1904, 175M–1.7B, final checkpoint, trained languages) against every external release (`all/external`, base and post-trained, same gate; the paper version uses the public base releases only; panels (c) and (d) use the six public lines gemma-3, Qwen3, OLMo-2, Olmo-3, Apertus, apertus3-a06); no task filter beyond the 84-task overlap.
+Population: the `predictivity` pool (seed 1904, 90M–1.7B, final checkpoint, trained languages) against every external release (`all/external`, base and post-trained, same gate; the paper version uses the public base releases only; panels (c) and (d) use the six public lines gemma-3, Qwen3, OLMo-2, Olmo-3, Apertus, apertus3-a06); no task filter beyond the 84-task overlap.
 
 Key findings:
-- 38 of the 86 shared tasks are gated at every ladder size; 27 of them are read by an external model ≤ 1.7B, 3 by none up to 70B.
-- (c) the ladder reads 37% of the shared tasks at 90M and 56% at 1.7B; the public base models ≤ 1.7B read Qwen3-1.7B-Base 87%, Qwen3-0.6B-Base 81%, OLMo-2-0425-1B 64%, gemma-3-1b-pt 64%, apertus3-1b-21-nodes 62%, gemma-3-270m 58% (a model's own run clears the bound; the ladder's share is its mask, half of the runs).
-- (d) 29 of the 38 ladder-gated tasks have a trained run at 1.7B (no 1.7B cell trains eu, sw, rule 2); 23 of them have a single run whose lower bound clears chance (near misses: the gate wants half of the runs), and the best public base model ≤ 1.7B beats the ladder's best run on 29.
+- 27 of the 73 shared tasks are gated at every ladder size; 24 of them are read by an external model ≤ 1.7B, 2 by none up to 70B.
+- (c) the ladder reads 41% of the shared tasks at 90M and 63% at 1.7B; the public base models ≤ 1.7B read Qwen3-1.7B-Base 93%, Qwen3-0.6B-Base 85%, OLMo-2-0425-1B 66%, gemma-3-1b-pt 65%, apertus3-1b-21-nodes 63%, gemma-3-270m 59% (a model's own run clears the bound; the ladder's share is its mask, half of the runs).
+- (d) 27 of the 27 ladder-gated tasks have a trained run at 1.7B (no 1.7B cell trains , rule 2); 24 of them have a single run whose lower bound clears chance (near misses: the gate wants half of the runs), and the best public base model ≤ 1.7B beats the ladder's best run on 25.
 
 Follow-ups:
 - (c) with the post-trained releases as open markers: whether instruction tuning moves a task over the gate at the same size.
@@ -456,25 +494,24 @@ Figure: https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-a
 
 **Key findings**
 
-- Most of what the ladder cannot read is a size or recipe floor, not a
-  benchmark floor: of the 38 shared tasks at chance at every ladder size,
-  public models read 8 at ≤ 600M and 19 at 1B–1.7B, 1 at 3B–4B
-  (`openbookqa`), 5 at 7–14B, 2 at ≥ 27B and 3 never (`arc_eu`, `paws_ja`,
-  `xnli_ar`).
-- The ≤ 1.7B group is every Belebele and Global-MMLU task of the list, `mmlu`,
-  `commonsense_qa`, `truthfulqa_{vi,zh}_mc2` and `paws_zh`. The 7–14B group is
-  `arc_ar`, `arc_hi`, `xnli_eu`, `xnli_sw`, `xstorycloze_sw`; the ≥ 27B one
-  `xstorycloze_eu`, `xcopa_eu`.
-- Public models of the ladder's sizes read far more of the shared tasks:
-  Qwen3-0.6B-Base 81 % and Qwen3-1.7B-Base 87 % (of the 84 they are scored
-  on), against 37 % of 86 for the ladder's mask at 90M and 56 % at 1.7B
-  (`above_random_external_lines.csv`).
-- Basque and Swahili, which no 1.7B ladder cell trains, account for 6 of the
-  10 tasks that need ≥ 7B or are never read: they are the language-resource
-  floors.
-- Near misses: 29 of the 38 tasks have a trained run at 1.7B, and on 23 of
-  them at least one run's Wilson bound clears chance. The ladder's verdict
-  there is the half-of-the-runs rule as much as a floor.
+- **Most of what the ladder cannot read is a size or recipe floor, not a
+  benchmark floor.** Of the 27 shared tasks at chance at every ladder size,
+  public models read 8 at ≤ 600M and 16 at 1B–1.7B, none at 3B–4B, 1 at
+  7–14B (`arc_hi`), none at ≥ 27B and 2 never (`paws_ja`, `xnli_ar`).
+- **The ≤ 1.7B group is every Belebele and Global-MMLU task of the list,
+  `mmlu`, `commonsense_qa`, `truthfulqa_{vi,zh}_mc2` and `paws_zh`.** The
+  7–14B group is `arc_hi` alone, and no shared task first passes at ≥ 27B.
+- **Public models of the ladder's sizes read far more of the shared tasks.**
+  Qwen3-0.6B-Base reads 85 % and Qwen3-1.7B-Base 93 % (of the 71 they are
+  scored on), against 41 % of 73 for the ladder's mask at 90M and 63 % at
+  1.7B (`above_random_external_lines.csv`).
+- **No language-resource floor is left in the overlap.** Basque and Swahili,
+  which no 1.7B ladder cell trains, left it with the other tasks in a language
+  no ladder cell trains at some size; the 3 tasks that need ≥ 7B or are never
+  read are in Hindi, Japanese and Arabic.
+- **Near misses.** All 27 tasks have a trained run at 1.7B, and on 24 of them
+  at least one run's Wilson bound clears chance; the ladder's verdict there is
+  the half-of-the-runs rule as much as a floor.
 
 **Follow-ups**
 
@@ -497,9 +534,9 @@ GitHub: [above_random_external.png](https://github.com/mariagrandury/snr-multili
 ### 5. The ladder's curves
 
 *Pool `predictivity_seeds`, every trained cell, the shared checkpoint grid:
-181 cells (seed 1904 161; seeds 64 and 313 three each at 175M and at 600M,
+207 cells (seed 1904 187; seeds 64 and 313 three each at 175M and at 600M,
 six per seed, 28 and 1797 four each at 1B; none at 1.7B). By data scheme A at
-T 1 95, A at T 3 24, B 50, C 12; deep 116, shallow 60, swiglu 5.*
+T 1 121, A at T 3 24, B 50, C 12; deep 116, shallow 60, swiglu 19, muon 12.*
 
 Descriptive: the counterpart of the progress report's figures on the
 analysis' own cells, so a reader can check any assumption of the analyses
@@ -515,28 +552,31 @@ Every cell the `predictivity_seeds` pool holds (all seeds and data builds), afte
 ![Benchmark curves](pretraining/predictivity_seeds/benchmark_curves.png)
 
 The paper version, `benchmark_curves_paper.png` (`--paper`, redrawn from `benchmark_curves.csv`), drops the header for a legend of the line encoding; its size twin, `benchmark_size_curves_paper.png`, draws each design's final accuracy against non-embedding parameters, colour = L (the scaling-predictability appendix's size figure).
+
+![Benchmark curves, paper version](pretraining/predictivity_seeds/benchmark_curves_paper.png)
+
+![Final accuracy against size, paper version](pretraining/predictivity_seeds/benchmark_size_curves_paper.png)
 <!-- END auto:curves -->
 
-*The benchmark panel draws 176 of the 181 cells: the five swiglu cells have
-loss curves only.*
+*The benchmark panel draws 202 of the 207 cells: four of the 12 muon cells and
+one of the 19 swiglu cells have loss curves only.*
 
 **Key findings**
 
-- Letter-format knowledge MCQA rises well off chance in one cell only, and
-  only in the last fifth of the run (between 4C and 5C): on `mmlu` the English-only
-  `lm-1.7B-L1-deep-seed1904` goes 0.274 → 0.316 → 0.337 at 4C / 4.5C / 5C
-  (chance 0.25). On `global_mmlu_full_en` it goes 0.270 → 0.303 → 0.314, on
-  `commonsense_qa` 0.202 → 0.256 → 0.257 (chance 0.20).
-- It is the only one of 175 cells to end above 0.28 on `mmlu`. Its shallow
+- **Letter-format knowledge MCQA rises well off chance in one cell only, and
+  only in the last fifth of the run (between 4C and 5C).** On `mmlu` the
+  English-only `lm-1.7B-L1-deep-seed1904` goes 0.274 → 0.316 → 0.337 at 4C /
+  4.5C / 5C (chance 0.25); on `global_mmlu_full_en` it goes 0.270 → 0.303 →
+  0.314, on `commonsense_qa` 0.202 → 0.256 → 0.257 (chance 0.20).
+- **It is the only one of 201 cells to end above 0.28 on `mmlu`.** Its shallow
   twin ends at 0.277, the English-only scheme-B (DCLMP) and scheme-C (FWEB)
   cells at 1.7B at 0.239 and 0.247, while the cloze `rf_mmlu` of the same
   cell moves smoothly (0.367 → 0.374 → 0.379).
-- Two families move away from chance with training, downwards: TruthfulQA
-  mc2 falls from 0.420 at 0.5C to 0.386 at 5C (mean over 175 cells; chance
-  0.449) and ToxiGen from 0.523 to 0.449 (chance 0.5), in 87 % and 83 % of
-  the cells.
-- Their "never above chance" verdict is therefore a trend below chance, not
-  noise around it.
+- **Two families move away from chance with training, downwards, so their
+  "never above chance" verdict is a trend below chance, not noise around
+  it.** TruthfulQA mc2 falls from 0.421 at 0.5C to 0.387 at 5C (mean over 201
+  cells; chance 0.449) and ToxiGen from 0.525 to 0.452 (chance 0.5), in 88 %
+  and 82 % of the cells.
 
 **Follow-ups**
 
@@ -550,6 +590,36 @@ loss curves only.*
 [loss_curves.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/loss_curves.csv) ·
 [benchmark_curves.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_curves.png) ·
 [benchmark_curves.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_curves.csv)
+
+**The two paper grids** (`benchmark_curves_paper.png`, `benchmark_size_curves_paper.png`,
+five panels per row, `curves.py --paper`). *Pool `predictivity_seeds`, the
+same cells as above; no gate, no task filter. The size twin reads each
+design's final checkpoint, one line per (L, ladder, data build, seed) across
+its rungs: 46 designs, 29 of them at 1.7B, 41 families; each L averages over
+its own trained languages, so the populations differ across L.*
+
+**Key findings** (`benchmark_size_curves_paper.csv`)
+
+- **The cloze and completion families climb with size; the letter-format
+  ones do not.** Mean over the designs, 90M → 1.7B: `hellaswag` 0.304 →
+  0.533, `xwinograd` 0.573 → 0.747, `rf_commonsense_qa` 0.304 → 0.462, while
+  `mmlu`, `global_mmlu_full`, `include_base_44`, `bbh_mcq`, `acp_bench_mcq`
+  and `commonsense_qa` move by 0.013 or less, and `cultural_bench_easy`
+  (0.393 → 0.259), `toxigen` and both TruthfulQA families fall.
+- **At 1.7B the English-only cell scores highest on most families.** On the
+  deep data-A seed-1904 designs, L1 is the top line on 24 of the 33 families
+  with a value at every L and above L50 on 28 (`hellaswag` 0.675 against
+  0.450, `arc` 0.576 against 0.322). L1 averages its English tasks only, so
+  this is partly the task population, not a ranking of the mixtures.
+
+**Follow-ups**
+
+- A twin of the size figure on the English tasks alone, so the L lines read
+  one task population.
+
+GitHub: [benchmark_curves_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_curves_paper.png) ·
+[benchmark_size_curves_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_size_curves_paper.png) ·
+[benchmark_size_curves_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_size_curves_paper.csv)
 
 ## Extensions from other sweeps
 

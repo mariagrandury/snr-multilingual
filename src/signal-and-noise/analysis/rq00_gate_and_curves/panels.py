@@ -6,11 +6,12 @@ curves of every language.
     gate_margin_by_benchmark.png            score minus chance, language x size, one subplot per benchmark
     gate_margin_by_language.png             score minus chance, benchmark x size, one subplot per language
     first_size_above_random.png / .csv      language x benchmark: smallest size from which the score stays above chance
-    first_size_above_random_paper.png/.svg/.csv  the same for the paper: languages down the side in the scheme-A resource
+    first_size_above_random_paper.png/.csv  the same for the paper: languages down the side in the scheme-A resource
                                             order, benchmarks across it from the most to the fewest languages above the
                                             gate, the trained languages of the L50 list only (rule 2), no header
-    first_size_share_paper.png/.svg/.csv    the paper map condensed: per benchmark the share of its languages at each
+    first_size_share_paper.png/.csv    the paper map condensed: per benchmark the share of its languages at each
                                             smallest size (highlights' right panel, in the same order and population)
+    first_size_share_paper_horizontal.png/.csv  the same bars standing along the x axis, for a full-width figure
     score_curves.csv                        the curves below
     score_curves/<language>.png             score vs training tokens (Chinchilla multiples, 5C = the full run),
                                             one line per size, one subplot per benchmark
@@ -65,9 +66,15 @@ def gate_panels(out_dir: Path) -> None:
     long["margin"] = long["score"] - long["random_baseline"]
     mask = pd.read_csv(out_dir / "above_random_mask.csv").melt(id_vars=["task"], value_vars=sizes, var_name="size", value_name="above")
     long = long.merge(mask, on=["task", "size"], how="left")
+    # rule 2: a cell no run of the size trains is gated on untrained runs (a transfer reading)
+    pop = pd.read_csv(out_dir / "above_random_share.csv").melt(
+        id_vars=["task"], value_vars=[f"{s}__population" for s in sizes], var_name="size", value_name="population")
+    pop["size"] = pop["size"].str.removesuffix("__population")
+    long = long.merge(pop, on=["task", "size"], how="left")
+    long = long[long["population"] == "trained"].drop(columns="population")
     gate = (f"the gate keeps a cell when at least {MIN_SHARE:.0%} of the size's runs are confidently above chance "
             f"(one-sided {1 - ALPHA / 2:.0%} Wilson lower bound over the task's items > chance)")
-    note = ("cell = mean final-checkpoint score of the size's models that trained the language (every model of the size where none did), minus chance (1 / number of "
+    note = ("cell = mean final-checkpoint score of the size's models that trained the language (cells no model of the size trains are left out, rule 2), minus chance (1 / number of "
             f"options); {gate}")
     kw = dict(value="margin", vmin=-0.1, vmax=0.3, center=0.0, cmap=S.DIV, fmt="{:+.2f}", note=note,
               cbar="score − chance (neutral colour = chance)")
@@ -94,9 +101,8 @@ def paper_figures(out_dir: Path) -> None:
     level map with languages down the side in the scheme-A resource order
     (English first) and benchmarks across it from the most to the fewest
     languages above the gate at some size, and the same map condensed to one
-    bar per benchmark. Both cover the trained languages of the L50 list alone
-    (rule 2; the map on disk also carries the transfer-only languages) and
-    carry no header."""
+    bar per benchmark. Both cover the trained languages of the L50 list (rule 2;
+    the map on disk is cut to trained cells too) and carry no header."""
     t = pd.read_csv(out_dir / "first_size_above_random.csv")
     sizes = [b for b in bucket_order() if b in pd.read_csv(out_dir / "above_random_mask.csv", nrows=0).columns]
     level = t.pivot(index="family", columns="language", values="level_index")
@@ -106,7 +112,7 @@ def paper_figures(out_dir: Path) -> None:
     order = list((level >= 0).sum(axis=1).sort_values(ascending=False, kind="stable").index)
     G.level_heatmap(level.T, out_dir / "first_size_above_random_paper.png", levels=sizes, title="",
                     cbar="Smallest size above chance", xlabel="", ylabel="", rows=langs, cols=order,
-                    names=("language", "benchmark"), also=(".svg",), name=G.paper_name, cell_text=False, cell_w=0.18)
+                    names=("language", "benchmark"), name=G.paper_name, cell_text=False, cell_w=0.18)
     height = 0.17 * len(order) + 0.9
     fig, ax = plt.subplots(figsize=(5.4, height))
     tab = G.stack_ax(ax, level, "", levels=sizes, rows=order, name=G.paper_name,
@@ -116,9 +122,18 @@ def paper_figures(out_dir: Path) -> None:
     ax.get_legend().remove()
     fig.legend(handles, labels, fontsize=6, frameon=False, ncol=4, loc="lower center", bbox_to_anchor=(0.5, 0))
     fig.tight_layout(rect=(0, 0.3 / height, 1, 1))       # the legend right under the axis label
-    tab.drop(columns="panel").rename(columns={"row": "benchmark", "col": "level", "value": "share"}) \
-       .to_csv(out_dir / "first_size_share_paper.csv", index=False)
+    tab = tab.drop(columns="panel").rename(columns={"row": "benchmark", "col": "level", "value": "share"})
+    tab.to_csv(out_dir / "first_size_share_paper.csv", index=False)
     S.save_paper(fig, out_dir / "first_size_share_paper")
+    # the same bars standing along the x axis, for a full-width figure (legend on top)
+    height = 3.4
+    fig, ax = plt.subplots(figsize=(0.125 * len(order) + 0.9, height))
+    G.stack_ax(ax, level, "", levels=sizes, rows=order, name=G.paper_name, upright=True,
+               xlabel="Share of languages\nabove the chance threshold")
+    fig.legend(handles, labels, fontsize=6, frameon=False, ncol=len(labels), loc="upper center", bbox_to_anchor=(0.5, 1))
+    fig.tight_layout(rect=(0, 0, 1, 1 - 0.25 / height))   # the legend right above the bars
+    tab.to_csv(out_dir / "first_size_share_paper_horizontal.csv", index=False)
+    S.save_paper(fig, out_dir / "first_size_share_paper_horizontal")
 
 
 def threshold_panels(out_dir: Path) -> None:

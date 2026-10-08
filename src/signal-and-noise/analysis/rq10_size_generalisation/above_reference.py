@@ -34,7 +34,7 @@ cell (verified exact on 3,312 cells, 2026-09-23).
 
     above_reference_<ref>[_design<d>].png / .csv       the pooled lines of (a), (b) and (d)
     above_reference_<ref>[_design<d>]_per_task.csv     one row per (task, axes, proxy size, frac)
-    above_reference_3B_paper.png / .svg / .csv          panel (a)'s lines to the 3B final alone, for the paper
+    above_reference_3B_paper.png / .csv          panel (a)'s lines to the 3B final alone, for the paper
 
     python analysis/rq10_size_generalisation/above_reference.py --pool predictivity            # reference 3B
     python analysis/rq10_size_generalisation/above_reference.py --pool predictivity --reference 1.7B --design 3B

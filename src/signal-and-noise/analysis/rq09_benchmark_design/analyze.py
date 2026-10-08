@@ -15,7 +15,7 @@ Writes (this dir):
   - snr_by_curation_per_task.png   per-task strip plot (catches the xnli_eu
                                    heterogeneity that family-level smears)
   - group_stats.csv                per-group n, mean, median, kruskal H, p
-  - snr_per_family_ranked_paper.png/.svg/.csv
+  - snr_per_family_ranked_paper.png/.csv
                                    the family ranking for the paper, one
                                    colour per answer-option count
                                    (`--paper`: alone, from per_family_snr.csv)
@@ -68,17 +68,28 @@ def snr_col(csv_path: Path) -> str:
 # --- Categorical labels for grouping -----------------------------------------
 # Keep these in sync with the per-family paragraphs in data_info.md. Two
 # views:
-#   curation_category — how items in the per-language eval set were produced.
+#   curation_category — how items in the per-language eval set were produced
+#                       (english_original: written in English, no translation;
+#                       translation_unknown: translated by a method no source states).
 #   source_origin     — whether the source benchmark was English-only and
-#                       translated, or originally multilingual / aggregated.
-# Task-format axes added in Q4-extension. `format`:
+#                       translated, originally multilingual / aggregated, or
+#                       an English original evaluated in English.
+# Task-format axes added in Q4-extension. `format` (read from the prompt the
+# harness task builds, configs/tasks.json `example`, not from the dataset):
 #   mcq_question_only — question + N letter-labeled options, no passage.
 #   mrc_passage       — a passage to read + question + N options.
 #   completion        — context + N candidate continuations, scored by LL.
+#   cloze_completion  — "Question: ... Answer:" + the N option strings scored
+#                       as continuations (the rf_ twins, and benchmarks the
+#                       harness already scores that way).
+#   statement_continuation — the rfgm_ LLM rewrite into a statement stem.
+#   last_word         — a passage whose last word is scored (LAMBADA).
 #   minimal_pair      — two minimally-differing sentences, pick higher-LL.
 #   classification    — premise + hypothesis (or sentence pair) -> N labels.
 # `passage` is True iff the prompt contains a substantial passage / long
 # context (a heuristic, formalised quantitatively in Phase B).
+# None marks a characteristic no source settles (rq09 README lists them):
+# it is left out of that characteristic's tests, never guessed.
 FAMILY_META: dict[str, dict] = {
     # The reformulated twins are separate benchmarks, not aliases: same items,
     # same curation, but the format is the thing rq09 measures and it is what
@@ -132,7 +143,8 @@ FAMILY_META: dict[str, dict] = {
         "curation_process": "machine translation by ChatGPT",
         "curation_category": "machine_translation",
         "source_origin": "english_translated",
-        "format": "mcq_question_only", "n_options": 4, "passage": False,
+        # okapi/arc_multilingual builds "Question: ...\nAnswer:" and scores the option strings
+        "format": "cloze_completion", "n_options": 4, "passage": False,
     },
     "belebele": {
         "data_source": "FLORES-200 passages, custom MRC questions",
@@ -213,11 +225,107 @@ FAMILY_META: dict[str, dict] = {
     },
     # --- families wired for the predictivity ladder (plan/benchmark_selection.md)
     "global_piqa_parallel_cloze": {
-        "data_source": "Global PIQA parallel split (Chang et al. 2025)",
+        "data_source": "Global PIQA parallel split (Chang et al. 2025), written in English",
+        # dataset card: written in English by two native speakers, machine-translated
+        # (Gemini) with human correction; the harness scores solution0..solution3
+        "curation_process": "machine translation + native-speaker correction",
+        "curation_category": "mt_post_edited",
+        "source_origin": "english_translated",
+        "format": "completion", "n_options": 4, "passage": False,
+    },
+    # --- the rest of the `auto` group (added 2026-10-08). Sources: the harness
+    # task YAMLs (pinned msnr-harness; src/evals/tasks for rf_/include_v2),
+    # configs/tasks.json, configs/multilingual_benchmarks.csv, the dataset cards.
+    "global_piqa_nonparallel_cloze": {
+        "data_source": "Global PIQA non-parallel split (Chang et al. 2025)",
         "curation_process": "participatory native-speaker authoring (no translation)",
         "curation_category": "originally_multilingual",
         "source_origin": "originally_multilingual",
         "format": "completion", "n_options": 2, "passage": False,
+    },
+    "arc_mt": {
+        "data_source": "ARC-Challenge (Clark et al. 2018), LumiOpen/arc_challenge_mt",
+        "curation_process": "machine translation by DeepL (dataset card)",
+        "curation_category": "machine_translation",
+        "source_origin": "english_translated",
+        "format": "cloze_completion", "n_options": 4, "passage": False,
+    },
+    "lambada_openai_mt": {
+        "data_source": "LAMBADA (Paperno et al. 2016), OpenAI test split",
+        "curation_process": "Google Translate for de/es/fr/it (dataset card); en original",
+        "curation_category": "machine_translation",
+        "source_origin": "english_translated",
+        # the last word of a narrative passage scored; no answer options, no chance level
+        "format": "last_word", "n_options": None, "passage": True,
+    },
+    "include_v2_og": {
+        "data_source": "INCLUDE v2 (include-results/include-128), regional exams",
+        "curation_process": "natively sourced exam questions (no translation)",
+        "curation_category": "originally_multilingual",
+        "source_origin": "originally_multilingual",
+        "format": "cloze_completion", "n_options": 4, "passage": False,
+    },
+    "include_v2_en": {
+        "data_source": "INCLUDE v2 (include-results/include-128), the question_en / choices_en columns",
+        # the dataset ships the English text with no card saying how it was made
+        "curation_process": "translation of the native items into English, method undocumented",
+        "curation_category": "translation_unknown",
+        "source_origin": "originally_multilingual",
+        "format": "cloze_completion", "n_options": 4, "passage": False,
+    },
+    "openbookqa": {
+        "data_source": "OpenBookQA (Mihaylov et al. 2018)",
+        "curation_process": "crowdsourced in English",
+        "curation_category": "english_original",
+        "source_origin": "english_original",
+        "format": "completion", "n_options": 4, "passage": False,
+    },
+    "mathqa": {
+        "data_source": "MathQA (Amini et al. 2019), AQuA-RAT problems",
+        "curation_process": "English exam-style problems annotated by crowd workers",
+        "curation_category": "english_original",
+        "source_origin": "english_original",
+        "format": "cloze_completion", "n_options": 5, "passage": False,
+    },
+    "rf_mmlu": {
+        "data_source": "MMLU (Hendrycks et al. 2021)",
+        "curation_process": "English exam questions collected from public sources",
+        "curation_category": "english_original",
+        "source_origin": "english_original",
+        "format": "cloze_completion", "n_options": 4, "passage": False,
+    },
+    "rf_commonsense_qa": {
+        "data_source": "CommonsenseQA (Talmor et al. 2019)",
+        "curation_process": "crowdsourced in English from ConceptNet concepts",
+        "curation_category": "english_original",
+        "source_origin": "english_original",
+        "format": "cloze_completion", "n_options": 5, "passage": False,
+    },
+    "rf_cultural_bench_easy": {
+        "data_source": "CulturalBench-Easy (Chiu et al. 2024), 45 regions",
+        "curation_process": "human-written and human-verified in English (dataset card)",
+        "curation_category": "english_original",
+        "source_origin": "english_original",
+        "format": "cloze_completion", "n_options": 4, "passage": False,
+    },
+    "rf_acp_bench_mcq": {
+        "data_source": "ACPBench (Kokel et al. 2025), PDDL planning domains",
+        "curation_process": "generated from PDDL problems by templates",
+        "curation_category": "template_generated",
+        "source_origin": "english_original",
+        # each item states the planning domain and state before the query
+        "format": "cloze_completion", "n_options": 4, "passage": True,
+    },
+    "rf_bbh_mcq": {
+        "data_source": "BIG-Bench Hard (Suzgun et al. 2023), the multiple-choice subtasks",
+        # subtasks mix human-written (date_understanding, ruin_names) and programmatically
+        # generated items (logical_deduction, colored objects); 2 to 8 options over the
+        # nine subtasks in the pool (tasks.json); stems of 55 to 549 characters, a
+        # table or a paragraph in some, a one-line question in others
+        "curation_process": "English; human-written and generated subtasks mixed",
+        "curation_category": None,
+        "source_origin": "english_original",
+        "format": "cloze_completion", "n_options": None, "n_options_range": "2--8", "passage": None,
     },
     "include_base_44": {
         "data_source": "INCLUDE base-44 (Romanou et al. 2025), regional exams",
@@ -250,7 +358,7 @@ FAMILY_META: dict[str, dict] = {
 }
 # Derived: random baseline = 1 / n_options
 for _f, _meta in FAMILY_META.items():
-    _meta["random_baseline"] = round(1.0 / _meta["n_options"], 3)
+    _meta["random_baseline"] = round(1.0 / _meta["n_options"], 3) if _meta["n_options"] else None
 
 # Per-task overrides: (family, lang) → curation_category. Used when an `_eu`
 # subset comes from a different paper with a different curation method than
@@ -267,8 +375,10 @@ CATEGORY_ORDER = [
     "template_generated",
     "mt_post_edited",
     "machine_translation",
+    "english_original",
+    "translation_unknown",
 ]
-ORIGIN_ORDER = ["originally_multilingual", "english_translated"]
+ORIGIN_ORDER = ["originally_multilingual", "english_translated", "english_original"]
 
 
 def load_per_task_snr(snr_csv: Path) -> pd.DataFrame:
@@ -379,16 +489,20 @@ _CATEGORY_COLORS = {
     "template_generated": "#2ca02c",
     "mt_post_edited": "#d62728",
     "machine_translation": "#9467bd",
+    "english_original": "#8c564b",
+    "translation_unknown": "#e377c2",
 }
+UNKNOWN_COLOUR = "#bbbbbb"            # a curation no source settles (FAMILY_META comment)
 
 
 def _scatter_baseline(per_family: pd.DataFrame, out_path: Path) -> None:
     """SNR vs random baseline (1/n_options) on log-y. Tests whether
     fewer-option tasks (higher baseline) systematically yield higher SNR."""
     fig, ax = plt.subplots(figsize=(8, 6))
+    per_family = per_family.dropna(subset=["random_baseline"])   # LAMBADA, BBH: no single option count
     x = per_family["random_baseline"].to_numpy()
     y = per_family["snr_median"].to_numpy()
-    colors = [_CATEGORY_COLORS[c] for c in per_family["curation_category"]]
+    colors = [_CATEGORY_COLORS.get(c, UNKNOWN_COLOUR) for c in per_family["curation_category"]]
     ax.scatter(x, y, c=colors, s=110, edgecolor="black", linewidth=0.7)
     for xi, yi, lbl in zip(x, y, per_family["family"]):
         ax.annotate(lbl, (xi, yi), fontsize=8,
@@ -424,7 +538,7 @@ def _scatter_length(
     df = per_family.dropna(subset=[x_col])
     x = df[x_col].to_numpy()
     y = df["snr_median"].to_numpy()
-    colors = [_CATEGORY_COLORS[c] for c in df["curation_category"]]
+    colors = [_CATEGORY_COLORS.get(c, UNKNOWN_COLOUR) for c in df["curation_category"]]
     ax.scatter(x, y, c=colors, s=110, edgecolor="black", linewidth=0.7)
     for xi, yi, lbl in zip(x, y, df["family"]):
         ax.annotate(lbl, (xi, yi), fontsize=8,
@@ -463,7 +577,7 @@ def _length_grid(per_family: pd.DataFrame, out_path: Path) -> None:
         df = per_family.dropna(subset=[col])
         x = df[col].to_numpy()
         y = df["snr_median"].to_numpy()
-        colors = [_CATEGORY_COLORS[c] for c in df["curation_category"]]
+        colors = [_CATEGORY_COLORS.get(c, UNKNOWN_COLOUR) for c in df["curation_category"]]
         ax.scatter(x, y, c=colors, s=80, edgecolor="black", linewidth=0.6)
         for xi, yi, lbl in zip(x, y, df["family"]):
             ax.annotate(lbl, (xi, yi), fontsize=7,
@@ -483,7 +597,7 @@ def _length_grid(per_family: pd.DataFrame, out_path: Path) -> None:
 
 def _ranked_bar(per_family: pd.DataFrame, out_path: Path) -> None:
     df = per_family.sort_values("snr_median", ascending=True)
-    colors = [_CATEGORY_COLORS[c] for c in df["curation_category"]]
+    colors = [_CATEGORY_COLORS.get(c, UNKNOWN_COLOUR) for c in df["curation_category"]]
     fig, ax = plt.subplots(figsize=(10, 0.45 * len(df) + 1.5))
     y = np.arange(len(df))
     ax.barh(y, df["snr_median"], color=colors, edgecolor="black", linewidth=0.6)
@@ -515,19 +629,23 @@ def ranked_bar_paper(per_family: pd.DataFrame, out_path: Path) -> None:
     from analysis import style as S
     plt.rcParams.update(S.RC)
     df = per_family.sort_values("snr_median", ascending=True)
-    opts = sorted(df["n_options"].astype(int).unique())
+    opts = sorted(df["n_options"].dropna().astype(int).unique())
     colour = dict(zip(opts, S.RAMP[len(S.RAMP) - len(opts):]))   # the darkest steps, light = fewest options
+    colour[None] = S.MUTED                                       # no option count (LAMBADA) or several (BBH)
+    key = lambda n: None if pd.isna(n) else int(n)
     fig, ax = plt.subplots(figsize=(4.8, 0.2 * len(df) + 0.9))
     y = np.arange(len(df))
-    ax.barh(y, df["snr_median"], color=[colour[int(n)] for n in df["n_options"]], height=0.7)
+    ax.barh(y, df["snr_median"], color=[colour[key(n)] for n in df["n_options"]], height=0.7)
     ax.set_yticks(y); ax.set_yticklabels([G.paper_name(f) for f in df["family"]], fontsize=7)
     ax.set_xscale("log")
     ax.xaxis.set_major_locator(mticker.LogLocator(subs=(1, 2, 3, 5)))
     ax.xaxis.set_major_formatter(mticker.FormatStrFormatter("%g")); ax.xaxis.set_minor_locator(mticker.NullLocator())
     ax.set_xlabel(f"Median SNR at {SNR_COL.rsplit('_', 1)[1]} over the family's languages")
     ax.grid(axis="x", color=S.GRID, lw=.6); ax.set_axisbelow(True); S.clean(ax)
-    ax.legend(handles=[plt.Rectangle((0, 0), 1, 1, color=colour[n], label=f"{n} options") for n in opts],
-              fontsize=6.5, frameon=False, ncol=len(opts), loc="lower center", bbox_to_anchor=(0.5, 1.0))
+    keys = opts + ([None] if df["n_options"].isna().any() else [])
+    ax.legend(handles=[plt.Rectangle((0, 0), 1, 1, color=colour[n], label=f"{n} options" if n else "No fixed count")
+                       for n in keys],
+              fontsize=6.5, frameon=False, ncol=len(keys), loc="lower center", bbox_to_anchor=(0.5, 1.0))
     fig.tight_layout()
     df[["family", "n_tasks", "snr_median", "n_options"]].assign(name=[G.paper_name(f) for f in df["family"]]) \
         .to_csv(out_path.with_suffix(".csv"), index=False)
@@ -571,19 +689,21 @@ def generate_readme(stage: str, pool: str) -> None:
     per_task = gs.loc["task/curation"] if "task/curation" in gs.index else None
     n_tasks = int(per_family["n_tasks"].sum())
     top_fam = per_family.sort_values("n_tasks", ascending=False).iloc[0]
+    strong = {v: r for v, r in sig.items() if r["p"] < 0.05 / len(fam_views)}    # Bonferroni over the five
+    opts = per_family["n_options"].value_counts()
     highlight = "\n".join([
-        "- **The answer-count penalty lives in the above-random gate, upstream "
-        "of SNR.** Every family whose tasks sit at chance at the reference size is "
+        "- **The above-random gate decides which families are read at all.** Every "
+        "family whose tasks sit at chance at the reference size is "
         f"dropped before SNR is computed, leaving **{n_families} families** that "
-        "clear the gate — most of them 2-option.",
-        ("- **Among survivors, no family-level design feature reaches p < 0.05** "
-         "(five Kruskal–Wallis tests on the same families, uncorrected): "
-         if not sig else
-         f"- **Among survivors, {', '.join(fam_views[v] for v in sig)} reach{'es' if len(sig) == 1 else ''} "
-         "p < 0.05 at the family level** — with five uncorrected tests on the same families, "
-         "one such hit is what chance produces: ")
+        f"clear the gate ({int(opts.get(2, 0))} with 2 options, {int(opts.get(4, 0))} with 4).",
+        ("- **Among survivors, only " + " and ".join(fam_views[v] for v in strong) + " separates the families** "
+         if strong else "- **Among survivors, no family-level design axis separates the families convincingly** ")
+        + "(five Kruskal–Wallis tests on the same families, uncorrected): "
         + "; ".join(f"{fam_views[v]} H = {fmt(r['H'])}, p = {fmt(r['p'], 3)}" for v, r in tested.items())
-        + ". Too little variation is left among the survivors (mostly 2-option) to resolve any axis.",
+        + (f". {', '.join(fam_views[v] for v in strong).capitalize()} stays under 0.05 after a Bonferroni correction "
+           "for the five" if strong else
+           f". {', '.join(fam_views[v] for v in sig).capitalize()} {'is' if len(sig) == 1 else 'are'} under 0.05, "
+           "which one of five uncorrected tests reaches by chance" if sig else "") + ".",
     ] + ([
         f"- **Per-task curation test** (tasks as observations, {n_tasks} tasks of which "
         f"{int(top_fam['n_tasks'])} are `{top_fam['family']}`): H = {fmt(per_task['H'])}, "
@@ -595,7 +715,7 @@ def generate_readme(stage: str, pool: str) -> None:
 
     rank_rows = [
         [f"`{r.family}`", fmt(r.snr_median), int(r.n_tasks), r.format,
-         int(r.n_options)]
+         "" if pd.isna(r.n_options) else int(r.n_options)]
         for _, r in per_family.iterrows()
     ]
     t_rank = md_table(["family", "median SNR", "n", "format", "n_opts"],
@@ -636,7 +756,7 @@ def generate_slides(stage: str, pool: str) -> None:
         return
     per_family = pd.read_csv(HERE / stage / pool / "per_family_snr.csv").sort_values(
         "snr_median", ascending=False)
-    rows = [[f"`{r.family}`", fmt(r.snr_median), int(r.n_options), r.format]
+    rows = [[f"`{r.family}`", fmt(r.snr_median), "" if pd.isna(r.n_options) else int(r.n_options), r.format]
             for _, r in per_family.iterrows()]
     slide = (
         "---\n"
@@ -724,12 +844,12 @@ def main(snr_dir: Path, out_dir: Path, stage: str, pool: str) -> None:
 
     # --- Task-format axes (Phase A) ----------------------------------------
     print("\nFamily-level Kruskal-Wallis by n_options:")
-    per_family["n_options_str"] = per_family["n_options"].astype(int).astype(str)
+    per_family["n_options_str"] = per_family["n_options"].map(lambda n: "" if pd.isna(n) else str(int(n)))
     H, p, ng = _strip_plot(
         per_family,
         group_col="n_options_str",
         value_col="snr_median",
-        order=["2", "3", "4"],
+        order=["2", "3", "4", "5"],
         label_col="family",
         title=f"Per-family median {SNR_COL} by number of answer options",
         out_path=out_dir / "snr_by_n_options.png",
@@ -737,8 +857,8 @@ def main(snr_dir: Path, out_dir: Path, stage: str, pool: str) -> None:
     group_rows.append({"view": "family/n_options", "H": H, "p": p, "n_groups": ng})
 
     print("\nFamily-level Kruskal-Wallis by format:")
-    format_order = ["minimal_pair", "completion", "classification",
-                    "mcq_question_only", "mrc_passage"]
+    format_order = ["minimal_pair", "completion", "classification", "cloze_completion",
+                    "statement_continuation", "last_word", "mcq_question_only", "mrc_passage"]
     H, p, ng = _strip_plot(
         per_family,
         group_col="format",

@@ -12,7 +12,7 @@ of benchmark tasks does not outweigh one with hundreds.
 
     rq2_da_all_decisions_mono_axis.csv     the decision-table rows of the two planned decisions
     rq2_da_goal_early_small_mono_axis.csv   agreement per (decision, population, proxy size, fraction)
-    rq2_da_goal_early_small_mono_axis.png/.pdf
+    rq2_da_goal_early_small_mono_axis.png
     early_decision_facts.json
 
     python analysis/rq05_design_decisions/early_decision.py --pool predictivity_seeds

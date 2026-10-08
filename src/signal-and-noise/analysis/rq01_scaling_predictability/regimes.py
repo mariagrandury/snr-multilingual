@@ -23,16 +23,16 @@ chance at every size does not appear:
 
     scaling_regimes.png / .csv             the figure and its per-task table (medians, counts, the regime)
     scaling_regimes_families.png / .csv    the same, one label per benchmark family at its median point (no legend)
-    scaling_regimes_families_paper.png/pdf/svg  the families figure for the paper: bare and square as the outliers one
+    scaling_regimes_families_paper.png  the families figure for the paper: bare and square as the outliers one
     scaling_regimes_outliers.png / .csv    the family labels plus the tasks that break their family's regime
                                            (another quadrant than the family's majority and > OUTLIER_DIST from
                                            its median point), named family:language
-    scaling_regimes_outliers_paper.png/pdf/svg  the outliers figure for the paper: no header, panel titles or
+    scaling_regimes_outliers_paper.png  the outliers figure for the paper: no header, panel titles or
                                            quadrant labels, square panels, the caption's axis labels, and the
                                            label text darkened towards the ink so it reads at 5 pt
     scaling_regimes_by_family.png / .csv   panel (b) per family: its tasks labelled with the language code, the
                                            other tasks in grey behind (the per-task table with the labels)
-    scaling_regimes_by_family_paper.png/pdf/svg/csv  the same for the paper's appendix: no header, the paper
+    scaling_regimes_by_family_paper.png/csv  the same for the paper's appendix: no header, the paper
                                            figure's axis labels and darkened label text (the same table)
     scaling_regimes.html                   the two panels with hover names and a click-to-highlight legend
                                            (Vega-Lite from a CDN, for the project site; not for the paper)
@@ -66,7 +66,7 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.paths import SCALING_PREDICTABILITY  # noqa: E402
 from analysis.rq01_scaling_predictability.analyze import _grid  # noqa: E402
-from analysis.utils import assign_language, benchmark_family, ladder_frame, languages_only, lower_is_better  # noqa: E402
+from analysis.utils import assign_language, benchmark_family, ladder_frame, languages_only, lower_is_better, on_shared_grid  # noqa: E402
 
 OUT_ROOT = SCALING_PREDICTABILITY
 CANONICAL = "predictivity_seeds"
@@ -86,21 +86,21 @@ QUADRANTS = {(True, True): ("predictable across both", "#b9cfe8"), (False, True)
              (True, False): ("predictable across size only", "#b8ccd0"), (False, False): ("weak / unpredictable in both", "#f1d8bd")}
 
 
-def size_medians(fits: pd.DataFrame) -> pd.DataFrame:
+def size_medians(fits: pd.DataFrame, min_fits: int = MIN_FITS) -> pd.DataFrame:
     """Per task: median R² and oriented median ρ of the gated log-N fits of
     rq1_fits.csv (a (task, L) the gate left without a fit has NaN there)."""
     f = fits.dropna(subset=["r2"]).copy()
     f["rho"] = np.where(f["task"].map(lower_is_better), -f["rho"], f["rho"])
     g = f.groupby("task").agg(r2_size=("r2", "median"), rho_size=("rho", "median"), n_size_fits=("r2", "count"))
-    return g[g["n_size_fits"] >= MIN_FITS]
+    return g[g["n_size_fits"] >= min_fits]
 
 
-def trajectory_medians(df: pd.DataFrame, pool: str) -> pd.DataFrame:
+def trajectory_medians(df: pd.DataFrame, pool: str, cells=_grid) -> pd.DataFrame:
     """Per task: median R² of score ~ a + b log10(tokens) over the run's
     checkpoints, one fit per (L, size) grid cell where the task is above
-    chance (rule 1, `grids.mark_gated`)."""
-    g0 = G.mark_gated(_grid(df), pool, "size", "primary_score")
-    g0 = g0[~g0["gated"] & (g0["tokens"] > 0)]
+    chance (rule 1, `grids.mark_gated`); `cells` as in `fit_table`."""
+    g0 = G.mark_gated(cells(df), pool, "size", "primary_score")
+    g0 = g0[~g0["gated"] & (g0["tokens"] > 0) & on_shared_grid(g0)]     # rule 3: BPB's twentieths are not a benchmark's
     rows = []
     for (task, L, size), g in g0.groupby(["task", "L", "size"]):
         if len(g) < MIN_POINTS:
@@ -112,6 +112,19 @@ def trajectory_medians(df: pd.DataFrame, pool: str) -> pd.DataFrame:
     t = pd.DataFrame(rows).dropna(subset=["r2"])
     g = t.groupby("task").agg(r2_trajectory=("r2", "median"), n_trajectory_fits=("r2", "size"))
     return g[g["n_trajectory_fits"] >= MIN_FITS]
+
+
+def regime_table(fits: pd.DataFrame, df: pd.DataFrame, pool: str, cells=_grid, min_fits: int = MIN_FITS) -> pd.DataFrame:
+    """One row per task: the size and trajectory medians and the regime, over
+    `cells` (the deep data-A seed-1904 grid by default); `min_fits` is the
+    size fits a task needs (one per L)."""
+    t = size_medians(fits, min_fits).join(trajectory_medians(df, pool, cells), how="inner").reset_index()
+    t["family"] = t["task"].map(benchmark_family)
+    t["language"] = t["task"].map(assign_language)
+    t = languages_only(t)     # rule 7: the loss is not a benchmark-language pair
+    t["regime"] = [DECLINES if rho < 0 else QUADRANTS[(x >= R2_SPLIT, y >= R2_SPLIT)][0]
+                   for x, y, rho in zip(t["r2_size"], t["r2_trajectory"], t["rho_size"])]
+    return t[["task", "family", "language", "n_size_fits", "r2_size", "rho_size", "n_trajectory_fits", "r2_trajectory", "regime"]]
 
 
 def short(family: str) -> str:
@@ -231,7 +244,7 @@ def figure(t: pd.DataFrame, out_dir: Path, fam: pd.DataFrame | None = None, out:
            paper: bool = False, dark: float = 0.0) -> None:
     """The two panels; with `fam` one label per family at its median point
     instead of the legend, with `out` also the named outliers; `paper` = the
-    bare version for the paper (PNG, PDF and SVG), see _panels. `dark` pulls
+    bare version for the paper, see _panels. `dark` pulls
     the label text that far towards the ink (the dots keep the family's colour)."""
     colours = _colours(t)
     fig, (a, b) = plt.subplots(1, 2, figsize=(9.6, 4.6) if paper else (10.4, 4.3))
@@ -256,7 +269,6 @@ def figure(t: pd.DataFrame, out_dir: Path, fam: pd.DataFrame | None = None, out:
                  f"median point in either panel")
     if paper:
         fig.tight_layout()
-        fig.savefig(out_dir / f"{name}.svg", bbox_inches="tight", facecolor=S.SURFACE)   # vector copy to edit by hand; save_figure closes the figure
         S.save_figure(fig, out_dir, name)
         return
     top = G._header(fig, "Benchmark scaling predictability per benchmark-language pair", note)
@@ -267,8 +279,7 @@ def figure(t: pd.DataFrame, out_dir: Path, fam: pd.DataFrame | None = None, out:
 def figure_by_family(t: pd.DataFrame, fam: pd.DataFrame, out_dir: Path, paper: bool = False) -> None:
     """Panel (b) once per family, its tasks labelled with the language code,
     every other task in grey behind; `paper` = the appendix version, as the
-    main paper figure: no header, its axis labels, darkened label text, PNG,
-    PDF and SVG."""
+    main paper figure: no header, its axis labels, darkened label text."""
     colours = _colours(t)
     labels = point_label(t)
     n = len(colours); ncol = 4; nrow = -(-n // ncol)
@@ -293,7 +304,6 @@ def figure_by_family(t: pd.DataFrame, fam: pd.DataFrame, out_dir: Path, paper: b
     t.assign(label=labels).to_csv(out_dir / f"{name}.csv", index=False)
     if paper:
         fig.tight_layout()
-        fig.savefig(out_dir / f"{name}.svg", bbox_inches="tight", facecolor=S.SURFACE)
         S.save_figure(fig, out_dir, name)
         return
     top = G._header(fig, "Panel (b) per benchmark family, tasks named by language",
@@ -358,14 +368,7 @@ def main(pool: str) -> None:
     fits = pd.read_csv(out_dir / "rq1_fits.csv")
     gated_out = sorted(set(fits.loc[fits["gated"], "task"]) - set(fits.dropna(subset=["r2"])["task"]))   # at chance wherever a fit was possible
     gated_note = ", ".join(f"{f} {n}" for f, n in pd.Series(map(benchmark_family, gated_out)).value_counts().sort_index().items()) or "none"
-    df = ladder_frame(pool)
-    t = size_medians(fits).join(trajectory_medians(df, pool), how="inner").reset_index()
-    t["family"] = t["task"].map(benchmark_family)
-    t["language"] = t["task"].map(assign_language)
-    t = languages_only(t)     # rule 7: the loss is not a benchmark-language pair
-    t["regime"] = [DECLINES if rho < 0 else QUADRANTS[(x >= R2_SPLIT, y >= R2_SPLIT)][0]
-                   for x, y, rho in zip(t["r2_size"], t["r2_trajectory"], t["rho_size"])]
-    t = t[["task", "family", "language", "n_size_fits", "r2_size", "rho_size", "n_trajectory_fits", "r2_trajectory", "regime"]]
+    t = regime_table(fits, ladder_frame(pool), pool)
     t.to_csv(out_dir / "scaling_regimes.csv", index=False)
     fam, out = family_table(t), outliers(t, family_table(t))
     fam.to_csv(out_dir / "scaling_regimes_families.csv", index=False)
@@ -397,10 +400,10 @@ def main(pool: str) -> None:
             f"Regenerate with `python analysis/rq01_scaling_predictability/regimes.py --pool {pool}`.",
             f"![Scaling regimes]({stage}/{pool}/scaling_regimes.png)",
             f"Named variants of the same points: `scaling_regimes_families.png` (one label per family at its median point, "
-            f"`scaling_regimes_families.csv`; `scaling_regimes_families_paper.png/.pdf/.svg` its bare, square version for the paper), `scaling_regimes_outliers.png` (plus the tasks in another quadrant than their family's "
-            f"majority and > {OUTLIER_DIST} from its median point, `scaling_regimes_outliers.csv`; `scaling_regimes_outliers_paper.png/.pdf/.svg` is its bare, square-panel version "
+            f"`scaling_regimes_families.csv`; `scaling_regimes_families_paper.png` its bare, square version for the paper), `scaling_regimes_outliers.png` (plus the tasks in another quadrant than their family's "
+            f"majority and > {OUTLIER_DIST} from its median point, `scaling_regimes_outliers.csv`; `scaling_regimes_outliers_paper.png` is its bare, square-panel version "
             f"for the paper, the label text pulled {LABEL_DARK:.0%} towards the ink), `scaling_regimes_by_family.png` "
-            f"(panel (b) per family, tasks named by language, its per-task table with the labels next to it; `_paper.png/.pdf/.svg/.csv` is its bare version for the paper's appendix) and `scaling_regimes.html` (hover names, click-to-highlight legend; "
+            f"(panel (b) per family, tasks named by language, its per-task table with the labels next to it; `_paper.png/.csv` is its bare version for the paper's appendix) and `scaling_regimes.html` (hover names, click-to-highlight legend; "
             f"for the project site).",
             f"![Scaling regimes, outliers named]({stage}/{pool}/scaling_regimes_outliers.png)",
             f"![Scaling regimes per family]({stage}/{pool}/scaling_regimes_by_family.png)"])

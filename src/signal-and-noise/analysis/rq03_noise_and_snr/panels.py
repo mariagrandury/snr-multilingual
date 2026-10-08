@@ -100,7 +100,7 @@ def main(pool: str) -> None:
         return
     body = "\n\n".join([
         "## Per benchmark and per language",
-        f"Regenerate with `python analysis/rq03_noise_and_snr/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\" (at chance at that size, rule 1); each figure's table sits next to it under the same name; sizes are 175M–1.7B (rule 10). SNR noise is the std over the 80/85/90/95/100 % checkpoints (rule 4).",
+        f"Regenerate with `python analysis/rq03_noise_and_snr/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\" (at chance at that size, rule 1); each figure's table sits next to it under the same name; sizes are 175M–1.7B (rule 10). SNR noise is the residual std around a line through the 80/85/90/95/100 % checkpoints (rule 4).",
         f"![rq03 in one figure]({stage}/{pool}/highlights.png)",
         f"![SNR per benchmark]({stage}/{pool}/snr_by_benchmark.png)",
         f"![SNR per language]({stage}/{pool}/snr_by_language.png)",

@@ -30,6 +30,10 @@ rq00–rq04 ask which *benchmarks* carry reliable signal; this RQ asks which
                       cells with 3 replicates): where the reference's own
                       preference is inside seed noise there is no decision to
                       agree with.
+                      `size_matched` is False on the 600M depth cells:
+                      shallow 600M is not size-matched to deep 600M
+                      (utils.UNMATCHED_PAIRS; kept, flagged; RULES.md
+                      "Size matching").
   effect at the reference — per intervention, the |Δ| in seed standard
                       deviations (the paper's "is there a decision to make?").
 
@@ -69,7 +73,8 @@ from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.utils import (CKPT_DA_EARLY_FRACS,  # noqa: E402
-    GRID_SEED, RELIABLE_DA, TARGET_SIZE, at_fraction, data_build, finals, ladder_frame, lower_is_better, passes_gate, size_order, trained_bpb_tasks)
+    GRID_SEED, RELIABLE_DA, TARGET_SIZE, at_fraction, data_build, finals, ladder_frame, lower_is_better, passes_gate,
+    size_match_note, size_matched, size_order, trained_bpb_tasks)
 from pretrain.launch_trainings import DATA_SCHEMES  # noqa: E402
 
 OUT_ROOT = DESIGN_DECISIONS
@@ -217,7 +222,8 @@ def intervention_da(df: pd.DataFrame, fracs: list = FRACS, mask: pd.DataFrame | 
     """(the decision table, the per-item agreement behind it, the same for
     every language's BPB with its `group`). The second frame has one row per
     (intervention, L, proxy size, fraction, task) of CELL_POPULATIONS with
-    `agree` in {0, 1}: what the per-benchmark and per-language tables
+    its `population` and `agree` in {0, 1}: what the per-benchmark and
+    per-language tables and the decision table's DA of those populations
     aggregate; the third, filled only for `bpb_all` (rq06's call), is what
     rq06's transfer lines aggregate. A benchmark
     item counts at a proxy size only where the task is above chance there and
@@ -269,8 +275,8 @@ def intervention_da(df: pd.DataFrame, fracs: list = FRACS, mask: pd.DataFrame | 
                         agree = (np.sign(d_proxy) == ref_sign.loc[items]).to_numpy(float)
                         if pop in CELL_POPULATIONS:
                             items_rows.append(pd.DataFrame({
-                                "intervention": key, "label": label, "L": int(L), "proxy_size": s, "frac": f,
-                                "task": items, "agree": agree}))
+                                "intervention": key, "label": label, "population": pop, "L": int(L), "proxy_size": s,
+                                "frac": f, "task": items, "agree": agree}))
                         if pop == "bpb_all":            # every language, grouped by what the cell's lists train
                             group_rows.append(pd.DataFrame({
                                 "intervention": key, "label": label, "L": int(L), "proxy_size": s, "frac": f, "reference_size": ref,
@@ -309,10 +315,12 @@ def language_group(tasks, L: int, builds: list) -> list[str]:
             else LANGUAGE_GROUPS[2] if t.rsplit("_", 1)[-1] in scripts else LANGUAGE_GROUPS[3] for t in tasks]
 
 
-def effect_at_reference(fin: pd.DataFrame) -> pd.DataFrame:
+def effect_at_reference(fin: pd.DataFrame, mask: pd.DataFrame | None) -> pd.DataFrame:
     """Per (intervention, L, population): at the reference size, the median
     |Δ| in per-task seed standard deviations (the seed sd of the baseline
-    cells, median over the (size, L) cells with replicates)."""
+    cells, median over the (size, L) cells with replicates). Benchmarks count
+    where they are above chance at the reference (rule 1): a task at chance
+    there has no decision to read, and its |Δ| is noise."""
     sd = seed_sd(fin)
     grid = fin[fin["seed"] == GRID_SEED]
     rows = []
@@ -324,14 +332,16 @@ def effect_at_reference(fin: pd.DataFrame) -> pd.DataFrame:
                 continue
             tasks = piv.index.get_level_values("task")
             is_bpb = tasks.str.startswith("bpb_")
-            for pop, mask in (("bits per byte", is_bpb & (tasks != "bpb_macro")), ("benchmarks", ~is_bpb & (tasks != "train_loss"))):
-                pp = piv[mask]
+            for pop, sel in (("bits per byte", is_bpb & (tasks != "bpb_macro")), ("benchmarks", ~is_bpb & (tasks != "train_loss"))):
+                pp = piv[sel]
                 counts = pp.groupby(level="size").size()
                 sizes = size_order(counts[counts >= MIN_ITEMS].index)
                 if TARGET_SIZE not in sizes:       # rule 9, as above
                     continue
                 ref = TARGET_SIZE
                 p = pp.xs(ref, level="size")
+                if pop == "benchmarks":
+                    p = p[passes_gate(mask, p.index.get_level_values("task"), ref).to_numpy()]
                 ratio = ((p[levels[0]] - p[levels[1]]).abs() / p.index.map(sd)).replace(np.inf, np.nan).dropna()
                 if len(ratio) >= MIN_ITEMS:
                     rows.append({"intervention": key, "label": label, "L": int(L), "reference_size": ref,
@@ -455,7 +465,8 @@ def generate_readme(pool: str, out_dir: Path, da: pd.DataFrame, ev: pd.DataFrame
         if not bench.empty:
             m = bench.groupby("proxy_size")["decision_acc"].mean()
             bullets.append("- **Depth decision on benchmarks** — mean DA over L by proxy: "
-                           + ", ".join(f"{s} {fmt(m[s])}" for s in size_order(m.index)) + ".")
+                           + ", ".join(f"{s} {fmt(m[s])}" for s in size_order(m.index)) + "."
+                           + size_match_note([("arch", s) for s in m.index]))
         blocks.append(f"![Intervention DA grid]({rel}/intervention_da_all_mono_axis.png)")
     if not ev.empty:
         med = (by_recipe(ev).groupby(["intervention", "population"])["median_effect_over_seed_sd"].median()
@@ -489,6 +500,8 @@ def main(pool: str, out_dir: Path) -> None:
           f"seeds {sorted(df['seed'].unique())}, data builds {sorted(df['data'].unique())}")
 
     da, items, _ = intervention_da(df, mask=gate_mask(pool))
+    if not da.empty:                     # the 600M depth pairs are not size-matched: kept, flagged
+        da["size_matched"] = [size_matched(k, s) for k, s in zip(da["intervention"], da["proxy_size"])]
     da.to_csv(out_dir / "intervention_da_all_mono_axis.csv", index=False)
     if not items.empty:
         # the same agreement, per benchmark and per language (panels.py draws them);
@@ -506,9 +519,10 @@ def main(pool: str, out_dir: Path) -> None:
         dag = (rec[rec["frac"] == 1.0].groupby(["intervention", "label", "population", "proxy_size"])
                .agg(decision_acc=("decision_acc", "mean"), cells=("decision_acc", "size"),
                     refs=("reference_size", lambda s: ",".join(sorted(set(s))))).reset_index())
+        dag["size_matched"] = [size_matched(k, s) for k, s in zip(dag["intervention"], dag["proxy_size"])]
         dag.to_csv(out_dir / "rq4_da_size_by_intervention_mono_axis.csv", index=False)
 
-    ev = effect_at_reference(fin)
+    ev = effect_at_reference(fin, gate_mask(pool))
     ev.to_csv(out_dir / "rq4_effect_vs_seed.csv", index=False)
     if not ev.empty or not dag.empty:
         plot_interventions(by_recipe(ev), dag, out_dir)

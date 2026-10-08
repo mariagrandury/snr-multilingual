@@ -26,9 +26,9 @@ This is a local fork of [allenai/signal-and-noise](https://github.com/allenai/si
 augmented to run the SNR / decision-accuracy pipeline on our own pretraining
 ladders. Two generations of models flow through it:
 
-- the **predictivity ladder** (current): `lm-<size>-L<L>[-schemeB]-<deep|shallow|swiglu>-seed<seed>`,
+- the **predictivity ladder** (current): `lm-<size>-L<L>[-schemeB]-<deep|shallow|swiglu|muon>-seed<seed>`,
   90M–1.7B × L ∈ {1, 2, 8, 15, 30, 50} (L100 was planned and dropped on
-  2026-09-20, plan/l100_data_mixture.md) × deep/shallow (+ the swiglu activation on deep at L 8/15/30) × data build
+  2026-09-20, plan/l100_data_mixture.md) × deep/shallow (+ the swiglu activation and the muon optimizer on deep at L 8/15/30) × data build
   A/AT3/B/ZH/ES/DCLMP/FWEB (read as scheme A/B/C × T, analysis/RULES.md Definitions) × seeds, evaluated during training by `src/pretrain/auto_evals_*.py` and
   summarised by `src/pretrain/ladder_report.py` into **one wide CSV** published
   as the HF dataset `msnr-data/ladder-report`. That CSV is the source of truth.
@@ -90,13 +90,15 @@ so a script never decides by model name.
   driver's first step; without the cluster-only store it keeps the committed
   table). `build_snr_pool` appends it AFTER its rule filters, as a copy of the
   original's row, so it exists only where the original is AND the store holds
-  that (model, step): an inner join on `bench_bpb.csv`. The nightly only
-  reduces the store and extracts nothing, so a cell evaluated after the last
-  `build_per_item_store.sbatch` run (the six L1 FineWeb cells for now)
-  has no twin until the sbatch is re-submitted; the loader prints those models. Its
+  that (model, step): an inner join on `bench_bpb.csv`. The store holds every
+  checkpoint of every seed-1904 ladder cell (rebuilt 2026-10-07), but not the
+  seed replicates nor the 3B cells. The nightly only reduces the store and
+  extracts nothing, so a cell evaluated after the last
+  `build_per_item_store.sbatch` run has no twin until the sbatch is
+  re-submitted; the loader prints those models. Its
   family is `bbpb_<family>`, its language the original's, and it is
-  lower-is-better (`utils.lower_is_better`). Finals only for now: see
-  RULES.md "The benchmark-BPB twins".
+  lower-is-better (`utils.lower_is_better`). See RULES.md "The benchmark-BPB
+  twins".
 - `mix` is the cell's design variant (`L8-schemeB-deep`, `launch_trainings.mix_label`)
   — the role the data mixture played in the 36-sweep — and `family`
   (`lm-L8-schemeB-deep-seed1904`) is the cross-size identity DA groups on.
@@ -124,7 +126,11 @@ so a script never decides by model name.
   so a run whose two new evals have not landed contributes three points, not
   five. `noise_checkpoints` keeps ONE row per grid point: a SIGUSR2 exit
   leaves an off-grid save (lm-1.7B-L1-shallow-seed1904 at 89.7 %) that BPB
-  scores and that otherwise counts the 90 % point twice. rq03 and rq05
+  scores and that otherwise counts the 90 % point twice. The noise itself is
+  `utils.checkpoint_noise`: since 2026-10-08 the residual SD around a line
+  through the window (the WSD decay still rises, and the raw SD counted the
+  rise as noise, 1.5–4× on the tasks with signal); the raw SD is kept,
+  labelled `raw`. rq03 and rq05
   read the seed replicates for the noise that does not depend on the window.
 - **The analysis-wide rules** — `analysis/RULES.md`: the gate, trained
   languages only, ten checkpoints, one noise window, three pairs, parent tasks
@@ -157,7 +163,9 @@ pool, `bench_bpb_da.py`, `da_per_benchmark.py`, `early_small.py`,
 `paper_rq2.py`, the `--axes mono-axis` twins, then
 the extensions: `scale_convergence.py --by L --langs L8 [--common-tasks]`,
 `by_language.py`, `agreement.py`, `seed_uncertainty.py`, `language_tier.py`,
-`pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per pool, which reads
+`pair_axes.py`, `crossfit_reliable.py` (the reliable tasks chosen out of sample),
+`fixed_tasks.py`, then `rq02_permutation_null/permutation_null.py` and
+`rq02_decisive_pairs/decisive_pairs.py`) → rq03 (`run_apertus_snr_variants.py` per pool, which reads
 rq02's DA; `compare_seed_splits.py`; `panels.py`) → rq04 (the variant ranking,
 `analyze.py`, `finetasks_criteria.py`, then `catalogue.py` + `search.py`: ~210
 proxy-only surrogates from `literature.md` and the AllenAI signal × noise grid
@@ -165,14 +173,15 @@ against every DA) → rq05 (+ rq03's
 `effect_vs_noise.py`, which reads rq05's table) → rq06 → rq07 (reads rq04's
 ranking) → the English-only check (`english_only.py`) → rq08 (`smooth_subtasks.py`,
 `panels.py`, `per_item_ladder.py`, `reference_solved.py`) → the above-chance
-items (`above_chance_items.py`) → rq09 → rq10 (`above_reference.py`, the 3B rung as the
+items (`above_chance_items.py`) → the proxy item selection
+(`rq14_proxy_item_selection/proxy_item_selection.py`, store-only) → rq09 → rq10 (`above_reference.py`, the 3B rung as the
 reference, the only reader of `above_reference=True`; filled since the
 2026-09-30 report holds the four 3B L8/L15 cells' evaluations) → rq11
 (`recipe.py`: per benchmark, which format and scoring to evaluate, from rq02's
 per-task table) → `report_figures/make_figures.py` →
 `check_rules.py`.
 Themes: A predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C
-generalisation (rq05–rq07), D benchmark improvement (rq08–rq09, rq12), E past the
+generalisation (rq05–rq07), D benchmark improvement (rq08–rq09, rq12, rq14), E past the
 reference (rq10), F the recommendation (rq11), G checks on the ladder (rq13);
 `analysis/paths.py` is the one map from constant to folder. The canonical
 pool (`analysis/autodoc.CANONICAL_POOL = predictivity`) is the one whose README

@@ -15,6 +15,9 @@ is trained, not the one that was planned when the text was written.
     benchmarks  block in app_03_evaluation.tex: the evaluated benchmarks
                 (configs/tasks.json `auto` group) with their language and
                 task counts on the sweep's trained languages
+    discarded   block in app_03_evaluation.tex: the screened probe tasks
+                dropped at the gate (configs/tasks.json `discarded` group),
+                per benchmark family
     nbenchmarks block in main.tex: the setup counts the prose quotes, written
                 in the same run as the tables they count:
                 \\nbenchmarks   rows of the benchmarks table's multilingual block
@@ -62,22 +65,23 @@ BUILD_DESC = {
     "DCLMP": "DCLM without the edu filter",
     "FWEB": r"FineWeb (crawls $\le$ 2022)",
 }
-LADDER_DESC = {"deep": "deep", "shallow": "shallow", "swiglu": "deep + SwiGLU"}
+LADDER_DESC = {"deep": "deep", "shallow": "shallow", "swiglu": "deep + SwiGLU", "muon": "deep + Muon"}
 
 # Benchmarks of the `auto` group: (name, capability, format, construction).
 # Counts are computed; only these descriptive columns are curated. A group
 # entry missing here is printed under its key.
 BENCH_META = {
     "belebele": ("Belebele", "reading comprehension", "4-way MC", "HT (FLORES)"),
-    "global_piqa": ("Global PIQA", "physical commonsense", "2-way completion", "native"),
+    "global_piqa": ("Global PIQA", "physical commonsense", "2-way completion, 4-way (parallel)",
+                    "native, MT + post-edit (parallel)"),
     "multiblimp": ("MultiBLiMP", "grammatical acceptability", "minimal pairs", "auto (UD, UniMorph)"),
     "include_base_44": ("INCLUDE", "regional knowledge", "4-way MC", "native exams"),
     "include_v2_og": ("INCLUDE v2", "regional knowledge", "4-way completion", "native exams"),
     "include_v2_en": ("INCLUDE v2 (English)", "regional knowledge", "4-way completion", "native, translated to en"),
     "global_mmlu": ("Global-MMLU", "world knowledge", "4-way MC", "HT + community"),
     "hellaswag": ("HellaSwag (Okapi)", "activity commonsense", "4-way completion", "MT"),
-    "arc": ("ARC (Okapi)", "science QA", "4-way MC", "MT"),
-    "arc_mt": ("ARC-Challenge MT", "science QA", "4-way MC", "MT"),
+    "arc": ("ARC (Okapi)", "science QA", "4-way completion", "MT"),
+    "arc_mt": ("ARC-Challenge MT", "science QA", "4-way completion", "MT"),
     "xnli": ("XNLI", "natural language inference", "3-way", "HT"),
     "xstorycloze": ("XStoryCloze", "narrative commonsense", "2-way ending", "HT"),
     "xcopa": ("XCOPA", "causal commonsense", "2-way", "HT"),
@@ -91,8 +95,8 @@ BENCH_META = {
     "blend_sample": ("BLEnD (sample)", "everyday cultural knowledge", "MC", "native"),
     "mmlu": ("MMLU", "world knowledge", "4-way MC", "native"),
     "commonsense_qa": ("CommonsenseQA", "commonsense", "5-way MC", "native"),
-    "openbookqa": ("OpenBookQA", "science QA", "4-way MC", "native"),
-    "mathqa": ("MathQA", "math word problems", "5-way MC", "native"),
+    "openbookqa": ("OpenBookQA", "science QA", "4-way completion", "native"),
+    "mathqa": ("MathQA", "math word problems", "5-way completion", "native"),
     "toxigen": ("ToxiGen", "toxicity detection", "2-way", "auto (LLM-generated)"),
     "bbh_mcq": ("BBH (letter subtasks)", "reasoning", "letter MC", "native"),
     "bbh_cloze": ("BBH (two-way subtasks)", "reasoning", "2-way completion", "native"),
@@ -195,7 +199,9 @@ def grid_table(runs: list[dict], done: int, missing: list[str]) -> str:
     status = ("" if done < 0 else
               f" All {total} runs had finished at the ladder-report snapshot." if not missing else
               f" At the ladder-report snapshot, {done} of the {total} runs had finished. "
-              f"The unfinished {'run is' if len(missing) == 1 else 'runs are'} {esc(and_list(missing))}.")
+              f"The unfinished {'run is' if len(missing) == 1 else 'runs are'} "
+              # the run names say L<k> for the language setting; the paper calls it K
+              f"{esc(and_list([re.sub(r'(?<=-)L(?=[0-9])', 'K', m) for m in missing]))}.")
     return "\n".join([
         r"\begin{table*}[t]", r"\centering", r"\small", r"\setlength{\tabcolsep}{3.5pt}",
         r"\resizebox{\linewidth}{!}{",
@@ -362,6 +368,28 @@ def benchmark_table() -> tuple[str, dict]:
     return "\n".join(lines), stats
 
 
+def discarded_table() -> str:
+    """The `discarded` group per family: probe tasks not above chance at 1B nor
+    at 1.7B (the rule-1 gate on the cells that trained the language), so they
+    left `auto_probe` (plan/todos/probe-candidates-2026-10-08.md)."""
+    cfg = json.loads((REPO / "configs" / "tasks.json").read_text())
+    tasks, by = cfg["tasks"], {}
+    for t in cfg["groups"]["discarded"]:
+        by.setdefault(tasks[t]["benchmark"], []).append(canon(tasks[t]["language"]))
+    lines = [r"\begin{table}[t]", r"\centering", r"\small", r"\resizebox{\columnwidth}{!}{", r"\begin{tabular}{llrl}", r"\toprule",
+             r"\textbf{Benchmark} & \textbf{Languages} & \textbf{Tasks} & \textbf{Reason} \\", r"\midrule"]
+    for b, langs in sorted(by.items(), key=lambda kv: (-len(kv[1]), kv[0])):
+        name = re.sub(r" \(.*\)$", "", cfg["benchmarks"].get(b, {}).get("name", b))   # "C-Eval (Chinese)"
+        lines.append(f"{esc(name)} & {fmt_list(sorted(set(langs)))} & {len(langs)} & not above chance at 1B and 1.7B \\\\")
+    lines += [r"\midrule", f"Total & & {sum(map(len, by.values()))} & \\\\", r"\bottomrule", r"\end{tabular}", "}",
+              r"\caption{Screened benchmark tasks that we discarded. A task is discarded when fewer than half of "
+              r"the runs that trained its language have a one-sided 95\% Wilson lower bound above chance, both at "
+              r"1B and at 1.7B. Tasks counts the discarded tasks of the benchmark. Its other tasks stay in the "
+              r"screen. Languages are ISO 639-1 codes.}",
+              r"\label{tab:discarded-benchmarks}", r"\end{table}"]
+    return "\n".join(lines)
+
+
 # --- languages --------------------------------------------------------------
 
 def languages_table() -> None:
@@ -402,11 +430,13 @@ def languages_table() -> None:
     rows = [r[:7] for r in rows]
 
     def tab(part):
-        lines = [r"\begin{tabular}{llllrrr}", r"\toprule",
+        # max width: a long language name must not push the right half into the margin;
+        # [t] puts the baseline on the top row, so the two halves align at their tops
+        lines = [r"\begin{adjustbox}{max width=\linewidth}", r"\begin{tabular}[t]{llllrrr}", r"\toprule",
                  r"Subset & Language & Script & Family & $K_A$ & $K_B$ & Fam. \\", r"\midrule"]
         for r in part:
             lines.append(" & ".join(esc(x) for x in r) + r" \\")
-        lines += [r"\bottomrule", r"\end{tabular}"]
+        lines += [r"\bottomrule", r"\end{tabular}", r"\end{adjustbox}"]
         return "\n".join(lines)
 
     c_builds = "".join(
@@ -415,7 +445,6 @@ def languages_table() -> None:
     half = (len(rows) + 1) // 2
     n_val = sum(r[4] == "val" for r in rows)
     body = "\n".join([
-        f"% Generated by documents/paper/figures/{SCRIPT} -- do not edit.",
         r"\begin{table*}[p]", r"\centering", r"\tiny", r"\setlength{\tabcolsep}{2.5pt}",
         r"\begin{minipage}[t]{0.49\textwidth}\centering", tab(rows[:half]), r"\end{minipage}\hfill",
         r"\begin{minipage}[t]{0.49\textwidth}\centering", tab(rows[half:]), r"\end{minipage}",
@@ -460,6 +489,7 @@ def main():
     replace_block(SECTIONS / "app_01_model_ladder.tex", "ladder", ladder_table(runs))
     body, stats = benchmark_table()
     replace_block(SECTIONS / "app_03_evaluation.tex", "benchmarks", body)
+    replace_block(SECTIONS / "app_03_evaluation.tex", "discarded", discarded_table())
     # written in the same run as the tables they count, so text and tables cannot disagree
     per_K = tasks_per_K()
     if unnamed := sorted(set(per_K) - set(K_WORDS)):

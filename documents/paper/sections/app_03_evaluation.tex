@@ -25,14 +25,14 @@ We concatenate validation documents without end-of-document separators. We score
 \midrule
 \multicolumn{7}{l}{\textit{multilingual}} \\
 Belebele & reading comprehension & 4-way MC & HT (FLORES) & 94 & 49 & 59 \\
-Global PIQA & physical commonsense & 2-way completion & native & 77 & 48 & 65 \\
+Global PIQA & physical commonsense & 2-way completion, 4-way (parallel) & native, MT + post-edit (parallel) & 77 & 48 & 65 \\
 MultiBLiMP & grammatical acceptability & minimal pairs & auto (UD, UniMorph) & 57 & 34 & 34 \\
 INCLUDE & regional knowledge & 4-way MC & native exams & 43 & 36 & 36 \\
 INCLUDE v2 & regional knowledge & 4-way completion & native exams & 42 & 42 & 77 \\
 Global-MMLU & world knowledge & 4-way MC & HT + community & 37 & 29 & 29 \\
 HellaSwag (Okapi) & activity commonsense & 4-way completion & MT & 31 & 26 & 26 \\
-ARC (Okapi) & science QA & 4-way MC & MT & 32 & 27 & 28 \\
-ARC-Challenge MT & science QA & 4-way MC & MT & 11 & 11 & 11 \\
+ARC (Okapi) & science QA & 4-way completion & MT & 32 & 27 & 28 \\
+ARC-Challenge MT & science QA & 4-way completion & MT & 11 & 11 & 11 \\
 XNLI & natural language inference & 3-way & HT & 18 & 15 & 15 \\
 XStoryCloze & narrative commonsense & 2-way ending & HT & 13 & 8 & 8 \\
 XCOPA & causal commonsense & 2-way & HT & 11 & 8 & 8 \\
@@ -49,8 +49,8 @@ CulturalBench (easy) & cultural knowledge & 4-way MC & native (English) & 8 & 8 
 CulturalBench (hard) & cultural knowledge & 2-way (true/false) & native (English) & 8 & 8 & 19 \\
 MMLU & world knowledge & 4-way MC & native & 1 & 1 & 1 \\
 CommonsenseQA & commonsense & 5-way MC & native & 1 & 1 & 1 \\
-OpenBookQA & science QA & 4-way MC & native & 1 & 1 & 1 \\
-MathQA & math word problems & 5-way MC & native & 1 & 1 & 1 \\
+OpenBookQA & science QA & 4-way completion & native & 1 & 1 & 1 \\
+MathQA & math word problems & 5-way completion & native & 1 & 1 & 1 \\
 ToxiGen & toxicity detection & 2-way & auto (LLM-generated) & 1 & 1 & 1 \\
 BBH (letter subtasks) & reasoning & letter MC & native & 1 & 1 & 17 \\
 BBH (two-way subtasks) & reasoning & 2-way completion & native & 1 & 1 & 6 \\
@@ -78,10 +78,40 @@ Total & & & & & 50 & 846 \\
 \end{table*}
 % END generated: benchmarks
 
-\textbf{Task selection.} We select the registered tasks whose language is in the training mixture. Task counts can exceed family counts. For the resource-ranked lists, the number of tasks grows with $K$: \ntasksKone at $K=1$, \ntasksKtwo at $K=2$, \ntasksKeight at $K=8$, \ntasksKfifteen at $K=15$, \ntasksKthirty at $K=30$, and \ntasksKfifty at $K=50$. These counts cover the whole evaluated group of Table~\ref{tab:benchmark-families}, that is, the multilingual families, the reformulated variants of the letter-format families (\S\ref{subsec:rq1}) and the English-text benchmarks. Every trained language is covered by at least one family. For the seed-1904 deep scheme-A ladder, we also run every task in every language, independent of the training mixture. This lets us read cross-lingual transfer on the benchmarks as well as on bits-per-byte. 
+Table~\ref{tab:discarded-benchmarks} lists the screened benchmark tasks that we discarded because they stayed at chance at both 1B and 1.7B.
+
+% BEGIN generated: discarded (make_appendix_tables.py)
+\begin{table}[t]
+\centering
+\small
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{llrl}
+\toprule
+\textbf{Benchmark} & \textbf{Languages} & \textbf{Tasks} & \textbf{Reason} \\
+\midrule
+C-Eval & zh & 51 & not above chance at 1B and 1.7B \\
+ZhoBLiMP & zh & 10 & not above chance at 1B and 1.7B \\
+NorEval & no & 9 & not above chance at 1B and 1.7B \\
+TurkishMMLU & tr & 9 & not above chance at 1B and 1.7B \\
+BLiMP-NL & nl & 8 & not above chance at 1B and 1.7B \\
+HAE-RAE Bench & ko & 5 & not above chance at 1B and 1.7B \\
+Bangla benchmarks & bn & 3 & not above chance at 1B and 1.7B \\
+TurBLiMP & tr & 3 & not above chance at 1B and 1.7B \\
+EVALITA-LLM & it & 2 & not above chance at 1B and 1.7B \\
+\midrule
+Total & & 100 & \\
+\bottomrule
+\end{tabular}
+}
+\caption{Screened benchmark tasks that we discarded. A task is discarded when fewer than half of the runs that trained its language have a one-sided 95\% Wilson lower bound above chance, both at 1B and at 1.7B. Tasks counts the discarded tasks of the benchmark. Its other tasks stay in the screen. Languages are ISO 639-1 codes.}
+\label{tab:discarded-benchmarks}
+\end{table}
+% END generated: discarded
+
+\textbf{Task selection.} We select the registered tasks whose language is in the training mixture. Task counts can exceed family counts. For the resource-ranked lists, the number of tasks grows with $K$: \ntasksKone at $K=1$, \ntasksKtwo at $K=2$, \ntasksKeight at $K=8$, \ntasksKfifteen at $K=15$, \ntasksKthirty at $K=30$, and \ntasksKfifty at $K=50$. These counts cover the whole evaluated group of Table~\ref{tab:benchmark-families}, that is, the multilingual families, the reformulated variants of the letter-format families (\S\ref{subsec:rq1}) and the English-text benchmarks. Every trained language is covered by at least one family. For the seed-1904 deep cells of scheme A at every $K$ and of scheme B at $K=8$, we also run every task in every language, independent of the training mixture. This lets us read cross-lingual transfer on the benchmarks as well as on bits-per-byte. 
 
 \textbf{Language coverage.} Every trained language is covered by at least one benchmark family. English is covered by 14 of the multilingual families plus 11 of the English-text benchmarks. Of the 100 languages of Table~\ref{tab:app-languages}, eighteen have exactly one family and fourteen have two. The languages with a single family are covered by Belebele (12), MultiBLiMP (4) or Global PIQA (2) alone. For those languages, the per-language benchmark read rests on one task. Counting tasks instead of families, a cell is evaluated on \ntasksKone tasks at $K=1$, \ntasksKtwo at $K=2$, \ntasksKeight at $K=8$, \ntasksKfifteen at $K=15$, \ntasksKthirty at $K=30$ and \ntasksKfifty at $K=50$, including the reformulated variants and the English-only benchmarks. Two IrokoBench families (AfriXNLI and AfriMMLU) are wired but disabled because of a loading defect in the pinned harness. Enabling them again would add a second or third human-translated family for Amharic, Igbo, Kinyarwanda, Southern Sotho, Xhosa and Zulu.
 
 
-\textbf{Harness settings.} All benchmarks run through a fork of the LM Evaluation Harness \citep{gao_framework_2021}. We install it from a pinned shared checkout, and each evaluation job records the source commit. We use the vLLM backend \citep{kwon_efficient_2023}, a maximum context of 4,096 tokens, a beginning-of-sequence token before every prompt, no chat template, and the default prompt and number of in-context examples of each task. We report accuracy for multiple-choice and completion tasks and exact match for the generative ones. We aggregate sub-tasks (for example the MMLU subjects) to their family with the harness's own grouping. Base models at these sizes are at chance on several families. The above-chance threshold of Appendix~\ref{app:chance-threshold} decides, per task and size, whether such a cell enters the analysis.
+\textbf{Harness settings.} All benchmarks run through a fork of the LM Evaluation Harness \citep{gao_framework_2021}. We install it from a pinned shared checkout, and each evaluation job records the source commit. We use the vLLM backend \citep{kwon_efficient_2023}, a maximum context of 4,096 tokens, a beginning-of-sequence token before every prompt, no chat template, and the default prompt and number of in-context examples of each task. We report accuracy for multiple-choice and completion tasks and exact match for the generative ones. The exception is the tasks whose options are answer strings scored as continuations, that is, the cloze-format originals (ARC, HellaSwag, OpenBookQA, MathQA and Global PIQA) and the reformulated variants, which we score with length-normalised accuracy. We aggregate sub-tasks (for example the MMLU subjects) to their family with the harness's own grouping. Base models at these sizes are at chance on several families. The above-chance threshold of Appendix~\ref{app:chance-threshold} decides, per task and size, whether such a cell enters the analysis.
 

@@ -511,9 +511,16 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
     # worker can share, so x EVAL_WORKERS, because eval_minutes divides the
     # count across the workers. Without this the solo top-up job the watcher
     # gives it is 15 min, the kill is not a recorded failure, and it is
-    # resubmitted every pass forever.
+    # resubmitted every pass forever. The 2026-10-08 probe's MMLU-sized
+    # tasks (11-14.5k items: m_mmlu, MMMLU, ArabicMMLU, OALL's Arabic MMLU and
+    # their rf_ twins) weigh six too: global_mmlu_full_* and mmlu, the same
+    # item count, take 183-199 s per worker-task at 1.7B (per_task timings,
+    # seed 1904), not the 41 s the fit assumes.
     TASK_WEIGHT = {"bbq": 36 * EVAL_WORKERS}
-    n_tasks = sum(TASK_WEIGHT.get(t, 6 if t.startswith(("rf_global_mmlu_full", "rfgm_global_mmlu_full")) else 1)
+    n_tasks = sum(TASK_WEIGHT.get(t, 6 if t.startswith((
+        "rf_global_mmlu_full", "rfgm_global_mmlu_full", "m_mmlu_", "rf_m_mmlu_", "mmmlu_", "rf_mmmlu_",
+        "arabicmmlu", "rf_arabicmmlu", "arabic_leaderboard_arabic_mmlu", "rf_arabic_leaderboard_arabic_mmlu",
+        "arabic_mt_mmlu")) else 1)
                   for t in remaining)
     # Prefix-export via the process env rather than --export=ALL,K=V,...:
     # sbatch's --export uses commas as separators BETWEEN vars, so the
@@ -698,10 +705,26 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
               + ("(dry-run: not written)" if args.dry_run else f"details in {path}"))
 
 
-# (scheme, ladder, seed) of the runs evaluated in EVERY language, flag or not:
-# one full size x L ladder showing how each benchmark behaves in languages
-# the model never trained on (eval_progress_all_languages.png).
-ALL_LANGUAGES_RUNS = ("A", "deep", 1904)
+# The runs evaluated in EVERY language, flag or not, showing how each
+# benchmark behaves in languages the model never trained on
+# (eval_progress_all_languages.png): the deep ladder (deep, xielu, ademamix)
+# at seed 1904, in these schemes at these settings (None = every setting).
+# Scheme A is the full size x L ladder; ZH and ES (L2) and B at L8 add the
+# other recipes at a fixed L. AT3, the other ladders and the replicate seeds
+# stay on their trained languages.
+ALL_LANGUAGES_RUNS = {"A": None, "ZH": {2}, "ES": {2}, "B": {8}}
+# For the titles of the figures that draw them.
+ALL_LANGUAGES_LABEL = "deep seed-1904 runs of " + ", ".join(
+    s if Ls is None else f"{s} L{'/'.join(map(str, sorted(Ls)))}"
+    for s, Ls in ALL_LANGUAGES_RUNS.items())
+
+
+def all_languages_run(scheme: str, ladder: str, seed: int, L: int) -> bool:
+    """Whether the watcher evaluates this cell in every language."""
+    if ladder != "deep" or int(seed) != 1904 or scheme not in ALL_LANGUAGES_RUNS:
+        return False
+    settings = ALL_LANGUAGES_RUNS[scheme]
+    return settings is None or int(L) in settings
 
 
 def eval_languages(L: int, scheme: str, all_languages: bool = False):
@@ -736,9 +759,9 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
         due = due[-1:]
     # The cell's task list: every auto benchmark, in the languages this cell
     # trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...), or in all of them
-    # under --all-languages and for the ALL_LANGUAGES_RUNS.
+    # under --all-languages and for the all_languages_run cells.
     langs = eval_languages(c["L"], scheme, args.all_languages
-                           or (scheme, c["ladder"], c["seed"]) == ALL_LANGUAGES_RUNS)
+                           or all_languages_run(scheme, c["ladder"], c["seed"], c["L"]))
     task_list = tasks_for_benchmarks(benchmarks, langs)
     # Convert EVERY saved checkpoint (persist all of them to capstor), but
     # evaluate only the due ones — conversion is the durability step, eval
@@ -833,9 +856,9 @@ def main() -> None:
     # Default: every ladder and every scheme. One watcher covers the whole
     # grid, so the shallow ladder and the non-A schemes cannot quietly fall
     # behind while a deep/A-only watcher runs. The flags narrow it for a
-    # targeted pass: --arch and --activation keep the ladders at that level
-    # (`--arch deep` is the deep and swiglu ladders).
-    for k in ("arch", "activation"):
+    # targeted pass: --arch, --activation and --optimizer keep the ladders at
+    # that level (`--arch deep` is the deep, swiglu and muon ladders).
+    for k in ("arch", "activation", "optimizer"):
         p.add_argument(f"--{k}", default=None,
                        choices=list(dict.fromkeys(v[k] for v in LADDERS.values())),
                        help=f"only the ladders at this {k} (default: every "
@@ -910,7 +933,8 @@ def main() -> None:
     # The pass iterates over these; a flag narrows the default "everything".
     args.ladders = [lad for lad in HYPERPARAMS
                     if args.arch in (None, LADDERS[lad]["arch"])
-                    and args.activation in (None, LADDERS[lad]["activation"])]
+                    and args.activation in (None, LADDERS[lad]["activation"])
+                    and args.optimizer in (None, LADDERS[lad]["optimizer"])]
     args.schemes = [args.scheme] if args.scheme else list(DATA_SCHEMES)
     args.sizes = args.size.split(",") if args.size else EVAL_SIZES
     if bad := set(args.sizes) - set(LADDER):

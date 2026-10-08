@@ -38,6 +38,14 @@ score in the project, in three forms:
 | HF dataset (`multilingual-snr/multilingual-snr-eval-results`) | three parquet splits: `pretraining_custom`, `pretraining_a06`, `reference_hf` | the SNR framework in [`../signal-and-noise/`](../signal-and-noise/) |
 | W&B per-model curves | [`mariagrandury-epflnlp/snr-experiments`](https://wandb.ai/mariagrandury-epflnlp/snr-experiments) | live dashboards, one line per benchmark per model |
 
+**Which metric a task is scored on.** `configs/tasks.json`'s per-task `metric`,
+else `acc` (else `exact_match` for generative tasks); `results_io.flatten` (W&B)
+and `ladder_report._primary` read the same rule. Cloze-format originals — ARC,
+HellaSwag (English and the okapi translations), OpenBookQA, MathQA, Global-PIQA
+cloze — pin `acc_norm` since 2026-10-08, as OLMES/DataDecide score them;
+letter-format MCQ and tasks that emit no `acc_norm` (XCOPA, XStoryCloze) keep
+`acc`. The list and the reasons are in `CLAUDE.md` ("Per-benchmark metric").
+
 The HF dataset is the canonical input to every analysis in
 [`../signal-and-noise/`](../signal-and-noise/): the SNR-variant CSV, the
 benchmark_creation per-family ranking, the AllenAI cross-corpus
@@ -92,7 +100,8 @@ reach the harness through `eval_worker.py --include_path`, which
 wheel is untouched. Re-run the generator after adding a language to any of
 the three families; it is idempotent. The lettered probe families (below)
 get twins from the same script, through an absolute `include:` of the
-original YAML. The second twin, `rfgm_<task>`
+original YAML (since 2026-10-08 also CareQA, OALL Exams and Arabic MMLU,
+ArabicMMLU, m_mmlu, MMMLU and FrenchBench's `fquadv2_bool`). The second twin, `rfgm_<task>`
 (`--set rfgm`, [`tasks/rfgm/`](tasks/rfgm/), also in `auto`), is the
 same item rewritten by Gemini into a statement stem with four short
 continuations: [`scripts/rewrite_items_gemini.py`](scripts/rewrite_items_gemini.py)
@@ -114,7 +123,9 @@ and each set's difference.
 A screening pass over candidate benchmarks at each cell's last checkpoint:
 `auto_evals_cscs.py --group auto_probe --size 600M,1B,1.7B --final-only`.
 A candidate that passes is promoted into `auto`: twenty of the
-twenty-one were on 2026-09-23, all but `bbq`, which left the candidates on 2026-10-01. Two generators feed it, both idempotent and both
+twenty-one were on 2026-09-23, all but `bbq`, which left the candidates on 2026-10-01. The
+2026-10-08 batch (`plan/todos/probe-candidates-2026-10-08.md`) is in the
+same group, so one job per checkpoint runs every missing task. Two generators feed it, both idempotent and both
 registering in `configs/tasks.json`:
 
 - [`scripts/make_cloze_tasks.py`](scripts/make_cloze_tasks.py) turns the
@@ -158,6 +169,11 @@ underneath it. Load every new task through a `TaskManager` before launching;
 results are in, `src/signal-and-noise/analysis/rq00_task_reformulation/probe.sh`
 produces the verdict: the gate per language and original-vs-`rf_` on the
 pairs. A candidate that earns its place is then added to `groups.auto`.
+A task that stays at chance at both 1B and 1.7B goes into
+`groups.discarded` instead, a list of task names that
+`tasks_for_benchmarks` never selects, so no pass schedules it again (100
+tasks of nine benchmarks on 2026-10-08; the paper's Table
+`tab:discarded-benchmarks` is generated from it).
 
 ## How to run
 

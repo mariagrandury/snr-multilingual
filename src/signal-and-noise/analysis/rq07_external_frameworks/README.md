@@ -6,10 +6,10 @@
 > also hold on AllenAI's DataDecide / OLMo corpus, on the English benchmarks
 > both share?
 
-> ⚠️ **Only six English benchmarks overlap, and three survive the gate.** The ladder
-> shares `arc_easy`, `arc_challenge`, `hellaswag`, `csqa` (via `commonsense_qa`),
-> `openbookqa` and MMLU (via the Global-MMLU English split) with DataDecide, and at
-> the 1B rung the above-random gate keeps only `arc_easy`, `arc_challenge` and `hellaswag`.
+> ⚠️ **Only six English benchmarks overlap, and all six survive the gate.** The ladder
+> shares `arc_easy`, `arc_challenge`, `hellaswag`, `csqa` (via the cloze twin `rf_commonsense_qa`),
+> `openbookqa` and MMLU (via the cloze twin `rf_mmlu`) with DataDecide, and at
+> the 1B rung the above-random gate keeps all six.
 >
 > With so small a universe, top-K set overlap is uninformative (any K ≥ N is
 > trivially 1.0), so the evidence is the **correlation of SNR over the shared
@@ -18,8 +18,9 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
-- **On the `predictivity` pool SNR values and rank order cannot be compared across corpora** — variant `aad` (rq04's global best, not selected here), Pearson r of log₁₀(SNR) **0.87**, Spearman ρ **1.00**, over only **3** shared English tasks after the above-random gate — too few for a correlation to mean anything.
-- **The shared universe is the English tasks both corpora evaluate** (ARC, HellaSwag, MMLU via the Global-MMLU English split, PIQA/CSQA/OpenBookQA where run), so the evidence is the SNR *correlation* over that handful, not top-K Jaccard (trivially 1.0 on so small a universe).
+- **On the `predictivity` pool SNR values and rank order agree across corpora** — variant `rel_std` (rq04's global best, not selected here), Pearson r of log₁₀(SNR) **0.81**, Spearman ρ **0.83** over the 6 shared English tasks.
+- **The shared universe is the English tasks both corpora evaluate** (ARC, HellaSwag, OpenBookQA, and MMLU / CSQA through our cloze twins), so the evidence is the SNR *correlation* over that handful, not top-K Jaccard (trivially 1.0 on so small a universe).
+- **Like for like since 2026-10-08:** the same 20 % noise window (5 points at 1B), the same detrended checkpoint noise (rule 4) and the same metric on both sides (`build_allenai_variants.py`); the signal populations still differ (25 pretraining corpora against our design variants).
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -41,37 +42,36 @@ ours is the spread over the language settings and the data scheme (A/B/C ×
 temperature T) at a fixed size. Read a low correlation as a difference in what
 the two model populations vary before reading it as a failure of the SNR definition.
 
-> ⚠️ **Methodological caveat — MMLU aliasing.** Apertus's
-> `global_mmlu_full_en[_<subject>]` rows are aliased to AllenAI's
-> `mmlu[_<subject>]` rows so the comparison can use the MMLU subjects, but
-> **the two are not the same content**: Apertus runs the Cohere-Full
-> translation/post-edit of MMLU (English split), AllenAI runs the original
-> Hendrycks et al. MMLU. Question wording, post-edits, and sample coverage may differ.
+> ⚠️ **Methodological caveat — MMLU aliasing (resolved 2026-10-08).** Until the
+> 2026-10-08 refresh Apertus's `global_mmlu_full_en[_<subject>]` rows were aliased
+> to AllenAI's `mmlu[_<subject>]` rows, and **the two are not the same content**:
+> Apertus ran the Cohere-Full translation/post-edit of MMLU (English split), AllenAI
+> the original Hendrycks et al. MMLU.
 >
-> Plan: re-run the original `mmlu` lm-eval task on the multilingual Apertus
-> checkpoints, then drop the alias and compare like-for-like. MMLU does not clear
-> the gate at our 1B rung today, so the alias does not enter the headline r; see
-> `pretraining/<pool>/agreement.md` for the full caveat.
+> The ladder now evaluates the original MMLU (`cais/mmlu`) and its cloze twin
+> `rf_mmlu`, which is matched to DataDecide's RC `mmlu` and clears the gate at our
+> 1B rung, so the alias is gone and MMLU enters the headline r; see
+> `pretraining/<pool>/agreement.md`.
 
 ## Key figure
 
 ![Ladder SNR against DataDecide SNR on the shared English tasks](pretraining/predictivity/snr_apertus_vs_snr_allenai_paper.png)
 
-Population: pool `predictivity` (seed 1904, every cell and data build at the 1B rung, SwiGLU included) against DataDecide's 1B rung (25 data recipes); SNR variant `aad` (the one the [surrogates analysis](../rq04_surrogates/README.md) ranks first); the 3 shared English tasks that clear the above-random gate (ARC Easy, ARC Challenge, HellaSwag); log₁₀ SNR, each axis on its own scale.
+Population: pool `predictivity` (seed 1904, every cell and data build at the 1B rung, SwiGLU included) against DataDecide's 1B rung (25 data recipes); SNR variant `rel_std` (the one the [surrogates analysis](../rq04_surrogates/README.md) ranks first); the 6 shared English tasks that clear the above-random gate (ARC Easy, ARC Challenge, HellaSwag, MMLU, CommonsenseQA, OpenBookQA); log₁₀ SNR, each axis on its own scale.
 
-**Key finding.** Both corpora rank the three gated shared tasks the same way (ARC Easy > HellaSwag > ARC Challenge; Spearman ρ 1.00, Pearson r of log₁₀ SNR 0.87, p = 0.33), but three points are too few for the agreement to be evidence.
+**Key finding.** Both corpora rank the six gated shared tasks alike (Spearman ρ 0.83, Pearson r of log₁₀ SNR 0.81, p = 0.049). Six points make this indicative, not robust.
 
 **Key findings**
 
-- **Same order, n = 3.** `aad` SNR is 1.09 / 0.87 / 0.52 on our ladder and 9.76 / 5.04 / 4.16 on DataDecide for ARC Easy / HellaSwag / ARC Challenge.
-- **Our SNR is 5.8–9.0× smaller.** DataDecide's `aad` SNR exceeds ours by 9.0× on ARC Easy, 5.8× on HellaSwag and 7.9× on ARC Challenge; the log-scale correlation ignores this offset, so compare orders across corpora, never SNR levels.
-- **The seed pool agrees.** On `predictivity_seeds` (every seed) the same three tasks keep the same order (ρ 1.00, Pearson r 0.84).
-- **Half of DataDecide's shared tasks are gated out on our side.** DataDecide also scores MMLU (5.01), CSQA (3.45) and OpenBookQA (1.69), but none of them clears the above-random gate at our 1B rung, so the top-5 overlap is 3 of 5 (Jaccard 0.60).
+- **Similar order, n = 6.** `rel_std` SNR is 4.09 / 8.18 / 2.97 / 4.94 / 2.64 / 1.78 on our ladder and 15.67 / 15.34 / 12.61 / 13.30 / 9.29 / 4.09 on DataDecide for ARC Easy / HellaSwag / ARC Challenge / MMLU / CSQA / OpenBookQA; both put CSQA and OpenBookQA last, and the top task differs (HellaSwag on ours, ARC Easy on DataDecide).
+- **Our SNR is 1.9–4.2× smaller.** DataDecide's `rel_std` SNR exceeds ours by 3.8× on ARC Easy, 1.9× on HellaSwag, 4.2× on ARC Challenge, 2.7× on MMLU, 3.5× on CSQA and 2.3× on OpenBookQA; the log-scale correlation ignores this offset, so compare orders across corpora, never SNR levels.
+- **The seed pool agrees.** On `predictivity_seeds` (every seed) the six tasks keep the same order on our side (ρ 0.83, Pearson r 0.83).
+- **None of DataDecide's shared tasks is gated out on our side.** MMLU and CSQA (through the cloze twins) and OpenBookQA clear the above-random gate at our 1B rung, so the top-5 overlap is 5 of 5 (Jaccard 1.00).
 
 **Follow-ups**
 
-- The same scatter at 1.7B↔1B, to check whether the order holds at our reference size (`aad` r 0.97 there, see [pearson_r_size_sweep.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/pearson_r_size_sweep.csv)).
-- Bootstrap CIs over the three tasks, to put a number on how little n = 3 constrains r.
+- The same scatter at 1.7B↔1B, to check whether the order holds at our reference size (`rel_std` r 0.79 there, see [pearson_r_size_sweep.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/pearson_r_size_sweep.csv)).
+- Bootstrap CIs over the six tasks, to put a number on how little n = 6 constrains r.
 
 GitHub: [snr_apertus_vs_snr_allenai_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/snr_apertus_vs_snr_allenai_paper.png) · [snr_apertus_vs_snr_allenai_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/snr_apertus_vs_snr_allenai_paper.csv). Every variant and the size sweep: [Results](#results).
 
@@ -82,48 +82,58 @@ GitHub: [snr_apertus_vs_snr_allenai_paper.png](https://github.com/mariagrandury/
   and SNR analysis ([`../rq03_noise_and_snr/`](../rq03_noise_and_snr/)). Each pool
   writes its own cross-corpus output (`pretraining/predictivity/`,
   `pretraining/predictivity_seeds/`).
-- **AllenAI side** (DataDecide ladder, 25 mixes × 5 ckpts at sizes
-  150M / 300M / 750M / 1B): pulled once at build time and run through
+- **AllenAI side** (DataDecide ladder, 25 mixes at seed 6198, sizes
+  150M / 300M / 750M / 1B, every 2,500-step checkpoint of the
+  `datadecide_intermediate` split): run through
   [build_allenai_variants.py](build_allenai_variants.py), which reuses every
   primitive from
   [run_apertus_snr_variants.py](../rq03_noise_and_snr/run_apertus_snr_variants.py)
-  (`per_model_inputs`, `variant_signal_noise_snr`) plus
+  (`per_model_inputs`, `ckpt_noise_columns`, `variant_signal_noise_snr`) plus
   `compute_size_decision_accuracy` from
   [compute_da.py](../rq02_decision_accuracy/compute_da.py) and the 22-aggregator
-  `AGGREGATION_FUNCTIONS` list. The shared driver groups by `model` for the
-  signal pool and by `model_family` (model name minus the size token) for DA — so
-  neither corpus needs a `seed` column to contribute.
-- **Task-name reconciliation.** Apertus ran only the multilingual
-  `global_mmlu_full_en_<subject>` view of MMLU on the full ckpt-series; AllenAI
-  uses the vanilla `mmlu_<subject>` names. We alias
-  `global_mmlu_full_en[_<subj>] → mmlu[_<subj>]` and the parent-task filter
-  collapses the subjects into `mmlu`, so the shared set on the ladder is **6
-  standalone English tasks** (`arc_challenge`, `arc_easy`, `csqa`, `hellaswag`,
-  `mmlu`, `openbookqa`; the 36-sweep also shared `piqa`).
+  `AGGREGATION_FUNCTIONS` list.
+- **Like for like (2026-10-08).** Both sides read the same noise window (the
+  k/20 points in the last 20 % of each run, 5 points at 1B), the same checkpoint
+  noise (the residual SD around a line through the window, RULES.md rule 4; the
+  raw SD sits beside it as `ckpt_noise_raw_<size>`) and the same metric: each
+  DataDecide task is read on the column matching our task's metric, `acc_norm` →
+  `acc_per_char`, `acc` → `acc_raw`, not on DataDecide's own primary metric
+  (`acc_uncond` for ARC-C, OBQA and CSQA). The table until then read the `core`
+  split's last five checkpoints (86.5–100 % of the 1B run) with the raw SD on
+  DataDecide's primary metric. The signal populations still differ: 25
+  pretraining corpora against our design variants, whose English spread is 4–7×
+  smaller (`plan/signal-audit-2026-10-08.md`, F1).
+- **Task-name reconciliation.** DataDecide's RC (cloze) MMLU and CSQA are matched
+  to our cloze twins `rf_mmlu` and `rf_commonsense_qa`; our letter-format `mmlu` and
+  `commonsense_qa` are named `mmlu:mc` / `csqa:mc`, DataDecide's MC format, which
+  its checkpoint series does not carry, so they are not shared. The
+  `global_mmlu_full_en → mmlu` alias of the 36-sweep is gone. The shared set on the
+  ladder is the English tasks both evaluate (`arc_challenge`, `arc_easy`, `csqa`,
+  `hellaswag`, `mmlu`, `openbookqa`).
 - **Correlation axis.** `log10(snr_<V>_<size>)` on each corpus, Pearson r (values)
   and Spearman ρ (rank) over the shared tasks that clear the above-random gate on
-  our side (3 at 600M, 1B and 1.7B; 2 at 175M and 350M, too few for a correlation).
+  our side (6 at 600M, 1B and 1.7B; 5 at 175M and 350M, where ARC Challenge is at chance).
 - **Reference HF models skipped.** SmolLM3-3B / Olmo-3-7B / Apertus-8B each have a
   single training mix, so the data-mix-spread term in every SNR variant is
   undefined; including them would force the comparison onto raw `primary_score` (a
   capability number), conflating "task is reliable" with "task is easy".
 
 **Which variant families transfer across corpora** — Pearson r of log₁₀ SNR at
-1B↔1B over the 3 gated shared tasks, `predictivity` / `predictivity_seeds`
-(from `pearson_r_per_variant.csv`; every r rests on n = 3):
+1B↔1B over the 6 gated shared tasks, `predictivity` / `predictivity_seeds`
+(from `pearson_r_per_variant.csv`; every r rests on n = 6):
 
 | family | members (r, seed 1904 / all seeds) | reading |
 |---|---|---|
-| **dispersion** | `dispersion` 0.79/0.75, `range` 0.79/0.75, `mpd` 0.96/0.97, `aad` 0.87/0.84, `rms_deviation` 0.99/1.00, `quartile_deviation` 0.79/0.53, `dist_std` 0.99/0.98, `mpsd` 0.98/1.00 | positive in both pools (0.53–1.00) |
-| **discrepancy** | `discrepancy` 0.83/0.83, `star_discrepancy` 0.92/0.93, `star_discrepancy_shifted` 0.84/0.85, `dispersion_shifted` 0.94/0.96, `rel_star_discrepancy` 0.79/0.68, `gini` −0.82/−0.85 | positive except `gini` |
-| **relative-spread** | `rel_std` −0.68/−0.99, `rel_mpd` −0.91/−0.98, `rel_mpsd` 0.31/0.09, `rel_dispersion` −0.04/−0.11, `iqr` 0.97/−0.95 | does not transfer (incl. AllenAI's default `rel_std`); `iqr` flips sign between pools |
-| **depth** | `tukey` 0.62/0.92, `projection` 0.75/0.85 | positive, pool-dependent |
-| **robust** | `mad` 0.63/0.59 | positive |
+| **dispersion** | `dispersion` 0.87/0.89, `range` 0.87/0.89, `mpd` 0.83/0.84, `aad` 0.78/0.80, `rms_deviation` 0.85/0.86, `quartile_deviation` 0.62/0.55, `dist_std` 0.88/0.88, `mpsd` 0.75/0.77 | positive in both pools (0.55–0.89) |
+| **discrepancy** | `discrepancy` 0.86/0.87, `star_discrepancy` 0.90/0.91, `star_discrepancy_shifted` 0.70/0.70, `dispersion_shifted` 0.91/0.92, `rel_star_discrepancy` 0.94/0.95, `gini` 0.47/0.47 | positive, `gini` weakest |
+| **relative-spread** | `rel_std` 0.81/0.83, `rel_mpd` 0.76/0.78, `rel_mpsd` 0.65/0.68, `rel_dispersion` 0.86/0.89, `iqr` 0.51/0.41 | transfers (incl. AllenAI's default `rel_std`); `iqr` weakest, same sign in both pools |
+| **depth** | `tukey` 0.68/0.81, `projection` 0.85/0.85 | positive, `tukey` pool-dependent |
+| **robust** | `mad` 0.81/0.76 | positive |
 
-**Enlarging the shared universe.** The 6-task overlap (3 after the gate; 7 on the
-36-sweep) is the binding constraint: 235 of DataDecide's 241 task rows (subjects
-and formats counted separately, `task_overlap.csv`) are not in the shared set, and
-57 of them are MMLU subject rows that the ladder has only as the collapsed `mmlu` parent.
+**Enlarging the shared universe.** The 6-task overlap (all 6 after the gate; 7 on the
+36-sweep) is the binding constraint: 4 of the 10 DataDecide task rows of the
+`datadecide_intermediate` split (`task_overlap.csv`) are not in the shared set
+(`boolq`, `piqa`, `socialiqa`, `winogrande`).
 Highest-yield additions, by category:
 
 | category | missing | how to add |
@@ -143,7 +153,7 @@ scoreable by a sub-2B model): `arc_easy`, `arc_challenge`, `hellaswag`, `mmlu`
 (the English original, which removes the Global-MMLU aliasing caveat), `piqa`,
 `openbookqa`, `commonsense_qa` (DataDecide `csqa`), `social_iqa` (`socialiqa`),
 `winogrande`, `boolq`, `medmcqa`. That is 11 shared task families (plus the 57
-MMLU subjects) against the 3 that clear the gate today.
+MMLU subjects) against the 6 that clear the gate today.
 
 DataDecide's generative and code tasks
 (`gsm8k`, `minerva_*`, `drop`, `squad`, `triviaqa`, `jeopardy`, `mbpp`,
@@ -154,7 +164,8 @@ Not worth adding: `paloma_*` (perplexity, custom harness), `multitask_*` /
 `custom_loss_*` (aggregates / loss probes), `copycolors:mc` (niche).
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-10-06 04:26** (full refresh, commit `b316f53b`).
+**2026-10-08 12:06** (regenerated locally: acc_norm on the cloze-format originals)
+and the outputs of the 2026-10-08 refresh (detrended checkpoint noise).
 
 <!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results
@@ -165,15 +176,15 @@ Cross-corpus agreement by pool (headline = `predictivity`). Regenerate with `pyt
 
 | pool | variant (from rq04) | Pearson r | Spearman ρ | n_shared |
 |---|---|---|---|---|
-| `predictivity` (grid, seed 1904) | `aad` | 0.87 | 1.00 | 3 |
-| `predictivity_seeds` (all seeds) | `aad` | 0.84 | 1.00 | 3 |
+| `predictivity` (grid, seed 1904) | `rel_std` | 0.81 | 0.83 | 6 |
+| `predictivity_seeds` (all seeds) | `rel_std` | 0.83 | 0.83 | 6 |
 
-![Ladder vs AllenAI SNR — rq04's variant](pretraining/predictivity/snr_apertus_vs_snr_allenai_aad.png)
+![Ladder vs AllenAI SNR — rq04's variant](pretraining/predictivity/snr_apertus_vs_snr_allenai_rel_std.png)
 
 ![Ladder vs AllenAI SNR across variants](pretraining/predictivity/snr_apertus_vs_snr_allenai_grid.png)
 <!-- END auto:results -->
 
-[snr_apertus_vs_snr_allenai_aad.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/snr_apertus_vs_snr_allenai_aad.png) ·
+[snr_apertus_vs_snr_allenai_rel_std.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/snr_apertus_vs_snr_allenai_rel_std.png) ·
 [snr_apertus_vs_snr_allenai_grid.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/snr_apertus_vs_snr_allenai_grid.png) ·
 [pearson_r_per_variant.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/pearson_r_per_variant.csv) ·
 [shared_task_agreement.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/shared_task_agreement.csv) ·
@@ -184,23 +195,23 @@ Population: pools `predictivity` (seed 1904) and `predictivity_seeds` (every see
 
 **Key findings**
 
-- **No variant is significant at 1B↔1B on seed 1904.** Pearson r ranges from −0.91 (`rel_mpd`) to 0.99 (`dist_std`, p = 0.07), and 17 of the 22 variants have r ≥ 0.6.
-- **The seed pool moves individual variants a lot.** On `predictivity_seeds`, `mpsd` (r 1.00, p = 0.01) and `rms_deviation` (r 1.00, p = 0.04) pass p < 0.05, while `iqr` flips from 0.97 to −0.95.
-- **Relative-spread variants do not transfer.** AllenAI's default `rel_std` has r −0.68 (seed 1904) and −0.99 (all seeds) at 1B↔1B, against 0.84–0.87 for `aad`.
-- **The correlation exists only from 600M up.** At 175M↔150M and 350M↔300M only 2 shared tasks clear the gate, so r is undefined; `aad` has r 0.94 on seed 1904 (0.99 on every seed) at 600M↔750M, and 0.97 at the unmatched 1.7B↔1B.
-- **Three points make r unstable across sizes.** `rel_std` goes from −0.68 at 1B↔1B to 1.00 at 1.7B↔1B, each over three tasks, so read any single variant's r as indicative only.
+- **13 of the 22 variants are significant at 1B↔1B on seed 1904, on six points.** Pearson r ranges from 0.47 (`gini`) to 0.94 (`rel_star_discrepancy`, p = 0.005), and 20 of the 22 variants have r ≥ 0.6.
+- **The seed pool moves individual variants little.** On `predictivity_seeds` 13 variants again pass p < 0.05 (`tukey` joins at r 0.81, `mad` drops to p = 0.08), no r moves by more than 0.14, and `iqr` keeps its sign (0.51 → 0.41).
+- **Relative-spread variants transfer.** AllenAI's default `rel_std` has r 0.81 (seed 1904) and 0.83 (all seeds) at 1B↔1B, against 0.78–0.80 for `aad`.
+- **The correlation is defined at every size pair.** At 175M↔150M and 350M↔300M 5 shared tasks clear the gate (ARC Challenge is at chance); `rel_std` has r 0.04 and 0.48 there, 0.59 on seed 1904 (0.59 on every seed) at 600M↔750M, and 0.79 at the unmatched 1.7B↔1B.
+- **Five or six points make r unstable across sizes.** `rel_std` spans 0.04–0.81 over the five size pairs and `rel_mpd` −0.02–0.76, while `rel_star_discrepancy` stays at 0.93–0.97, so read any single variant's r as indicative only.
 
 **Follow-ups**
 
-- Bootstrap or leave-one-task-out r per variant, to separate stable variants from those three points happen to favour.
-- The size sweep as a figure (r against size pair, one line per family), once more shared tasks clear the gate.
+- Bootstrap or leave-one-task-out r per variant, to separate stable variants from those six points happen to favour.
+- The size sweep as a figure (r against size pair, one line per family), now that five or six shared tasks clear the gate at every size pair.
 
 ## TODO
 
 - [ ] Add `mmlu_pro` / BBH to widen the 6-task shared universe.
 - [ ] Bootstrap CIs on the cross-corpus Pearson r and Spearman ρ.
-- [ ] Re-run the original `mmlu` lm-eval task on Apertus and drop the MMLU alias
-      for a like-for-like comparison.
+- [x] Re-run the original `mmlu` lm-eval task on Apertus and drop the MMLU alias
+      for a like-for-like comparison (done 2026-10-08: `rf_mmlu` against DataDecide's RC `mmlu`).
 
 ## Extensions from other sweeps
 
@@ -211,7 +222,7 @@ list) or from the **external tier** (`all/external`: the public and reference
 models, 270M–70B, cross-model dispersion with no mixture axis). Its harness,
 task set and reference differ from the ladder's, and its shared universe with
 DataDecide is the 7 standalone English tasks (the ladder's `auto` list shares
-3 after the gate), so its correlations are a replication on a different
+6 after the gate), so its correlations are a replication on a different
 population, never rows of the ladder's table.
 
 ## External model-set tier (`all/external`, 36-sweep)

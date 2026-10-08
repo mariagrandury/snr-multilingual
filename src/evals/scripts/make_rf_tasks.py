@@ -16,6 +16,9 @@ The lettered probe families (`auto_probe`, 2026-09-23: mmlu, commonsense_qa,
 cultural_bench_easy) get twins the same way, but through an absolute
 `include:` of the original YAML rather than copied keys -- see
 _INCLUDE_ORIGINAL below for why the copy cannot work for them.
+The 2026-10-08 probe batch adds careqa, french_bench_extra (fquadv2_bool
+only), oall_exams, oall_arabic_mmlu (a group: one twin per leaf plus a group
+YAML), arabicmmlu, m_mmlu and mmmlu, all in auto_probe.
 
 What it writes, idempotently:
   src/evals/tasks/rf/<family>/rf_<task>.yaml   one self-contained harness
@@ -23,9 +26,9 @@ What it writes, idempotently:
         the pinned harness checkout), reachable through eval_worker.py's
         --include_path (evaluate.sbatch passes $HARNESS_INCLUDE_PATH)
   configs/tasks.json                            one entry per rf task
-        (language, benchmark rf_<family>, n_options 4 -- 5 for commonsense_qa --
+        (language, benchmark rf_<family>, n_options 4 unless N_OPTIONS says otherwise,
         metric acc_norm) and the `benchmarks` metadata; the twins enter
-        the `auto` group by hand (the `auto_rf` group was retired 2026-09-23)
+        `auto` or `auto_probe` by hand (the `auto_rf` group was retired 2026-09-23)
 
 Task names carry an `rf_` PREFIX on purpose: tasks_for_benchmarks matches
 `<benchmark>_…`, so a `_rf` suffix would be swept into the original family.
@@ -99,9 +102,43 @@ TEMPLATES = {
         "{{[prompt_option_a, prompt_option_b, prompt_option_c, prompt_option_d]}}",
         "{{answer}}",
     ),
+    # The 2026-10-08 probe batch (group auto_probe).
+    # careqa's `cop` is 1-based; oall_* targets read the `gold` index the
+    # original's own process_docs computes (its `choices` are the letters, so
+    # the twin lists the A-D columns instead); arabicmmlu's columns carry spaces
+    # ("Option 1"), which Jinja cannot name, so ARABICMMLU_UTILS builds rf_* ones.
+    "careqa": ("{{question.strip()}}\nAnswer:", "{{[op1, op2, op3, op4]}}", "{{cop - 1}}"),
+    "french_bench_extra": (      # only french_bench_fquadv2_bool (RF_ONLY)
+        "{{context}}\nQuestion: {{question}}\nD'après le contexte, répondre à la question est",
+        "{{['possible', 'impossible']}}",
+        "{{[False, True].index(is_impossible)}}",
+    ),
+    "oall_exams": ("{{question.strip()}}\nAnswer:", "{{[A, B, C, D]}}", "{{gold}}"),
+    "oall_arabic_mmlu": ("{{question.strip()}}\nAnswer:", "{{[A, B, C, D]}}", "{{gold}}"),
+    "arabicmmlu": ("{{rf_text}}\nAnswer:", "{{rf_choices}}", "rf_gold"),
+    "m_mmlu": (
+        "{{instruction.strip()}}\nAnswer:",
+        "{{[option_a, option_b, option_c, option_d]}}",
+        "{{['A', 'B', 'C', 'D'].index(answer)}}",
+    ),
+    "mmmlu": (
+        "{{Question.strip()}}\nAnswer:",
+        "{{[A, B, C, D]}}",
+        "{{['A', 'B', 'C', 'D'].index(Answer)}}",
+    ),
 }
-# n_options is 4 unless the family says otherwise.
-N_OPTIONS = {"commonsense_qa": 5}
+# n_options is 4 unless the family says otherwise (arabicmmlu: 2-5 per item,
+# the item-weighted effective count measured off the original).
+N_OPTIONS = {"commonsense_qa": 5, "arabicmmlu": 3, "french_bench_extra": 2}
+# Families where only some of the benchmark's tasks are lettered.
+RF_ONLY = {"french_bench_extra": ("french_bench_fquadv2_bool",)}
+# Families whose registered original is a harness GROUP of leaf tasks with no
+# all-subjects config to read instead: one twin per leaf, plus a group YAML
+# `rf_<original>` that aggregates them the way the original group does.
+GROUP_FAMILIES = ("oall_arabic_mmlu",)
+# An `include:`d leaf brings its `tag:` along, and a twin carrying the
+# original's tag would join the original's tag group; give it its own.
+TAG = {"french_bench_extra": "rf_french_bench_tasks", "m_mmlu": "rf_m_mmlu_tasks"}
 
 FORMAT = {
     "mmlu": "cloze reformulation of mmlu: question only, the four options scored as continuations",
@@ -110,6 +147,8 @@ FORMAT = {
     "belebele": "cloze reformulation of belebele: passage + question, the four answers scored as continuations",
     "global_mmlu_full": "cloze reformulation of global_mmlu_full: question only, the four options scored as continuations",
     "include_base_44": "cloze reformulation of include_base_44: question only, the four options scored as continuations",
+    **{f: f"cloze reformulation of {f}: question only (no lettered option list), the options scored as continuations"
+       for f in ("careqa", "french_bench_extra", "oall_exams", "oall_arabic_mmlu", "arabicmmlu", "m_mmlu", "mmmlu")},
 }
 # Tier 2: the items rewritten by Gemini (rewrite_items_gemini.py) into a
 # statement stem with four short continuations, one JSONL per task with
@@ -146,13 +185,17 @@ _Loader.add_constructor("!function", lambda loader, node: node.value)
 # The three original families deliberately keep the copied-keys form: their
 # YAMLs are already evaluated on a thousand-odd checkpoints, and rewriting them
 # would change a measurement that is mid-flight.
-_INCLUDE_ORIGINAL = ("commonsense_qa", "cultural_bench_easy")
+_INCLUDE_ORIGINAL = ("commonsense_qa", "cultural_bench_easy", "careqa", "french_bench_extra",
+                     "oall_exams", "oall_arabic_mmlu", "m_mmlu")
 # `mmlu` is a group of 57 subject tasks, so no leaf YAML declares `task: mmlu`
 # and there is nothing to include -- that is the "no harness YAML declares"
 # exit. The twin reads the dataset's own `all` config, the same items the group
 # aggregates over, as one task.
 _EXPLICIT_SRC = {"mmlu": {"dataset_path": "cais/mmlu", "dataset_name": "all",
-                          "test_split": "test"}}
+                          "test_split": "test"},
+                 # ArabicMMLU's `All` config is the 14,455 items its 40-subject group covers.
+                 "arabicmmlu": {"dataset_path": "MBZUAI/ArabicMMLU", "dataset_name": "All",
+                                "test_split": "test"}}
 
 
 @lru_cache(maxsize=1)
@@ -186,6 +229,9 @@ def source_config(name: str, family: str, harness: Path) -> dict:
     of subject subtasks over one split)."""
     if family in _EXPLICIT_SRC:
         return dict(_EXPLICIT_SRC[family])
+    if family == "mmmlu":    # mmmlu_<xx_yy> is a 57-subject group over one config
+        return {"dataset_path": "openai/MMMLU", "dataset_name": name[len("mmmlu_"):].upper(),
+                "test_split": "test"}
     if family in _INCLUDE_ORIGINAL:
         f = _task_index(harness).get(name)
         if f is None:
@@ -218,6 +264,36 @@ def process_docs(dataset):
                                         for k in FIELDS))
 '''
 FILTERED = ("global_mmlu_full", "include_base_44")
+# The same filter over other column names (CareQA's one None question, the
+# blank options in m_mmlu sk and MMMLU de/ja/zh).
+FILTER_FIELDS = {"careqa": ("question", "op1", "op2", "op3", "op4"),
+                 "m_mmlu": ("instruction", "option_a", "option_b", "option_c", "option_d"),
+                 "mmmlu": ("Question", "A", "B", "C", "D")}
+ARABICMMLU_UTILS = '''"""rf_arabicmmlu: question (+ context) only, the present options as choices (make_rf_tasks.py writes this)."""
+OPTS = ["Option 1", "Option 2", "Option 3", "Option 4", "Option 5"]
+
+
+def process_docs(dataset):
+    def _doc(r):
+        opts = []
+        for k in OPTS:
+            if r[k] is None or not str(r[k]).strip():
+                break
+            opts.append(str(r[k]).strip())
+        q = r["Question"] if not r["Context"] else f"{r['Context']}\\n\\n{r['Question']}"
+        return {"rf_text": q.strip(), "rf_choices": opts, "rf_gold": "ABCDE".index(r["Answer Key"])}
+    return dataset.map(_doc)
+'''
+
+
+def utils_py(family: str) -> str | None:
+    """The utils.py a family dir needs for its `process_docs`, or None."""
+    if family in FILTERED:
+        return UTILS_PY
+    if family in FILTER_FIELDS:
+        return UTILS_PY.replace('FIELDS = ("question", "option_a", "option_b", "option_c", "option_d")',
+                                f"FIELDS = {FILTER_FIELDS[family]!r}")
+    return ARABICMMLU_UTILS if family == "arabicmmlu" else None
 
 # One row of CulturalBench-Easy (Spain) carries prompt_option_d = None. Behind
 # letters that is harmless -- the original scores "A".."D" -- but as a choice
@@ -257,10 +333,12 @@ def rf_yaml(name: str, family: str, src: dict) -> str:
                            for m in ("acc", "acc_norm")],
            "metadata": {"version": 0.0}}
     body = yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=1000)
-    if family in FILTERED:   # a YAML tag safe_dump cannot emit
+    if utils_py(family):   # a YAML tag safe_dump cannot emit
         body += "process_docs: !function utils.process_docs\n"
     if family == "cultural_bench_easy":
         body += f"process_docs: !function utils.process_{name[len(family) + 1:]}\n"
+    if family in TAG:
+        body += f"tag: {TAG[family]}\n"
     return body
 
 
@@ -283,8 +361,8 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("--set", choices=["rf", "rfgm"], default="rf",
                    help="rf: the cloze twins (default); rfgm: the Gemini-rewritten twins")
-    p.add_argument("--family", choices=list(TEMPLATES),
-                   help="register only this family; for rfgm, whose families are rewritten one at a "
+    p.add_argument("--family", choices=list(TEMPLATES), nargs="+",
+                   help="register only these families; for rfgm, whose families are rewritten one at a "
                         "time, so a family still mid-rewrite is not registered with a partial item set")
     p.add_argument("--harness", type=Path, default=HARNESS)
     p.add_argument("--dry-run", action="store_true")
@@ -293,10 +371,11 @@ def main() -> None:
 
     data, before = read_tasks_json(TASKS_JSON)
     tasks = data["tasks"]
-    families = [args.family] if args.family else list(TEMPLATES)
+    families = args.family or list(TEMPLATES)
     originals = [(n, e) for n, e in tasks.items()
                  if e["benchmark"] in families and "pretraining" in e["stages"]
-                 and e["language"] not in ("multi", "??")]
+                 and e["language"] not in ("multi", "??")
+                 and n in RF_ONLY.get(e["benchmark"], (n,))]
     written, missing = 0, []
     for name, e in originals:
         fam = e["benchmark"]
@@ -305,8 +384,19 @@ def main() -> None:
             continue
         twin = f"{pre}_{name}"
         out = out_dir / fam / f"{twin}.yaml"
-        body = (rf_yaml(name, fam, source_config(name, fam, args.harness)) if pre == "rf"
-                else rfgm_yaml(name))
+        if pre == "rf" and fam in GROUP_FAMILIES:
+            leaves = sorted(n for n in _task_index(args.harness)
+                            if n.startswith(name + "_") and not n.endswith("_light"))
+            files = {out_dir / fam / f"rf_{n}.yaml": rf_yaml(n, fam, source_config(n, fam, args.harness))
+                     for n in leaves}
+            files[out_dir / fam / f"_{twin}.yaml"] = yaml.safe_dump(
+                {"group": twin, "task": [f"rf_{n}" for n in leaves],
+                 "aggregate_metric_list": [{"metric": m, "aggregation": "mean", "weight_by_size": True}
+                                           for m in ("acc", "acc_norm")],
+                 "metadata": {"version": 0.0}}, sort_keys=False, allow_unicode=True)
+        else:
+            files = {out: (rf_yaml(name, fam, source_config(name, fam, args.harness)) if pre == "rf"
+                           else rfgm_yaml(name))}
         prev = tasks.get(twin, {})
         tasks[twin] = {"language": e["language"], "benchmark": f"{pre}_{fam}",
                        "stages": ["pretraining"], "n_options": N_OPTIONS.get(fam, 4),
@@ -318,16 +408,17 @@ def main() -> None:
             tasks[twin]["n_items"] = prev["n_items"]
         if not args.dry_run:
             out.parent.mkdir(parents=True, exist_ok=True)
-            if pre == "rf" and fam in FILTERED:
-                (out.parent / "utils.py").write_text(UTILS_PY)
+            if pre == "rf" and utils_py(fam):
+                (out.parent / "utils.py").write_text(utils_py(fam))
             if pre == "rf" and fam == "cultural_bench_easy":
                 slugs = sorted(n[len(fam) + 1:] for n, e2 in originals
                                if e2["benchmark"] == fam)
                 (out.parent / "utils.py").write_text(CB_UTILS % "\n".join(
                     f'process_{g} = _country("{g}")' for g in slugs))
-            if not out.exists() or out.read_text() != body:
-                out.write_text(body)
-                written += 1
+            for f, body in files.items():
+                if not f.exists() or f.read_text() != body:
+                    f.write_text(body)
+                    written += 1
     # No `auto_{pre}` group: those were retired on 2026-09-23 (the twins are
     # listed in `auto` by hand), so writing one here would resurrect it.
     fmt = FORMAT if pre == "rf" else FORMAT_RFGM

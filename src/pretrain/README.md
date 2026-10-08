@@ -79,11 +79,11 @@ walltime to the remaining iters); on Azure resubmitting is the resume.
 | Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, 3B, every size at every setting except 3B at L ∈ {8, 15, 30, 50} only |
 | Language setting L | 1, 2, 8, 15, 30, 50 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
 | Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30} |
-| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}; L8 adds swiglu; L15 adds swiglu; L30 adds swiglu) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B, L50 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1.7B; deep only) · **DCLMP** (L ∈ {1}; deep only) · **FWEB** (L ∈ {1}; deep only) |
-| Ladder (model) | deep (baseline), shallow (arch = shallow), swiglu (activation = swiglu) |
+| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}; L8 adds swiglu + muon; L15 adds swiglu + muon; L30 adds swiglu + muon) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B, L50 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1.7B; deep only) · **DCLMP** (L ∈ {1}; deep only) · **FWEB** (L ∈ {1}; deep only) |
+| Ladder (model) | deep (baseline), shallow (arch = shallow), swiglu (activation = swiglu), muon (optimizer = muon) |
 
 **58 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting every scheme and the ladders each is trained in: **201 runs**.
+Counting every scheme and the ladders each is trained in: **219 runs**.
 
 ![Planned runs per grid cell](./pretrain_progress_plan.png)
 
@@ -94,12 +94,14 @@ Counting every scheme and the ladders each is trained in: **201 runs**.
 
 The intervention levels are suffix-marked in the run name. The model side
 is three axes — `--arch {deep,shallow}`, `--activation {xielu,swiglu}`,
-`--optimizer {ademamix}` — and the trained combinations are the ladders of
+`--optimizer {ademamix,muon}` — and the trained combinations are the ladders of
 `LADDERS` in [`launch_trainings.py`](launch_trainings.py), each named by the
 token its cells carry: `deep` (the baseline: deep, xielu, ademamix),
 `shallow` (`--arch shallow`, width/depth 128, the model-depth intervention)
-and `swiglu` (`--activation swiglu`, the activation intervention on the deep
-model). A combination no ladder trains (`--arch shallow --activation
+`swiglu` (`--activation swiglu`, the activation intervention on the deep
+model) and `muon` (`--optimizer muon`, the optimizer intervention: the deep
+model and LR trained with Muon instead of AdEMAMix, scheme A at L ∈ {8, 15,
+30}). A combination no ladder trains (`--arch shallow --activation
 swiglu`) is refused. The data axis is `--scheme`, one of the seven entries
 of `DATA_SCHEMES`:
 
@@ -122,7 +124,7 @@ D(N) = 100 × N tokens (5×C); the per-size schedule lives in the
 `predictivity` block of the hyperparams files.
 
 Run name = Slurm job name = Azure display name = checkpoint dir = W&B run
-name: `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu>-seed<seed>`
+name: `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu|muon>-seed<seed>`
 (the last token is the ladder). Runs log to
 W&B under `mariagrandury-epflnlp/msnr` — the entity is a hardcoded constant
 (`megatron_args.sh`) and the project comes from
@@ -183,7 +185,7 @@ launcher — the core design):
 | --- | -------- |
 | [`azure/`](azure/) | Everything only Azure needs (guide: [`azure/README.md`](azure/README.md)): [`env.sh`](azure/env.sh) (names — edit once, `source azure/env.sh` before any az command), [`setup.sh`](azure/setup.sh) (one-time workspace/compute setup, consumes the `compute-*.yml` / `environment-*.yml` specs), [`get_megatron.sh`](azure/get_megatron.sh) (pinned Megatron checkout), [`jobs/`](azure/jobs/) (AML job specs: `pretrain.yml`, `smoke.yml`, `convert.yml`, `eval.yml`), [`convert.sh`](azure/convert.sh) / [`eval.sh`](azure/eval.sh) (job entrypoints), [`launch_evals.py`](azure/launch_evals.py) (eval launcher). |
 | [`data/`](data/) | Data-mixture pipeline: [`create_data_mixture.py`](data/create_data_mixture.py) (tokenize-and-blend worker), [`build_data_mixtures.py`](data/build_data_mixtures.py) (per-sweep driver), [`language_sets_scheme{A,B,ZH,ES}.json`](data/language_sets_schemeA.json) (the nested language lists; AT3 reuses A's), [`launch_builds.sh`](data/launch_builds.sh) + [`submit_build_one.sh`](data/submit_build_one.sh) (one idempotent self-chaining Slurm job per (scheme, setting) mixture, fanned out from `DATA_SCHEMES`), [`stage_to_iopsstor.sh`](data/stage_to_iopsstor.sh) (capstor master → iopsstor training stage), [`data_progress.py`](data/data_progress.py) (per-language token coverage of every mixture, as a heatmap), [`build_status.sh`](data/build_status.sh) (is each build done, running or stalled — and the one sbatch to resume a dead chain). |
-| [`hyperparams/`](hyperparams/) | The reviewed ladders, one file each: [`hyperparams_deep.json`](hyperparams/hyperparams_deep.json) (baseline) / [`hyperparams_shallow.json`](hyperparams/hyperparams_shallow.json) (depth variant) / [`hyperparams_swiglu.json`](hyperparams/hyperparams_swiglu.json) (activation variant, deep's shape), each with the per-size `predictivity` schedule block; their generators and shared helpers. |
+| [`hyperparams/`](hyperparams/) | The reviewed ladders, one file each: [`hyperparams_deep.json`](hyperparams/hyperparams_deep.json) (baseline) / [`hyperparams_shallow.json`](hyperparams/hyperparams_shallow.json) (depth variant) / [`hyperparams_swiglu.json`](hyperparams/hyperparams_swiglu.json) (activation variant, deep's shape) / [`hyperparams_muon.json`](hyperparams/hyperparams_muon.json) (optimizer variant, deep's configs + the Muon update scale), each with the per-size `predictivity` schedule block; their generators and shared helpers. |
 | [`conversion/`](conversion/) | CSCS Megatron → HF conversion ([`convert-snr.sh`](conversion/convert-snr.sh)) and HF-Hub push ([`push-snr.py`](conversion/push-snr.py)). |
 
 Plus [`env.toml`](env.toml) (pyxis container env file, CSCS),
@@ -309,6 +311,7 @@ Intervention axes and filters compose:
 ```bash
 python launch_trainings.py cscs --arch shallow         # the depth intervention
 python launch_trainings.py cscs --activation swiglu    # the activation one (L 8/15/30)
+python launch_trainings.py cscs --optimizer muon       # the optimizer one (L 8/15/30)
 python launch_trainings.py cscs --scheme B --langs 8   # diversity-first lists
 python launch_trainings.py cscs --scheme AT3           # T=3: L15, L30 and L50
 python launch_trainings.py cscs --scheme ZH            # L2 with Chinese
@@ -392,13 +395,14 @@ by design.
   (`sinfo -p normal`): jobs queued against a down partition sit on
   `PartitionDown` and the launcher counts them as in flight.
 - **Re-apply the patches after any fresh clone.** A scratch cleaning sweep can
-  wipe the checkout, and a re-clone reverts all three fixes — then **every
+  wipe the checkout, and a re-clone reverts every fix — then **every
   resume** dies in `get_reformulation_metadata` with `AttributeError:
   'Metadata' object has no attribute 'mcore_data'` (our checkpoints predate
   `mcore_data`; the patch synthesizes the reformulation metadata from the saved
   tensor sizes), a preemption stops checkpointing on SIGTERM (CLAUDE.md #4),
   and the HF saver silently drops every swiglu `gate_proj` again (CLAUDE.md
-  #14). Copy the tracked, patched files over the fork's:
+  #14), and a muon cell dies at argument parsing (`--optimizer muon` is the
+  port's). Copy the tracked, patched files over the fork's:
   ```bash
   cp patches/dist_checkpointing_strategies_torch.py \
      /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/megatron/core/dist_checkpointing/strategies/torch.py
@@ -406,6 +410,11 @@ by design.
      /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/megatron/training/dist_signal_handler.py
   cp patches/tools_checkpoint_saver_swissai_hf.py \
      /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/tools/checkpoint/saver_swissai_hf.py
+  M=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/megatron
+  cp patches/optimizer_muon.py $M/core/optimizer/muon.py
+  cp patches/optimizer_optimizer_config.py $M/core/optimizer/optimizer_config.py
+  cp patches/training_arguments.py $M/training/arguments.py
+  cp patches/training_training.py $M/training/training.py
   ```
 - **Train off the iopsstor copy of the data, not the capstor master.** Megatron
   memmaps the `.bin` files and reads them shuffled (random access): capstor is
@@ -483,7 +492,7 @@ regardless of variant:
   at (size, L), across seeds, ladders, every scheme, tokenizers.
 - **`pretrain_progress_detailed.png`** — one row of binary (yellow 0 /
   blue 1) heatmaps per transformation: SEED (28 / 64 / 313 / 1797 / 1904),
-  LADDER (deep / shallow / swiglu), DATA (A / AT3 / B / ZH / ES), TOKENIZER (v1 for
+  LADDER (deep / shallow / swiglu / muon), DATA (A / AT3 / B / ZH / ES), TOKENIZER (v1 for
   now). Cells a factor value was never planned at — a scheme's undefined
   settings, a seed outside that size's triple — are greyed out rather than
   drawn as permanently missing runs.
@@ -503,9 +512,10 @@ automatically at the end of every `launch_trainings.py cscs` invocation;
 `eval_progress.png` (embedded above) is refreshed by the auto-eval watcher after every pass,
 since that is what changes the state it shows. So is
 [`eval_progress_all_languages.png`](eval_progress_all_languages.png): the
-deep scheme-A seed-1904 runs, which the watcher always evaluates in every
-language (`ALL_LANGUAGES_RUNS` in `auto_evals_cscs.py`), counted against
-that full list. Unlike the two model
+deep (xielu, AdEMAMix) seed-1904 runs of scheme A at every setting, ZH and
+ES at L2 and B at L8, which the watcher always evaluates in every language
+(`all_languages_run` in `auto_evals_cscs.py`), counted against that full
+list. Unlike the two model
 heatmaps it counts only runs the grid names — a run on disk outside the grid
 is work the watcher will never do, and is reported on stderr instead of
 painting its cell as permanently under-evaluated.

@@ -13,8 +13,8 @@ and is reported next to every ρ. Benchmarks and the per-language BPB are two
 populations; `bpb_macro` and `train_loss` are in neither (rule 7).
 
     rq3_surrogates.csv        ρ, p and n per (proxy size, kind, metric)
-    rq3_surrogates.png/.pdf
-    rq3_surrogates_paper.png/.svg/.csv   the same for the paper: bare (rule 18), no title or caption
+    rq3_surrogates.png
+    rq3_surrogates_paper.png/.csv   the same for the paper: bare (rule 18), no title or caption
 
     python analysis/rq04_surrogates/analyze.py --pool predictivity
     python analysis/rq04_surrogates/analyze.py --paper    # the _paper figure alone, from the CSV

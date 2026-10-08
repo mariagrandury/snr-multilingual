@@ -81,12 +81,15 @@ build_megatron_cmd() {
 		*) echo "megatron_args.sh: unknown ACTIVATION '$ACTIVATION'" >&2; return 1 ;;
 	esac
 	# The optimizer is a LADDERS axis too, and launch_trainings.py emits
-	# OPTIMIZER for a ladder that changes it — but only AdEMAMix is wired here
-	# (TRAINING_ARGS, and its betas and warmups below). Refuse anything else
-	# rather than train AdEMAMix under another ladder's name.
+	# OPTIMIZER for a ladder that changes it. ademamix is every trained cell
+	# (its betas and warmups below). muon is the upstream-Megatron port
+	# (patches/optimizer_muon.py, upstream defaults): Muon on the 2D hidden
+	# weights, AdamW with the adam betas below on embeddings/output/norms; it
+	# has no distributed-optimizer path in this fork (DISTRIBUTED_ARGS). Refuse
+	# anything else rather than train AdEMAMix under another ladder's name.
 	case "${OPTIMIZER:-ademamix}" in
-		ademamix) ;;
-		*) echo "megatron_args.sh: OPTIMIZER '$OPTIMIZER' is not wired (ademamix only)" >&2; return 1 ;;
+		ademamix|muon) ;;
+		*) echo "megatron_args.sh: OPTIMIZER '$OPTIMIZER' is not wired (ademamix|muon)" >&2; return 1 ;;
 	esac
 
 	LOGGING_ARGS=(
@@ -132,11 +135,27 @@ build_megatron_cmd() {
 		--log-interval 1
 		--cross-entropy-loss-fusion
 		--disable-bias-linear
-		--optimizer ademamix
+		--optimizer ${OPTIMIZER:-ademamix}
 		--dataloader-type single
 		--manual-gc
 		--manual-gc-interval 500
 	)
+	if [ "${OPTIMIZER:-ademamix}" = muon ]; then
+		# The Moonlight recipe (Liu et al. 2025, arXiv 2502.16982): the
+		# orthogonalized update rescaled by 0.2 x sqrt(max(A, B)) — the spectral
+		# scale mode times the extra factor — matches AdamW's update RMS, so
+		# Muon reuses the AdamW LR and weight decay above unchanged; momentum
+		# 0.95 with Nesterov, 5 Newton-Schulz steps. The factor comes from
+		# hyperparams_muon.json via launch_trainings.py; required, so a muon
+		# run never silently trains at upstream's 1.0.
+		TRAINING_ARGS+=(
+			--muon-scale-mode spectral
+			--muon-extra-scale-factor ${MUON_EXTRA_SCALE_FACTOR:?muon needs MUON_EXTRA_SCALE_FACTOR (hyperparams_muon.json)}
+			--muon-momentum 0.95
+			--muon-nesterov
+			--muon-num-ns-steps 5
+		)
+	fi
 	if [ -n "${TRIGGER_PATH:-}" ]; then
 		# SLURM graceful exit: SIGUSR2 (sent 1h before walltime) makes Megatron
 		# checkpoint and exit; the trigger dir enables manual save/exit files.
@@ -196,6 +215,15 @@ build_megatron_cmd() {
 		--overlap-grad-reduce
 		--overlap-param-gather
 	)
+	if [ "${OPTIMIZER:-ademamix}" = muon ]; then
+		# Muon steps a replicated optimizer (no ZeRO sharding), and
+		# --overlap-param-gather requires the distributed optimizer.
+		DISTRIBUTED_ARGS=(
+			--tensor-model-parallel-size 1
+			--pipeline-model-parallel-size 1
+			--overlap-grad-reduce
+		)
+	fi
 
 	TOKENIZER_ARGS=(
 		--tokenizer-type HuggingFaceTokenizer

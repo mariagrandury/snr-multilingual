@@ -33,17 +33,18 @@ reading:
   safe_compute   the cheapest (proxy, checkpoint) cell, as a share of the
                  reference run's compute, from which every costlier cell clears
                  tau (rq02's safe-FLOPs rule, along the DA-goal grid); -1 = no
-                 cell from which every costlier one clears tau; empty when only
-                 final checkpoints exist (bBPB for now)
+                 cell from which every costlier one clears tau; empty for a
+                 task with final checkpoints only
 
 with tau = utils.RELIABLE_DA = 0.75 and rule 5 (n_pairs >= MIN_PAIRS). Rule 1
 (`passes_gate`, mask `predictivity`): acc_acc at the proxy and the reference;
 bbpb_bbpb passes (no chance level); bbpb_acc on the original's accuracy at the
 reference only, as bench_bpb_da.py gates it (gating the proxy would discard
-the regime bBPB is for). The bBPB twins exist at each run's final checkpoint
-only until the per-item store covers every checkpoint. The rebuild fills their
-DA-goal and DA-ckpt cells in the decision-accuracy tables; here it changes
-only `safe_compute`. Every figure and table here is DA-size. A twin's cell
+the regime bBPB is for). The per-item store scores the bBPB twins at every
+evaluated checkpoint, so their DA-goal, DA-ckpt and `safe_compute` are read
+on the same grid as the accuracy variants'. Every figure and table here is DA-size but the
+per-benchmark paper figure, which adds DA-goal (the same cells along the run)
+and DA-ckpt (rq02's pooled per-task table, `da_own`). A twin's cell
 with fewer pairs than its original's (a family the store lacks) is blank
 (`same_pairs`), so every variant of a task is read over the same decisions.
 
@@ -72,10 +73,17 @@ chance).
     recipe_da_size_ladder{...}.png/.csv                         the cheapest reliable proxy per variant, a panel per bBPB reading
     recipe_da_size_profiles{...}.png/.csv                       share of languages reliable per proxy, per benchmark
     recipe_da_size_variants{...}.png/.csv                       combined vs per variant and reading
-    recipe_da_size_variants_multi_axes_paper.png/.svg/.csv      its first panel for the paper, every line against the 1.7B accuracy
+    recipe_da_size_variants_multi_axes_paper.png/.csv      its first panel for the paper, every line against the 1.7B accuracy
+    recipe_da_size_variants_multi_axes_fixed_tasks_paper.png/.csv   the same on one task set per line (rule 13),
+                                                                the moving line dashed behind it
+    recipe_da_goal_per_task{...}.csv                            the early-small cells behind every table: per task, reading,
+                                                                proxy and tenth, rule 5 applied, the gate verdict in `gated`
+    recipe_da_all_by_benchmark_multi_axes_paper.png/.csv   the paper's per-benchmark page: Overall and the TOP benchmarks
+                                                                by DA-size (`ranking`), DA-size, DA-ckpt and DA-goal, one line
+                                                                per variant and reading, 95 % bootstrap bands over the tasks
 
     python analysis/rq11_evaluation_recipe/recipe.py --pool predictivity
-    python analysis/rq11_evaluation_recipe/recipe.py --paper    # the paper figure alone, from the overview table on disk
+    python analysis/rq11_evaluation_recipe/recipe.py --paper    # the paper figures alone, from the tables on disk
 """
 
 from __future__ import annotations
@@ -104,9 +112,9 @@ from analysis.autodoc import CANONICAL_POOL, fmt, md_table, replace_block  # noq
 from analysis.paths import DECISION_ACCURACY, EVALUATION_RECIPE  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask, task_n_items  # noqa: E402
 from analysis.rq02_decision_accuracy import compute_da  # noqa: E402
-from analysis.utils import (AXES_SUFFIX, BBPB, FORMATS, MIN_PAIRS, PAIR_AXES, RELIABLE_DA, SMALL_SIZES,  # noqa: E402
-                            TARGET_SIZE, assign_language, benchmark_family, build_snr_pool, design_axes,
-                            lower_is_better, pair_sets, passes_gate, variant)
+from analysis.utils import (AXES_SUFFIX, BBPB, FORMATS, MIN_PAIRS, NON_EMB, PAIR_AXES, RELIABLE_DA,  # noqa: E402
+                            SMALL_SIZES, TARGET_SIZE, assign_language, benchmark_family, bootstrap_band, build_snr_pool,
+                            design_axes, fixed_population, lower_is_better, pair_sets, passes_gate, variant)
 
 TAU = RELIABLE_DA
 FORMAT_NAME = {"original": "original", "rf": "RF", "rfgm": "LLM-RF"}
@@ -168,7 +176,7 @@ def bbpb_to_acc(df: pd.DataFrame, psets: dict) -> pd.DataFrame:
         # the kernel's reference is each family's last row at the reference size: keep the twin there only before
         # the original's final, so the reference is the accuracy and every proxy cell the twin
         tw = tw[(tw["bucket"] != TARGET_SIZE) | (tw["step"] < tw["model"].map(ref.set_index("model")["step"]))]
-        fracs = compute_da.EARLY_SMALL_FRACS if tw.groupby("model")["step"].nunique().gt(1).any() else [1.0]   # finals only: no grid to read
+        fracs = compute_da.EARLY_SMALL_FRACS if tw.groupby("model")["step"].nunique().gt(1).any() else [1.0]   # a twin with final checkpoints only has no grid to read
         for axes in [a for a in PAIR_AXES if psets[a]]:
             rows += [{"task": t, "axes": axes, **r}
                      for r in compute_da.compute_early_small_decision_accuracy(pd.concat([tw, ref]), fracs=fracs, pairs=psets[axes])]
@@ -195,9 +203,9 @@ def same_pairs(early: pd.DataFrame) -> pd.DataFrame:
     return early.assign(da=early["da"].where(~early.index.isin(drop)))
 
 
-def per_task(early: pd.DataFrame, mask: pd.DataFrame | None, reading: str) -> pd.DataFrame:
-    """One row per task, read one way: its variant, DA-size per proxy (gated
-    and rule-5 cells NaN), the safe size and rank and the safe compute share."""
+def early_cells(early: pd.DataFrame, mask: pd.DataFrame | None, reading: str) -> pd.DataFrame:
+    """The early-small cells of one reading that count (rule 5), each with its
+    rule-1 verdict at its proxy size in `gated`."""
     e = early[(early["n_pairs"] >= MIN_PAIRS) & early["da"].notna()].copy()            # rule 5
 
     def gate(t: str, s: str) -> pd.Series:      # rule 1; bbpb_acc: the original's accuracy at the reference only
@@ -205,6 +213,13 @@ def per_task(early: pd.DataFrame, mask: pd.DataFrame | None, reading: str) -> pd
                 else passes_gate(mask, [t], s, TARGET_SIZE))
     ok = {(t, s): bool(gate(t, s).iloc[0]) for t, s in set(zip(e["task"], e["proxy_size"]))}
     e["gated"] = [not ok[(t, s)] for t, s in zip(e["task"], e["proxy_size"])]
+    return e
+
+
+def per_task(e: pd.DataFrame, reading: str) -> pd.DataFrame:
+    """One row per task, read one way from its `early_cells`: its variant,
+    DA-size per proxy (gated and rule-5 cells NaN), the safe size and rank and
+    the safe compute share."""
     fin = e[e["frac"] == 1.0]
     wide = fin[~fin["gated"]].pivot_table(index="task", columns="proxy_size", values="da").reindex(columns=LEVELS)
     tasks = sorted(set(e["task"]))
@@ -221,7 +236,7 @@ def per_task(early: pd.DataFrame, mask: pd.DataFrame | None, reading: str) -> pd
     out["safe_rank"] = out["safe_size"].where(~known | (out["safe_size"] >= 0), len(LEVELS))   # never ranks after every size
     out["mean_da_size"] = out[[f"da_size_{s}" for s in LEVELS]].mean(axis=1)
     # the cheapest cell from which every costlier one clears tau, along compute (rq02's safe-FLOPs rule); a task
-    # with final checkpoints only (bBPB until the store has the grid) has no compute ladder to read it on
+    # with final checkpoints only has no compute ladder to read it on
     g = e[~e["gated"]].assign(share=lambda d: d["compute"] / d["ref_compute"]).sort_values("share")
     on_grid = e.groupby("task")["frac"].nunique().reindex(tasks).gt(1)
     out["safe_compute"] = pd.Series({t: _safe_share(x) for t, x in g.groupby("task")}).reindex(tasks).where(on_grid)
@@ -284,14 +299,20 @@ def recommend(t: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     by = by.dropna(subset=["median_safe_rank"]).reset_index(drop=True)
     by["mean_da_size"] = by[[f"mean_da_size_{s}" for s in LEVELS]].mean(axis=1)
     by["tie_da_size"] = _tie_da_size(t, by)
-    best = (by.sort_values(["benchmark", "mean_safe_rank", "tie_da_size", "mean_da_size"], ascending=[True, True, False, False],
-                           na_position="last").groupby("benchmark").head(1))
-    rank = by.groupby("benchmark")["mean_safe_rank"]
+    # a pick rests on at least MIN_DRAWN ranked tasks, or on every language of a smaller benchmark
+    # (an English-only one has a single task per variant): variants under that floor compete only
+    # where no variant of the benchmark clears it, and the pick says so (`competes`)
+    floor = np.minimum(MIN_DRAWN, by["benchmark"].map(t.groupby("benchmark")["language"].nunique()))
+    by["competes"] = by["n_tasks"] >= floor
+    cand = by[by["competes"] | ~by.groupby("benchmark")["competes"].transform("any")]
+    best = (cand.sort_values(["benchmark", "mean_safe_rank", "tie_da_size", "mean_da_size"], ascending=[True, True, False, False],
+                             na_position="last").groupby("benchmark").head(1))
+    rank = cand.groupby("benchmark")["mean_safe_rank"]
     rec = best[["benchmark", "variant", "format", "scoring", "reading", "mean_safe_rank", "median_safe_size", "safe_by_1B",
-                "languages", "languages_ranked", "n_tasks", "mean_da_size", "tie_da_size"]].set_index("benchmark")
+                "languages", "languages_ranked", "n_tasks", "mean_da_size", "tie_da_size", "competes"]].set_index("benchmark")
     rec["n_variants"] = rank.size()
-    rec["accuracy_competes"] = by.groupby("benchmark")["scoring"].apply(lambda x: (x == "acc").any())
-    tied = (by["mean_safe_rank"] == rank.transform("min")).groupby(by["benchmark"]).sum().reindex(rec.index)
+    rec["accuracy_competes"] = cand.groupby("benchmark")["scoring"].apply(lambda x: (x == "acc").any())
+    tied = (cand["mean_safe_rank"] == rank.transform("min")).groupby(cand["benchmark"]).sum().reindex(rec.index)
     rec["decided_by"] = np.where(rec["n_variants"] == 1, "only variant", np.where(tied > 1, "DA-size tie-break", "safe rank"))
     order = t.sort_values(["benchmark", "language", "safe_rank", "mean_da_size"], ascending=[True, True, True, False])
     first = order.dropna(subset=["safe_size"]).groupby(["benchmark", "language"]).head(1).index
@@ -460,22 +481,28 @@ def variants_figure(ov: pd.DataFrame, t: pd.DataFrame, path: Path, note: str) ->
                       tables, name=path.stem)
 
 
+def _paper_lines(reading: str = "bbpb_acc"):
+    """The paper figure's lines, one legend column per format: (format, scoring,
+    reading, overview variant name, legend label, style); format None is the
+    pooled line, over the tasks of every reading in BBPB_READINGS[reading]."""
+    for f, s, r in [(f, s, r) for f in FORMATS for s, r in (("acc", "acc_acc"), ("bbpb", reading))] + [(None, None, reading)]:
+        yield (f, s, r, f"{ALL}, {bbpb_name(r)}" if f is None else vname(f, s, r),
+               "All variants" if f is None else f"{FORMAT_NAME[f][0].upper()}{FORMAT_NAME[f][1:]} {SCORING_NAME[s]}",
+               dict(color=S.INK, ls="--", lw=2) if f is None else dict(
+                   color={"original": S.MUTED, "rf": S.SERIES[0], "rfgm": S.SERIES[2]}[f], ls="-" if s == "acc" else ":", lw=1.4))
+
+
 def variants_paper(ov: pd.DataFrame, path: Path) -> None:
     """The first panel of `variants_figure` for the paper: mean DA-size over
     every task per variant and for all variants together, no title. One target
     only: bBPB is read against the original's accuracy (`bbpb_acc`), so every
     line predicts the 1.7B accuracy, and the y label says so."""
     d = ov[ov["population"] == "every task"]
-    reading = "bbpb_acc"
     fig, ax = plt.subplots(figsize=(5.2, 3.2))
     rows = []
-    for f, s, r in [(f, s, r) for f in FORMATS for s, r in (("acc", "acc_acc"), ("bbpb", reading))] + [(None, None, reading)]:
-        name = f"{ALL}, {bbpb_name(r)}" if f is None else vname(f, s, r)     # legend columns: one per format
+    for f, s, r, name, label, style in _paper_lines():
         g = d[d["variant"] == name].set_index("size").reindex(LEVELS)
         g["mean_da_size"] = g["mean_da_size"].where(g["n_tasks"] >= MIN_DRAWN)
-        label = "All variants" if f is None else f"{FORMAT_NAME[f][0].upper()}{FORMAT_NAME[f][1:]} {SCORING_NAME[s]}"
-        style = dict(color=S.INK, ls="--", lw=2) if f is None else dict(
-            color={"original": S.MUTED, "rf": S.SERIES[0], "rfgm": S.SERIES[2]}[f], ls="-" if s == "acc" else ":", lw=1.4)
         ax.plot(range(len(LEVELS)), g["mean_da_size"], marker="o", ms=3.5, label=label, **style)
         rows.append(g.reset_index()[["size", "mean_da_size", "n_tasks"]].assign(variant=label, reading=r))
     ax.axhline(TAU, color=S.MUTED, lw=.8, ls=":", label=f"Reliable ({TAU:g})")
@@ -485,6 +512,185 @@ def variants_paper(ov: pd.DataFrame, path: Path) -> None:
     ax.legend(fontsize=6.5, frameon=False, ncol=4, loc="lower center", bbox_to_anchor=(0.5, 1.0))
     fig.tight_layout()
     pd.concat(rows)[["variant", "reading", "size", "mean_da_size", "n_tasks"]].to_csv(path.with_suffix(".csv"), index=False)
+    S.save_paper(fig, path.with_suffix(""))
+
+
+PAPER_AXES = "multi-axis"   # rq11's headline pair set, the one its paper figures read
+TOP = 8                 # the benchmarks the per-benchmark paper figure draws
+# line -> (legend label, style): one Okabe-Ito colour per kind of line in every row of the
+# figure, solid for accuracy and dashed for BPB and bBPB
+_C = S.OKABE_ITO
+LINES = {"bpb": ("BPB", dict(color=_C["sky"], ls="--")),
+         "acc": ("Accuracy, every format", dict(color=_C["black"], ls="-")),
+         "original": ("Original accuracy", dict(color=_C["blue"], ls="-")),
+         "rf": ("RF accuracy", dict(color=_C["orange"], ls="-")),
+         "rfgm": ("LLM-RF accuracy", dict(color=_C["green"], ls="-")),
+         "bbpb_acc": (f"bBPB {against('bbpb_acc')}", dict(color=_C["vermillion"], ls="--")),
+         "bbpb_bbpb": (f"bBPB {against('bbpb_bbpb')}", dict(color=_C["purple"], ls="--"))}
+OVERALL_ROW = "Overall"
+BENCHMARKS_PAPER = "recipe_da_all_by_benchmark_multi_axes_paper.png"
+
+
+def ranking(by: pd.DataFrame) -> pd.DataFrame:
+    """The benchmarks by their best accuracy DA-size: per benchmark, the higher
+    of the original's and the RF twin's `mean_da_size` (the mean over its tasks
+    at each proxy, then over the proxies with a value), among the variants with
+    at least MIN_DRAWN ranked tasks."""
+    x = by[(by["scoring"] == "acc") & by["format"].isin(["original", "rf"]) & (by["n_tasks"] >= MIN_DRAWN)]
+    x = x.drop_duplicates(["benchmark", "format"]).sort_values("mean_da_size", ascending=False)
+    best = x.drop_duplicates("benchmark").reset_index(drop=True)
+    return best.assign(rank=best.index + 1)[["rank", "benchmark", "format", "mean_da_size", "n_tasks", "languages"]]
+
+
+def benchmarks_cells(pool: str, rank: pd.DataFrame) -> pd.DataFrame:
+    """One row per (figure row, line, DA kind, task, proxy, tenth) with a value:
+    DA-size and DA-goal from `recipe_da_goal_per_task_multi_axes.csv` (gated as
+    every rq11 table), DA-ckpt from rq02's pooled per-task table (`da_own`, rule
+    5, gated at the proxy, `same_pairs` on the twins), the BPB of the Overall
+    row from the same table."""
+    stage = load_pools()[pool].get("stage", "pretraining")
+    sfx = AXES_SUFFIX[PAPER_AXES]
+    goal = pd.read_csv(EVALUATION_RECIPE / stage / pool / f"recipe_da_goal_per_task{sfx}.csv")
+    goal = goal[~goal["gated"]]
+    pooled = pd.read_csv(DECISION_ACCURACY / stage / pool / f"da_all_pooled_per_task{sfx}.csv")
+    bpb = G.add_meta(pooled[pooled["task"].str.startswith("bpb_")])          # per-language BPB (rule 7: no bpb_macro)
+    bpb = bpb[bpb["n_pairs_ref"] >= MIN_PAIRS]
+    ckpt = pooled[pooled["task"].isin(set(goal["task"])) & (pooled["frac"] < 1.0)]
+    ckpt = ckpt.rename(columns={"da_own": "da", "n_pairs_own": "n_pairs"}).assign(
+        axes=PAPER_AXES, reading=np.where(ckpt["task"].str.startswith(BBPB), "bbpb_bbpb", "acc_acc"))
+    ckpt = G.mark_gated(same_pairs(ckpt[ckpt["n_pairs"] >= MIN_PAIRS]), pool, "proxy_size", "da")
+    long = pd.concat([goal.assign(kind="goal"), goal[goal["frac"] == 1.0].assign(kind="size"),
+                      ckpt.assign(kind="ckpt"),
+                      bpb.assign(kind="goal", da=bpb["da_ref"]), bpb[bpb["frac"] == 1.0].assign(kind="size", da=bpb["da_ref"]),
+                      bpb[bpb["n_pairs_own"] >= MIN_PAIRS].assign(kind="ckpt", da=bpb["da_own"])], ignore_index=True)
+    long = long.dropna(subset=["da"])
+    long = long[long["proxy_size"].isin(LEVELS)]
+    v = long["task"].map(variant)
+    long["format"], long["scoring"] = v.str[0], v.str[1]
+    long["benchmark"] = long["task"].str.replace(f"^{BBPB}", "", regex=True).map(lambda t: G.base(benchmark_family(t)))
+    is_bpb = long["task"].str.startswith("bpb_")
+    # the Overall row: BPB, accuracy over every format, every twin read against the 1.7B bBPB
+    long["line"] = np.where(is_bpb, "bpb", np.where(long["reading"] == "acc_acc", "acc", long["reading"]))
+    overall = long[long["line"] != "bbpb_acc"].assign(row=OVERALL_ROW)
+    # a benchmark row: each accuracy format, and the twins of the format that ranks the benchmark
+    picked = dict(zip(rank["benchmark"], rank["format"]))
+    b = long[long["benchmark"].isin(picked) & ~is_bpb]
+    b = b[(b["scoring"] == "acc") | (b["format"] == b["benchmark"].map(picked))]
+    b = b.assign(row=b["benchmark"], line=np.where(b["scoring"] == "acc", b["format"], b["reading"]))
+    return pd.concat([overall, b], ignore_index=True)[["row", "line", "kind", "task", "proxy_size", "frac", "da"]]
+
+
+def benchmarks_summary(cells: pd.DataFrame) -> pd.DataFrame:
+    """Per (row, line): DA-size per proxy over its tasks, and DA-ckpt and DA-goal
+    per tenth over its tasks, each task first averaged over the proxies 90M–1B
+    it has a value at. Mean, 95 % bootstrap band and task count."""
+    size = cells[cells["kind"] == "size"].assign(x=lambda d: d["proxy_size"])
+    run = (cells[cells["kind"] != "size"].groupby(["row", "line", "kind", "task", "frac"], as_index=False)["da"].mean()
+           .assign(x=lambda d: d["frac"].map("{:g}".format)))
+    rows = []
+    for d in (size, run):
+        for (r, l, k, x), g in d.groupby(["row", "line", "kind", "x"]):
+            v = g["da"].to_numpy()
+            lo, hi = bootstrap_band(v)               # 95 %, over the line's tasks
+            rows.append({"row": r, "line": l, "kind": k, "x": x, "da": v.mean(), "lo": lo, "hi": hi, "n_tasks": len(v)})
+    return pd.DataFrame(rows)
+
+
+def benchmarks_paper(pool: str, path: Path) -> None:
+    """The per-benchmark paper figure: one row for Overall and one for each of
+    the TOP benchmarks of `ranking` (rq11's DA-size, multi-axis pairs), one
+    column per decision accuracy, one line per way of reading the benchmark
+    with its 95 % bootstrap band over the tasks. DA-size against model size,
+    DA-ckpt and DA-goal against the proxy's tokens, both averaged over the
+    proxies 90M–1B. bBPB → 1.7B accuracy has no DA-ckpt (its reference would be
+    the proxy's own accuracy, another score), so that line is absent there."""
+    from analysis.rq02_decision_accuracy.paper_rq2 import _self_reference
+    d = EVALUATION_RECIPE / load_pools()[pool].get("stage", "pretraining") / pool
+    rank = ranking(pd.read_csv(d / f"recipe_da_size_by_variant{AXES_SUFFIX[PAPER_AXES]}.csv"))
+    top = rank.head(TOP)
+    summ = benchmarks_summary(benchmarks_cells(pool, top))
+    rows = [OVERALL_ROW] + list(top["benchmark"])
+    kinds = [("size", "DA-size"), ("ckpt", "DA-ckpt"), ("goal", "DA-goal")]
+    fig, grid = plt.subplots(len(rows), 3, figsize=(6.3, 7.2), sharey=True, sharex="col")
+    for i, (axrow, r) in enumerate(zip(grid, rows)):
+        for ax, (k, title) in zip(axrow, kinds):
+            for line, (label, style) in LINES.items():
+                g = summ[(summ["row"] == r) & (summ["line"] == line) & (summ["kind"] == k)]
+                g = g.assign(xv=g["x"].map(NON_EMB) if k == "size" else g["x"].astype(float) * G.CHINCHILLA_AT_FULL)
+                g = g[g["n_tasks"] >= MIN_DRAWN].sort_values("xv")
+                if not len(g):
+                    continue
+                ax.fill_between(g["xv"], g["lo"], g["hi"], color=style["color"], alpha=.13, lw=0)
+                ax.plot(g["xv"], g["da"], marker="o", ms=2, lw=1.1, label=label, **style)
+                if k == "size" and g["x"].iloc[-1] == LEVELS[-1]:           # the 1.7B reference: 1.0 by self comparison
+                    _self_reference(ax, g["xv"].iloc[-1], g["da"].iloc[-1], NON_EMB[TARGET_SIZE], style["color"])
+                elif k == "ckpt":                                            # each proxy's own final: 1.0
+                    _self_reference(ax, g["xv"].iloc[-1], g["da"].iloc[-1], G.CHINCHILLA_AT_FULL, style["color"])
+            if i == 0:
+                ax.set_title(title, fontsize=8, pad=9)
+            ax.set_ylim(0.2, 1.05); ax.set_yticks([0.25, 0.5, 0.75, 1.0])
+            ax.grid(color=S.GRID, lw=.5); S.clean(ax); ax.tick_params(labelsize=6.5)
+            if i < len(rows) - 1:
+                ax.tick_params(axis="x", length=0)
+        name = G.paper_name(r)
+        if r != OVERALL_ROW:                     # the row's rank, and the format and value it is ranked on
+            x = top.set_index("benchmark").loc[r]
+            name = f"{int(x['rank'])}. {name} ({FORMAT_NAME[x['format']]}, {x['mean_da_size']:.2f})"
+        axrow[0].set_title(name, loc="left", fontsize=6.5, pad=9 if i == 0 else 2)    # a pad is per axes: the top row's is the column titles'
+    sizes = LEVELS + [TARGET_SIZE]
+    grid[-1, 0].set_xscale("log"); grid[-1, 0].set_xticks([NON_EMB[s] for s in sizes])
+    grid[-1, 0].set_xticklabels(sizes, rotation=45); grid[-1, 0].minorticks_off()
+    for ax in grid[-1, 1:]:
+        ax.set_xticks([1, 2, 3, 4, 5]); ax.set_xticklabels([G.chinchilla(f) for f in (.2, .4, .6, .8, 1.0)])
+        ax.set_xlim(0.3, 5.2)
+    grid[-1, 0].set_xlabel("Model size", fontsize=7)
+    for ax in grid[-1, 1:]:
+        ax.set_xlabel("Proxy tokens (× Chinchilla)", fontsize=7)
+    fig.supylabel("Decision accuracy (mean over tasks)", fontsize=7.5)
+    handles = [plt.Line2D([], [], lw=1.1, marker="o", ms=2, label=label, **style) for label, style in LINES.values()]
+    handles.append(plt.Line2D([], [], ls="none", marker="o", ms=4, mfc=S.SURFACE, mec=S.MUTED, label="1.0 by self comparison"))
+    fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=4, fontsize=6.5, frameon=False)
+    fig.tight_layout(h_pad=0.4, w_pad=0.6)
+    out = pd.concat([summ.assign(panel=summ["kind"].map(dict(kinds))).drop(columns="kind"),
+                     rank.rename(columns={"benchmark": "row", "format": "line", "mean_da_size": "da"})
+                     .assign(panel="ranking", x="mean over 90M to 1B")], ignore_index=True)
+    out["row"] = out["row"].map(G.paper_name)
+    out["drawn"] = out["n_tasks"] >= MIN_DRAWN
+    out.to_csv(path.with_suffix(".csv"), index=False)
+    S.save_paper(fig, path.with_suffix(""))
+
+
+def variants_paper_fixed(t: pd.DataFrame, path: Path) -> None:
+    """`variants_paper` on one task set per line (rule 13): solid, the tasks
+    with a DA-size at every proxy size the line is drawn at
+    (`utils.fixed_population`); dashed behind it, the paper figure's moving
+    population. A bBPB line keeps its hollow marker in place of its dots."""
+    cells = pd.concat([(t[t["reading"].isin(BBPB_READINGS[r])] if f is None else t[(t["format"] == f) & (t["reading"] == r)])
+                       .melt(id_vars="task", value_vars=[f"da_size_{x}" for x in LEVELS], var_name="x").dropna()
+                       .assign(line=label, x=lambda d: d["x"].str.removeprefix("da_size_"))
+                       for f, s, r, name, label, style in _paper_lines()])
+    drawn = cells[cells.groupby(["line", "x"])["value"].transform("size") >= MIN_DRAWN]     # the points the paper figure draws
+    tab = pd.concat([d.groupby(["line", "x"], sort=False)["value"].agg(value="mean", n_tasks="size").reset_index().assign(reading=rd)
+                     for rd, d in (("moving", cells), ("fixed", fixed_population(drawn, ["line"], "x", "value")))])
+    tab["value"] = tab["value"].where(tab["n_tasks"] >= MIN_DRAWN)
+    fig, ax = plt.subplots(figsize=(5.2, 3.2))
+    for f, s, r, name, label, style in _paper_lines():
+        for rd in ("moving", "fixed"):
+            g = tab[(tab["line"] == label) & (tab["reading"] == rd)].set_index("x").reindex(LEVELS)
+            kw = (dict(style, ls="-", marker="o", ms=3.5, mfc=S.SURFACE if s == "bbpb" else style["color"], label=label)
+                  if rd == "fixed" else dict(color=style["color"], ls=(0, (3, 2)), lw=.9, alpha=.6, marker=".", ms=3, zorder=1.8))
+            ax.plot(range(len(LEVELS)), g["value"], **kw)
+    ax.axhline(TAU, color=S.MUTED, lw=.8, ls=":", label=f"Reliable ({TAU:g})")
+    ax.plot([], [], color=S.MUTED, ls=(0, (3, 2)), lw=.9, label="Tasks above chance at each size")
+    ax.set_xticks(range(len(LEVELS))); ax.set_xticklabels(LEVELS); ax.set_ylim(0.4, 0.8)
+    ax.set_xlabel("Proxy size"); ax.set_ylabel(f"Decision accuracy against {TARGET_SIZE} accuracy")
+    ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    h, lab = ax.get_legend_handles_labels()
+    order = [0, 1, 6, 2, 3, 7, 4, 5, 8]          # three columns filled down: accuracy row, bBPB row, the rest
+    ax.legend([h[i] for i in order], [lab[i] for i in order], fontsize=6.5, frameon=False, ncol=3, loc="lower center",
+              bbox_to_anchor=(0.5, 1.0))
+    fig.tight_layout()
+    tab[["reading", "line", "x", "value", "n_tasks"]].to_csv(path.with_suffix(".csv"), index=False)
     S.save_paper(fig, path.with_suffix(""))
 
 
@@ -540,15 +746,15 @@ def readme(pool: str, rec: pd.DataFrame, ov: pd.DataFrame, t: pd.DataFrame) -> N
         f"`predictivity` at the proxy and the reference); a bBPB variant either its original's accuracy at {TARGET_SIZE} "
         f"(**bBPB {against('bbpb_acc')}**, gated on that accuracy at the reference only, the reading of "
         f"`bench_bpb_da.py`) or its own bBPB at {TARGET_SIZE} (**bBPB {against('bbpb_bbpb')}**, no chance level, never "
-        f"gated). {t['task'].nunique()} tasks over {t['benchmark'].nunique()} benchmarks. The bBPB twins are read at final "
-        f"checkpoints only for now. A mean over fewer than {MIN_DRAWN} tasks is left blank (`n < {MIN_DRAWN}`) in the tables "
+        f"gated). {t['task'].nunique()} tasks over {t['benchmark'].nunique()} benchmarks. The bBPB twins are read on the "
+        f"same checkpoint grid as the accuracy variants. A mean over fewer than {MIN_DRAWN} tasks is left blank (`n < {MIN_DRAWN}`) in the tables "
         f"below and the figures; it stays in the CSVs. Regenerate with "
         f"`python analysis/rq11_evaluation_recipe/recipe.py --pool {pool}`.",
         f"**How the pick is made**, per bBPB reading and scoring of the pick (benchmarks with a value; reliable somewhere = "
         f"mean safe rank below {never}, a task of the pick safe from some proxy on; never reliable = {never}.00, no task of the "
         f"pick ever safe):",
         md_table(["bBPB read", "pick", "benchmarks", "reliable somewhere", "never reliable", "won on the DA-size tie-break",
-                  "only variant with a value", "no accuracy variant has a value"], split),
+                  "only variant that competes", "no accuracy variant competes"], split),
         f"**The recommendation** (per benchmark and bBPB reading: the variant with the smallest mean safe rank over its "
         f"ranked tasks — 0 = safe from 90M, 4 = from 1B, {never} = never; a task gated or under the pair minimum at every "
         f"proxy has no rank, so the ranked languages and tasks are counted beside it (rule 13) — then the higher mean "
@@ -591,7 +797,10 @@ def main(pool: str) -> None:
     mask = load_mask(pool)
     for axes, g in early.groupby("axes"):
         sfx = AXES_SUFFIX[axes]
-        t = pd.concat([per_task(x, mask, r) for r, x in g.groupby("reading")], ignore_index=True)
+        cells = {r: early_cells(x, mask, r) for r, x in g.groupby("reading")}
+        pd.concat(cells.values())[["task", "reading", "proxy_size", "frac", "da", "n_pairs", "gated"]].to_csv(
+            out_dir / f"recipe_da_goal_per_task{sfx}.csv", index=False)
+        t = pd.concat([per_task(e, r) for r, e in cells.items()], ignore_index=True)
         bys, recs = [], []
         for rd, readings in BBPB_READINGS.items():
             sub = t[t["reading"].isin(readings)].copy()
@@ -607,13 +816,15 @@ def main(pool: str) -> None:
         note = (f"DA-size against the {TARGET_SIZE} final, {axes} pairs of `{pool}`, ≥ {MIN_PAIRS} pairs; τ = {TAU:g}. "
                 f"Accuracy {against('acc_acc')}, gate `predictivity` at the proxy and the reference; bBPB {against('bbpb_acc')} "
                 f"(the original's accuracy, gated at the reference only) or bBPB {against('bbpb_bbpb')} (no chance level: "
-                "never gated); bBPB at final checkpoints only.")
+                "never gated).")
         heatmap(by, out_dir / f"recipe_da_size_heatmap{sfx}.png", note)
         ladder(by, rec, out_dir / f"recipe_da_size_ladder{sfx}.png", note)
         profiles(by, rec, out_dir / f"recipe_da_size_profiles{sfx}.png", note)
         variants_figure(ov, t, out_dir / f"recipe_da_size_variants{sfx}.png", note)
-        if axes == "multi-axis":
+        if axes == PAPER_AXES:
             variants_paper(ov, out_dir / "recipe_da_size_variants_multi_axes_paper.png")
+            benchmarks_paper(pool, out_dir / BENCHMARKS_PAPER)
+            variants_paper_fixed(t, out_dir / "recipe_da_size_variants_multi_axes_fixed_tasks_paper.png")
         print(f"[{axes}] {t['task'].nunique()} tasks over {t['benchmark'].nunique()} benchmarks; recommendation:")
         print(rec.pivot(index="benchmark", columns="bbpb_reading", values="variant").to_string())
         if axes == "multi-axis" and pool == CANONICAL_POOL:
@@ -623,10 +834,13 @@ def main(pool: str) -> None:
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL_POOL)
-    p.add_argument("--paper", action="store_true", help="only the paper figure, from the multi-axis overview table on disk")
+    p.add_argument("--paper", action="store_true", help="only the paper figures, from the multi-axis tables on disk")
     args = p.parse_args()
     if args.paper:
         d = EVALUATION_RECIPE / load_pools()[args.pool].get("stage", "pretraining") / args.pool
         variants_paper(pd.read_csv(d / "recipe_da_size_overview_multi_axes.csv"), d / "recipe_da_size_variants_multi_axes_paper.png")
+        benchmarks_paper(args.pool, d / BENCHMARKS_PAPER)
+        variants_paper_fixed(pd.read_csv(d / "recipe_da_all_per_task_multi_axes.csv"),
+                             d / "recipe_da_size_variants_multi_axes_fixed_tasks_paper.png")
     else:
         main(args.pool)

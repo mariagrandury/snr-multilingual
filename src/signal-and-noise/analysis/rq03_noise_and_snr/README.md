@@ -14,26 +14,27 @@
 - **Pools** (`pretraining/<pool>/`, [RULES.md](../RULES.md), Definitions). `predictivity` is the headline: seed 1904, every cell, every data build and every ladder (deep, shallow, swiglu), sizes 90M–1.7B.
 - **Seed pools.** `predictivity_seeds` adds every replicate seed as a separate model of the signal pool. The holdout trains on the replicate seeds (`predictivity_seeds_train`: 64/313 at 175M/600M, 28/1797 at 1B) and tests on seed 1904 of the same 10 cells (`predictivity_seeds_test`).
 - **Seed cells.** The ×3 cells are the deep data-A runs at 175M and 600M for L ∈ {1, 2, 50} and at 1B for L ∈ {1, 2, 30}, plus the 1B L30 data-B run. A non-English harness task is trained only at L30/L50 (Russian also at L2), so the seed analyses are English-heavy by construction.
-- **Signal and noise.** The signal population at a size is every design variant trained there (language setting × ladder × data build), with one data-scheme axis: scheme A/B/C × temperature T (AT3 = A at T 3; ZH, DCLMP = B; ES, FWEB = C). The noise is the checkpoint std over the noise window of rule 4 (`utils.noise_checkpoints`: 80/85/90/95/100 % of the run, the same for BPB and benchmarks); `effect_vs_noise.py` adds the seed-replicate noise.
+- **Signal and noise.** The signal population at a size is every design variant trained there (language setting × ladder × data build), with one data-scheme axis: scheme A/B/C × temperature T (AT3 = A at T 3; ZH, DCLMP = B; ES, FWEB = C). The noise is the checkpoint noise over the noise window of rule 4 (`utils.noise_checkpoints`: 80/85/90/95/100 % of the run, the same for BPB and benchmarks): since 2026-10-08 the residual std around a line through the window (`utils.checkpoint_noise`), with the raw std kept beside it as `ckpt_noise_raw_<size>`; `effect_vs_noise.py` adds the seed-replicate noise.
 - **Decision accuracy and variants.** DA-size ranks small → 1.7B (plus every other bucket pair) and DA-ckpt ranks 10 … 90 % → final within a size. The 22 SNR variants fall into five families (dispersion, relative spread, discrepancy, robust, depth), and the per-language BPB tasks (`bpb_<subset>`) take part like any benchmark except under the discrepancy family.
-- **bBPB twins.** In this snapshot the bBPB twins (`bbpb_*`) are scored at the final checkpoint only; their rows are not read here until the refresh with twins at every checkpoint.
+- **bBPB twins.** The bBPB twins (`bbpb_*`) are scored at every checkpoint of every cell, seed replicates included, so they have a checkpoint noise and an SNR at every size and also enter the seed-noise rows and the seed holdout.
 
 ## Highlighted result
 
 ![Noise and SNR in one figure](pretraining/predictivity/highlights.png)
 
-Pool `predictivity`, SNR variant `rel_std` (relative std of the final scores across the size's design variants over the relative checkpoint noise), gate applied (tasks at chance at a size are grey), sizes 90M–1.7B. "Benchmarks" below are the harness tasks without BPB and without the bBPB twins; the figure's two rank panels also list bBPB twins, which are not read here.
+Pool `predictivity`, SNR variant `rel_std` (relative std of the final scores across the size's design variants over the relative checkpoint noise), gate applied (tasks at chance at a size are grey), sizes 90M–1.7B. "Benchmarks" below are the harness tasks without BPB and without the bBPB twins; the bBPB twins (lower is better, never gated) have their own bullet, and the figure's two rank panels list them too.
 
 **Key findings**
 
-- **SNR peaks at 350M and is lowest at the 1.7B reference.** The median log10 SNR of the ungated benchmark tasks is 0.30 at 90M (317 tasks), 0.28 at 175M (341), 0.41 at 350M (378), 0.30 at 600M (414), 0.23 at 1B (454) and 0.14 at 1.7B (494), so at 1.7B the typical benchmark separates the design variants by only 1.4× its checkpoint noise.
-- **One benchmark task in five is below the noise at 1.7B.** 99 of the 494 ungated benchmark tasks (20 %) have SNR < 1 at 1.7B, against 8 of 378 (2 %) at 350M; the per-language BPB falls from a median of 0.82 at 350M to 0.22 at 1.7B, with 14 of 50 languages below 0.
-- **The task populations differ across sizes** (rule 13): the gate keeps 317 to 494 of the 845–846 benchmark tasks, so a column's median is over a different task set at each size.
+- **SNR peaks at 350M and is lowest at the 1.7B reference.** The median log10 SNR of the ungated benchmark tasks is 0.30 at 90M (316 tasks), 0.28 at 175M (345), 0.41 at 350M (383), 0.33 at 600M (429), 0.27 at 1B (472) and 0.24 at 1.7B (512), so at 1.7B the typical benchmark separates the design variants by only 1.7× its checkpoint noise.
+- **Few benchmark tasks are below the noise at 1.7B.** 38 of the 512 ungated benchmark tasks (7 %) have SNR < 1 at 1.7B, against 8 of 383 (2 %) at 350M; the per-language BPB falls from a median of 1.34 at 350M to 0.81 at 1.7B, with none of the 50 languages below 0.
+- **The bBPB twins follow the same curve, one notch higher.** Over the 816 twin tasks the median log10 SNR is 0.58 at 90M, 0.58 at 175M, 0.75 at 350M, 0.50 at 600M, 0.44 at 1B and 0.36 at 1.7B, with 34 of 816 (4 %) below the noise at 1.7B.
+- **The task populations differ across sizes** (rule 13): the gate keeps 316 to 512 of the 845–846 benchmark tasks, so a column's median is over a different task set at each size.
 
 **Follow-ups**
 
 - The number of design variants in each size's signal pool beside the median row, to tell whether the 350M peak is a property of the benchmarks or of that rung's set of variants.
-- The bBPB rows, once the twins are scored at every checkpoint.
+- Each bBPB twin against its original on the tasks the gate keeps, to tell whether the higher twin SNR is the continuous score or the ungated population.
 
 GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/highlights.csv). The SNR above uses checkpoint noise; [the next figure](#intervention-effect-against-noise) checks it against the seed noise.
 
@@ -41,8 +42,9 @@ GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/
 
 - **Signal and noise per (task, size bucket).**
   - Signal pool = every model at the bucket (`per_model_inputs`); each model's
-    `data_score` is its final checkpoint and `step_noise` the std (ddof 0) over
-    the noise window, the k/20 points in the last `noise_window` = 20 % of its
+    `data_score` is its final checkpoint and `step_noise` its checkpoint noise
+    (`utils.checkpoint_noise`: the residual SD around a line, n−2, by default;
+    the raw std, ddof 0, kept as `ckpt_noise_raw_<size>`) over the noise window, the k/20 points in the last `noise_window` = 20 % of its
     run (80/85/90/95/100 %, rule 4). Before 2026-09-20 the window was the last
     five checkpoints of whatever grid the task had (80–100 % for BPB, 60–100 %
     for benchmarks), which put BPB's noise on a narrower window.
@@ -62,10 +64,10 @@ GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/
 - **Effect vs noise.**
   - For every (size, L, task) the intervention's |Δ| is put against the seed
     noise (sample std, n−1, over the seed replicates, where ≥ 2 seeds exist)
-    and the checkpoint noise (std over the same 80/85/90/95/100 % window of the
-    baseline cell, raw with n−1 and detrended with n−2). Under WSD the final
-    window is still descending, so the raw std carries trend; every std divides
-    by its residual degrees of freedom.
+    and the checkpoint noise over the same 80/85/90/95/100 % window of the
+    baseline cell (`utils.checkpoint_noise`: detrended, the residual std with
+    n−2, the rule-4 default; and raw, ddof 0). Under WSD the final window is
+    still descending, so the raw std carries trend.
   - A ratio near 1 means the two levels are the same model as far as a ranking
     is concerned (the "read this against the seed row" rule of
     `ladder_report.md`). A decision on such a cell is a coin flip whatever its
@@ -86,31 +88,31 @@ GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/
     surrogates analysis reports the numbers next to the ranking they test.
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-10-06 04:26** (refresh commit `b316f53b`, outputs regenerated
-2026-10-07; prose re-read 2026-10-07).
+**2026-10-08 12:06** (regenerated locally: acc_norm on the cloze-format originals)
+and the outputs of the 2026-10-08 refresh (detrended checkpoint noise).
 
 <!-- BEGIN auto:effect-vs-noise (effect_vs_noise.py --pool predictivity_seeds) -->
 ## Intervention effect against noise
 
 Numbers from the `predictivity_seeds` pool. Regenerate with `python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_seeds`.
 
-- **Noise definitions.** Seed noise = sample std (n−1) of the final score across the replicate seeds of the deep data-A cell; checkpoint noise = std of the grid seed's run over the noise window, the k/20 points in the last 20% of the run (80/85/90/95/100 %, the same for BPB and benchmarks), raw (n−1) and detrended by a line (n−2). Every std divides by its residual degrees of freedom. The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter of one run: above 1 a re-roll of the seed moves the score more than the late checkpoints do.
-- **Gate.** 9221 of 26806 (size, L, task) cells are at chance at their size (rule 1); they keep their row, carry no number and enter no median below.
-- **Seed noise vs detrended checkpoint noise** — median ratio 1.62 over 1466 (size, L, task) cells with seed replicates.
-- **Depth effect vs seed noise** — median |Δ|/seed-std 1.32; 29% of 1461 cells above 2× (a distinct model for SNR, not a re-roll).
+- **Noise definitions.** Seed noise = sample std (n−1) of the final score across the replicate seeds of the deep data-A cell; checkpoint noise = std of the grid seed's run over the noise window, the k/20 points in the last 20% of the run (80/85/90/95/100 %, the same for BPB and benchmarks), `utils.checkpoint_noise`: detrended by a line (residual SD, n−2, the rule-4 default) and raw (ddof 0, the labelled alternative). The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter of one run: above 1 a re-roll of the seed moves the score more than the late checkpoints do.
+- **Gate.** 9027 of 33438 (size, L, task) cells are at chance at their size (rule 1); they keep their row, carry no number and enter no median below.
+- **Seed noise vs detrended checkpoint noise** — median ratio 1.75 over 4394 (size, L, task) cells with seed replicates.
+- **Depth effect vs seed noise** — median |Δ|/seed-std 1.31; 31% of 4389 cells above 2× (a distinct model for SNR, not a re-roll).
 
 **Effect over noise** (median over the ungated (size, L, task) cells; `n` = cells behind the median):
 
 | population | effect / noise | median | n |
 |---|---|---|---|
-| benchmark | arch / seed | 1.18 | 1304 |
-| benchmark | arch / ckpt | 2.09 | 14439 |
-| benchmark | scheme_B / seed | 1.32 | 494 |
-| benchmark | scheme_B / ckpt | 2.04 | 6791 |
-| benchmark | scheme_C / seed | 1.60 | 177 |
-| benchmark | scheme_C / ckpt | 3.38 | 1019 |
-| benchmark | temperature / seed | 1.35 | 1091 |
-| benchmark | temperature / ckpt | 2.74 | 11659 |
+| benchmark | arch / seed | 1.26 | 4232 |
+| benchmark | arch / ckpt | 2.20 | 20796 |
+| benchmark | scheme_B / seed | 1.21 | 1679 |
+| benchmark | scheme_B / ckpt | 2.17 | 9644 |
+| benchmark | scheme_C / seed | 1.63 | 775 |
+| benchmark | scheme_C / ckpt | 3.56 | 1436 |
+| benchmark | temperature / seed | 1.79 | 3366 |
+| benchmark | temperature / ckpt | 3.04 | 16660 |
 | bpb | arch / seed | 1.77 | 139 |
 | bpb | arch / ckpt | 1.95 | 636 |
 | bpb | scheme_B / seed | 0.27 | 32 |
@@ -141,13 +143,13 @@ Numbers from the `predictivity_seeds` pool. Regenerate with `python analysis/rq0
 
 GitHub: [effect_vs_noise.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds/effect_vs_noise.png) · [effect_vs_noise.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds/effect_vs_noise.csv)
 
-The highlighted SNR divides by checkpoint noise; this figure asks whether that is the right noise by setting both noises, and each design decision's effect, against the seed replicates. Population: pool `predictivity_seeds`, the nine deep data-A seed cells (175M and 600M at L 1/2/50, 1B at L 1/2/30, three seeds each), gate applied (9221 of 26806 (size, L, task) cells at chance).
+The highlighted SNR divides by checkpoint noise; this figure asks whether that is the right noise by setting both noises, and each design decision's effect, against the seed replicates. Population: pool `predictivity_seeds`, the nine deep data-A seed cells (175M and 600M at L 1/2/50, 1B at L 1/2/30, three seeds each), gate applied (9027 of 33438 (size, L, task) cells at chance; the 15882 bBPB twin cells are never gated and, now that the per-item store holds the seed replicates, enter the seed-noise rows too: 2883 of the 4394 seed-over-checkpoint cells).
 
 **Key findings**
 
-- **Seed noise exceeds checkpoint noise.** The seed std is a median 1.62× the detrended checkpoint std over 1466 ungated cells and larger in 74 % of them (benchmarks 1.70 over 1309 cells, per-language BPB 1.33 over 139); per size 1.60 at 175M, 1.77 at 600M and 1.54 at 1B.
-- **So the checkpoint-noise SNR is optimistic.** A design difference that clears the checkpoint noise need not clear a re-roll of the seed: on the same 1461 seed cells, depth's median effect is 2.06× the detrended checkpoint noise but 1.32× the seed noise (51 % against 29 % above 2×).
-- **No design axis clears twice the seed noise in half of its cells.** Against seed noise the median effect is 1.32 for depth, 1.29 for scheme A vs B (540 cells, 29 % above 2×), 1.73 for scheme A vs C (195, 43 %) and 1.51 for temperature T 1 vs 3 (1227, 38 %); the per-population medians are in the table above.
+- **Seed noise exceeds checkpoint noise.** The seed std is a median 1.75× the detrended checkpoint std over 4394 ungated cells and larger in 75 % of them (benchmark originals 1.72 over 1354 cells, bBPB twins 1.82 over 2883, per-language BPB 1.33 over 139); per size 2.08 at 175M, 1.72 at 600M and 1.52 at 1B.
+- **So the checkpoint-noise SNR is optimistic.** A design difference that clears the checkpoint noise need not clear a re-roll of the seed: on the same 4389 seed cells, depth's median effect is 2.13× the detrended checkpoint noise but 1.31× the seed noise (52 % against 31 % above 2×).
+- **No design axis clears twice the seed noise in half of its cells.** Against seed noise the median effect is 1.31 for depth, 1.20 for scheme A vs B (1725 cells, 29 % above 2×), 1.65 for scheme A vs C (793, 43 %) and 1.86 for temperature T 1 vs 3 (3502, 47 %); the per-population medians are in the table above.
 
 **Follow-ups**
 
@@ -157,7 +159,7 @@ The highlighted SNR divides by checkpoint noise; this figure asks whether that i
 <!-- BEGIN auto:panels (panels.py --pool predictivity) -->
 ## Per benchmark and per language
 
-Regenerate with `python analysis/rq03_noise_and_snr/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate" (at chance at that size, rule 1); each figure's table sits next to it under the same name; sizes are 175M–1.7B (rule 10). SNR noise is the std over the 80/85/90/95/100 % checkpoints (rule 4).
+Regenerate with `python analysis/rq03_noise_and_snr/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate" (at chance at that size, rule 1); each figure's table sits next to it under the same name; sizes are 175M–1.7B (rule 10). SNR noise is the residual std around a line through the 80/85/90/95/100 % checkpoints (rule 4).
 
 ![rq03 in one figure](pretraining/predictivity/highlights.png)
 
@@ -178,14 +180,14 @@ GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/
 [effect_over_seed_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds/effect_over_seed_by_language.png) ·
 [snr_variants_per_task.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr_variants_per_task.csv)
 
-The highlight gave medians; these grids show which benchmarks and languages carry the signal. Population: SNR grids on pool `predictivity` (`rel_std`, sizes 90M–1.7B; the generated line's "175M–1.7B" is stale generator text), depth-over-seed grids on `predictivity_seeds` (1400 ungated cells at 175M, 600M and 1B), gate applied.
+The highlight gave medians; these grids show which benchmarks and languages carry the signal. Population: SNR grids on pool `predictivity` (`rel_std`, sizes 90M–1.7B; the generated line's "175M–1.7B" is stale generator text), depth-over-seed grids on `predictivity_seeds` (4321 ungated cells at 175M, 600M and 1B), gate applied.
 
 **Key findings**
 
-- **Benchmarks at 1.7B** (28 benchmark families with an ungated task, 50 languages, 494 tasks): the highest median log10 SNR is `global_mmlu_full` 0.35, `xstorycloze` 0.32 and `paws` 0.29; the lowest are `global_piqa_nonparallel_cloze` −0.06, `rf_belebele` 0.03, `lambada_openai_mt` 0.04 and `rf_global_mmlu_full` 0.04.
-- **Reformulation does not reliably raise SNR at 1.7B here:** every `rf` twin with an ungated original is lower (`rf_global_mmlu_full` 0.04 against `global_mmlu_full` 0.35, `rf_include_base_44` 0.14 against 0.27, `rf_belebele` 0.03 against 0.06), and of the `rfgm` twins `rfgm_include_base_44` is lower (0.16 against 0.27) but `rfgm_belebele` is higher (0.11 against 0.06). The gate keeps a different task set for each twin, so this is a population-level reading.
-- **Languages at 1.7B** (benchmarks only): the median log10 SNR runs from −0.16 (Bosnian, 1 task; Malay −0.16 over 7 tasks) to 0.36 (Slovenian, 3 tasks), 7 of 50 languages sit below 0 and English is 0.22 over 33 tasks; a language rests on 1 to 49 tasks, so the extremes are thin.
-- **Depth over seed noise** (log10 ratio): among the 21 families with at least 10 cells it runs from −0.02 (`rfgm_include_base_44`) to 0.25 (per-language BPB), and, among languages with at least 10 cells, from −0.36 (Tamil, 11 cells) to 0.51 (Slovak, 10 cells; unfiltered maximum Bosnian 0.52 over 2 cells), with English at 0.14 over 261 cells.
+- **HellaSwag has the highest benchmark SNR at 1.7B.** Over 29 benchmark families with an ungated task (50 languages, 512 tasks) the highest median log10 SNR is `hellaswag` 0.62, `global_mmlu_full` 0.53 and `xstorycloze` 0.49; the lowest are `belebele` 0.11, `rf_belebele` 0.15, `rf_include_base_44` 0.16 and `global_piqa_parallel_cloze` 0.17.
+- **Reformulation does not reliably raise SNR at 1.7B here.** Two of the three `rf` twins with an ungated original are lower (`rf_global_mmlu_full` 0.39 against `global_mmlu_full` 0.53, `rf_include_base_44` 0.16 against 0.28) and `rf_belebele` is higher (0.15 against 0.11), and of the `rfgm` twins `rfgm_include_base_44` is lower (0.24 against 0.28) but `rfgm_belebele` is higher (0.20 against 0.11). The gate keeps a different task set for each twin, so this is a population-level reading.
+- **Every language but Lithuanian is above the noise at 1.7B.** On the benchmarks the median log10 SNR runs from −0.03 (Lithuanian, 8 tasks) to 0.51 (Slovenian, 3 tasks), 1 of 50 languages sits below 0 and English is 0.29 over 34 tasks; a language rests on 1 to 52 tasks, so the extremes are thin.
+- **Depth beats the seed noise in most families.** The median log10 ratio is above 0 in 40 of the 51 families with at least 10 cells (the bBPB twins included), from −0.42 (`bbpb_blend_sample`, 21 cells) to 0.39 (`bbpb_belebele`, 165 cells); the 21 original families run from −0.01 (`rfgm_include_base_44`) to 0.25 (`paws`, 14 cells, and per-language BPB, 139 cells), and the 49 languages with at least 10 cells from −0.07 (Kazakh, 38 cells) to 0.31 (Slovak, 30 cells; Bosnian, the one language under 10 cells, 0.16 over 5), with English at 0.07 over 1154 cells.
 
 **Follow-ups**
 
@@ -205,19 +207,19 @@ A language's r is rq04's Pearson r over its tasks' (log10 SNR, DA) points and ne
 
 | DA | languages | same variant | same family | Spearman ρ of the variant ranking |
 |---|---|---|---|---|
-| DA-size | 1 | 0 | 0 | -0.28 |
-| DA-ckpt | 2 | 0 | 2 | 0.82 |
+| DA-size | 1 | 0 | 1 | 0.55 |
+| DA-ckpt | 2 | 0 | 2 | 0.70 |
 <!-- END auto:seed-holdout -->
 
 [headline_metrics.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds_train__vs__predictivity_seeds_test/headline_metrics.csv) ·
 [summary.md](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds_train__vs__predictivity_seeds_test/summary.md)
 
-Population: train = the replicate seeds 28/64/313/1797, test = seed 1904, the same 10 cells, pairs within each split, gate of `predictivity`. DA-size exists only for 175M → 600M (110 of the 898 train-split tasks, 108 English tasks and 2 aggregates), so the 1B seeds do not enter it and neither does the 1.7B reference.
+Population: train = the replicate seeds 28/64/313/1797, test = seed 1904, the same 10 cells, pairs within each split, gate of `predictivity`. DA-size exists only for 175M → 600M (208 of the 1714 train-split tasks: 206 English tasks, 98 of them bBPB twins, and 2 aggregates), so the 1B seeds do not enter it and neither does the 1.7B reference.
 
 **Key findings**
 
-- **DA-ckpt: the family survives a seed swap.** Two languages (English, Russian) have a best variant on both splits; the train pick is the same family in 2 of 2 (relative spread) but the same variant in 0 of 2, the global variant ranking agrees at Spearman ρ 0.82, the variant cells at Pearson r 0.68 (n = 44) and the train pick keeps 94 % of the test-best r.
-- **DA-size: untestable on this holdout.** Only English has a best variant on both splits (`rel_star_discrepancy` on train, `rms_deviation` on test), the global ranking agrees at ρ −0.28 and the cells at r −0.17 (n = 22), on one size pair and one language.
+- **DA-ckpt: the family survives a seed swap.** Two languages (English, Russian) have a best variant on both splits; the train pick is the same family in 2 of 2 (discrepancy for English, relative spread for Russian) but the same variant in 0 of 2, the global variant ranking agrees at Spearman ρ 0.70, the variant cells at Pearson r 0.34 (n = 44) and the train pick keeps 97 % of the test-best r.
+- **DA-size: now agrees, but on one size pair and one language.** Only English has a best variant on both splits (`dispersion_shifted` on train, `star_discrepancy_shifted` on test, both discrepancy, so 1 of 1 at the family level), the global ranking agrees at ρ 0.55 and the cells at r 0.72 (n = 22), and the train pick keeps 85 % of the test-best r; on the 10-06 snapshot the test pick was `rms_deviation` and ρ was −0.28, so the sign rests on a single language.
 
 **Follow-ups**
 
@@ -233,17 +235,19 @@ Population: train = the replicate seeds 28/64/313/1797, test = seed 1904, the sa
       whether that ranking of definitions survives a change of seed, by
       computing it on `predictivity_seeds_train` (seeds 64, 313, 28, 1797)
       and on `predictivity_seeds_test` (seed 1904 of the same 10 cells).
-      *The problem (re-read 2026-10-07).* Since 2026-10-05 the 1B ×3 cells
+      *The problem (re-read 2026-10-08).* Since 2026-10-05 the 1B ×3 cells
       (seeds 28/1797) are in both splits, but DA-size still exists only for
       175M → 600M, so the 1.7B reference never enters. A non-English
       benchmark is trained only at L30/L50 (Russian also at L2), so its
-      split holds no multi-axis pair and no DA-size: 110 of the 898
-      train-split tasks have a DA-size value, 108 English tasks and 2
-      aggregates.
-      *Implications.* The DA-size agreement (0 of 1 language at the family
-      level, ρ −0.28) rests on English alone, and DA-ckpt on two languages
-      (English, Russian), so "the ranking does not survive a seed swap" may
-      say more about the holdout than about the definitions.
+      split holds no multi-axis pair and no DA-size: 208 of the 1714
+      train-split tasks have a DA-size value, 206 English tasks (98 of them
+      bBPB twins) and 2 aggregates.
+      *Implications.* The DA-size agreement (1 of 1 language at the family
+      level, ρ 0.55; 0 of 1 and ρ −0.28 on the 10-06 snapshot) rests on
+      English alone, and DA-ckpt on two languages
+      (English, Russian), so whether "the ranking survives a seed swap" says
+      more about the holdout than about the definitions: one language flipped
+      it between two snapshots.
       Nothing in the main `predictivity` tables is affected.
       *Options.* (A) keep only tasks with ≥ 6 pairs on both splits: an honest
       check, but English + BPB only. (B) treat replicate seeds as replicates,

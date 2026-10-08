@@ -515,6 +515,15 @@ def metric_for(task: str,
     return load_tasks(path).get(task, {}).get("metric")
 
 
+def accuracy_metric(task: str) -> str | None:
+    """The task's per-item accuracy metric (`acc` unless tasks.json pins
+    `acc_norm`), or None when it scores something else (MELA's mcc,
+    EVALITA wic's f1): such a task has no chance level, so the gate leaves
+    it ungated, and no column in the per-item store."""
+    m = metric_for(task) or "acc"
+    return m if m in ("acc", "acc_norm") else None
+
+
 # Task `language` values are canonical iso2 codes plus a few legacy aliases
 # kept by manual annotation (see build_configs.py's LANG_MAP note).
 _TASK_LANG_ALIASES = {"jp": "ja", "cn": "zh"}
@@ -528,13 +537,18 @@ def tasks_for_benchmarks(benchmarks: list[str], languages: set[str],
     A task matches a benchmark by exact name or a `<benchmark>_…` extension
     (so "global_mmlu" also selects benchmark "global_mmlu_full"). Language
     tags are canonicalized ("jp" → "ja", "cn" → "zh"); tasks tagged "multi"
-    (cross-language aggregates) or "??" (unresolved) are never auto-selected.
+    (cross-language aggregates) or "??" (unresolved) are never auto-selected,
+    and neither are the task names in the `discarded` group (probe tasks not
+    above chance at 1B nor at 1.7B).
     Used by the auto-eval watchers: the `auto` group in tasks.json lists
     benchmark names, and each model is evaluated on every listed benchmark's
     tasks in the languages it was trained on.
     """
     out = []
+    discarded = set(_load_groups(path).get("discarded", []))
     for name, e in load_tasks(path).items():
+        if name in discarded:
+            continue
         b = e.get("benchmark", "")
         if not any(b == g or b.startswith(g + "_") for g in benchmarks):
             continue

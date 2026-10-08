@@ -34,8 +34,8 @@ the items with a missing option or a rejected rewrite, so the counts differ)
 under the two-proportion z-test. The panels keep acc_norm for the twins,
 because that is the metric a cloze task is scored with, and `norm_offset`
 in the CSV is how much of the cell is that choice. A task's gain is
-significant at a size when p < P_SIG for at least half of the size's models
-(per family); per language the small number counts the significant (task,
+significant at a size when the twin scores higher with p < P_SIG for at least
+half of the size's tested models (per family); per language the small number counts the significant (task,
 model) pairs instead. The twin run's `acc` lives in the harness results files
 on the cluster only: elsewhere the test reuses the values the last cluster run
 recorded in rf_significance.csv, leaves the newer pairs untested (p NaN, and
@@ -173,7 +173,9 @@ def significance(df: pd.DataFrame, s: str, kept: pd.Series | None = None) -> pd.
                         "acc_twin_plain": acc_plain, "norm_offset": w["primary_score"]["twin"] - acc_plain,
                         "n_orig": w["n"]["orig"].astype(int), "n_twin": w["n"]["twin"].astype(int), "p": p},
                        index=w.index).reset_index()
-    out["sig"] = out["p"] < P_SIG
+    # a significant GAIN: the two-sided test says the formulations differ, the sign says which
+    # way; an untested pair (no twin results file) is NaN, not "not significant"
+    out["sig"] = ((out["p"] < P_SIG) & (out["acc_twin_plain"] > out["acc_orig"])).where(out["p"].notna())
     missing = out["acc_twin_plain"].isna().sum()
     if missing:
         print(f"({s}: {missing} of {len(out)} pairs have no twin results file: not tested)")

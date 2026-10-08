@@ -126,3 +126,36 @@ proxectonos/truthfulqa_gl
 
 # probe 2026-09-23: Spanish extractive QA (generative, no chance level)
 google/xquad
+
+# probe 2026-10-08 (group auto_probe)
+ltg/noropenbookqa
+ltg/nrk_quiz_qa
+ltg/nortruthfulqa_mc
+ltg/norec_document
+ltg/norec_sentence
+skt/kobest_v1
+evalitahf/faq
+evalitahf/hatespeech_detection
+evalitahf/sentiment_analysis
+BSC-LT/COPA-es
+projecte-aina/COPA-ca
+projecte-aina/teca
+gplsi/xnli_va
+nilc-nlp/assin2
+projecte-aina/Parafraseja
+haryoaw/COPAL
+EleutherAI/headqa
+HPAI-BSC/CareQA
+manu/french_boolq
+manu/fquad2_test
+manu/french_bench_hellaswag
+manu/topic_based_nli_test
+OALL/Arabic_MMLU
+MBZUAI/ArabicMMLU
+alexandrainst/m_mmlu
+openai/MMMLU
+# built but no task registered: assin_entailment/_paraphrase name no config and
+# the repo has three (full/ptbr/ptpt), so they are ambiguous offline
+nilc-nlp/assin
+# not buildable: tyouisen/aclue is a script dataset (parquet only on
+# refs/convert/parquet); miulab/tmlu is gone from the Hub (404)

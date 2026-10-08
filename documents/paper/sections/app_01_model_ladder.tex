@@ -20,6 +20,7 @@ Build & Data & $M$ & $T$ & Ladder & $K$ & Sizes & Runs & Repl. \\
 A & resource-ranked lists & A & 1 & deep & 1, 2, 8, 15, 30, 50 & 90M--1.7B and 3B at $K \in \{8, 15, 30, 50\}$ & 58 & 18 \\
 A & resource-ranked lists & A & 1 & shallow & 1, 2, 8, 15, 30, 50 & 90M--1.7B & 36 & -- \\
 A & resource-ranked lists & A & 1 & deep + SwiGLU & 8, 15, 30 & 90M--1.7B & 18 & -- \\
+A & resource-ranked lists & A & 1 & deep + Muon & 8, 15, 30 & 90M--1.7B & 18 & -- \\
 AT3 & scheme-A lists, flattened & A & 3 & deep & 15, 30, 50 & 90M--1.7B & 18 & -- \\
 AT3 & scheme-A lists, flattened & A & 3 & shallow & 50 & 90M--1.7B & 6 & -- \\
 B & diversity-first lists & B & 1 & deep & 8, 15, 30 & 90M--3B & 23 & 2 \\
@@ -29,10 +30,10 @@ ES & Spanish as second language & C & 1 & deep & 2 & 90M--1.7B & 6 & -- \\
 DCLMP & DCLM without the edu filter & B & 1 & deep & 1 & 90M--1.7B & 6 & -- \\
 FWEB & FineWeb (crawls $\le$ 2022) & C & 1 & deep & 1 & 90M--1.7B & 6 & -- \\
 \midrule
-Total & & & & & & & 201 & 20 \\
+Total & & & & & & & 219 & 20 \\
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Training grid.} One row per data build and ladder. $M$ is the data scheme of the build at its $K$. A is the baseline recipe, and B and C are the alternatives at that $K$. $T$ is the sampling temperature of the build. These are the two design axes that a build sets. The ladders are deep (the baseline), shallow (about twice the width-to-depth ratio) and deep + SwiGLU (the activation axis). All three use AdEMAMix. Runs counts the runs of every seed. Repl.\ counts the replicate-seed runs among them (Table~\ref{tab:grid}). At the ladder-report snapshot, 200 of the 201 runs had finished. The unfinished run is 3B-L30-schemeB-deep-seed1904.}
+\caption{\textbf{Training grid.} One row per data build and ladder. $M$ is the data scheme of the build at its $K$. A is the baseline recipe, and B and C are the alternatives at that $K$. $T$ is the sampling temperature of the build. These are the two design axes that a build sets. The ladders are deep (the baseline), shallow (about twice the width-to-depth ratio) and deep + SwiGLU (the activation axis). All three use AdEMAMix. Runs counts the runs of every seed. Repl.\ counts the replicate-seed runs among them (Table~\ref{tab:grid}). At the ladder-report snapshot, 218 of the 219 runs had finished. The unfinished run is 3B-K30-schemeB-deep-seed1904.}
 \label{tab:schemes}
 \end{table*}
 % END generated: grid
@@ -106,6 +107,13 @@ deep + SwiGLU & 350M & 20 & 1,280 & 64 & 3,392 & 2.65 & 20/5 & 342.4 & 34.2 & 50
 deep + SwiGLU & 600M & 24 & 1,536 & 64 & 4,096 & 2.67 & 24/6 & 594.5 & 59.5 & 504 & 28,800 & 0.90 & 20 \\
 deep + SwiGLU & 1B & 28 & 1,792 & 64 & 4,800 & 2.68 & 28/7 & 947.3 & 94.7 & 504 & 45,880 & 0.80 & 40 \\
 deep + SwiGLU & 1.7B & 30 & 2,304 & 77 & 6,144 & 2.67 & 36/9 & 1,672.2 & 167.2 & 504 & 81,000 & 0.69 & 60 \\
+\midrule
+deep + Muon & 90M & 15 & 768 & 51 & 3,072 & 4.00 & 12/3 & 92.9 & 9.3 & 84 & 27,000 & 1.43 & 20 \\
+deep + Muon & 175M & 16 & 1,024 & 64 & 4,096 & 4.00 & 16/4 & 176.2 & 17.6 & 168 & 25,620 & 1.22 & 20 \\
+deep + Muon & 350M & 20 & 1,280 & 64 & 5,120 & 4.00 & 20/5 & 344.1 & 34.4 & 504 & 16,660 & 1.03 & 20 \\
+deep + Muon & 600M & 24 & 1,536 & 64 & 6,144 & 4.00 & 24/6 & 594.5 & 59.5 & 504 & 28,800 & 0.90 & 20 \\
+deep + Muon & 1B & 28 & 1,792 & 64 & 7,168 & 4.00 & 28/7 & 944.1 & 94.4 & 504 & 45,720 & 0.80 & 40 \\
+deep + Muon & 1.7B & 30 & 2,304 & 77 & 9,216 & 4.00 & 36/9 & 1,672.2 & 167.2 & 504 & 81,000 & 0.69 & 60 \\
 \bottomrule
 \end{tabular}}
 \caption{\textbf{Pretraining hyperparameters per ladder and model size}, for the rungs that each ladder trains. $N$ counts non-embedding parameters. The tied embedding adds $d_{\mathrm{model}} \times 131{,}072$. $D = 100N$ is the token budget. Heads gives the query and key-value head counts (grouped-query attention, four query heads per key-value head, head dimension 64). FFN is the feed-forward hidden dimension. The SwiGLU ladder keeps the deep shape and narrows the FFN so that its three projections match the deep non-embedding count. Batch is the global batch in sequences of 4,096 tokens. The two smallest rungs train at their own batch and take proportionally more steps for the same $D$. LR is the peak learning rate from the compute-based law at the run's own budget. Ckpts is the number of saved checkpoints.}
@@ -114,5 +122,7 @@ deep + SwiGLU & 1.7B & 30 & 2,304 & 77 & 6,144 & 2.67 & 36/9 & 1,672.2 & 167.2 &
 % END generated: ladder
 
 \textbf{Optimization.} Every run uses the same optimizer and schedule. Only the per-size values change. We train with AdEMAMix \citep{pagliardini_ademamix_2024} ($\beta_1 = 0.9$, $\beta_2 = 0.999$, $\beta_3 = 0.9999$, $\alpha = 8$), weight decay 0.1 and gradient clipping at 0.1. From 350M up, the global batch is 504 sequences of 4,096 tokens, about 2.06M tokens per step. The 90M and 175M rungs train at 84 and 168 sequences (see below). The learning rate follows a warmup-stable-decay schedule \citep{hagele_scaling_2024}. It has a linear warmup over about 4\% of the steps, a constant phase, and a $1-\sqrt{\cdot}$ decay to zero over the final 20\%. The peak learning rate comes from a compute-based law evaluated at the budget of each run, $\eta = 0.3118\, C^{-1/8}$ with $C = 6 N D = 600 N^2$. It therefore decreases smoothly from $1.43 \times 10^{-3}$ at 90M to $6.9 \times 10^{-4}$ at 1.7B and $6.0 \times 10^{-4}$ at 3B. We scale the optimizer warmup with run length and the initialization with width. The warmup of the AdEMAMix $\alpha$ and $\beta_3$ spans the full run. The initialization standard deviation is scaled with width as $0.008944 \sqrt{1792 / d_{\mathrm{model}}}$. Training uses BF16 mixed precision with FP32 gradient accumulation in a fork of Megatron-LM \citep{shoeybi_megatron-lm_2019}. It uses data parallelism only (no tensor or pipeline parallelism).
+
+\textbf{Muon ladder.} The optimizer intervention trains the deep ladder with Muon \citep{jordan_muon_2024} under scheme A at $K \in \{8, 15, 30\}$ and from 90M to 1.7B, with every model dimension unchanged. We follow the Moonlight recipe \citep{liu_muon_2025}. Muon applies to the two-dimensional hidden weight matrices, with momentum 0.95 and Nesterov updates, and orthogonalizes each update with five Newton-Schulz steps. Each update is then rescaled by $0.2\sqrt{\max(m, n)}$ for an $m \times n$ matrix, which matches the root mean square of an AdamW update. Muon therefore reuses the deep ladder's peak learning rate, schedule and weight decay of 0.1. Embeddings, the output layer, norms and biases are trained with AdamW ($\beta_1 = 0.9$, $\beta_2 = 0.999$). Muon keeps one momentum buffer per matrix, and in our fork its optimizer state is not sharded across data-parallel ranks.
 
 \textbf{The two smallest rungs.} At the 504-sequence batch, nine of the ten completed 90M runs diverge. Each of them reaches its best training loss between 15\% and 19\% of the way through training and then degrades for the rest of the run. It ends 1.2--1.9 nats above its own best. No larger rung shows this. Held-out bits-per-byte rises with training on every language we checked, so the degradation is real and not an artefact of the training objective. We retrained the rung at three learning rates that span a factor of five, and at one half and one sixth of the batch size. Each retraining reproduces the failure at the same fraction of the optimizer steps. This points to the interaction between the fixed $\beta_3$ timescale of AdEMAMix, about 10,000 steps, and a run that is only 4,500 steps long. The 175M run is 8,540 steps long, and its batch-504 runs also land off the power law of the larger rungs. We therefore train these two rungs at their own global batch, 84 sequences at 90M and 168 at 175M (the nearest value that the 175M data-parallel layout allows), with $D = 100N$ fixed. The step count grows by the same factor, to 27,000 and 25,620 steps, so the $\beta_3$ memory covers about 0.37 and 0.39 of the run. This removes the divergence without changing any optimizer constant, which the step-matched batch cuts above did not do. No run of the grid diverges, and the batch-504 runs of these two rungs enter no analysis.

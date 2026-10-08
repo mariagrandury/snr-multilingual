@@ -53,6 +53,7 @@ TARGET_SIZE = _SNR["target_size"]
 CKPT_DA_EARLY_FRACS = _SNR["da_early_fracs"]   # the nine evaluated checkpoints before the final (analysis/RULES.md, rule 3)
 NOISE_WINDOW = _SNR["noise_window"]            # noise = std over the shared checkpoints in this last share of a run (rule 4)
 NOISE_GRID = _SNR["noise_grid"]                # the k/NOISE_GRID points the window is read on: 5 of them at 20 (rule 4)
+NOISE_DETREND = True                           # rule 4: the noise is the residual SD around a line through the window, not the raw SD
 MIN_PAIRS = _SNR["min_pairs"]                  # a decision-accuracy cell needs this many design-variant pairs (rule 5)
 MIN_LANG_TASKS = _SNR["min_lang_tasks"]        # a per-language correlation needs this many distinct tasks (rule 8)
 SHARED_FRACS = [k / 10 for k in range(1, 11)]  # the checkpoint grid every size was evaluated on
@@ -536,6 +537,16 @@ def agreement_measures(proxy, ref) -> dict:
                   "rho": float(spearmanr(s, t).statistic), "pearson_r": float(pearsonr(s, t).statistic)}
 
 
+def bootstrap_band(v, n_boot: int = 1000, level: float = 0.95) -> tuple[float, float]:
+    """The percentile bootstrap interval of the mean of `v`, resampling its
+    elements (tasks of a line, cells of a heat-map row): a band over the units
+    averaged, not over the design pairs (which `jackknife_ratio` resamples).
+    Seeded, so a figure redrawn from the same table keeps its bytes."""
+    v = np.asarray(v, dtype=float)
+    m = v[np.random.default_rng(0).integers(0, len(v), (n_boot, len(v)))].mean(axis=1)
+    return tuple(np.percentile(m, [50 * (1 - level), 50 * (1 + level)]))
+
+
 JACKKNIFE_Z = 1.645          # the two-sided 90 % band every jackknife interval here is drawn at
 
 
@@ -686,6 +697,51 @@ def noise_checkpoints(df: pd.DataFrame) -> pd.DataFrame:
     return sub.loc[sorted(nearest)]
 
 
+def checkpoint_noise(frac, scores, detrend: bool = NOISE_DETREND) -> float:
+    """The checkpoint noise of one run from its `noise_checkpoints` rows (rule 4).
+
+    Detrended (the default): the residual standard deviation after a
+    least-squares line through (frac, score), with n - 2 degrees of freedom,
+    so a run that still improves over the window (the WSD decay) does not
+    count its improvement as noise; NaN below three points. Raw
+    (`detrend=False`, the alternative, labelled `raw` wherever it is written):
+    the population std (ddof 0) of the scores, the definition until
+    2026-10-08; NaN below two points. Under white noise the two agree on
+    average; on a pure ramp the raw SD is the ramp's spread and the detrended
+    one is 0."""
+    y = np.asarray(scores, dtype=float)
+    if not detrend:
+        return float(np.std(y)) if len(y) >= 2 else float("nan")
+    if len(y) < 3:
+        return float("nan")
+    x = np.asarray(frac, dtype=float)
+    res = y - np.polyval(np.polyfit(x, y, 1), x)
+    return float(np.sqrt((res ** 2).sum() / (len(y) - 2)))
+
+
+# Pairs kept in every analysis whose two cells are NOT size-matched (RULES.md,
+# "Size matching"): (design axis, size) -> what differs. The depth pairs at
+# 175M-1.7B match their non-embedding count within -2.4 % to +0.8 %.
+UNMATCHED_PAIRS = {
+    ("arch", "600M"): "600M shallow is not size-matched to 600M deep: +3.7 % non-embedding parameters "
+                      "(616.6M vs 594.5M), width 2048 vs 1536 and about +15 % compute",
+}
+
+
+def size_matched(axis: str, size: str) -> bool:
+    """False for the pairs that move `axis` at `size` between cells that are
+    not size-matched (`UNMATCHED_PAIRS`): flagged in every output that reports
+    them, never dropped."""
+    return (axis, size) not in UNMATCHED_PAIRS
+
+
+def size_match_note(cells) -> str:
+    """The caption sentence for the (axis, size) `cells` an output reports
+    that are not size-matched; empty when there are none."""
+    hit = [UNMATCHED_PAIRS[c] for c in dict.fromkeys(cells) if c in UNMATCHED_PAIRS]
+    return "".join(f" Kept and flagged (size_matched = False): {h}." for h in hit)
+
+
 def passes_gate(mask: pd.DataFrame | None, tasks, *sizes) -> pd.Series:
     """True where the above-random gate keeps a task at every one of `sizes`
     (rule 1): a mask of 0 rejects, 1 passes, and NA (no chance level: BPB, the
@@ -724,7 +780,8 @@ def trained_tasks(L: int, data: str) -> frozenset[str]:
 
 
 def is_trained(task: str, L: int, data: str) -> bool:
-    return task in trained_tasks(int(L), data)
+    """A `bbpb_` twin is trained where its original is."""
+    return task.removeprefix(BBPB) in trained_tasks(int(L), data)
 
 
 def trained_only(df: pd.DataFrame) -> pd.DataFrame:
@@ -733,6 +790,21 @@ def trained_only(df: pd.DataFrame) -> pd.DataFrame:
     transfer, which is rq06's question and no other's."""
     keep = [is_trained(t, L, d) for t, L, d in zip(df["task"], df["L"], df["data"])]
     return df[np.asarray(keep, dtype=bool)]
+
+
+@lru_cache(maxsize=None)
+def auto_tasks() -> frozenset[str]:
+    """Every task of the benchmarks rule 2's trained set is drawn from, in every
+    language: the `auto` group (or the groups SNR_TRAINED_GROUPS names, as in
+    `pretrain.ladder_report._trained_tasks`), the `discarded` tasks left out.
+    The gate is built with `untrained=True`, so its tables (`above_random_*.csv`)
+    also hold the probe candidates; a script that reads them directly instead
+    of a pool filtered by `trained_only` keeps only these tasks (RULES.md, "The
+    probe candidates are not in the populations")."""
+    import os
+    from pretrain import ladder_report as lr
+    benchmarks = [b for g in os.environ.get("SNR_TRAINED_GROUPS", "auto").split(",") for b in lr.auto_benchmarks(g.strip())]
+    return frozenset(lr.tasks_for_benchmarks(benchmarks, lr.eval_languages(1, "A", all_languages=True)))
 
 
 def with_bbpb_twins(df: pd.DataFrame) -> pd.DataFrame:
@@ -765,6 +837,17 @@ def with_variant_columns(df: pd.DataFrame) -> pd.DataFrame:
     v = {t: variant(t) for t in df.loc[df["kind"] == "benchmark", "task"].unique()}
     return df.assign(format=df["task"].map(lambda t: v.get(t, (None, None))[0]),
                      scoring=df["task"].map(lambda t: v.get(t, (None, None))[1]))
+
+
+def fixed_population(cells: pd.DataFrame, line: list, x: str, value: str, task: str = "task") -> pd.DataFrame:
+    """`cells` cut, per line (the `line` columns), to the tasks with a `value`
+    at EVERY `x` that line has: one task set along the whole line, so a change
+    along x is not a change of population (rule 13 by construction). It is the
+    twin a moving-population line is read beside, never a replacement for it."""
+    c = cells.dropna(subset=[value])
+    keys = list(line)
+    n_x = c.groupby(keys)[x].transform("nunique") if keys else c[x].nunique()
+    return c[c.groupby(keys + [task])[x].transform("nunique") == n_x]
 
 
 def finals(df: pd.DataFrame) -> pd.DataFrame:

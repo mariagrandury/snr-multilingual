@@ -13,8 +13,9 @@ task filter. Three accuracies: DA-goal (against the 1.7B final), DA-ckpt
 (against the proxy size's own final) and DA-size (each size's final against
 the 1.7B final), DA-goal and DA-ckpt each with a mono-axis twin.
 
-Numbers are from the ladder report of 2026-10-06 04:26 (outputs commit
-b316f53b, read 2026-10-07), written by
+Numbers are from the ladder report of 2026-10-08 12:06 and the outputs of the
+2026-10-08 refresh (detrended checkpoint noise; prose re-read 2026-10-08),
+written by
 [`../rq01_scaling_predictability/tokens_seen.py`](../rq01_scaling_predictability/tokens_seen.py);
 the figures moved here from `rq01_scaling_predictability/` on 2026-10-07. The
 above-chance counterpart is in
@@ -48,21 +49,28 @@ Key findings:
   six pairs flipped, against 0.97–0.99 at 90M–1B; they are 16 of the 18
   languages at 0.67.
 - **The 600M proxies agree with themselves, not with the reference.** Their
-  DA-ckpt is 0.94 at the first tenth and 0.997 at the ninth, the highest proxy
+  DA-ckpt is 0.91 at the first tenth and 0.994 at the ninth, the highest proxy
   there, so the 600M order settles early on a ranking the 1.7B final does not
   share.
 - **Final training loss does not single out 600M.** The shallow cell ends
   below its deep twin in 7 of 10 matched (L, data build) pairs at 600M and
   also at 1B, where DA-goal is 0.92
-  ([`scaling_fit.csv`](../rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_fit.csv)),
-  so which design axis drives the dip is open.
+  ([`scaling_fit.csv`](../rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_fit.csv)).
+  The depth axis is the likely driver: the 600M depth pairs are not
+  size-matched (shallow has 3.7 % more non-embedding parameters,
+  [RULES.md, "Size matching"](../RULES.md#size-matching-the-600m-depth-pairs-are-flagged-not-dropped)),
+  and BPB orders them like the 1.7B final at 0.06 against 0.69–0.97 at the
+  other proxies (DA-size, rq02's
+  [`scale_convergence_da_size_transformation_multi_axes.csv`](../rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_transformation_multi_axes.csv)).
 
 Follow-ups:
 - A per-pair breakdown of the 600M final (which design axis each flipped pair
-  moves), to test whether the depth axis drives the dip; today's CSVs give
-  only per-language DA.
-- The same figures on the benchmark-BPB twins once they exist at every
-  checkpoint (finals only in these outputs).
+  moves), to confirm per language that the depth axis drives the dip; this
+  folder's CSVs give only per-language DA, rq02's per-axis lines only the pool.
+- The same figures on the benchmark-BPB twins. They now exist at every
+  checkpoint of every seed-1904 cell (`bench_bpb.csv`, rebuilt 2026-10-08 with
+  the seed replicates),
+  but `tokens_seen.py` reads the per-language BPB only.
 
 <!-- BEGIN auto:da-vs-train-tokens (tokens_seen.py --pool predictivity_seeds) -->
 ## Decision accuracy against the tokens of the language seen
@@ -109,7 +117,7 @@ Key findings:
 [PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_ckpt_multi_axes_across_langs_bpb.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_ckpt_multi_axes_across_langs_bpb.csv)
 
 Key findings:
-- Over 50 languages, the proxies' last point ranges from 0.99 (90M) to 1.00 (600M).
+- Over 50 languages, the proxies' last point ranges from 0.99 (90M) to 0.99 (600M).
 - First tenth of the run at DA ≥ 0.75: 90M 10%, 175M 10%, 350M 10%, 600M 10%, 1B 10%.
 
 ![DA-ckpt of BPB vs tokens seen, mono-axis pairs](pretraining/predictivity_seeds/da_ckpt_mono_axis_across_langs_bpb.png)
@@ -117,16 +125,16 @@ Key findings:
 [PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_ckpt_mono_axis_across_langs_bpb.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_ckpt_mono_axis_across_langs_bpb.csv)
 
 Key findings:
-- Over 50 languages, the proxies' last point ranges from 0.98 (90M) to 0.99 (600M).
+- Over 50 languages, the proxies' last point ranges from 0.97 (90M) to 0.99 (600M).
 - First tenth of the run at DA ≥ 0.75: 90M 10%, 175M 10%, 350M 10%, 600M 10%, 1B 30%.
-- The mono-axis pairs read lower than the multi-axis set at 43 of 45 (size, tenth) points, by 0.03 on average.
+- The mono-axis pairs read lower than the multi-axis set at 39 of 45 (size, tenth) points, by 0.03 on average.
 
 ![DA-ckpt of BPB vs share of the run](pretraining/predictivity_seeds/da_ckpt_multi_axes_across_langs_bpb_vs_frac.png)
 
 [PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_ckpt_multi_axes_across_langs_bpb_vs_frac.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_ckpt_multi_axes_across_langs_bpb_vs_frac.csv)
 
 Key findings:
-- Over 50 languages, the proxies' last point ranges from 0.99 (90M) to 1.00 (600M).
+- Over 50 languages, the proxies' last point ranges from 0.99 (90M) to 0.99 (600M).
 - First tenth of the run at DA ≥ 0.75: 90M 10%, 175M 10%, 350M 10%, 600M 10%, 1B 10%.
 
 ![DA-size of BPB vs tokens seen](pretraining/predictivity_seeds/da_size_multi_axes_across_langs_bpb.png)
@@ -138,7 +146,7 @@ Key findings:
 <!-- END auto:da-vs-train-tokens -->
 
 Key findings (generated figures):
-- **The mono-axis pairs read lower for DA-goal at every point (50 of 50), and for DA-ckpt at 43 of 45.** DA-goal at the final is 0.60 at 600M and 0.88–0.94 at the other proxies over the mono-axis pairs (median 12 per language), against 0.74 and 0.92–0.96 over the multi-axis set.
+- **The mono-axis pairs read lower for DA-goal at every point (50 of 50), and for DA-ckpt at 39 of 45.** DA-goal at the final is 0.60 at 600M and 0.88–0.94 at the other proxies over the mono-axis pairs (median 12 per language), against 0.74 and 0.92–0.96 over the multi-axis set.
 - **DA-size has no size trend.** The finals read 0.96 (90M), 0.96 (175M), 0.92 (350M), 0.74 (600M) and 0.92 (1B), so a larger proxy does not rank this BPB population more like the 1.7B.
 
 Follow-ups:

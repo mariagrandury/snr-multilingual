@@ -10,7 +10,7 @@ Q2 (within-cluster similarities) — language groups by best variant.
 Q3 (across languages) — top variants by mean Pearson r over the languages
     with a value (≥ MIN_LANG_TASKS tasks each, rule 8).
     → top_variants_overall.csv  +  top_variants_overall.png
-      (+ top_variants_overall_paper.png/.svg/.csv, the bare rule-18 copy the paper's
+      (+ top_variants_overall_paper.png/.csv, the bare rule-18 copy the paper's
       appendix shows; `--paper` redraws it alone from the CSV)
 Q4 (top benchmarks per language) — under the overall-best variant (Q3's
     mean over DA-size and DA-ckpt), rank benchmarks per language with both

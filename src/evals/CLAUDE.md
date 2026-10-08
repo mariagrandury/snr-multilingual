@@ -231,6 +231,11 @@ left `auto_probe` on 2026-10-01. A
 promoted benchmark stays listed in `auto_probe` as the record of what was
 screened, which costs nothing: the watcher's idempotency is per task, so a
 later `--group auto_probe` pass finds the work done and submits only gaps.
+The reverse move (2026-10-08): a screened task at chance at both 1B and 1.7B
+goes into `groups.discarded`, a list of TASK names that
+`tasks_for_benchmarks` skips, so it leaves the probe while its siblings in
+the same benchmark stay; relabelling its `benchmark` instead would move
+results already on disk to another family.
 
 **A running watcher does not see a tasks.json edit.** `auto_evals_cscs.py`
 reads the group once, before the `--watch` loop (`benchmarks =
@@ -964,9 +969,29 @@ entry point. It does **two** jobs:
   `iter` and `tokens` are also defined and can be swapped in via the W&B UI
   (Edit panel → X-axis).
 
-**Per-benchmark metric** — `flatten()`: prefer `acc`; fall back to
-`exact_match` (mgsm-style); skip the task otherwise. `acc_norm`,
-`acc_bytes`, `degeneration`, all `*_stderr` are intentionally dropped.
+**Per-benchmark metric** — `flatten()`: the task's tasks.json `metric`
+when it has one; else prefer `acc`; fall back to `exact_match`
+(mgsm-style); skip the task otherwise. `acc_bytes`, `degeneration`, all
+`*_stderr` are intentionally dropped. An override naming a metric the task
+does not emit drops the task silently, here and in `ladder_report`: until
+2026-10-08, 77 probe tasks (kmmlu, MELA, EVALITA, ...) carried `acc_norm`
+and never reached the gate. Set `metric` only where `acc` is wrong.
+**Cloze originals score `acc_norm`** (2026-10-08, as OLMES and DataDecide
+do): every task whose options are answer strings scored as continuations and
+that emits `acc_norm` carries `metric: acc_norm` — ARC (`arc_easy`,
+`arc_challenge`, the 31 okapi `arc_<lang>`), HellaSwag (`hellaswag`, the 30
+okapi `hellaswag_<lang>`), `openbookqa`, `mathqa` and the 95 Global-PIQA
+cloze tasks, besides the `rf_`/`rfgm_`/cloze-arm twins that always did.
+Letter-format MCQ (Belebele, Global-MMLU, INCLUDE, MMLU, CSQA, BLEnD,
+CulturalBench) keeps `acc`: its options are one-token letters, so the
+normalisation does nothing useful. So do the tasks that emit no `acc_norm`
+(XCOPA, XStoryCloze, XNLI, PAWS-X, TruthfulQA mc1/mc2, XWinograd — switching
+them needs a re-evaluation), the true/false and yes/no judgements (ToxiGen,
+CulturalBench-hard) and MultiBLiMP (minimal pairs, scored on the whole
+sentence's log-likelihood). The classification read the lm-eval samples
+(the scored continuations) of the 1B and 1.7B deep cells. The W&B series of
+a switched task changes name (`hellaswag/acc` → `hellaswag/acc_norm`) from
+the next push on.
 
 **Subtopic aggregation** — `aggregate_parents()`: a task `T` is collapsed
 into its parent `P` if `P` is an underscore-prefix of `T` and `P` is also
@@ -1071,7 +1096,7 @@ The 36-sweep checkpoint dirs live at
 `/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/<EXP_NAME>/checkpoints/`
 (EXP_NAME `apertus-${MODEL_SIZE}-fwEdu${FW_EDU_RATIO}-fw2${FW2_RATIO}-seed${SEED}`);
 predictivity-sweep runs land under `.../Meg-Runs/msnr/` with EXP_NAME
-`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu>-seed<seed>`
+`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu|muon>-seed<seed>`
 — the optional label is the cell's data scheme (`DATA_SCHEMES` in
 `launch_trainings.py`; A is the unlabelled baseline) and the last token is the
 ladder. The eval side never needs to parse it: which tasks a cell is

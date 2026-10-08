@@ -1,0 +1,21 @@
+task: rf_french_bench_fquadv2_bool
+include: /capstor/store/cscs/swissai/infra01/msnr/msnr-harness/lm-evaluation-harness/lm_eval/tasks/french_bench/french_bench_fquadv2_bool.yaml
+output_type: multiple_choice
+num_fewshot: 0
+doc_to_text: '{{context}}
+
+  Question: {{question}}
+
+  D''après le contexte, répondre à la question est'
+doc_to_choice: '{{[''possible'', ''impossible'']}}'
+doc_to_target: '{{[False, True].index(is_impossible)}}'
+metric_list:
+- metric: acc
+  aggregation: mean
+  higher_is_better: true
+- metric: acc_norm
+  aggregation: mean
+  higher_is_better: true
+metadata:
+  version: 0.0
+tag: rf_french_bench_tasks

@@ -10,7 +10,7 @@ curves of every cell (the progress report's BPB figure on the analysis' cells).
 
     rq5_transfer.csv          one row per (L, language, k)
     rq5_transfer_summary.csv  median |relative error| per (trained, k) and method
-    rq5_transfer.png/.pdf     the paper figure
+    rq5_transfer.png     the paper figure
     bpb_curves.png            per cell: per-language BPB vs fraction of run
     transfer_da_all_by_group_mono_axis.csv
                               rq05's interventions read on every language's BPB at every
@@ -45,7 +45,7 @@ from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import LANGUAGE_TRANSFER  # noqa: E402
 from analysis.rq05_design_decisions.analyze import LANGUAGE_GROUPS, intervention_da  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    GRID_SEED, LADDER_SIZES, NON_EMB, finals, ladder_frame, size_order, trained_bpb_tasks)
+    GRID_SEED, LADDER_SIZES, NON_EMB, TARGET_SIZE, finals, ladder_frame, size_order, trained_bpb_tasks)
 
 OUT_ROOT = LANGUAGE_TRANSFER
 CANONICAL = "predictivity_seeds"
@@ -61,10 +61,10 @@ def transfer(fin: pd.DataFrame) -> pd.DataFrame:
     for L, g in g0.groupby("L"):
         piv = g.pivot_table(index="task", columns="size", values="primary_score")
         sizes = size_order(piv.columns)
-        if len(sizes) < MIN_SIZES:
+        if len(sizes) < MIN_SIZES or TARGET_SIZE not in sizes:      # rule 9: never a smaller rung as the reference
             continue
         piv = piv[sizes].dropna()
-        ref, proxies = sizes[-1], sizes[:-1]
+        ref, proxies = TARGET_SIZE, [s for s in sizes if s != TARGET_SIZE]
         x = np.log(np.array([NON_EMB[s] for s in proxies]))
         Y = np.log(piv[proxies].to_numpy())
         alpha = np.array([-np.polyfit(x, yy, 1)[0] for yy in Y])       # own exponent, all proxy rungs

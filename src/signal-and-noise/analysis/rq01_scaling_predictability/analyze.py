@@ -14,7 +14,7 @@ the ladder health check's power law on the seed-1904 cell of every (L, ladder,
 data build); `scaling_law_error.py` next to this script asks how well such a fit
 on the proxy rungs predicts the reference rung's per-language BPB.
 
-    rq1_scaling.png/.pdf/.csv  above-chance curves at L=30 (ungated, so a task at chance is visible at 0),
+    rq1_scaling.png/.csv  above-chance curves at L=30 (ungated, so a task at chance is visible at 0),
                                R²/ρ per family over the gated fits; the CSV holds both panels' plotted values
     rq1_fits.csv           one row per (task, L): n_rungs (fitted), gated_rungs, gated, the fit;  rq1_families.csv  the family medians
     scaling_fit.png/.csv   final loss vs N per L, one power-law fit per (ladder, data build), the rung count in the legend
@@ -71,13 +71,15 @@ def _line_style(size, ladder, data) -> dict:
 
 # --- the paper's RQ1: log-N fits ------------------------------------------------
 
-def fit_table(fin: pd.DataFrame, pool: str, mask: pd.DataFrame | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+def fit_table(fin: pd.DataFrame, pool: str, mask: pd.DataFrame | None = None,
+              cells=_grid) -> tuple[pd.DataFrame, pd.DataFrame]:
     """One row per (task, L) of the grid: the log-N fit over the rungs where
     the task is above chance (rule 1, `grids.mark_gated`, `mask` replacing the
     pool's); `n_rungs` counts them, `gated_rungs` the rungs the gate removed,
     and `gated` marks a series the gate left with fewer than MIN_RUNGS (its
-    statistics are NaN)."""
-    g0 = G.mark_gated(_grid(fin), pool, "size", "primary_score", mask=mask)
+    statistics are NaN). `cells` picks the cells fitted (the deep data-A
+    seed-1904 grid by default)."""
+    g0 = G.mark_gated(cells(fin), pool, "size", "primary_score", mask=mask)
     rows = []
     for (task, L), g_all in g0.groupby(["task", "L"]):
         g_all = g_all.assign(N=g_all["size"].map(NON_EMB)).dropna(subset=["N"]).sort_values("N")

@@ -7,8 +7,8 @@ progress report's figures, on the same cells.
     loss_curves.png        training loss vs fraction of run, per L: full run and last 10 %
     benchmark_curves.png   benchmark accuracy vs the run in Chinchilla multiples per family, chance line;
                            a family's `rf_` / `rfgm_` twin sits next to it, titled "<name> (rf)"
-    benchmark_curves_paper.png/.svg   the same without the header, a legend instead (rule 18)
-    benchmark_size_curves_paper.png/.svg/.csv   its size twin: each design's final accuracy against
+    benchmark_curves_paper.png   the same without the header, a legend instead (rule 18)
+    benchmark_size_curves_paper.png/.csv   its size twin: each design's final accuracy against
                            non-embedding parameters per family, colour = L (the rq01 appendix figure)
 
     python analysis/rq00_gate_and_curves/curves.py --pool predictivity_seeds
@@ -48,6 +48,7 @@ CANONICAL = "predictivity_seeds"      # every cell: all seeds and data builds
 CLOSEUP_YMAX = 3.5                  # ceiling of the last-10 % loss panels, as in the report
 TWINS = ("rf", "rfgm")             # a twin's prefix, written as a suffix in the panel title
 Y_TICKS = 6                         # every benchmark panel carries this many y ticks
+PAPER_COLS = 5                      # panels per row of the two paper grids
 mpl.rcParams.update(S.RC)
 
 
@@ -136,7 +137,7 @@ def plot_benchmark_curves(b: pd.DataFrame, out_dir: Path, paper: bool = False) -
         return
     b = b.assign(family=b["task"].map(benchmark_family), chance=b["task"].map(task_chance))
     fams = sorted(b["family"].unique(), key=_twin_key)
-    cols = min(4, len(fams)); rows = (len(fams) + cols - 1) // cols
+    cols = min(PAPER_COLS if paper else 4, len(fams)); rows = (len(fams) + cols - 1) // cols
     fig, axes = plt.subplots(rows, cols, figsize=(3.4 * cols, 2.6 * rows), squeeze=False)
     flat = [a for r in axes for a in r]
     for ax in flat[len(fams):]:
@@ -167,7 +168,7 @@ def plot_benchmark_curves(b: pd.DataFrame, out_dir: Path, paper: bool = False) -
                    + [plt.Line2D([], [], color=S.ALERT, lw=.9, ls=":", label="Chance")])
         ncol = next((k for k in (8, 9, 6, 7, 5) if len(handles) % k == 0), 8)
         fig.legend(handles=handles, ncol=ncol, loc="lower center", frameon=False, fontsize=7.5, handlelength=3.2)
-        fig.tight_layout(rect=(0, 0.5 / fig.get_figheight() * (-(-len(handles) // ncol)), 1, 1))
+        fig.tight_layout(rect=(0, 0.2 / fig.get_figheight() * (-(-len(handles) // ncol)), 1, 1))   # 0.2 in per legend row
         S.save_paper(fig, out_dir / "benchmark_curves_paper")
         return
     fig.suptitle("Benchmark accuracy along the run, mean over the cell's trained-language tasks\n"
@@ -195,7 +196,7 @@ def plot_benchmark_size_curves(b: pd.DataFrame, out_dir: Path) -> None:
     colour = dict(zip(Ls, S.SEQ(np.linspace(0.3, 1, len(Ls)))))
     sizes = [s for s in LADDER_SIZES if s in set(t["size"])]
     fams = sorted(t["family"].unique(), key=_twin_key)
-    cols = min(4, len(fams)); rows = (len(fams) + cols - 1) // cols
+    cols = min(PAPER_COLS, len(fams)); rows = (len(fams) + cols - 1) // cols
     fig, axes = plt.subplots(rows, cols, figsize=(3.4 * cols, 2.6 * rows), squeeze=False)
     flat = [a for r in axes for a in r]
     for ax in flat[len(fams):]:
@@ -225,7 +226,7 @@ def plot_benchmark_size_curves(b: pd.DataFrame, out_dir: Path) -> None:
                + [plt.Line2D([], [], color=S.ALERT, lw=.9, ls=":", label="Chance")])
     ncol = next((k for k in (8, 9, 6, 7, 5) if len(handles) % k == 0), 8)
     fig.legend(handles=handles, ncol=ncol, loc="lower center", frameon=False, fontsize=7.5, handlelength=3.2)
-    fig.tight_layout(rect=(0, 0.5 / fig.get_figheight() * (-(-len(handles) // ncol)), 1, 1))
+    fig.tight_layout(rect=(0, 0.2 / fig.get_figheight() * (-(-len(handles) // ncol)), 1, 1))   # 0.2 in per legend row
     t.to_csv(out_dir / "benchmark_size_curves_paper.csv", index=False)
     S.save_paper(fig, out_dir / "benchmark_size_curves_paper")
 
@@ -264,7 +265,9 @@ def generate_readme(pool: str) -> None:
             "The paper version, `benchmark_curves_paper.png` (`--paper`, redrawn from `benchmark_curves.csv`), "
             "drops the header for a legend of the line encoding; its size twin, `benchmark_size_curves_paper.png`, draws "
             "each design's final accuracy against non-embedding parameters, colour = L (the scaling-predictability "
-            "appendix's size figure).")
+            "appendix's size figure).\n\n"
+            f"![Benchmark curves, paper version]({rel}/benchmark_curves_paper.png)\n\n"
+            f"![Final accuracy against size, paper version]({rel}/benchmark_size_curves_paper.png)")
     readme = OUT_ROOT / "README.md"
     replace_block(readme, "curves", body, f"curves.py --pool {pool}")
     print(f"Wrote auto README block → {readme}")

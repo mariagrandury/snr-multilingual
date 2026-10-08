@@ -9,7 +9,7 @@ Outputs (all in this directory):
   pearson_r_per_variant.csv
   snr_apertus_vs_snr_allenai_<best_variant>.png
   snr_apertus_vs_snr_allenai_grid.png
-  snr_apertus_vs_snr_allenai_paper.png/.svg/.csv   the headline scatter for the paper, one named point per shared task
+  snr_apertus_vs_snr_allenai_paper.png/.csv   the headline scatter for the paper, one named point per shared task
   top_apertus.csv  top_allenai.csv  agreement.md
 
     python analysis/rq07_external_frameworks/analyze.py --pool predictivity
@@ -45,6 +45,7 @@ from evals.scripts.utils.configs import load_pools  # noqa: E402
 from analysis.autodoc import (  # noqa: E402
     ALLENAI_POOL, CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
 from analysis.rq03_noise_and_snr.run_apertus_snr_variants import variant_key
+from analysis.rq07_external_frameworks.build_allenai_variants import APERTUS_TASK
 from analysis.utils import TARGET_SIZE
 
 ROOT_OUT = EXTERNAL_FRAMEWORKS
@@ -72,34 +73,22 @@ VARIANT_TITLES = {variant_key(fd): fd["title"] for fd in AGGREGATION_FUNCTIONS}
 
 # --- task name aliasing ----------------------------------------------------
 
-# Direct (Apertus → AllenAI) aliases for tasks that are the same eval
-# under different lm-eval task keys. The MMLU family is handled
-# separately below since it's a per-subject prefix rewrite, not a single
-# rename.
-_TASK_ALIASES: dict[str, str] = {
-    "commonsense_qa": "csqa",
-    "social_iqa": "socialiqa",
-    # Add more obvious mismatches here as we discover them.
+# Our task -> its AllenAI DataDecide name: the inverse of the builder's
+# `APERTUS_TASK` (same items, same cloze format, same metric), so MMLU and CSQA
+# are our cloze twins `rf_mmlu` / `rf_commonsense_qa`. Our letter-format
+# originals take DataDecide's name for the MC format (`mmlu:mc`, `csqa:mc`),
+# which the checkpoint series does not carry, so they are not shared.
+_TASK_ALIASES: dict[str, str] = {ours: theirs for theirs, ours in APERTUS_TASK.items()} | {
+    "mmlu": "mmlu:mc",
+    "commonsense_qa": "csqa:mc",
 }
 
 
 def _canonicalise_apertus_task(t: str) -> str:
-    """Map Apertus task names to their AllenAI equivalents.
-
-    MMLU: Apertus only ran the multilingual ``global_mmlu_full_en_<subject>``
-    view on a full ckpt-series — the vanilla ``mmlu_<subject>`` rows are
-    single-shot and have no SNR. AllenAI exposes the same content under
-    the vanilla ``mmlu_<subject>`` names, so we alias. Note: Apertus's
-    ``global_mmlu_full_en`` is the **Cohere Full** translation of MMLU,
-    not the original — see ``agreement.md`` for the methodological
-    caveat.
-
-    Other one-off renames live in ``_TASK_ALIASES``.
-    """
-    if t == "global_mmlu_full_en":
-        return "mmlu"
-    if t.startswith("global_mmlu_full_en_"):
-        return "mmlu_" + t[len("global_mmlu_full_en_"):]
+    """Map an Apertus task name to its AllenAI equivalent (`_TASK_ALIASES`).
+    Until 2026-10-08 `global_mmlu_full_en` stood in for MMLU; the original
+    `mmlu` and its cloze twin `rf_mmlu` are evaluated now, so it no longer
+    does."""
     return _TASK_ALIASES.get(t, t)
 
 
@@ -365,9 +354,12 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
            f"— too few for a correlation to mean anything."
            if weak else f" over the {n_shared} shared English tasks."),
         f"- **The shared universe is the English tasks both corpora evaluate** "
-        f"(ARC, HellaSwag, MMLU via the Global-MMLU English split, PIQA/CSQA/OpenBookQA "
-        f"where run), so the evidence is the SNR *correlation* over that handful, not "
-        f"top-K Jaccard (trivially 1.0 on so small a universe).",
+        f"(ARC, HellaSwag, OpenBookQA, and MMLU / CSQA through our cloze twins), so the evidence "
+        f"is the SNR *correlation* over that handful, not top-K Jaccard (trivially 1.0 on so small "
+        f"a universe).",
+        f"- **Like for like since 2026-10-08:** the same 20 % noise window (5 points at 1B), the same "
+        f"detrended checkpoint noise (rule 4) and the same metric on both sides (`build_allenai_variants.py`); "
+        f"the signal populations still differ (25 pretraining corpora against our design variants).",
     ])
 
     rs = []
@@ -532,7 +524,6 @@ def run(stage: str, pool: str, apertus_dir: Path, out_dir: Path) -> None:
     agreement_df = pd.DataFrame(rows)
 
     # Write agreement.md
-    aliased_mmlu = sorted(t for t in shared if t == "mmlu" or t.startswith("mmlu_"))
     other_aliases = sorted(
         f"{src} → {dst}" for src, dst in _TASK_ALIASES.items() if dst in shared
     )
@@ -544,20 +535,15 @@ def run(stage: str, pool: str, apertus_dir: Path, out_dir: Path) -> None:
         f"AllenAI SNR column: `snr_{best_variant}_{ALLENAI_SIZE}`",
         f"Shared-task universe: **{len(shared)}** tasks.",
         "",
-        "## ⚠️ Methodological caveat — MMLU aliasing",
+        "## Like for like",
         "",
-        "Apertus's `global_mmlu_full_en[_<subject>]` rows are aliased to "
-        "AllenAI's `mmlu[_<subject>]` rows so the cross-corpus comparison "
-        "can use the ~60 MMLU subjects. **The two are not the same content.** "
-        "Apertus runs the **Cohere Full** translation/post-edit of MMLU "
-        "(English split), AllenAI runs the original Hendrycks et al. MMLU. "
-        "Question wording, post-edits, and sample coverage may differ. "
-        "Plan: re-run the original `mmlu` lm-eval task on the multilingual "
-        "Apertus checkpoints; once that lands, drop the alias and compare "
-        "like-for-like.",
-        "",
-        f"MMLU rows aliased into the shared set: **{len(aliased_mmlu)}** "
-        f"of {len(shared)} total.",
+        "Both sides read the same noise window (the k/20 points in the last 20 % of each run, "
+        "5 points at 1B), the same checkpoint noise (the residual SD around a line through it, "
+        "RULES.md rule 4) and the same metric (our `acc_norm` is DataDecide's `acc_per_char`, our "
+        "`acc` its `acc_raw`; `build_allenai_variants.py`). MMLU and CSQA are our cloze twins "
+        "`rf_mmlu` / `rf_commonsense_qa` against DataDecide's RC format; our letter-format "
+        "originals are not shared. The signal populations still differ: 25 pretraining corpora "
+        "against our design variants.",
         "",
         "Other Apertus → AllenAI aliases that hit the shared set: "
         + (", ".join(f"`{a}`" for a in other_aliases) if other_aliases else "_none_")

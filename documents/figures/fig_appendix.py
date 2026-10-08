@@ -141,7 +141,7 @@ def language_heatmap(sub, lang, name, out, nfam):
 
 if __name__ == "__main__":
     long = pd.read_csv(SRC)
-    size = long[long["da_def"] == "DA-size"]
+    size = long[long["da_def"].str.startswith("DA-size")]   # every size pair, the ladder's own ("DA-size (ladder)") too
     names = {c: e["language"] for c, e in load_languages()["languages"].items()}
     langs = [l for l in load_languages()["groups"]["trained"] if l in set(size["language"])]
     langs = sorted(langs, key=lambda l: (l != "en", l))

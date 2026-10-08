@@ -72,7 +72,7 @@ for k in KINDS:
     best.append(f"{tt(a)} / {tt(b)}, $\\rho = {g.loc[s, 'rho']:.2f}$")
 out += ["\\bottomrule", "\\end{tabular}",
         "\\caption{The signal $\\times$ noise grid. We give the Spearman $\\rho$ with decision accuracy of each signal alone, of its ratio to the relative checkpoint noise (/ckpt, where "
-        "\\texttt{rel\\_dispersion} / \\texttt{ckpt\\_rel} is the SNR of \\citet{heineman_signal_2025} as released) and of its ratio to the relative $k$-fold benchmark noise (/$k$-fold). "
+        "\\texttt{rel\\_dispersion} / \\texttt{ckpt\\_rel} is the SNR of \\citet{heineman_signal_2025} as released, with the detrended checkpoint noise) and of its ratio to the relative $k$-fold benchmark noise (/$k$-fold). "
         "The last rows give each noise alone. The population and conventions are the same as in Table~\\ref{tab:sur-corr-catalogue}. Rows are ordered by $|\\rho|$ of the checkpoint-noise SNR with DA-size. "
         f"The strongest of the 132 ratios is {best[0]} for DA-size, {best[1]} for DA-goal and {best[2]} for DA-ckpt.}}",
         "\\label{tab:sur-corr-snr}", "\\end{table}"]

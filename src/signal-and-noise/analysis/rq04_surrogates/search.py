@@ -69,6 +69,7 @@ a configuration with q < Q on the validation half.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from itertools import combinations
 from pathlib import Path
@@ -98,7 +99,11 @@ from analysis.utils import FRAC_TOL, MIN_LANG_TASKS, NOISE_WINDOW, PAIR_AXES  # 
 OUT_ROOT = SURROGATES
 KEYS = ["task", "language", "benchmark", "kind", "tier", "proxy_size", "axes"]
 TRUTH = ["t_kind", "metric", "axes", "L"]
-CIRCULAR = {"da_ckpt_mean", "da_ckpt_half", "sign_persistence", "settling_time"}   # early-vs-final agreements
+# Early-vs-final agreements, and statistics that contain one: `crossings` counts
+# the sign changes up to and including the final checkpoint (none = DA-ckpt 1 at
+# every fraction) and `consecutive_kendall*` include the 90 % -> final step.
+CIRCULAR = {"da_ckpt_mean", "da_ckpt_half", "sign_persistence", "settling_time",
+            "crossings", "consecutive_kendall", "consecutive_kendall_late"}
 RELIABLE_CUTS = (0.66, 0.75)
 RELIABLE_RED = "median"                 # the reduction of rq02's above_66_* filters
 MIN_UNITS = MIN_LANG_TASKS              # main analysis: rule 8's floor, three clusters
@@ -111,6 +116,10 @@ QUANTILES = (0.25, 0.5, 0.75)
 N_VALIDATE, N_PERM, N_BOOT = 400, 2000, 500
 TOP_PER_SUBSET = 3                      # ... plus the discovery-best three of every (truth, subset)
 Q = 0.05
+# Processes per phase. Every phase maps one job per truth with Pool.map, which keeps
+# the job order, and each validation job seeds its own rng, so the tables do not
+# depend on it; more workers also keep each process under a login node's CPU limit.
+N_JOBS = int(os.environ.get("SEARCH_WORKERS", "4"))
 mpl.rcParams.update(S.RC)
 
 
@@ -281,7 +290,8 @@ def subsets(g: pd.DataFrame):
             yield typ, str(k), (b & (g[col] == k)).to_numpy()
     if (g["frac"] < 1).any():
         yield "stage", "early (<= 50 %)", (b & (g["frac"] <= .5)).to_numpy()
-        yield "stage", "late (60-90 %)", (b & (g["frac"] > .5)).to_numpy()
+        # DA-goal's last tenth is its 100 % cell (= DA-size), DA-ckpt's is 90 %
+        yield "stage", f"late (60-{g.loc[b, 'frac'].max():.0%})", (b & (g["frac"] > .5)).to_numpy()
     for col in [c for c in g.columns if c.startswith("reliable_")]:
         yield "reliable (on the truth)", col.removeprefix("reliable_"), (b & g[col].fillna(False).astype(bool)).to_numpy()
 
@@ -633,7 +643,7 @@ def main(pool: str, out_dir: Path) -> None:
     d, names = load(out_dir, pool)
     print(f"{len(d):,} cells, {d['task'].nunique()} tasks, {len(names)} surrogates, "
           f"{d.groupby(TRUTH).ngroups} truths")
-    with Pool(4) as p:
+    with Pool(N_JOBS) as p:
         corr = pd.DataFrame([r for rows in p.map(screen_truth, [(tr, g, names) for tr, g in truths(d)]) for r in rows])
     print(f"  screened: {len(corr):,} correlations")
     jobs = []
@@ -644,7 +654,7 @@ def main(pool: str, out_dir: Path) -> None:
             top = top.reindex(top[col].abs().sort_values(ascending=False).index).head(TOP_K)
             if len(top) >= 2:
                 jobs.append((tr, g, top, basis))
-    with Pool(4) as p:
+    with Pool(N_JOBS) as p:
         filt = pd.DataFrame([r for rows in p.map(filters_truth, jobs) for r in rows])
     filt.to_csv(out_dir / "surrogate_filters.csv", index=False)
     print(f"  filters: {len(filt):,} correlations")
@@ -669,7 +679,7 @@ def main(pool: str, out_dir: Path) -> None:
         rows = pick[(pick[TRUTH].astype(str) == pd.Series(tr).astype(str)).all(axis=1)]
         if len(rows):
             vjobs.append((g, rows.to_dict("records"), i))
-    with Pool(4) as p:
+    with Pool(N_JOBS) as p:
         val = pd.DataFrame([r for rows in p.map(validate_job, vjobs) for r in rows])
     assert np.allclose(val["rho_val"], val["rho_val_check"], equal_nan=True), "validation cells differ from the screen"
     val["q_val"] = bh(val["p_val"].to_numpy())

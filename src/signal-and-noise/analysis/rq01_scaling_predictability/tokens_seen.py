@@ -13,7 +13,7 @@ checkpoint) grid, not a new measurement, and the plan files live on capstor: a
 cell whose share is unreachable carries NaN tokens, is left out of the figure
 and is counted in the `!!!` line and the README.
 
-A) da_goal_multi_axes_across_langs_bpb.png/.pdf/.csv, _cells.csv  (and `_mono_axis_` twins of goal and ckpt)
+A) da_goal_multi_axes_across_langs_bpb.png/.csv, _cells.csv  (and `_mono_axis_` twins of goal and ckpt)
    DA-goal of a language's BPB against the tokens of that language the proxies
    had seen. DA-goal = the share of pairs of design variants the proxy
    checkpoint orders like the reference's final (rq02's kernel; rule 15's
@@ -37,7 +37,7 @@ A) da_goal_multi_axes_across_langs_bpb.png/.pdf/.csv, _cells.csv  (and `_mono_ax
    the token axis fall together there, it is the schedule, not the exposure,
    that decides when a language's BPB ranks the variants.
 
-B) pass_prob_vs_train_tokens_by_benchmark_<population>.png/.pdf/.csv, _points.csv
+B) pass_prob_vs_train_tokens_by_benchmark_<population>.png/.csv, _points.csv
    Per benchmark and size: the share of its (language, L) cells that are above
    chance, against the tokens of the language the cell trained on, one line per
    size, the cells binned on log10 tokens (BINS_PER_DECADE per decade, the cell
@@ -63,7 +63,7 @@ B) pass_prob_vs_train_tokens_by_benchmark_<population>.png/.pdf/.csv, _points.cs
    panels in order of the language's tokens) and `_all_` (one panel, every cell);
    the cell table is the `_by_benchmark_` stem's `.csv`, the two others' `.csv`
    hold the binned points they draw.
-   Two paper copies of the `_by_benchmark_1904_ckpts` figure, PNG and SVG, no
+   Two paper copies of the `_by_benchmark_1904_ckpts` figure, no
    header, the language count alone in a panel's title: `_paper` (every
    benchmark) and `_include_rf_paper_vertical` (INCLUDE over its `rf_` twin,
    the two panels stacked in the height of one), and `da_goal_..._paper`, the
@@ -180,7 +180,7 @@ def plot_da(summary: pd.DataFrame, cells: pd.DataFrame, out_dir: Path, mode: str
             paper: bool = False, axes: str = "multi-axis") -> None:
     """`x` = "tokens" (the language's tokens the proxy checkpoint had seen) or
     "frac" (the share of its run the checkpoint sits at: the `_vs_frac` twin);
-    `paper` writes the `_paper` copy, PNG and SVG, without the header (rule 18);
+    `paper` writes the `_paper` copy without the header (rule 18);
     `axes` the pair set the DA is over."""
     ref = DA_MODES[mode][0]
     fig, ax = plt.subplots(figsize=(6.4, 4.4))
@@ -297,7 +297,7 @@ def _cell_label(ckpts: bool) -> str:
 def plot_pass(points: pd.DataFrame, cells: pd.DataFrame, out_dir: Path, population: str, ckpts: bool = False,
               by: str = "benchmark", paper: bool = False) -> None:
     """`paper`: no header, the language count alone in a panel's title, the
-    cell named on the y axis, written as `<stem>_paper.png/.svg`."""
+    cell named on the y axis, written as `<stem>_paper.png`."""
     if by == "all":
         cells = cells.assign(all="all benchmarks, all languages")
     if by == "benchmark":

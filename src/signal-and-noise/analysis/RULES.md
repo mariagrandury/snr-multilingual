@@ -27,6 +27,7 @@ mappings the loader applies (`snr/download/ladder.py`; the frame keeps
 | deep | deep | xielu | ademamix |
 | shallow | shallow | xielu | ademamix |
 | swiglu | deep | swiglu | ademamix |
+| muon | deep | xielu | muon |
 
 | data build (`DATA_SCHEMES`: `letter`, `temp`) | L | scheme | T |
 |---|---|---|---|
@@ -63,10 +64,10 @@ headline pool carries every build.
 
 | # | rule | constant / helper |
 |---|---|---|
-| 1 | **The above-random gate.** A benchmark's number at a size counts only where the task is above chance at that size: the Wilson 95 % lower bound of a run's accuracy clears the chance level for at least `MIN_SHARE` (half) of the size's runs. A quantity that ranks against the reference (DA-size, a surrogate of it) also needs the task above chance at the reference. A cross-size fit uses only sizes where the task is above chance. Gated cells are drawn grey and kept in the CSV, never dropped from a grid. Tasks without a chance level (BPB, the loss, generative tasks) are never gated: a mask of NA passes. The chance level is uniform guessing: 1/n_options, or E[1/n_i] over the items when the count varies (TruthfulQA mc1, 0.2253), or the mean true-option share for `truthfulqa_mc2`, whose score is probability mass rather than a pick-one accuracy (0.449; `above_random.CHANCE`, read through `task_chance`). It does not test a constant answer, which scores the majority gold label's share (hellaswag_ta: 0.2585 against 0.25), and the runs of a size answer the same items, so their verdicts are correlated, not independent trials. | `rq00 above_random.load_mask`, `utils.passes_gate`, `grids.mark_gated` |
+| 1 | **The above-random gate.** A benchmark's number at a size counts only where the task is above chance at that size: the Wilson 95 % lower bound of a run's accuracy clears the chance level for at least `MIN_SHARE` (half) of the size's runs. A quantity that ranks against the reference (DA-size, a surrogate of it) also needs the task above chance at the reference. A cross-size fit uses only sizes where the task is above chance. Gated cells are drawn grey and kept in the CSV, never dropped from a grid. Tasks without a chance level (BPB, the loss, generative tasks, and tasks whose tasks.json `metric` is not an accuracy, such as MELA's mcc and EVALITA wic's f1) are never gated: a mask of NA passes. The chance level is uniform guessing: 1/n_options, or, when the count varies, E[1/n_i] measured over the items, per family in `above_random.CHANCE` (TruthfulQA mc1 and ibero_truthfulqa 0.2253, m_truthfulqa_mc1 0.227, arabicmmlu and rf_arabicmmlu 0.2935) or per task-name prefix in `CHANCE_BY_PREFIX` where a family mixes fixed and variable counts (NorEval nrk_quiz_qa_* 0.28, nortruthfulqa_mc_* 0.23). The multi-true mc2 families (`truthfulqa_mc2`, `m_truthfulqa_mc2`, `truthfulqa-multi_mc2`) score probability mass rather than a pick-one accuracy and take the mean true-option share, 0.449. `task_chance` is the one reader. The gate tables live in rq00_gate_and_curves unless `SNR_GATE_DIR` names another directory; `rq00_task_reformulation/probe.sh` sets it to a scratch dir, so a probe run never touches the canonical tables. It does not test a constant answer, which scores the majority gold label's share (hellaswag_ta: 0.2585 against 0.25), and the runs of a size answer the same items, so their verdicts are correlated, not independent trials. | `rq00 above_random.load_mask`, `utils.passes_gate`, `grids.mark_gated` |
 | 2 | **Trained languages only.** A model's score on a language its mixture does not train is a transfer measurement. It is used in rq06 (language transfer) and nowhere else, not even pooled into a mean. `bpb_macro` and `train_loss` are measurements of the whole mixture and always count. | enforced in `utils.build_snr_pool`; opt out with `untrained=True` (rq06, and the gate, which must cover every task) |
 | 3 | **Ten checkpoints.** Every quantity read along a run uses the ten evaluated tenths (10 %, 20 %, …, 100 %), the grid every size shares; `da_early_fracs` is the nine before the final. BPB is also scored on the twentieths; those rows are left out wherever BPB and benchmarks are compared or a checkpoint axis is drawn. Progress is labelled in Chinchilla multiples (1C–5C), never as a share of the run. | `utils.CKPT_DA_EARLY_FRACS`, `utils.SHARED_FRACS`, `utils.on_shared_grid`, `grids.chinchilla` |
-| 4 | **One noise window.** Checkpoint noise is the standard deviation over the `k`/`NOISE_GRID` (k/20) points in the last `NOISE_WINDOW` (20 %) of a run, the WSD decay, and the same window and grid for every kind of measurement: 80, 85, 90, 95 and 100 %, five points. BPB has always been scored there; `launch_trainings.due_iters` adds the benchmark evals at 85 % and 95 %, which the size grids alone miss (a 20-save size lands on the tenths, a 60-save size on the thirtieths). A run whose two new evals have not landed contributes three points, which is a noisier estimate of the same quantity, not a second definition. | `utils.NOISE_WINDOW`, `utils.NOISE_GRID`, `utils.noise_checkpoints`, `launch_trainings.due_iters`, `ladder._on_shared_grid` |
+| 4 | **One noise window, one noise.** Checkpoint noise is read on the `k`/`NOISE_GRID` (k/20) points in the last `NOISE_WINDOW` (20 %) of a run, the WSD decay, and the same window and grid for every kind of measurement: 80, 85, 90, 95 and 100 %, five points. It is the **residual standard deviation around a least-squares line** through those points (n − 2 degrees of freedom, three points at least): scores still rise over the decay, and the raw standard deviation counts that rise as noise (1.5–4× on the tasks with real signal, `plan/signal-audit-2026-10-08.md` F2). The raw standard deviation (ddof 0, the definition until 2026-10-08) is kept as a labelled alternative (`detrend=False`; rq03's `ckpt_noise_raw_<size>`, effect_vs_noise's `ckpt_noise`), never as an unlabelled one. BPB has always been scored there; `launch_trainings.due_iters` adds the benchmark evals at 85 % and 95 %, which the size grids alone miss (a 20-save size lands on the tenths, a 60-save size on the thirtieths). A run whose two new evals have not landed contributes three points, which is a noisier estimate of the same quantity, not a second definition. | `utils.NOISE_WINDOW`, `utils.NOISE_GRID`, `utils.noise_checkpoints`, `utils.checkpoint_noise`, `utils.NOISE_DETREND`, `launch_trainings.due_iters`, `ladder._on_shared_grid` |
 | 5 | **Three pairs.** A decision-accuracy cell needs at least `MIN_PAIRS` (3) design-variant pairs; below that it is NaN and its pair count is still written next to it. The rq02 kernels enforce this and print how many cells it emptied; any other DA computation applies the same constant and reports the same way. A cell's pair count is `k(k-1)/2` over its `k` families, so it is triangular — 0, 1, 3, 6, 10, … and never 2. `MIN_PAIRS` = 3 therefore means "three families"; setting it to 2 changes nothing, and the only value that admits a two-family cell is 1, where DA can only be 0 or 1. | `utils.MIN_PAIRS`, `compute_da` kernels, `da_all_n_pairs_per_task_both_axes.csv` |
 | 6 | **One task per benchmark and language.** A benchmark with sub-benchmarks (MMLU subjects, INCLUDE domains) is read as its per-language parent only. Sub-benchmarks are used in rq08 (subset selection) and nowhere else. | enforced in `utils.build_snr_pool`; opt out with `facets=True` (rq08 only); `utils.parents_only`, `utils._is_parent_task` |
 | 7 | **`multi` is not a language.** The cross-language aggregates (`bpb_macro`, `train_loss`, `include_base_44`) and unresolved tasks (`??`) are never a row of a per-language table, never one of "N languages", never a language in a correlation. | `utils.languages_only`, `utils.LANGUAGE_AGGREGATES` |
@@ -75,11 +76,11 @@ headline pool carries every build.
 | 10 | **Sizes 90M–1.7B, at each rung's own batch.** Every analysis reads `ANALYSIS_SIZES`, the ladder from 90M up to the reference. The 90M and 175M rungs were retrained at their own batch (84 / 168) on 2026-09-23; the diverged batch-504 runs they replace stay on disk and in older reports, and the loader keeps only the runs at the batch a rung uses now (`ladder_report.on_grid`, applied in `snr/download/ladder.py`), so an old run never appears: not as a value, an empty column, an axis tick or a README column. The 3B rung sits ABOVE the reference and is dropped the same way: it exists for the size-generalization question, which is its own RQ and opts in with `above_reference=True`. Nothing else reads a size above the reference, because a table whose reference is 1.7B cannot carry a column the reference does not cover. `ANALYSIS_SIZES` is derived from `TARGET_SIZE`, so moving the reference moves the ladder with it. | `utils.ANALYSIS_SIZES`, applied in `utils.build_snr_pool`; `above_reference=True` for the size-generalization RQ alone (`rq10_size_generalisation/above_reference.py`, exempt in `check_rules.EXEMPT`) |
 | 11 | **No leakage.** A statistic presented as available at a proxy size, or before the reference is trained, is computed from that proxy's data alone. A fit over sizes that includes the reference is a reference-size quantity and is labelled as one. | rq04 |
 | 12 | **Figures.** A CSV of the same name next to every PNG; white = no value, grey = gated; a line under the title saying how a cell is computed; the population (tasks, pairs, languages) stated wherever a mean is shown. | `grids`, `style.save_figure` |
-| 13 | **Populations move; say so.** When the set of tasks or pairs behind a cell differs across a row (the gate keeps different tasks at different sizes), the figure or table carries the count, and the README says the populations differ. | `grids` count overlays |
+| 13 | **Populations move; say so.** When the set of tasks or pairs behind a cell differs across a row (the gate keeps different tasks at different sizes), the figure or table carries the count, and the README says the populations differ. A paper figure whose task set moves along x also gets a `_fixed_tasks_paper` twin drawn on `utils.fixed_population` (per line, the tasks with a value at every point). | `grids` count overlays; `utils.fixed_population` |
 | 14 | **Outputs follow the code.** After a change to the loader, `configs/models.json` → `snr`, or a helper above, the pipeline is re-run before any table is read or cited; `check_rules.py` is the test that the tables on disk obey the rules. | `run_all_predictivity.sh`, `check_rules.py` |
 | 15 | **Say which pairs a decision accuracy is over.** A DA table carries an `axes` column naming its pair set: `multi-axis` (every pair of design variants at the pool's seed — the convention to 2026-09-22, in which two thirds of the pairs move more than one axis at once), `mono-axis` (the pairs moving exactly one of the design axes L, arch, activation, optimizer, scheme, T — the seed held — the decision a practitioner makes, and what upstream's "every pair" is by construction) and `seed` (the null: two draws of ONE design, emitted only where the pool has replicate seeds). The build label is never an axis; scheme (A/B/C, the recipe at that L) and T are (Definitions above; `DATA_SCHEMES` `letter` and `temp` are the source of truth), so A vs AT3 moves T, A vs ZH moves the scheme and B vs AT3 moves two axes. Nor is a cell's ladder (the `deep`/`shallow`/`swiglu` token in its name): the loader's frame carries its levels as the `arch` (depth: deep|shallow), `activation` and `optimizer` columns (`launch_trainings.LADDERS`), and `design_axes` reads them, so a (deep, swiglu) pair moves `activation` and a (shallow, swiglu) pair moves two axes and is no mono-axis pair. A consumer that does not ask reads `multi-axis`, so a table written before this rule needs no migration; a figure drawn over one pair set is filtered by a reliability computed on the same one (one exception: `rq02/pair_axes.py` filters both of its rows by the multi-axis reliability on purpose, so the pair set is the only thing that differs between them), and its twin sits beside it under `AXES_SUFFIX`. | `utils.DESIGN_AXES`, `utils.design_axes`, `utils.moved_axes`, `utils.pair_sets`, `utils.pair_agreement`, `utils.one_axes`, `utils.AXES_SUFFIX` |
 | 16 | **A name says what the artifact is.** Figure and table names are descriptive and coherent within and across RQs: the same quantity carries the same token in every folder, in one order — `<subject>_da_<kind>[_<breakdown>][_<filter>]_<pair set>[_<view>]` (`scale_convergence_da_size_L_above_66_both_mono_axis_flops`, `early_small_da_goal_by_L_above_80_multi_axes`). A decision-accuracy artifact always names which DA it holds (`da_size`, `da_ckpt`, `da_goal`; `da_all` when one file holds more than one, `da_size_vs_da_ckpt` when it sets two against each other), which pair set (`AXES_SUFFIX`: `_mono_axis`, `_multi_axes`, `_seed_null`; `_both_axes` when an `axes` column carries every pair set, `_mono_vs_multi_axes` when the figure compares them) and, where a reliability filter applies, which one (`above_66_size`, `above_66_ckpt`, `above_66_either`, `above_66_both`, `above_80`). A facet pair shares one table: `<name>_by_benchmark_<pair set>.png` and `<name>_by_language_<pair set>.png` read `<name>_<pair set>.csv` (`grids._csv_path`). A rename changes the writer, every reader and the files (`git mv`) in one change. | `utils.AXES_SUFFIX`, `grids._csv_path`, `check_rules.py --names` (lists the names that break the rule) |
-| 17 | **Nothing is generated outside the regeneration, and nothing orphaned stays unflagged.** Every figure, table, README auto block and paper block is written by a script that `run_all_predictivity.sh` or `scripts/refresh_analysis.sh` runs, so none can diverge from the code or from the report; a generated block names its generator in its marker (`<!-- BEGIN auto:KEY (script) -->`, `% BEGIN generated: KEY (script)`, `% Generated by script`). An orphan — an artifact no generator writes any more (the old twin of a renamed file, the output of a script dropped from the driver) — is flagged, never left to look current: the refresh lists every artifact a `FORCE=1` run did not write, and a rename lists the files it leaves behind with the command that removes them (deleting is the user's call). The slides are outside this rule. | `check_rules.py` (generators), `scripts/refresh_analysis.sh` (the `ORPHAN` lines) |
+| 17 | **Nothing is generated outside the regeneration, and nothing orphaned stays unflagged.** Every figure, table, README auto block and paper block is written by a script that `run_all_predictivity.sh` or `scripts/refresh_analysis.sh` runs, so none can diverge from the code or from the report; a generated block names its generator in its marker (`<!-- BEGIN auto:KEY (script) -->`, `% BEGIN generated: KEY (script)`; a paper section written whole by a generator carries no marker and `check_rules.GENERATED_TEX` names its generator instead). An orphan — an artifact no generator writes any more (the old twin of a renamed file, the output of a script dropped from the driver) — is flagged, never left to look current: the refresh lists every artifact a `FORCE=1` run did not write, and a rename lists the files it leaves behind with the command that removes them (deleting is the user's call). The slides are outside this rule. | `check_rules.py` (generators), `scripts/refresh_analysis.sh` (the `ORPHAN` lines) |
 | 18 | **Paper figures are bare.** Every `_paper` figure (the files `documents/paper/figures/make_rq_figures.py` copies) has no figure title and no description: the caption is the paper's. Its axis labels are capitalized; no label, panel title or legend entry uses a dash as punctuation (`—`, `–`, ` - `; a hyphen inside a word such as Global-MMLU is fine) or a `;`; and legend columns should hold the same number of entries where possible (choose `ncol` to divide the entry count). `style.save_paper` refuses, with a `RULE 18` error, to write a figure with a title, a description, an uncapitalized axis label, a dash or a `;`, and only warns about unequal legend columns (an odd entry count cannot always be split evenly), and `check_rules.py` flags a script that writes a `_paper` figure without it (`EXEMPT[18]` lists the generators not yet converted). | `style.save_paper`, `style.paper_problems`, `check_rules.py` |
 | 19 | **Double-blind anonymity.** Until the reviews are out, the website, the docs and the paper carry NO link to any of our Hugging Face organisations or profiles, W&B, GitHub, or any personal or professional site, and no name, handle or affiliation that identifies us: one such link is grounds for automatic rejection. Where such a link would go, write the sentence `REMOVED_LINK` holds ("Link momentarily removed for double blind review"); its wording lives in that one constant. The analysis READMEs' GitHub links (README rule 6) are internal and must not reach a published page. | `anonymity.REMOVED_LINK` (repo root) |
 
@@ -105,9 +106,9 @@ be told (rule 13):
   alone should say so.
 
 This matters because the originals barely survive the gate: at 1.7B the gate
-keeps 0 of 37 Global-MMLU tasks and 11 of 105 belebele tasks, against 35 and
-86 of their `rf_` twins, and 4 of 43 INCLUDE tasks against 31 of the `rf_`
-twins and 33 of the Gemini-rewritten ones. Before the twins entered the pool
+keeps 1 of 37 Global-MMLU tasks and 5 of 105 belebele tasks, against 35 and
+86 of their `rf_` twins, and 3 of 43 INCLUDE tasks against 31 of the `rf_`
+twins and 32 of the Gemini-rewritten ones. Before the twins entered the pool
 those families contributed almost nothing to any RQ.
 
 ## The benchmark-BPB twins are in the populations too
@@ -127,17 +128,18 @@ an `rf_` twin has one as well (`belebele-rf-bbpb`). What a reader has to be told
   (`DISCREPANCY_UNIT_INTERVAL`) are NaN on the twins, as on BPB and the loss.
 - **No chance level, so no gate.** Like per-language BPB, the twin has a mask
   of NA and passes rule 1 everywhere, including where its original is at chance.
-- **The store holds finals only.** It was built with `--finals-only` on
-  seed 1904, so a twin exists only where the store holds the cell's final
-  checkpoint (`with_bbpb_twins` is an inner join on `bench_bpb.csv`): it
-  enters DA-size and every final-checkpoint read, and is empty in DA-ckpt,
-  DA-goal before 100 %, the checkpoint noise and the seed replicates until the
-  store is rebuilt over every checkpoint. The nightly only reduces the store
-  (`--bench-bpb`) and extracts nothing, so a cell evaluated after the last
-  `build_per_item_store.sbatch` run (the six L1 FineWeb cells for now)
-  has no twin until the sbatch is re-submitted (it resumes); the loader prints
-  those models, and a bBPB DA over them runs over fewer families than its
-  original's.
+- **Every checkpoint, seed 1904 only.** The store was rebuilt over every
+  checkpoint on 2026-10-07 (`build_per_item_store.py` without
+  `--finals-only`) and holds all checkpoints of every seed-1904 ladder cell,
+  so a twin enters DA-size, DA-ckpt, DA-goal at every fraction, the
+  checkpoint noise and the SNR (`with_bbpb_twins` is an inner join on
+  `bench_bpb.csv`). It does not hold the seed replicates (64/313, 28/1797)
+  nor the 3B cells, so the seed noise, the seed holdout and the 3B reads have
+  no twin. The nightly only reduces the store (`--bench-bpb`) and extracts
+  nothing, so a cell evaluated after the last `build_per_item_store.sbatch`
+  run has no twin until the sbatch is re-submitted (it resumes); the loader
+  prints those models, and a bBPB DA over them runs over fewer families than
+  its original's.
 - **Two targets for a twin.** A twin is read against the 1.7B bBPB (bBPB →
   bBPB, no chance level, never gated) or against its original's 1.7B
   accuracy (bBPB → accuracy, the same truth as the accuracy variants, gated
@@ -171,7 +173,13 @@ moves while it is only a candidate. The one pass that reads them,
 `rq00_task_reformulation/probe.sh`, opts in with `SNR_TRAINED_GROUPS=auto,auto_probe`
 (`pretrain.ladder_report._trained_tasks`), which only widens the trained set
 for that process; the gate it rewrites differs from the committed one in the
-probe rows alone.
+probe rows alone. The gate itself is built with `untrained=True` and so keeps
+the candidates: a script that draws a population from its tables directly
+(`above_random_runs.csv` and the mask, share and scores) rather than from a
+pool keeps only `utils.auto_tasks()`, as rq06's `family_transfer.py` does
+(`check_rules.py` checks rq06), or the share's `trained` population, as rq00's
+`panels.py` does. `reformulations_gate.py` (the probe screen) and
+`run_apertus.py`'s count of every chance-level task in the gate read them all.
 
 **Promoted 2026-09-23**, and this moves every population: twenty of the
 twenty-one candidates are now in `auto` — the BBH / ACP-Bench cloze arms and
@@ -266,6 +274,24 @@ plus Russian, ZH plus Chinese, ES plus Spanish, and all three exist in the
 deep architecture only. They are three levels of the scheme axis at that L —
 the L2 analogue of A vs B at higher L — and that is what makes them the three
 families rule 5 counts at L2.
+
+## Size matching: the 600M depth pairs are flagged, not dropped
+
+A depth pair (deep vs shallow, the `arch` axis) compares two cells of one
+nominal size. At 175M, 350M, 1B and 1.7B their non-embedding counts match
+within −2.4 % to +0.8 % (90M shallow is 5.2 % smaller, 88.1M against 92.9M,
+and not flagged); at **600M they do not**: shallow has 616.6M
+non-embedding parameters against deep's 594.5M (+3.7 %), width 2048 against
+1536 (a 33 % larger tied embedding) and 14 layers, the depth of shallow 350M,
+so with D = 100 N it spends about 15 % more compute
+(`src/pretrain/hyperparams/hyperparams_{deep,shallow}.json`;
+`plan/signal-audit-2026-10-08.md` F5). Shallow beats deep on `bpb_dclm` in 9
+of 10 settings at 600M and loses at every other size, which is the "600M dip"
+of depth-pair DA. The pairs stay in every analysis (retraining the cell
+would move the grid); every output that reports depth-pair DA by size carries
+`size_matched` (False on these) and its caption says so, both from
+`utils.UNMATCHED_PAIRS` through `utils.size_matched` / `utils.size_match_note`.
+A depth result at 600M is read as "depth plus a little size".
 
 ## Anonymity (double-blind review)
 

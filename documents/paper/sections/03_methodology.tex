@@ -40,7 +40,8 @@ rotary position embeddings \citep{su_roformer_2023}, RMSNorm, QK-layernorm, and 
 We use AdEMAMix as optimizer
 %\citep{pagliardini_ademamix_2024}
 and a warmup-stable-decay learning-rate schedule, %\citep{hagele_scaling_2024},
-using a global batch of 504 sequences (84 at 90M and 168 at 175M, where 504 makes the short runs diverge; Appendix~\ref{app:model-configurations}). We scale the peak learning rate with the run's training budget and the initialization standard deviation with model width.
+using a global batch of 504 sequences (84 at 90M and 168 at 175M, where 504 makes the short runs diverge, see Appendix~\ref{app:model-configurations}). We scale the peak learning rate with the run's training budget and the initialization standard deviation with model width.
+At $K \in \{8, 15, 30\}$ we also train the deep architecture with Muon \citep{jordan_muon_2024}, following the Moonlight recipe \citep{liu_muon_2025}. Muon updates the hidden weight matrices, and each update is rescaled by $0.2\sqrt{\max(m, n)}$ for an $m \times n$ matrix so that its size matches that of AdamW. This lets Muon reuse the same peak learning rate and weight decay. Embeddings, the output layer, norms and biases keep AdamW.
 
 \textbf{Seeds.} Every configuration is trained with seed 1904. Selected deep configurations at sizes 175M, 600M and 1B use two additional seeds (Table~\ref{tab:grid}).
 These replicates vary both initialization and data order, so their variability estimates the combined effect of training randomness.
@@ -51,15 +52,15 @@ These replicates vary both initialization and data order, so their variability e
 \subsubsection{Intervention Axes}
 
 \textbf{Number of parameters $N$.} We train seven model sizes, measured in non-embedding parameters: 90M, 175M, 350M, 600M, 1B, 1.7B, 3B.
-The analysis reads the ladder from 90M to the 1.7B reference; the 3B rung, trained in the deep architecture at $K \in \{8, 15, 30, 50\}$, only checks whether the findings extend one rung above it.
+The analysis reads the ladder from 90M to the 1.7B reference. The 3B rung, trained in the deep architecture at $K \in \{8, 15, 30, 50\}$, only checks whether the findings extend one rung above it.
 
 \textbf{Architecture $A$.} We compare a deep with a shallow-wide architecture at each size up to 1.7B. The shallow models roughly double the width-to-depth ratio while preserving the feed-forward multiplier and the ratio of query heads to key-value heads. At $K \in \{8, 15, 30\}$ we also train the deep architecture with SwiGLU instead of xIELU activations, with the feed-forward width reduced to keep the parameter count. %Their non-embedding counts differ from the corresponding deep models by 0.4\% to 5.2\%. Details about the full specific architecture and model configurations can be found
-Detailed model configurations in Appendix \ref{app:model-configurations}.
+Detailed model configurations in Appendix \ref{app:model-configurations}. At 600M the shallow model is not size-matched to the deep one (3.7\% more non-embedding parameters, width 2048 against 1536 and about 15\% more compute), so the depth decision at that size also moves model size. We keep these pairs and flag them.
 
 \textbf{Number of training languages $K$.} We vary the number of training languages over $K \in \{1, 2, 8, 15, 30, 50\}$. The $K=1$ setting is English only. Multilingual settings allocate half the training tokens to English and half to the other $K-1$ languages.
 
 \textbf{Language selection scheme $M$.}
-We compare two rules for choosing the non-English languages. Scheme A ranks languages by available corpus size, whereas scheme B prioritizes diversity in script and language family; scheme B is trained at $K \in \{8, 15, 30\}$.
+We compare two rules for choosing the non-English languages. Scheme A ranks languages by available corpus size, whereas scheme B prioritizes diversity in script and language family. Scheme B is trained at $K \in \{8, 15, 30\}$.
 At $K=2$ the schemes instead vary the second language: Russian (A), Chinese (B), or Spanish (C). At $K=1$ they vary the English corpus: DCLM-edu (A), the same DCLM pipeline without its educational-quality filter (B), or FineWeb restricted to the crawls up to 2022 (C).
 Appendix~\ref{app:data-mixtures} lists the languages selected by each scheme at every value of $K$.
 
@@ -79,7 +80,7 @@ The $T=3$ runs use the scheme-A lists at $K \in \{15, 30, 50\}$, with both archi
 We assess the reliability of the following evaluations:
 \begin{itemize}[leftmargin=15pt,noitemsep,topsep=0pt]
 
-\item \textbf{Downstream tasks.} We evaluate \nbenchmarks multilingual benchmark families spanning reading comprehension, commonsense, factual knowledge, grammatical acceptability, and other capabilities (Table~\ref{tab:benchmark-families}). These include parallel multilingual items, native-language questions, machine translations, and automatically generated probes. We use the LM Evaluation Harness \citep{gao_framework_2021}. We use each task's documented prompt and number of in-context examples, without a chat template.
+\item \textbf{Downstream tasks.} We evaluate \nbenchmarks multilingual benchmark families spanning reading comprehension, commonsense, factual knowledge, grammatical acceptability, and other capabilities (Table~\ref{tab:benchmark-families}). These include parallel multilingual items, native-language questions, machine translations, and automatically generated probes. We use the LM Evaluation Harness \citep{gao_framework_2021}. We use each task's documented prompt and number of in-context examples, without a chat template. We score accuracy, and length-normalised accuracy (acc\_norm) for the original benchmarks in cloze format that report it (ARC, HellaSwag, OpenBookQA, MathQA and Global-PIQA) and for the reformulated variants, as OLMES does \citeneeded{olmes}.
 % The evaluated group also contains the reformulated variants of the letter-format families described in \S\ref{subsec:rq1}, which are gated, counted and plotted like any other benchmark.
 By default, we evaluate each model only on the languages included in its training mixture.
 % For the seed-1904, deep, scheme-A ladder, we additionally evaluate all validation languages and all benchmark languages registered in the harness. This extended evaluation supports our analysis of transfer to languages absent from a model's training mixture.
@@ -94,7 +95,7 @@ We evaluate both at the same aligned training fractions for every model size, al
 Specifically, we evaluate the ten deciles from 10\% to 100\% of training and two additional checkpoints at 85\% and 95\%, for a total of twelve aligned fractions. Every analysis along a run reads the ten deciles, which we label in Chinchilla multiples: each run trains five times the $20N$ budget, so 20\% of a run is 1C and its end 5C. % The 85\% and 95\% checkpoints serve only the checkpoint-noise estimate, taken over the five evenly spaced checkpoints in the last 20\% of training.
 
 An evaluation run is considered above chance when the lower bound of its one-sided 95\% Wilson confidence interval exceeds the task's chance level.
-We retain a benchmark--language--size cell when at least half of its evaluation runs satisfy this condition, taking the final checkpoints of every seed-1904 run of that size (every architecture and data build), and only those trained on the language when any exist. A ranking against the reference additionally requires the task to pass at the reference size.
+We retain a benchmark-language-size cell when at least half of its evaluation runs satisfy this condition, taking the final checkpoints of every seed-1904 run of that size (every architecture and data build), and only those trained on the language when any exist. A ranking against the reference additionally requires the task to pass at the reference size.
 % We apply an above-chance gate before any analysis of a benchmark task. For each language task $b_\ell$ and model size $N$, we take the final-checkpoint accuracy of every model of that size and mark it as above chance when the lower bound of its one-sided 95\% Wilson confidence interval exceeds the task's chance level $1/m_b$, where $m_b$ is the number of answer options.
 % We retain the task at that size when at least half of these models satisfy the condition. %, using only the models whose mixture trains $\ell$ whenever any exist.
 This prevents near-random variation from being interpreted as evidence for or against scaling.
@@ -142,7 +143,7 @@ We consider the three transfer settings defined in Table~\ref{tab:ra_defs}.
 
 We quantify ranking agreement using three complementary metrics. Spearman's rank correlation $\rho$ measures agreement between the complete proxy and reference rankings.
 Kendall's $\tau_a = (C-D)/n$ counts the concordant ($C$) minus the discordant ($D$) pairs among the $n$ pairs of variants.
-Decision accuracy (DA; \citealp{heineman_signal_2025}) measures the fraction of pairwise preferences that agree between them.
+Decision accuracy (DA, \citealp{heineman_signal_2025}) measures the fraction of pairwise preferences that agree between them.
 %For a set $\mathcal{P}$ of model-variant pairs,
 %\begin{equation}
 %\mathrm{DA} = \frac{1}{|\mathcal{P}|} \sum_{(a,b)\in\mathcal{P}} \mathbb{1}
@@ -166,12 +167,12 @@ For a language task $b_\ell$, a proxy point $(N,f)$ and a set $\mathcal{P}$ of p
 \label{eq:decision-accuracy}
 \end{equation}
 where $\theta_a$ has size $N$, $\theta_a^{\mathrm{ref}}$ is the same configuration at $N_{\mathrm{ref}}$. A pair tied on both sides counts as agreement and a pair tied on one side as disagreement. DA equals one when every pairwise preference transfers and equals $0.5$ in expectation under random, tie-free rankings. DA and Kendall's $\tau$ differ only in how they treat ties: $2\,\mathrm{DA}-1 = \tau_a + (T_{\mathrm{both}}-T_{\mathrm{one}})/n$, where $T_{\mathrm{both}}$ and $T_{\mathrm{one}}$ count the pairs tied on both sides and on one side. A cell $(b_\ell, N, f)$ is reported if it has at least three pairs.
-We summarize a benchmark or a suite by the mean of the cell values over its gated tasks. Where we restrict to reliably ranking tasks, we keep those whose median DA over the proxy cells reaches 0.66 for RA-size or for RA-checkpoint; such a reading is conditional on the selection.
+We summarize a benchmark or a suite by the mean of the cell values over its gated tasks. Where we restrict to reliably ranking tasks, we keep those whose median DA over the proxy cells reaches 0.66 for RA-size or for RA-checkpoint. Such a reading is conditional on the selection.
 
 
 \textbf{Ranking comparison axes.}
 When computing RA, we distinguish between two types of model comparisons based on which design choices vary.
-Pairs are formed among the seed-1904 runs of every architecture and data build; the replicate seeds serve only as a noise baseline and are never ranked as design variants.
+Pairs are formed among the seed-1904 runs of every architecture and data build. The replicate seeds serve only as a noise baseline and are never ranked as design variants.
 In \emph{single-axis} comparisons, models differ in only one model design choice ($K$, depth, activation, $M$ or $T$) while all others are held fixed. 
 For example, we compare deep and shallow architectures ($A$), while keeping the language count, language scheme, and sampling temperature unchanged
 ($\theta' = (A_\mathrm{deep},K,M,T) \rightarrow \theta'' = (A_\mathrm{shallow},K,M,T)$).

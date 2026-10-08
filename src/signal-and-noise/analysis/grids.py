@@ -259,7 +259,7 @@ def benchmark_and_language_panels(cells: pd.DataFrame, out_dir: Path, name: str,
 def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "", cbar: str = "",
                   level_label=str, never: str = "—", xlabel: str = "language", ylabel: str = "benchmark",
                   rows: list | None = None, cols: list | None = None, separators: list = (),
-                  names: tuple = ("family", "language"), also: tuple = (), name=display,
+                  names: tuple = ("family", "language"), name=display,
                   cell_text: bool = True, cell_w: float = 0.30) -> None:
     """Language x benchmark maps whose cell is a *level* (the smallest size,
     Chinchilla multiple or compute at which something holds). `mats` is one
@@ -269,11 +269,11 @@ def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "",
     NaN where there is no value (white). Rows follow the panel order, bits
     per byte first; every subplot keeps the same rows and columns. Writes
     `<name>.csv` next to the figure, its row and column keys under `names`;
-    `also` adds formats (".svg") beside the PNG; `name` labels the ticks,
-    `cell_text` writes the level into every cell, `cell_w` is a column's
-    width in inches; an empty `xlabel` / `ylabel` is not drawn. A path whose
-    stem ends in `_paper` is a paper figure (rule 18): capitalized legend
-    entries, no dash glyph, written through `S.save_paper`, which lints it."""
+    `name` labels the ticks, `cell_text` writes the level into every cell,
+    `cell_w` is a column's width in inches; an empty `xlabel` / `ylabel` is
+    not drawn. A path whose stem ends in `_paper` is a paper figure (rule
+    18): capitalized legend entries, no dash glyph, written through
+    `S.save_paper`, which lints it."""
     paper = path.stem.endswith("_paper")
     if isinstance(mats, pd.DataFrame):
         mats = {"": mats}
@@ -324,9 +324,9 @@ def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "",
     path.parent.mkdir(parents=True, exist_ok=True)
     pd.concat(long)[["panel", *names, "level_index", "level"]].to_csv(path.with_suffix(".csv"), index=False)
     if paper:
-        S.save_paper(fig, path.with_suffix(""), exts=("png", *(e.lstrip(".") for e in also)), dpi=130)
+        S.save_paper(fig, path.with_suffix(""), dpi=130)
     else:
-        S.save(fig, path, dpi=130, also=also)
+        S.save(fig, path, dpi=130)
     print(f"Wrote {path.name} ({len(mats)} panel(s), {len(rows)} benchmarks x {len(cols)} languages)")
 
 
@@ -380,11 +380,13 @@ def matrix_ax(ax, mat: pd.DataFrame, title: str, *, cnt: pd.DataFrame | None = N
 
 
 def stack_ax(ax, level: pd.DataFrame, title: str, *, levels: list, level_label=str, xlabel: str = "share of languages",
-             rows: list | None = None, name=display, legend_cols: int = 4) -> pd.DataFrame:
+             rows: list | None = None, name=display, legend_cols: int = 4, upright: bool = False) -> pd.DataFrame:
     """A level map condensed: per benchmark, the share of its languages at
     each level (never in red, filtered out by the gate in grey, only where
     the map has such cells). `rows` is the benchmark order (default: the
-    panel order), `name` labels the bars."""
+    panel order), `name` labels the bars. `upright`: the bars stand along the
+    x axis (benchmark names under them, `xlabel` on the y axis) and the caller
+    draws the legend."""
     level = level.reindex(index=rows if rows is not None else panel_order(level.index))
     gated = bool((level == GATED).any().any())
     codes = [float(i) for i in range(len(levels))] + [NEVER_CODE] + ([GATED] if gated else [])
@@ -393,14 +395,23 @@ def stack_ax(ax, level: pd.DataFrame, title: str, *, levels: list, level_label=s
     share = pd.DataFrame({n: (level == c).sum(axis=1) for n, c in zip(names, codes)})
     total = share.sum(axis=1)
     share = share.div(total.where(total > 0), axis=0)
-    left = np.zeros(len(share))
+    base = np.zeros(len(share))
+    labels = [f"{name(f)} ({int(n)})" for f, n in zip(share.index, total)]
     for n, c in zip(names, colours):
-        ax.barh(range(len(share)), share[n].fillna(0), left=left, color=c, label=n, height=0.8)
-        left += share[n].fillna(0).to_numpy()
-    ax.set_yticks(range(len(share))); ax.set_yticklabels([f"{name(f)} ({int(n)})" for f, n in zip(share.index, total)], fontsize=6.5)
-    ax.invert_yaxis(); ax.set_xlim(0, 1); ax.set_xlabel(xlabel, fontsize=7.5)
-    ax.set_title(title, loc="left", fontsize=8.5); S.clean(ax); ax.tick_params(axis="y", length=0)
-    ax.legend(fontsize=6, frameon=False, ncol=legend_cols, loc="upper left", bbox_to_anchor=(0, -0.12))
+        if upright:
+            ax.bar(range(len(share)), share[n].fillna(0), bottom=base, color=c, label=n, width=0.8)
+        else:
+            ax.barh(range(len(share)), share[n].fillna(0), left=base, color=c, label=n, height=0.8)
+        base += share[n].fillna(0).to_numpy()
+    if upright:
+        ax.set_xticks(range(len(share))); ax.set_xticklabels(labels, fontsize=6.5, rotation=90)
+        ax.set_xlim(-0.5, len(share) - 0.5); ax.set_ylim(0, 1); ax.set_ylabel(xlabel, fontsize=7.5)
+    else:
+        ax.set_yticks(range(len(share))); ax.set_yticklabels(labels, fontsize=6.5)
+        ax.invert_yaxis(); ax.set_xlim(0, 1); ax.set_xlabel(xlabel, fontsize=7.5)
+    ax.set_title(title, loc="left", fontsize=8.5); S.clean(ax); ax.tick_params(axis="x" if upright else "y", length=0)
+    if not upright:
+        ax.legend(fontsize=6, frameon=False, ncol=legend_cols, loc="upper left", bbox_to_anchor=(0, -0.12))
     t = share.rename_axis(index="row", columns="col").stack().dropna().rename("value").reset_index()
     return t.assign(panel=title)
 

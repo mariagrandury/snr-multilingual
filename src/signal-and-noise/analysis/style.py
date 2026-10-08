@@ -6,6 +6,8 @@ clears 2:1 against the slide surface, adjacent steps differ enough to read.
 Import this, never redefine a colour in a figure script.
 ``documents/figures/style.py`` re-exports it for the deck.
 """
+import functools
+import importlib.util
 from pathlib import Path
 
 import matplotlib as mpl
@@ -19,13 +21,17 @@ RAMP = ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"]
 # Categorical slots, in fixed order, for series that are different KINDS of
 # thing rather than steps of one magnitude. Never cycled past slot 3.
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a"]
+# Okabe-Ito, colourblind safe, for a figure with more than three kinds of line
+# (yellow left out: it does not read on white).
+OKABE_ITO = {"black": "#000000", "orange": "#e69f00", "sky": "#56b4e9", "green": "#009e73",
+             "blue": "#0072b2", "vermillion": "#d55e00", "purple": "#cc79a7"}
 SIZE_COLOR = {"90M": "#cde2fb", "175M": "#86b6ef", "350M": "#3987e5",
               "600M": "#1c5cab", "1B": "#0d366b", "1.7B": "#061d3a"}
 SIZES = ["90M", "175M", "350M", "600M", "1B", "1.7B"]
-# A cell's other two axes on a curve: its ladder (deep, shallow, swiglu) takes
+# A cell's other two axes on a curve: its ladder (deep, shallow, swiglu, muon) takes
 # the line width, its data build (the frame's `data`) the dash pattern, so
 # colour stays free for the size.
-LADDER_WIDTH = {"deep": 1.4, "shallow": 0.8, "swiglu": 2.2}
+LADDER_WIDTH = {"deep": 1.4, "shallow": 0.8, "swiglu": 2.2, "muon": 3.0}
 DATA_DASH = {"A": "-", "B": "--", "AT3": ":", "BT3": (0, (5, 2)), "ZH": "-.",
                "ES": (0, (3, 1, 1, 1)), "DCLMP": (0, (6, 2, 2, 2)),
                "FWEB": (0, (5, 1, 1, 1, 1, 1))}         # dash-dot-dot: AT3 is the only dotted one
@@ -55,12 +61,31 @@ def title(fig, text, y=1.02, size=12):
     fig.suptitle(text, fontsize=size, color=INK, y=y)
 
 
-def save(fig, path, dpi=200, also=()):
-    """`also`: further suffixes (".svg") written next to `path`."""
-    for p in [Path(path)] + [Path(path).with_suffix(ext) for ext in also]:
-        fig.savefig(p, dpi=dpi, bbox_inches="tight", facecolor=SURFACE)
+PAPER = Path(__file__).resolve().parents[3] / "documents" / "paper"
+
+
+@functools.cache
+def paper_names() -> dict[str, str]:
+    """Analysis figure (absolute path, no extension) -> the name the paper gives
+    it: the PNG entries of make_rq_figures.FIGURES."""
+    spec = importlib.util.spec_from_file_location("make_rq_figures", PAPER / "figures" / "make_rq_figures.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return {str(src.resolve()): stem for stem, (src, exts) in mod.FIGURES.items() if "png" in exts}
+
+
+def save(fig, png, dpi=200):
+    """Write the PNG `png`, and for a figure the paper embeds its SVG and PDF under
+    the paper's name in documents/paper/figures_svg/ and figures_pdf/: the only
+    SVG and PDF figures the analysis writes."""
+    png = Path(png)
+    fig.savefig(png, dpi=dpi, bbox_inches="tight", facecolor=SURFACE)
+    stem = paper_names().get(str(png.resolve().with_suffix("")))
+    for ext in ("svg", "pdf") if stem else ():
+        (PAPER / f"figures_{ext}").mkdir(exist_ok=True)
+        fig.savefig(PAPER / f"figures_{ext}" / f"{stem}.{ext}", dpi=dpi, bbox_inches="tight", facecolor=SURFACE)
     mpl.pyplot.close(fig)
-    print(f"wrote {path}" + "".join(f" {ext}" for ext in also))
+    print(f"wrote {png}" + (f" (paper {stem}.svg/.pdf)" if stem else ""))
 
 
 ADVISORY = "advisory: "                    # rule 18's "try to": reported, not refused
@@ -95,10 +120,11 @@ def paper_problems(fig) -> list[str]:
     return out
 
 
-def save_paper(fig, path, exts=("png", "svg"), dpi=200):
-    """Write a `_paper` figure: `path` without its extension, one file per
-    `exts`. Refuses (ValueError) a figure that breaks rule 18 instead of
-    writing it, so a paper figure on disk is always one that passed."""
+def save_paper(fig, path, dpi=200):
+    """Write a `_paper` figure: `path` without its extension, as PNG (and SVG and
+    PDF for the paper, see `save`). Refuses (ValueError) a figure that breaks
+    rule 18 instead of writing it, so a paper figure on disk is always one that
+    passed."""
     path = Path(path)
     problems = paper_problems(fig)
     for p in (p for p in problems if p.startswith(ADVISORY)):
@@ -106,15 +132,9 @@ def save_paper(fig, path, exts=("png", "svg"), dpi=200):
     if bad := [p for p in problems if not p.startswith(ADVISORY)]:
         mpl.pyplot.close(fig)
         raise ValueError(f"RULE 18: {path.name}: " + " | ".join(bad))
-    for ext in exts:
-        fig.savefig(path.parent / f"{path.name}.{ext}", dpi=dpi, bbox_inches="tight", facecolor=SURFACE)
-    mpl.pyplot.close(fig)
-    print(f"wrote {path}." + "/.".join(exts))
+    save(fig, path.parent / f"{path.name}.png", dpi)
 
 
-def save_figure(fig, out_dir, name, dpi=200, exts=("png", "pdf")):
-    """PNG for the READMEs and the site, PDF for the paper; one call."""
-    for ext in exts:
-        fig.savefig(out_dir / f"{name}.{ext}", dpi=dpi, bbox_inches="tight", facecolor=SURFACE)
-    mpl.pyplot.close(fig)
-    print(f"wrote {out_dir / name}." + "/.".join(exts))
+def save_figure(fig, out_dir, name, dpi=200):
+    """`save` by folder and stem: the PNG for the READMEs and the site."""
+    save(fig, Path(out_dir) / f"{name}.png", dpi)

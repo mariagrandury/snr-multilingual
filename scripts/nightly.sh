@@ -191,9 +191,12 @@ do_evals() {
 do_ladder() {
     say "publishing the ladder report"
     local pub_err=$LOG_DIR/$STAMP.publish.err
+    # stderr straight to its file (a `>(tee ...)` substitution is asynchronous: the grep below
+    # could read it before it is flushed), then appended to the log once the command is done
     ( cd "$REPO/src" && $PY pretrain/ladder_report.py --plot --publish --push-hf --push-git ) \
-        > >(tee -a "$LOG") 2> >(tee "$pub_err" >>"$LOG")
+        > >(tee -a "$LOG") 2> "$pub_err"
     local rc=$?
+    cat "$pub_err" >> "$LOG"
     # A crash before publish() wrote its CSV leaves yesterday's file at $fresh,
     # which the cmp below would install and verify as "today's": stop here.
     (( rc == 0 )) || { FAILED+=("ladder_report.py (exit $rc)"); finish 1; }
