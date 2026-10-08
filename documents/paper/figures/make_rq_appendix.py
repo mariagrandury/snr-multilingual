@@ -33,8 +33,7 @@ the first finding for the main figure, a fixed sentence for the extras.
 
 A FIGURE_PAGES entry writes sections/<stem>.tex, one more figure on a float page
 of its own, with a caption built from the figure's CSV on every run:
-app_rq02_bbpb, the main-text rq2 figure in three rows: accuracy, bBPB against the
-1.7B accuracy, bBPB against the 1.7B bBPB.
+app_rq02_bbpb, the main-text rq2 figure split into an accuracy and a bBPB row.
 
 The text is double-blind: links, file names and rule numbers are dropped.
 plain() gives every written sentence the appendix punctuation: no dash and no
@@ -472,30 +471,23 @@ def bold_lead(tex):
 def rq02_bbpb_caption(d):
     """The caption of app_rq02_bbpb, its numbers read from the figure's CSV `d`."""
     size = d[(d["panel"] == "DA-size") & (d["group"] == "all pairs") & (d["size"] != "1.7B")]
-    acc, b_acc, b_bb = (size[size["row"] == r].set_index("size")
-                        for r in ("Accuracy → 1.7B accuracy", "bBPB → 1.7B accuracy", "bBPB → 1.7B bBPB"))
-
-    def tasks(r):
-        n = r["n_tasks"].astype(int)
-        return f"{n.iloc[0]} tasks" if n.nunique() == 1 else f"{n.min()}--{n.max()} tasks"
-
-    def span(r):
-        return f"{r['reliability_macro'].min():.2f}--{r['reliability_macro'].max():.2f}"
+    acc, bb = (size[size["row"] == r].set_index("size") for r in ("Accuracy", "bBPB"))
+    n_acc, n_bb = acc["n_tasks"].astype(int), bb["n_tasks"].astype(int)
+    lo, hi = bb["reliability_macro"].min(), bb["reliability_macro"].max()
+    tasks_bb = f"the same {n_bb.iloc[0]} tasks" if n_bb.nunique() == 1 else f"{n_bb.min()}--{n_bb.max()} tasks"
     return (
-        "\\textbf{Only accuracy decides more like the 1.7B reference as the proxy grows. The bBPB twins stay flat "
-        "whichever 1.7B score they are ranked against.} This figure splits the panels of Figure~\\ref{fig:rq2} by how a "
-        "task is scored and what it is ranked against. Top row: accuracy (the original items and their RF and LLM-RF "
-        "versions) against the 1.7B accuracy. Middle row: the bBPB twins, the bits per byte of the gold answer, against "
-        "the 1.7B accuracy of their original task, kept where that accuracy is above chance at 1.7B. DA-ckpt is not "
-        "defined there, since its reference would be the proxy's own final accuracy, a second score. Bottom row: all the "
-        "twins against their own 1.7B bBPB, which has no chance level, so the gate keeps every twin. All rows use the "
-        "mono-axis design pairs of the seed-1904 runs and the task filter of Figure~\\ref{fig:rq2} (median DA-size or "
-        "median DA-ckpt at least 0.66). DA-size over all pairs goes from "
-        f"{acc.at['90M', 'reliability_macro']:.2f} at 90M to {acc.at['1B', 'reliability_macro']:.2f} at 1B on "
-        f"accuracy over {tasks(acc)} (the gate keeps more tasks at larger sizes). It stays at {span(b_acc)} for bBPB "
-        f"against accuracy over {tasks(b_acc)} and at {span(b_bb)} for bBPB against bBPB over {tasks(b_bb)}. Left: "
-        "DA-size, one black line over all pairs and one green line per design axis. Middle: DA-ckpt. Right: DA-goal, "
-        "one line per proxy size. A hollow point is 1.0 by comparing a ranking with itself.")
+        "\\textbf{On accuracy alone a larger proxy decides more like the 1.7B reference, while on the bBPB twins it "
+        "does not.} This figure splits the panels of Figure~\\ref{fig:rq2} by how a task is scored. Top row: accuracy (the original "
+        "items and their RF and LLM-RF versions). Bottom row: the bBPB twins, the bits per byte of the gold answer. A "
+        "twin is ranked against its own bBPB (bBPB $\\rightarrow$ 1.7B bBPB): at the 1.7B final checkpoint for DA-size "
+        "and DA-goal, and at the proxy's own final checkpoint for DA-ckpt. It has no chance level, so the above-chance "
+        "gate keeps it at every size. Both rows use the mono-axis design pairs of the seed-1904 runs and the task filter "
+        "of Figure~\\ref{fig:rq2} (median DA-size or median DA-ckpt at least 0.66), and together they hold exactly its "
+        f"tasks. On accuracy, DA-size over all pairs goes from {acc.at['90M', 'reliability_macro']:.2f} at 90M to "
+        f"{acc.at['1B', 'reliability_macro']:.2f} at 1B over {n_acc.min()}--{n_acc.max()} tasks (the gate keeps more "
+        f"tasks at larger sizes). On bBPB it stays at {lo:.2f}--{hi:.2f} over {tasks_bb}. Left: DA-size, one black "
+        "line over all pairs and one green line per design axis. Middle: DA-ckpt. Right: DA-goal, one line per proxy "
+        "size. A hollow point is 1.0 by comparing a ranking with itself.")
 
 
 # paper figure stem -> (its caption from its CSV, label): one float page each, sections/<stem>.tex
