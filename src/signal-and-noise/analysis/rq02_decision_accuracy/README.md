@@ -558,33 +558,67 @@ GitHub: [rq2_da_all_above_66_both_transformation_multi_axes.png](https://github.
 GitHub: [rq2_da_all_above_66_own_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_own_multi_axes.png) · [rq2_da_all_above_66_own_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_own_multi_axes.csv) ·
 GitHub: [scale_convergence_da_size_above_66_size_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_above_66_size_mono_axis.png) · [scale_convergence_da_size_above_66_size_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_above_66_size_mono_axis.csv)
 
-**The same figure split by scoring** (`rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.png`,
+**The same figure split by scoring and target** (`rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.png`,
 `paper_rq2.py --axes mono-axis`, the paper's `app_rq02_bbpb`). **DA-size,
 DA-ckpt, DA-goal · filter `above_66_either` · mono-axis pairs · pairs from
-`predictivity` at seed 1904 · gate `predictivity`.** Top row: the accuracy tasks
-(originals and their `rf_`/`rfgm_` twins); bottom row: the `bbpb_` twins, read
-as bBPB → 1.7B bBPB (never gated, no chance level). The two rows partition the
-paper figure's tasks exactly; they are reduced from by_L's per-task tables
-with by_L's `_summary`, which reproduces the paper figure's CSV to 1e-12.
+`predictivity` at seed 1904 · gate `predictivity`.** One row per reading (rq11's
+keys): top, the accuracy tasks (originals and their `rf_`/`rfgm_` twins) →
+their 1.7B accuracy; middle, the `bbpb_` twins → their ORIGINAL's 1.7B accuracy,
+gated on that accuracy at 1.7B only (rq11's gate, computed by rq11's
+`bbpb_to_acc`); bottom, the twins → their own 1.7B bBPB (never gated, no chance
+level). Rows 1 and 3 partition the paper figure's tasks and are reduced from
+by_L's per-task tables with by_L's `_summary`, which reproduces the paper
+figure's CSV to 1e-12; row 2 is row 3's twins whose original is above chance at
+1.7B (410 of 621). The middle DA-ckpt panel is left empty on purpose: its
+reference would be the proxy's own final ACCURACY, another score than the bBPB
+it ranks, so its 5C point is not a ranking compared with itself, and at the
+small sizes that reference is at chance for most originals.
 
-![Decision accuracy by scoring, mono-axis pairs](pretraining/predictivity/rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.png)
+![Decision accuracy by scoring and target, mono-axis pairs](pretraining/predictivity/rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.png)
 
 **Key findings**
 
 - Accuracy alone does improve with the proxy's size: DA-size over all pairs
   goes from 0.58 at 90M to 0.70 at 1B, over 85–121 tasks (the gate
   keeps more tasks at larger sizes, so the population moves along the line).
-- The bBPB twins stay flat at 0.60–0.66 over the same 621 tasks at every size:
-  the paper figure's flat line is mostly theirs.
+- bBPB is flat whichever 1.7B score it predicts: 0.57–0.58 against the 1.7B
+  accuracy (410 tasks) and 0.60–0.66 against the 1.7B bBPB (621 tasks; on
+  row 2's 410 twins 0.60–0.67). The 1.7B run's own bBPB agrees with its
+  final accuracy on only 0.63 of the pairs at 4.5C (row 2's DA-goal 1.7B
+  line), the ceiling for any bBPB → accuracy proxy.
+- The flat bBPB → bBPB line is not a bug (checked 2026-10-08): the twins cover
+  every checkpoint of every seed-1904 cell but seven SwiGLU ones (3.9 % of the
+  rows, 3 of the 68 mono-axis pairs), the per-task DA-size recomputes by hand
+  from `bench_bpb.csv` exactly, sign agreement is direction-free, and bBPB has
+  no ties. The design differences are below the noise: at 1.7B 59 % of the
+  (twin, pair) differences are under one checkpoint-noise SD (rule 4 window;
+  38 % against the SD around a linear trend over the decay), and a perfect
+  proxy would agree with the observed 1.7B ranking on at most 0.78–0.86 of
+  them. Pairs under one SD agree at 0.52–0.58, pairs over four at 0.65–0.81.
+- Depth and the data scheme sit at 0.46–0.59 because their bBPB effect is
+  small and changes sign with size: at 1.7B deep has the lower bBPB on
+  38–66 % of the twins for eight of the ten depth pairs, and at L15 scheme B has the lower
+  bBPB on 84 % of twins at 90M but scheme A on 65 % at 1.7B. Temperature, the
+  largest effect, reaches 0.70–0.74.
+- No reading makes bBPB rise with size: on the pairs with a clear 1.7B
+  difference (two detrended SD) DA-size is 0.67–0.73 but stays flat from
+  90M to 1B. Splitting by item count, by letter vs cloze continuation or by
+  whether the original clears chance at 1.7B moves the level (lettered twins,
+  whose continuation is " A", are lowest) but no split gains more than 0.04
+  from 90M to 1B, and per benchmark the change is mixed in sign (Global-MMLU
+  +0.07, HellaSwag and Belebele flat, XCOPA −0.16). AllenAI's DataDecide ranks 25 data recipes whose differences are
+  much larger: on the shared English tasks our accuracy SNR is roughly 6–9x lower
+  ([rq07](../rq07_external_frameworks/README.md)).
 - DA-ckpt at 4.5C is 0.78–0.86 on accuracy and 0.84–0.93 on bBPB; DA-goal of
-  the proxies at 5C is 0.58–0.70 on accuracy and 0.60–0.66 on bBPB.
+  the proxies at 5C is 0.58–0.70 on accuracy, 0.57–0.58 on bBPB → accuracy
+  and 0.60–0.66 on bBPB → bBPB.
 
 **Follow-ups**
 
 - The accuracy row on a fixed task set (the tasks gated in at every size), so
   its rise is not partly the gate admitting easier tasks.
-- The bBPB row read as bBPB → 1.7B accuracy (rq11's other reading) for
-  DA-size and DA-goal.
+- Re-submit `build_per_item_store.sbatch` for the seven SwiGLU cells the store
+  lacks, which returns the two activation pairs to the bBPB rows.
 
 GitHub: [rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.png) · [rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.csv)
 

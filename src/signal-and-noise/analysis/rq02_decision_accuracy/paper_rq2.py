@@ -77,14 +77,22 @@ exception, and says so below.
                                  need not match across panels.
 
     rq2_da_all_above_66_either_transformation_by_scoring.*
-                                 the paper figure in two rows, split by how a task is
-                                 scored (`utils.variant`): accuracy on top (originals and
-                                 their `rf_`/`rfgm_` twins), the `bbpb_` twins below. A
-                                 twin is read as bBPB -> 1.7B bBPB (its own bBPB at the
-                                 reference and at its own final, as rq02's tables hold
-                                 it), so it has no chance level and rule 1 passes it.
-                                 Same filter, pairs, pool and gate as the paper figure,
-                                 whose two populations these rows partition.
+                                 the paper figure in three rows, one per reading
+                                 (rq11's keys, `READINGS` of bench_bpb_da.py):
+                                   acc_acc    the accuracy tasks (originals and their
+                                              `rf_`/`rfgm_` twins) -> their 1.7B accuracy
+                                   bbpb_acc   the `bbpb_` twins -> their ORIGINAL's 1.7B
+                                              accuracy, gated on that accuracy at the
+                                              reference only (rq11's gate); rq11's
+                                              `bbpb_to_acc` computes it, per design axis
+                                              too. No DA-ckpt: its reference would be the
+                                              proxy's own final on another score, so the
+                                              panel is left empty with a note
+                                   bbpb_bbpb  the twins -> their own 1.7B bBPB (no chance
+                                              level, so rule 1 passes them)
+                                 Same filter, pairs, pool and gate as the paper figure:
+                                 rows 1 and 3 partition its tasks, row 2 is row 3's twins
+                                 whose original is above chance at the reference.
 
 Every name above carries the pair set's AXES_SUFFIX (rule 15), `rq2_da_all_multi_axes.*`
 or `rq2_da_all_mono_axis.*` with --axes mono-axis, and reads the tables with the same one.
@@ -97,7 +105,9 @@ the summary tables cannot give: it reduces by_L's per-task tables
 (`da_all_pooled_per_task<axes>.csv`, `da_all_by_transformation_per_task_mono_axis.csv`)
 with by_L's own `_summary`, the reduction behind the three tables above. Over
 both scorings at once that reproduces the paper figure's CSV (to 1e-12, same
-task counts), so the two rows are the paper figure's population, split.
+task counts), so rows 1 and 3 are the paper figure's population, split. No
+rq02 table holds bbpb_acc, so row 2 loads the pool and runs rq11's
+`bbpb_to_acc` (compute_da's early-small kernel) on it, then the same `_summary`.
 
 Runs after `scale_convergence.py` and `by_L.py`, whose CSVs it reads.
 
@@ -122,15 +132,18 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import load_pools  # noqa: E402
+from evals.scripts.utils.configs import load_pools, size_bucket  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.rq02_decision_accuracy.by_L import READINGS, _summary  # noqa: E402
 from analysis.rq02_decision_accuracy.reliable_tasks import load_reliable  # noqa: E402
-from analysis.rq02_decision_accuracy.scale_convergence import OVERALL  # noqa: E402
-from analysis.utils import AXES_SUFFIX, NON_EMB, SMALL_SIZES, TARGET_SIZE, size_order, variant  # noqa: E402
+from analysis.rq02_decision_accuracy.scale_convergence import OVERALL, pairs_by_group  # noqa: E402
+from analysis.rq11_evaluation_recipe.recipe import bbpb_to_acc  # noqa: E402
+from analysis.utils import (AXES_SUFFIX, BBPB, NON_EMB, PAIR_AXES, SMALL_SIZES, TARGET_SIZE,  # noqa: E402
+                            build_snr_pool, design_axes, pair_sets, passes_gate, size_order, variant)
 
 OUT_ROOT = DECISION_ACCURACY
 YLIM = (0.25, 1.02)           # one scale for the three panels; 1.0 (the hollow self-references) inside it
@@ -151,9 +164,11 @@ RQ2_VARIANTS = {
     "above_66_own_transformation": ("scale_convergence_da_size_transformation_above_66_size",
                                     "_above_66_ckpt", "_above_66_either"),
 }
-# the `_by_scoring` split: the paper variant it splits, its reliability filter, and one row per scoring
+# the `_by_scoring` split: the paper variant it splits, its reliability filter, and one row per reading
+# (<scoring at the proxy>_<score at the reference>, rq11's keys) with its row title
 SCORING_VARIANT, SCORING_FILTER = "above_66_either_transformation", "above_66_either"
-SCORING_ROWS = {"acc": "Accuracy", "bbpb": "bBPB"}
+SCORING_ROWS = {"acc_acc": f"Accuracy → {TARGET_SIZE} accuracy", "bbpb_acc": f"bBPB → {TARGET_SIZE} accuracy",
+                "bbpb_bbpb": f"bBPB → {TARGET_SIZE} bBPB"}
 mpl.rcParams.update(S.RC)
 
 
@@ -258,25 +273,54 @@ def figure(out_dir: Path, variant: str = "", axes: str = "multi-axis") -> None:
     S.save_paper(fig, out_dir / f"rq2_da_all{suffix}")       # rule 18: every rq2 figure is a bare paper figure
 
 
-def scoring_panels(out_dir: Path, pool: str, axes: str, scoring: str) -> tuple[pd.DataFrame, ...]:
-    """The three panels of the paper variant over the tasks of one scoring, from
+def bbpb_acc_tables(pool: str, twins: set, axes: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """by_L-shaped per-task tables (pooled over `axes`, per mono-axis design axis)
+    of the bBPB twins `twins` read against their original's 1.7B ACCURACY: rq11's
+    `bbpb_to_acc` on the pool, one call per pair set. DA-goal only (`da_ref`): a
+    proxy cell is the twin's bBPB, the reference the original's accuracy."""
+    df = build_snr_pool(pool)
+    df["bucket"] = df["size"].map(size_bucket)
+    attrs = design_axes(df)
+    df = df[df["task"].isin(twins | {t[len(BBPB):] for t in twins})]
+    none = {a: [] for a in PAIR_AXES}           # bbpb_to_acc runs every non-empty pair set it is given
+
+    def run(key: str, pairs: list) -> pd.DataFrame:
+        return bbpb_to_acc(df, none | {key: pairs}).drop(columns="axes").rename(
+            columns={"da": "da_ref", "n_pairs": "n_pairs_ref"})
+    groups = pairs_by_group(attrs, "transformation", "mono-axis")
+    trans = pd.concat([run("mono-axis", pl).assign(axis=g) for g, pl in groups.items() if g != OVERALL], ignore_index=True)
+    return run(axes, pair_sets(attrs)[axes]), trans
+
+
+def scoring_panels(out_dir: Path, pool: str, axes: str, reading: str) -> tuple[pd.DataFrame, ...]:
+    """The three panels of the paper variant over the tasks of one reading, from
     by_L's per-task tables reduced by its `_summary` (gate, pair minimum, mean
     over tasks): DA-size per design axis and pooled (the 5C column of DA-goal),
     DA-ckpt and DA-goal over every pair of `axes`. As in scale_convergence, the
     per-axis lines keep the cells reliable on the mono-axis pairs and the pooled
-    lines those reliable on `axes`'."""
+    lines those reliable on `axes`'. `bbpb_acc` has no DA-ckpt (None): its
+    reference would be the proxy's own final on another score, so its 5C point
+    is not a ranking compared with itself."""
     keep = set(load_reliable(out_dir, SCORING_FILTER, axes)["task"])
     mono = set(load_reliable(out_dir, SCORING_FILTER, "mono-axis")["task"])
-    pooled = pd.read_csv(out_dir / f"da_all_pooled_per_task{AXES_SUFFIX[axes]}.csv")
-    trans = pd.read_csv(out_dir / "da_all_by_transformation_per_task_mono_axis.csv")
-    pooled, trans = (t[[variant(x)[1] == scoring for x in t["task"]]] for t in (pooled, trans))
+    if reading == "bbpb_acc":
+        # the twins of the bBPB row whose original is above chance at the reference (rq11's gate for this reading)
+        twins = sorted(t for t in keep | mono if t.startswith(BBPB))
+        ok = passes_gate(load_mask(pool), [t[len(BBPB):] for t in twins], TARGET_SIZE)
+        pooled, trans = bbpb_acc_tables(pool, {t for t in twins if ok[t[len(BBPB):]]}, axes)
+    else:
+        pooled = pd.read_csv(out_dir / f"da_all_pooled_per_task{AXES_SUFFIX[axes]}.csv")
+        trans = pd.read_csv(out_dir / "da_all_by_transformation_per_task_mono_axis.csv")
+        scoring = reading.split("_")[0]
+        pooled, trans = (t[[variant(x)[1] == scoring for x in t["task"]]] for t in (pooled, trans))
     pooled = pooled[pooled["task"].isin(keep)]
     trans = trans[trans["task"].isin(mono) & (trans["frac"] == 1.0)]
 
     def summary(t, keys, name):
         d = _summary(pool, t, keys, READINGS[name])
         return d[d["group"] == "all benchmarks"].drop(columns="group")
-    goal, ckpt = summary(pooled, [], "goal"), summary(pooled, [], "ckpt")
+    goal = summary(pooled, [], "goal")
+    ckpt = None if reading == "bbpb_acc" else summary(pooled, [], "ckpt")
     size = pd.concat([goal[goal["frac"] == 1.0].assign(axis=OVERALL), summary(trans, ["axis"], "goal")])
     size = size.rename(columns={"axis": "group", "proxy_size": "size", "da": "reliability_macro", "tasks": "n_tasks"})
     size = size[size["size"] != TARGET_SIZE]
@@ -286,28 +330,44 @@ def scoring_panels(out_dir: Path, pool: str, axes: str, scoring: str) -> tuple[p
     return size, ckpt, goal
 
 
+def _no_ckpt(ax, ylabel: str) -> None:
+    """The DA-ckpt panel of the bBPB -> accuracy row: empty, with the reason."""
+    ax.text(0.5, 0.5, "Not defined for this reading.\nIts reference would be the proxy's own\n"
+            "final accuracy, another score than bBPB,\nso it is not a checkpoint comparison.",
+            transform=ax.transAxes, ha="center", va="center", fontsize=7.5, color=S.MUTED)
+    ax.set_xticks([1, 2, 3, 4, 5]); ax.set_xticklabels([G.chinchilla(f) for f in (.2, .4, .6, .8, 1.0)])
+    ax.set_xlim(0.3, 5.2)
+    ax.set_xlabel("Proxy's training tokens (× Chinchilla)")
+    ax.set_ylabel(ylabel)
+
+
 def scoring_figure(out_dir: Path, pool: str, axes: str = "multi-axis") -> None:
     """`rq2_da_all_<SCORING_VARIANT>_by_scoring<axes>`: the paper figure's three
-    panels, one row per scoring (accuracy above, the bBPB twins below), on one y axis."""
+    panels, one row per reading (accuracy, bBPB against the 1.7B accuracy, bBPB
+    against the 1.7B bBPB), on one y axis."""
     a = AXES_SUFFIX[axes]
     # the design axes in the order (and so the colours) of the paper figure's DA-size panel
     sz = pd.read_csv(out_dir / f"{RQ2_VARIANTS[SCORING_VARIANT][0]}{a}.csv")
     sz = sz[sz["population"] == "all benchmarks"].sort_values("non_emb")
     order = [g for g in dict.fromkeys(sz["group"]) if g != OVERALL]
-    fig, grid = plt.subplots(len(SCORING_ROWS), 3, figsize=(13.5, 7.6), sharey=True, sharex="col")
+    fig, grid = plt.subplots(len(SCORING_ROWS), 3, figsize=(13.5, 11.2), sharey=True, sharex="col")
     rows = []
-    for i, (ax3, (scoring, label)) in enumerate(zip(grid, SCORING_ROWS.items())):
-        size, ckpt, goal = scoring_panels(out_dir, pool, axes, scoring)
-        rows += [d.assign(row=label) for d in (
-            _scale_lines(ax3[0], size, order),
-            _run_lines(ax3[1], ckpt, "ckpt", "DA-ckpt (reference is the final checkpoint of the same size)", i == 0),
-            _run_lines(ax3[2], goal, "goal", f"DA-goal (reference is the final checkpoint of {TARGET_SIZE})", False))]
+    ck_label = "DA-ckpt (reference is the final checkpoint of the same size)"
+    for i, (ax3, (reading, label)) in enumerate(zip(grid, SCORING_ROWS.items())):
+        size, ckpt, goal = scoring_panels(out_dir, pool, axes, reading)
+        drawn = [_scale_lines(ax3[0], size, order),
+                 _run_lines(ax3[2], goal, "goal", f"DA-goal (reference is the final checkpoint of {TARGET_SIZE})", False)]
+        if ckpt is None:
+            _no_ckpt(ax3[1], ck_label)
+        else:
+            drawn.append(_run_lines(ax3[1], ckpt, "ckpt", ck_label, i == 0))
+        rows += [d.assign(row=label) for d in drawn]
         ax3[0].set_title(label, loc="left", fontsize=9.5, fontweight="bold")
         if i:                             # the design-axis legend once, in the top row
             ax3[0].get_legend().remove()
     for ax in grid.ravel():
         ax.set_ylim(*YLIM); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
-    for ax in grid[0]:
+    for ax in grid[:-1].ravel():
         ax.set_xlabel("")
     fig.tight_layout()
     stem = f"rq2_da_all_{SCORING_VARIANT}_by_scoring{a}"
