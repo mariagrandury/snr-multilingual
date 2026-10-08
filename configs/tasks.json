@@ -3801,7 +3801,9 @@
       "benchmark": "m_truthfulqa_mc1",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 774
     },
     "truthfulqa_eu_mc2": {
       "language": "eu",
@@ -31216,7 +31218,8 @@
         "pretraining"
       ],
       "n_options": 2,
-      "n_items": 1763
+      "n_items": 1763,
+      "metric": "f1"
     },
     "evalita-mp_hs_prompt-2": {
       "language": "it",
@@ -31225,7 +31228,8 @@
         "pretraining"
       ],
       "n_options": 2,
-      "n_items": 1763
+      "n_items": 1763,
+      "metric": "f1"
     },
     "evalita-mp_hs_prompt-3": {
       "language": "it",
@@ -31234,7 +31238,8 @@
         "pretraining"
       ],
       "n_options": 2,
-      "n_items": 1763
+      "n_items": 1763,
+      "metric": "f1"
     },
     "evalita-mp_hs_prompt-4": {
       "language": "it",
@@ -31243,7 +31248,8 @@
         "pretraining"
       ],
       "n_options": 2,
-      "n_items": 1763
+      "n_items": 1763,
+      "metric": "f1"
     },
     "evalita-mp_hs_prompt-5": {
       "language": "it",
@@ -31252,7 +31258,8 @@
         "pretraining"
       ],
       "n_options": 2,
-      "n_items": 1763
+      "n_items": 1763,
+      "metric": "f1"
     },
     "evalita-mp_hs_prompt-6": {
       "language": "it",
@@ -31261,7 +31268,8 @@
         "pretraining"
       ],
       "n_options": 2,
-      "n_items": 1763
+      "n_items": 1763,
+      "metric": "f1"
     },
     "evalita-mp_sa_prompt-1": {
       "language": "it",
@@ -31270,7 +31278,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "n_items": 2000
+      "n_items": 2000,
+      "metric": "f1"
     },
     "evalita-mp_sa_prompt-2": {
       "language": "it",
@@ -31279,7 +31288,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "n_items": 2000
+      "n_items": 2000,
+      "metric": "f1"
     },
     "evalita-mp_sa_prompt-3": {
       "language": "it",
@@ -31288,7 +31298,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "n_items": 2000
+      "n_items": 2000,
+      "metric": "f1"
     },
     "evalita-mp_sa_prompt-4": {
       "language": "it",
@@ -31297,7 +31308,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "n_items": 2000
+      "n_items": 2000,
+      "metric": "f1"
     },
     "evalita-mp_sa_prompt-5": {
       "language": "it",
@@ -31306,7 +31318,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "n_items": 2000
+      "n_items": 2000,
+      "metric": "f1"
     },
     "evalita-mp_sa_prompt-6": {
       "language": "it",
@@ -31315,7 +31328,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "n_items": 2000
+      "n_items": 2000,
+      "metric": "f1"
     },
     "copa_es": {
       "language": "es",
@@ -31360,7 +31374,8 @@
         "pretraining"
       ],
       "n_options": 2,
-      "n_items": 2448
+      "n_items": 2448,
+      "metric": "f1"
     },
     "parafraseja": {
       "language": "ca",
