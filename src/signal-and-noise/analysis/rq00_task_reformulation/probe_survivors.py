@@ -4,11 +4,12 @@
 The decision the probe exists for: of the candidates in `groups.auto_probe`,
 which carry signal at each size, in which languages, and does the `rf_` twin
 (where one exists) survive where the original does not? Everything here is
-read off the committed gate mask (rule 1, `above_random.load_mask`) — no
-score is recomputed — so it agrees with every other RQ by construction. Run
-`above_random.py --only predictivity` first, with SNR_TRAINED_GROUPS naming
-the probe group so the multilingual candidates are gated on the cells that
-trained their language (probe.sh does both).
+read off a gate mask (rule 1, `above_random.load_mask`) — no score is
+recomputed — so it is the same rule as every other RQ. Run `above_random.py
+--only predictivity` first, with SNR_TRAINED_GROUPS naming the probe group
+so the multilingual candidates are gated on the cells that trained their
+language, and SNR_GATE_DIR pointing both scripts at a scratch dir so that
+gate never replaces the canonical one (probe.sh does all three).
 
 Writes, next to this file:
     probe_survivors.csv   one row per (task, size): benchmark, language and
@@ -102,7 +103,7 @@ def main() -> None:
         lang.append(f"| {l} | " + " | ".join(cells) + " |")
     n_b, n_l = tab["base"].nunique(), tab["language"].nunique()
     lines = [f"Probe survivors: which of the {n_b} candidate benchmarks in `auto_probe` clear the above-random gate "
-             f"(rule 1, read from the committed `{POOL}` mask, cells that trained the language), over {n_l} languages. "
+             f"(rule 1, the `{POOL}` gate re-run by probe.sh with the probe counted as trained, cells that trained the language), over {n_l} languages. "
              "A cell counts languages (original | rf twin where one exists) — the population differs per cell "
              "(rule 13) — and the second table names the surviving benchmarks per language, the twin as `-rf`. "
              "Same items as `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance; this "
