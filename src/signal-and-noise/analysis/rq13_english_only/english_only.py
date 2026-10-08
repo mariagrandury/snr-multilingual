@@ -145,7 +145,7 @@ from analysis.rq03_noise_and_snr.run_apertus_snr_variants import (  # noqa: E402
     per_model_inputs, variant_key, variant_signal_noise_snr)
 from analysis.rq07_external_frameworks.analyze import ALLENAI_CSV, SIZE_PAIRS  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    AXES_SUFFIX, GRID_SEED, MIN_PAIRS, RELIABLE_DA, SMALL_SIZES, TARGET_SIZE, assign_language,
+    AXES_SUFFIX, BBPB, BENCH_BPB, GRID_SEED, MIN_PAIRS, RELIABLE_DA, SMALL_SIZES, TARGET_SIZE, assign_language,
     benchmark_family, design_axes, finals, fixed_population, ladder_frame, lower_is_better, pair_sets, passes_gate,
     size_order, variant)
 
@@ -324,6 +324,20 @@ def spikes(g: pd.DataFrame, sizes: list) -> tuple[str, pd.Index, int, int] | Non
     at = l1.sum().idxmax()
     ow = b.pivot_table(index=["L", "task"], columns="size", values="score_other").reindex(columns=sizes)
     return at, l1.index[l1[at]], int(mask(ow)[at].sum()), int(ow[at].notna().sum())
+
+
+def spike_seeds(at: str, tasks) -> pd.Series:
+    """Mean bBPB over the spiking twins `tasks` of every L1 deep run at size
+    `at` (the grid seed and its replicates), at each run's final checkpoint of
+    the per-item store (`utils.BENCH_BPB`): whether the spike is the run's or
+    the size's."""
+    if not BENCH_BPB.is_file():
+        return pd.Series(dtype=float)
+    b = pd.read_csv(BENCH_BPB)
+    b = b[b["model"].str.fullmatch(rf"lm-{re.escape(at)}-L1-deep-seed\d+")
+          & b["task"].isin({t[len(BBPB):] for t in tasks})]
+    b = b[b["step"] == b.groupby("model")["step"].transform("max")]
+    return b.groupby(b["model"].str.extract(r"seed(\d+)$", expand=False).astype(int))["bbpb"].mean()
 
 
 # --- 2. the gate ----------------------------------------------------------------
@@ -1148,8 +1162,16 @@ def readme(pool: str, gate_pool: str, rel: str, r: dict) -> None:
                      f"{len(tasks)} of {b1['task'].nunique()} tasks (" + ", ".join(f"{k} {v}" for k, v in fam.items())
                      + f"), against {n_o} of {n_all} (task, L) cells of the other L's deep cells; without those tasks "
                      f"the {at} mean gap is {fmt(b1.loc[~b1['task'].isin(tasks), 'gap'].mean(), 3)} instead of "
-                     f"{fmt(b1['gap'].mean(), 3)}: a spike of that one cell, not of English (the store holds finals "
-                     "only and no replicate seed, so it cannot be told from seed noise).")
+                     f"{fmt(b1['gap'].mean(), 3)}: a spike of that one cell, not of English")
+            rep = spike_seeds(at, tasks)
+            others = rep.drop(GRID_SEED, errors="ignore")
+            line += (f" (on those tasks the L1 deep {at} run of seed {GRID_SEED} averages {fmt(rep[GRID_SEED], 2)} bits, its "
+                     f"replicate seeds {', '.join(f'{k} {fmt(v, 2)}' for k, v in others.items())}: "
+                     + (f"more than {JUMP:g} bits above every replicate, so the spike is that run's, not the size's)."
+                        if (rep[GRID_SEED] - others).min() > JUMP else
+                        "a replicate comes within the spike's margin, so it cannot be told from seed noise).")
+                     if GRID_SEED in rep and len(others) else
+                     f" (no replicate seed of the L1 deep {at} cell in the store, so it cannot be told from seed noise).")
         bullets.append(line)
     per_l = summ[(summ["scoring"] == "acc") & (summ["arch"] == "deep") & (summ["size"] == TARGET_SIZE)
                  & (summ["comparator"] != "every L > 1")]

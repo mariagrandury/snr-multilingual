@@ -33,17 +33,16 @@ reading:
   safe_compute   the cheapest (proxy, checkpoint) cell, as a share of the
                  reference run's compute, from which every costlier cell clears
                  tau (rq02's safe-FLOPs rule, along the DA-goal grid); -1 = no
-                 cell from which every costlier one clears tau; empty when only
-                 final checkpoints exist (bBPB for now)
+                 cell from which every costlier one clears tau; empty for a
+                 task with final checkpoints only
 
 with tau = utils.RELIABLE_DA = 0.75 and rule 5 (n_pairs >= MIN_PAIRS). Rule 1
 (`passes_gate`, mask `predictivity`): acc_acc at the proxy and the reference;
 bbpb_bbpb passes (no chance level); bbpb_acc on the original's accuracy at the
 reference only, as bench_bpb_da.py gates it (gating the proxy would discard
-the regime bBPB is for). The bBPB twins exist at each run's final checkpoint
-only until the per-item store covers every checkpoint. The rebuild fills their
-DA-goal and DA-ckpt cells in the decision-accuracy tables; here it changes
-only `safe_compute`. Every figure and table here is DA-size but the
+the regime bBPB is for). The per-item store scores the bBPB twins at every
+evaluated checkpoint, so their DA-goal, DA-ckpt and `safe_compute` are read
+on the same grid as the accuracy variants'. Every figure and table here is DA-size but the
 per-benchmark paper figure, which adds DA-goal (the same cells along the run)
 and DA-ckpt (rq02's pooled per-task table, `da_own`). A twin's cell
 with fewer pairs than its original's (a family the store lacks) is blank
@@ -177,7 +176,7 @@ def bbpb_to_acc(df: pd.DataFrame, psets: dict) -> pd.DataFrame:
         # the kernel's reference is each family's last row at the reference size: keep the twin there only before
         # the original's final, so the reference is the accuracy and every proxy cell the twin
         tw = tw[(tw["bucket"] != TARGET_SIZE) | (tw["step"] < tw["model"].map(ref.set_index("model")["step"]))]
-        fracs = compute_da.EARLY_SMALL_FRACS if tw.groupby("model")["step"].nunique().gt(1).any() else [1.0]   # finals only: no grid to read
+        fracs = compute_da.EARLY_SMALL_FRACS if tw.groupby("model")["step"].nunique().gt(1).any() else [1.0]   # a twin with final checkpoints only has no grid to read
         for axes in [a for a in PAIR_AXES if psets[a]]:
             rows += [{"task": t, "axes": axes, **r}
                      for r in compute_da.compute_early_small_decision_accuracy(pd.concat([tw, ref]), fracs=fracs, pairs=psets[axes])]
@@ -237,7 +236,7 @@ def per_task(e: pd.DataFrame, reading: str) -> pd.DataFrame:
     out["safe_rank"] = out["safe_size"].where(~known | (out["safe_size"] >= 0), len(LEVELS))   # never ranks after every size
     out["mean_da_size"] = out[[f"da_size_{s}" for s in LEVELS]].mean(axis=1)
     # the cheapest cell from which every costlier one clears tau, along compute (rq02's safe-FLOPs rule); a task
-    # with final checkpoints only (bBPB until the store has the grid) has no compute ladder to read it on
+    # with final checkpoints only has no compute ladder to read it on
     g = e[~e["gated"]].assign(share=lambda d: d["compute"] / d["ref_compute"]).sort_values("share")
     on_grid = e.groupby("task")["frac"].nunique().reindex(tasks).gt(1)
     out["safe_compute"] = pd.Series({t: _safe_share(x) for t, x in g.groupby("task")}).reindex(tasks).where(on_grid)
@@ -745,8 +744,8 @@ def readme(pool: str, rec: pd.DataFrame, ov: pd.DataFrame, t: pd.DataFrame) -> N
         f"`predictivity` at the proxy and the reference); a bBPB variant either its original's accuracy at {TARGET_SIZE} "
         f"(**bBPB {against('bbpb_acc')}**, gated on that accuracy at the reference only, the reading of "
         f"`bench_bpb_da.py`) or its own bBPB at {TARGET_SIZE} (**bBPB {against('bbpb_bbpb')}**, no chance level, never "
-        f"gated). {t['task'].nunique()} tasks over {t['benchmark'].nunique()} benchmarks. The bBPB twins are read at final "
-        f"checkpoints only for now. A mean over fewer than {MIN_DRAWN} tasks is left blank (`n < {MIN_DRAWN}`) in the tables "
+        f"gated). {t['task'].nunique()} tasks over {t['benchmark'].nunique()} benchmarks. The bBPB twins are read on the "
+        f"same checkpoint grid as the accuracy variants. A mean over fewer than {MIN_DRAWN} tasks is left blank (`n < {MIN_DRAWN}`) in the tables "
         f"below and the figures; it stays in the CSVs. Regenerate with "
         f"`python analysis/rq11_evaluation_recipe/recipe.py --pool {pool}`.",
         f"**How the pick is made**, per bBPB reading and scoring of the pick (benchmarks with a value; reliable somewhere = "
@@ -815,7 +814,7 @@ def main(pool: str) -> None:
         note = (f"DA-size against the {TARGET_SIZE} final, {axes} pairs of `{pool}`, ≥ {MIN_PAIRS} pairs; τ = {TAU:g}. "
                 f"Accuracy {against('acc_acc')}, gate `predictivity` at the proxy and the reference; bBPB {against('bbpb_acc')} "
                 f"(the original's accuracy, gated at the reference only) or bBPB {against('bbpb_bbpb')} (no chance level: "
-                "never gated); bBPB at final checkpoints only.")
+                "never gated).")
         heatmap(by, out_dir / f"recipe_da_size_heatmap{sfx}.png", note)
         ladder(by, rec, out_dir / f"recipe_da_size_ladder{sfx}.png", note)
         profiles(by, rec, out_dir / f"recipe_da_size_profiles{sfx}.png", note)
