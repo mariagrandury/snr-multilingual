@@ -255,6 +255,49 @@ Follow-ups:
   so which twins it scales on is the next question.
 - A replicate seed of the FineWeb L1 cell: one family per corpus cannot tell
   a corpus effect from a seed effect.
+- Next: the same panels on the English benchmarks alone, without the bBPB
+  twins and the grey backdrop,
+  [Scaling regimes at L1 on the English benchmarks](#scaling-regimes-at-l1-on-the-english-benchmarks).
+
+### Scaling regimes at L1 on the English benchmarks
+
+The figure above mixes two things into the L1 reading: the bBPB twins (98 of
+its 132 tasks, never gated) and rq01's grey points, which come from every L.
+This version keeps only what the monolingual English cells score on the
+English benchmarks: the accuracy-scored English tasks (originals, RF and
+LLM-RF twins, each gated as in rq01), no bBPB twin, no `bpb_dclm`, and no
+point from an L > 1 cell. The RF twins count because they are ordinary
+benchmarks in the pool (RULES.md), scored by accuracy against a chance level.
+The bBPB twins do not: they score the gold answer's bits per byte, not the
+benchmark, and have no chance level, so they pass the gate at every size.
+
+<!-- BEGIN auto:english-regimes-l1-accuracy (english_regimes.py --pool predictivity) -->
+![Scaling regimes at L1 on the English benchmarks](pretraining/predictivity/english_only_scaling_regimes_l1_accuracy.png)
+
+Pool `predictivity`: the L1 deep seed-1904 cell of each English corpus, 90M–1.7B, gate `predictivity`, the fits and regimes of the figure above; English accuracy tasks only (20 RF, 12 original, 1 LLM-RF), no bBPB twin, no `bpb_dclm`, and no point from an L > 1 cell. The three corpora read the same tasks. Regenerate with `python analysis/rq13_english_only/english_regimes.py --pool predictivity`.
+
+Key findings (share of tasks per regime; both = predictable across size and training):
+
+- **DCLM-Edu** (33 tasks): both 48%, training only 3%, size only 21%, weak 15%, declines 12%; median R² across size 0.86, along training 0.54.
+- **DCLM** (33 tasks): both 48%, training only 6%, size only 24%, weak 9%, declines 12%; median R² across size 0.88, along training 0.58.
+- **FineWeb** (33 tasks): both 48%, training only 3%, size only 15%, weak 27%, declines 6%; median R² across size 0.89, along training 0.50.
+- **Predictable across both, per format**: RF (20 tasks) DCLM-Edu 30%, DCLM 25%, FineWeb 30%; original (12 tasks) DCLM-Edu 75%, DCLM 83%, FineWeb 75%; LLM-RF (1 task) DCLM-Edu 100%, DCLM 100%, FineWeb 100%.
+- **Same regime in all three corpora**: 15 of 33 tasks; predictable across both in all three: 14.
+
+[english_only_scaling_regimes_l1_accuracy.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_scaling_regimes_l1_accuracy.png) · [english_only_scaling_regimes_l1_accuracy.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_scaling_regimes_l1_accuracy.csv)
+<!-- END auto:english-regimes-l1-accuracy -->
+
+- On the English benchmarks alone the corpus effect of the figure above
+  disappears: FineWeb's 70 % against 40–42 % was the bBPB twins, and each
+  corpus puts the same 16 of 33 tasks (48 %) in the predictable regime.
+- What stays out of that regime is mostly the RF twins of BBH and ACP-Bench:
+  of their 14 English tasks only date understanding (all three corpora) and
+  penguins in a table (FineWeb) are predictable across both.
+
+Follow-ups:
+
+- The BBH and ACP-Bench RF twins along training, per size: whether they sit
+  near chance on the small rungs (a fit on few sizes) or stay flat above it.
 
 - Next: whether a small L1 proxy also ranks the L1 variants like 1.7B does,
   [Decision accuracy](#decision-accuracy).
@@ -474,6 +517,7 @@ blocks above.
 | `english_only_verdict.csv` | the verdict table |
 | `english_only_scaling_regimes.png/.csv`, `…_paper.png/.csv` | `english_regimes.py`: the scaling regimes of each English corpus at L1, one row per (corpus, task), with rq01's points as `every K (rq01)` |
 | `english_only_scaling_regimes_summary.csv` | the share of tasks per regime for each corpus, and the same single-fit reading of the English tasks of the deep data-A cell at every other L |
+| `english_only_scaling_regimes_l1_accuracy.png/.csv`, `…_paper.png/.csv` | `english_regimes.py`: the same regimes for the L1 cells alone on the English accuracy tasks (no bBPB twin, no `bpb_dclm`, no L > 1 point), one row per (corpus, task) with its `format` |
 
 ## How to run
 

@@ -290,6 +290,30 @@ def rq13_regimes_caption(d):
         "fit would.")
 
 
+def rq13_regimes_l1_caption(d):
+    """The caption of app_rq13_english_scaling_regimes_l1_accuracy, its numbers read from the figure's CSV `d`."""
+    pct = lambda v: f"{100 * v:.0f}\\%"
+    span = lambda s: pct(s.min()) if round(100 * s.min()) == round(100 * s.max()) else f"{pct(s.min())}--{pct(s.max())}"
+    d = d.assign(b=d["regime"] == "predictable across both")
+    both = d.groupby("corpus")["b"].mean()
+    fmt = d.groupby(["format", "corpus"])["b"].mean()
+    n = d[d["corpus"] == "FineWeb"]["format"].value_counts()
+    same = "the same " if round(100 * both.min()) == round(100 * both.max()) else ""
+    return (
+        f"\\textbf{{On the English benchmarks alone, the three English corpora put {same}{span(both)} of the tasks in the "
+        "regime predictable across both size and training, so the FineWeb lead of "
+        "Figure~\\ref{fig:app_rq13_english_scaling_regimes} comes from the bBPB twins.} The same scaling regimes "
+        "restricted to the monolingual English cells ($K$ = 1) and the "
+        "English benchmarks. Each column is one deep cell at seed 1904, 90M--1.7B, on the same "
+        f"{int(n.sum())} English accuracy tasks ({n.get('original', 0)} originals, {n.get('rf', 0)} RF and "
+        f"{n.get('rfgm', 0)} LLM-RF). The bBPB twins, the English bits per byte and every cell with $K > 1$ are left out, "
+        "so no point comes from a multilingual model. The fits and the above-chance gate are those of "
+        f"Figure~\\ref{{fig:rq1}}. Per corpus, {span(fmt['original'])} of the originals and {span(fmt['rf'])} of the RF "
+        "twins are predictable across both. Top: the $R^2$ of the model-size fit against its Spearman $\\rho$. Bottom: the "
+        "same $R^2$ against the median $R^2$ of the training-trajectory fits, shaded by regime at 0.5. A black edge marks "
+        "a task whose score declines with size.")
+
+
 def rq06_cross_task_caption(d):
     """The caption of app_rq06_cross_task_hellaswag, its numbers read from the figure's CSV `d`."""
     lang = lambda t: "en" if t == "hellaswag" else t.rsplit("_", 1)[-1]
@@ -609,7 +633,9 @@ PAGES = {
         "other language setting. These other cells give half of their tokens to English. We use seed 1904, final "
         "checkpoints and sizes 90M--1.7B, on the English accuracy tasks above chance at each size.",
         None, 0,
-        (("app_rq13_english_scaling_regimes", rq13_regimes_caption, "fig:app_rq13_english_scaling_regimes"),)),
+        (("app_rq13_english_scaling_regimes", rq13_regimes_caption, "fig:app_rq13_english_scaling_regimes"),
+         ("app_rq13_english_scaling_regimes_l1_accuracy", rq13_regimes_l1_caption,
+          "fig:app_rq13_english_scaling_regimes_l1_accuracy"))),
     "rq14_proxy_item_selection": (
         "Item selection from the proxies alone", "app_rq14_proxy_item_selection",
         "Seed-1904 runs of every cell, final checkpoints, on pairs that may differ on any number of design axes. "

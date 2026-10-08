@@ -63,7 +63,8 @@ comes from). The .tex carries the source path as a comment next to the
     app_rq13_english_only      <- rq13_english_only/english_only.py --paper      english_only_scores_paper
                              (these five: the main figure of an appendix page of make_rq_appendix.py)
     app_rq13_english_scaling_regimes <- rq13_english_only/english_regimes.py   english_only_scaling_regimes_paper
-                             (the extra figure of the English-only appendix page)
+    app_rq13_english_scaling_regimes_l1_accuracy <- the same   english_only_scaling_regimes_l1_accuracy_paper
+                             (these two: the extra figures of the English-only appendix page)
     app_rq02_permutation_null  <- rq02_permutation_null/permutation_null.py       permutation_null_da_size_paper
     app_rq02_decisive_pairs    <- rq02_decisive_pairs/decisive_pairs.py           decisive_pairs_da_size_paper
     app_rq14_proxy_item_selection <- rq14_proxy_item_selection/proxy_item_selection.py  proxy_item_selection_da_size_multi_axes_paper
@@ -163,6 +164,8 @@ FIGURES = {
     "app_rq13_english_only": (ANALYSIS.joinpath("rq13_english_only", *PRED, "english_only_scores_paper"), ("png",)),
     "app_rq13_english_scaling_regimes": (ANALYSIS.joinpath("rq13_english_only", *PRED, "english_only_scaling_regimes_paper"),
                                          ("png",)),
+    "app_rq13_english_scaling_regimes_l1_accuracy": (ANALYSIS.joinpath(
+        "rq13_english_only", *PRED, "english_only_scaling_regimes_l1_accuracy_paper"), ("png",)),
     "app_rq02_permutation_null": (ANALYSIS.joinpath("rq02_permutation_null", *PRED, "permutation_null_da_size_paper"), ("png",)),
     "app_rq02_decisive_pairs": (ANALYSIS.joinpath("rq02_decisive_pairs", *PRED, "decisive_pairs_da_size_paper"), ("png",)),
     "app_rq14_proxy_item_selection": (ANALYSIS.joinpath("rq14_proxy_item_selection", *PRED,
