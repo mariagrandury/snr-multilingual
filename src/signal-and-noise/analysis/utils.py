@@ -536,6 +536,16 @@ def agreement_measures(proxy, ref) -> dict:
                   "rho": float(spearmanr(s, t).statistic), "pearson_r": float(pearsonr(s, t).statistic)}
 
 
+def bootstrap_band(v, n_boot: int = 1000, level: float = 0.95) -> tuple[float, float]:
+    """The percentile bootstrap interval of the mean of `v`, resampling its
+    elements (tasks of a line, cells of a heat-map row): a band over the units
+    averaged, not over the design pairs (which `jackknife_ratio` resamples).
+    Seeded, so a figure redrawn from the same table keeps its bytes."""
+    v = np.asarray(v, dtype=float)
+    m = v[np.random.default_rng(0).integers(0, len(v), (n_boot, len(v)))].mean(axis=1)
+    return tuple(np.percentile(m, [50 * (1 - level), 50 * (1 + level)]))
+
+
 JACKKNIFE_Z = 1.645          # the two-sided 90 % band every jackknife interval here is drawn at
 
 

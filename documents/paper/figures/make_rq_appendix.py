@@ -89,6 +89,51 @@ def rq11_benchmarks_caption(d):
         "point is 1.0 by self comparison.")
 
 
+def _rq02_maps(d):
+    """What the two per-language maps share: the drawn cells, the not-drawn benchmarks, the setup sentences."""
+    rest = d[~d["drawn"]].drop_duplicates("benchmark")
+    single, empty = (sorted(rest.loc[rest["n_languages"] < 2, "benchmark"]),
+                     sorted(rest.loc[rest["n_languages"] >= 2, "benchmark"]))
+    setup = (
+        "A cell is the mean over a benchmark's original accuracy tasks (no RF, LLM-RF or bBPB twin) in a trained "
+        "language. The maps use the mono-axis pairs of Figure~\\ref{fig:rq2} without its reliability cut, which "
+        "would select cells by their value. Grey cells are gated, white cells have no value, and the scale is centred at 0.5 (a "
+        "coin flip). Languages follow resource rank, with lines where the lists of $K$ = 1, 2, 8, 15, 30 and 50 "
+        f"languages end. Not drawn: {len(single)} single-language benchmarks"
+        + (f", and {', '.join(empty)}, which have no value." if empty else "."))
+    return d[d["drawn"]], setup
+
+
+def rq02_language_caption(d):
+    """The caption of app_rq02_da_by_language, its numbers read from the figure's CSV `d`."""
+    drawn, setup = _rq02_maps(d)
+    clear = {k: (g.drop_duplicates("family")["benchmark_lo"].gt(0.5).sum(),
+                 g.drop_duplicates("language")["language_lo"].gt(0.5).sum(), g["da"].mean())
+             for k, g in drawn.groupby("kind")}
+    n_b, n_l = drawn["family"].nunique(), drawn.dropna(subset=["da"])["language"].nunique()
+    (sb, sl, sm), (cb, cl, cm), (gb, gl, gm) = clear["DA-size"], clear["DA-ckpt"], clear["DA-goal"]
+    return (
+        f"\\textbf{{Averaged over the proxies 90M--1B, DA-size is above 0.5 (95\\% interval) on only {sb} of {n_b} "
+        f"benchmarks and {sl} of {n_l} languages, against {cb} and {cl} for DA-ckpt.}} DA-goal clears it on {gb} "
+        f"benchmarks and {gl} languages. Cell means: {sm:.2f}, {cm:.2f} and {gm:.2f}. Top: DA-size of each proxy's "
+        "final checkpoint against the 1.7B final. Middle: DA-ckpt of its nine earlier tenths against its own final. "
+        "Bottom: DA-goal of its ten tenths against the 1.7B final. Each task is first averaged over the proxies "
+        "90M--1B and the tenths. Side panels: row and column means with 95\\% bootstrap intervals over the cells. "
+        + setup)
+
+
+def rq02_language_per_proxy_caption(d):
+    """The caption of app_rq02_da_size_by_language_per_proxy, its numbers read from the figure's CSV `d`."""
+    drawn, setup = _rq02_maps(d)
+    per = drawn.groupby("proxy_size").agg(cells=("da", "count"), mean=("da", "mean"))
+    lo, hi = per.loc["90M"], per.loc["1B"]
+    return (
+        f"\\textbf{{A larger proxy lets more benchmark-language cells past the gate ({int(lo['cells'])} at 90M, "
+        f"{int(hi['cells'])} at 1B), but their mean DA-size only moves from {lo['mean']:.2f} to {hi['mean']:.2f}.}} "
+        "DA-size of each proxy's final checkpoint against the 1.7B final, one map per proxy, the row means last. Only "
+        "benchmarks with a DA-size at some proxy are drawn. " + setup)
+
+
 # folder -> title, paper figure stem, setup, (README image the finding follows, which bullet)[, extras]
 PAGES = {
     "rq00_gate_and_curves": (
@@ -144,7 +189,10 @@ PAGES = {
         "design pairs that the final checkpoint of a proxy orders in the same way as the final checkpoint of the "
         "1.7B reference. Every task is above chance at the proxy and at 1.7B. A pair may differ on any number of "
         "design axes.",
-        None, 0),
+        None, 0,
+        (("app_rq02_da_by_language", rq02_language_caption, "fig:app_rq02_da_by_language"),
+         ("app_rq02_da_size_by_language_per_proxy", rq02_language_per_proxy_caption,
+          "fig:app_rq02_da_size_by_language_per_proxy"))),
     "rq02_da_vs_train_tokens": (
         "Decision accuracy against the tokens of the language seen", "app_rq02_da_goal_multi_axes_bpb",
         "We use the bits per byte of 50 languages, one task each. Design pairs are formed among the variants that "

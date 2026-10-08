@@ -112,8 +112,8 @@ from analysis.paths import DECISION_ACCURACY, EVALUATION_RECIPE  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask, task_n_items  # noqa: E402
 from analysis.rq02_decision_accuracy import compute_da  # noqa: E402
 from analysis.utils import (AXES_SUFFIX, BBPB, FORMATS, MIN_PAIRS, NON_EMB, PAIR_AXES, RELIABLE_DA,  # noqa: E402
-                            SMALL_SIZES, TARGET_SIZE, assign_language, benchmark_family, build_snr_pool, design_axes,
-                            lower_is_better, pair_sets, passes_gate, variant)
+                            SMALL_SIZES, TARGET_SIZE, assign_language, benchmark_family, bootstrap_band, build_snr_pool,
+                            design_axes, lower_is_better, pair_sets, passes_gate, variant)
 
 TAU = RELIABLE_DA
 FORMAT_NAME = {"original": "original", "rf": "RF", "rfgm": "LLM-RF"}
@@ -504,7 +504,6 @@ def variants_paper(ov: pd.DataFrame, path: Path) -> None:
 
 PAPER_AXES = "multi-axis"   # rq11's headline pair set, the one its paper figures read
 TOP = 8                 # the benchmarks the per-benchmark paper figure draws
-N_BOOT = 1000           # bootstrap resamples of a line's tasks (95 % percentile band)
 # line -> (legend label, style): one colour per kind of line in every row of the figure
 LINES = {"bpb": ("BPB", dict(color=S.ALERT, ls="-")),
          "acc": ("Accuracy, every format", dict(color=S.INK, ls="-")),
@@ -526,12 +525,6 @@ def ranking(by: pd.DataFrame) -> pd.DataFrame:
     x = x.drop_duplicates(["benchmark", "format"]).sort_values("mean_da_size", ascending=False)
     best = x.drop_duplicates("benchmark").reset_index(drop=True)
     return best.assign(rank=best.index + 1)[["rank", "benchmark", "format", "mean_da_size", "n_tasks", "languages"]]
-
-
-def _band(v: np.ndarray) -> tuple[float, float]:
-    """The 95 % percentile bootstrap interval of the mean of `v` (resampling its tasks)."""
-    m = v[np.random.default_rng(0).integers(0, len(v), (N_BOOT, len(v)))].mean(axis=1)
-    return tuple(np.percentile(m, [2.5, 97.5]))
 
 
 def benchmarks_cells(pool: str, rank: pd.DataFrame) -> pd.DataFrame:
@@ -583,7 +576,7 @@ def benchmarks_summary(cells: pd.DataFrame) -> pd.DataFrame:
     for d in (size, run):
         for (r, l, k, x), g in d.groupby(["row", "line", "kind", "x"]):
             v = g["da"].to_numpy()
-            lo, hi = _band(v)
+            lo, hi = bootstrap_band(v)               # 95 %, over the line's tasks
             rows.append({"row": r, "line": l, "kind": k, "x": x, "da": v.mean(), "lo": lo, "hi": hi, "n_tasks": len(v)})
     return pd.DataFrame(rows)
 

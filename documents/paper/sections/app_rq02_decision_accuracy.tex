@@ -32,3 +32,19 @@
 \end{minipage}
 \vspace{\baselineskip}
 }]
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq02_da_by_language.png}
+% source: src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_by_benchmark_and_language_mono_axis.png
+\caption{\textbf{Averaged over the proxies 90M--1B, DA-size is above 0.5 (95\% interval) on only 4 of 19 benchmarks and 15 of 49 languages, against 15 and 45 for DA-ckpt.} DA-goal clears it on 5 benchmarks and 16 languages. Cell means: 0.56, 0.62 and 0.54. Top: DA-size of each proxy's final checkpoint against the 1.7B final. Middle: DA-ckpt of its nine earlier tenths against its own final. Bottom: DA-goal of its ten tenths against the 1.7B final. Each task is first averaged over the proxies 90M--1B and the tenths. Side panels: row and column means with 95\% bootstrap intervals over the cells. A cell is the mean over a benchmark's original accuracy tasks (no RF, LLM-RF or bBPB twin) in a trained language. The maps use the mono-axis pairs of Figure~\ref{fig:rq2} without its reliability cut, which would select cells by their value. Grey cells are gated, white cells have no value, and the scale is centred at 0.5 (a coin flip). Languages follow resource rank, with lines where the lists of $K$ = 1, 2, 8, 15, 30 and 50 languages end. Not drawn: 9 single-language benchmarks, and CulturalBench-hard, Global PIQA (parallel), TruthfulQA (mc2), which have no value.}
+\label{fig:app_rq02_da_by_language}
+\end{figure*}
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq02_da_size_by_language_per_proxy.png}
+% source: src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_size_by_benchmark_and_language_per_proxy_mono_axis.png
+\caption{\textbf{A larger proxy lets more benchmark-language cells past the gate (130 at 90M, 191 at 1B), but their mean DA-size only moves from 0.53 to 0.58.} DA-size of each proxy's final checkpoint against the 1.7B final, one map per proxy, the row means last. Only benchmarks with a DA-size at some proxy are drawn. A cell is the mean over a benchmark's original accuracy tasks (no RF, LLM-RF or bBPB twin) in a trained language. The maps use the mono-axis pairs of Figure~\ref{fig:rq2} without its reliability cut, which would select cells by their value. Grey cells are gated, white cells have no value, and the scale is centred at 0.5 (a coin flip). Languages follow resource rank, with lines where the lists of $K$ = 1, 2, 8, 15, 30 and 50 languages end. Not drawn: 9 single-language benchmarks, and BLEnD, Belebele, CulturalBench-easy, CulturalBench-hard, Global PIQA (parallel), Global-MMLU, TruthfulQA (mc2), TruthfulQA-Multi, which have no value.}
+\label{fig:app_rq02_da_size_by_language_per_proxy}
+\end{figure*}
