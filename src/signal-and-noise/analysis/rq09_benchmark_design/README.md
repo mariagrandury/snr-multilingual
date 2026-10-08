@@ -18,24 +18,24 @@
 
 Pool `predictivity`: seed 1904, every cell, data build and ladder (swiglu included); the 36-sweep pools are history under [Extensions](#extensions-from-other-sweeps). The signal is `snr_mpd_1.7B` (mean pairwise distance, the noise-and-SNR analysis's headline variant) at the 1.7B reference only, after the above-random gate, so every family here is a gate survivor.
 
-Each family is the median over its per-language aggregate tasks, grouped by curation method, source origin, task format, option count and a reading-passage flag, and tested with a family-level Kruskal–Wallis (groups of one family skipped). Of the 23 families tagged in `FAMILY_META` ([analyze.py](analyze.py), provenance in [data_info.md](data_info.md)), 17 keep at least one task: 328 tasks over 49 languages; TruthfulQA-Multi has no 1.7B SNR, and AfriMMLU, AfriXNLI, Global-MMLU Lite, Global-PIQA completions and the LLM-rewritten Global-MMLU twin are not in the pool.
+Each family is the median over its per-language aggregate tasks, grouped by curation method, source origin, task format, option count and a reading-passage flag, and tested with a family-level Kruskal–Wallis (groups of one family skipped). Of the 23 families tagged in `FAMILY_META` ([analyze.py](analyze.py), provenance in [data_info.md](data_info.md)), 17 keep at least one task: 344 tasks over 49 languages; TruthfulQA-Multi has no 1.7B SNR, and AfriMMLU, AfriXNLI, Global-MMLU Lite, Global-PIQA completions and the LLM-rewritten Global-MMLU twin are not in the pool.
 
 ## Key figure
 
 ![Median SNR per benchmark family, coloured by answer-option count](pretraining/predictivity/snr_per_family_ranked_paper.png)
 
-Population: pool `predictivity` (seed 1904), SNR `snr_mpd_1.7B` (mean pairwise distance at the 1.7B reference), median over each family's per-language tasks, the 17 families (328 tasks, 49 languages) that clear the above-random gate only; snapshot 2026-10-07 15:51.
+Population: pool `predictivity` (seed 1904), SNR `snr_mpd_1.7B` (mean pairwise distance at the 1.7B reference), median over each family's per-language tasks, the 17 families (344 tasks, 49 languages) that clear the above-random gate only; snapshot: the 2026-10-08 refresh.
 
-**Key finding.** The four sharpest families by SNR are MultiBLiMP 1.70 (34 tasks), XStoryCloze 1.53 (8), XWinograd 1.45 (6) and PAWS-X 1.37 (5), and the reformulated twins fill the lower half (0.41 to 0.62). No family-level design characteristic separates the families convincingly, by SNR or by DA-size.
+**Key finding.** **No family-level design characteristic separates the families convincingly, by SNR or by DA-size.** The four sharpest families by SNR are MultiBLiMP 2.39 (34 tasks), HellaSwag 2.29 (26), XStoryCloze 2.18 (8) and XWinograd 1.77 (6), and the reformulated twins fill the lower half (0.58 to 0.84).
 
 GitHub: [snr_per_family_ranked_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_per_family_ranked_paper.png) · [snr_per_family_ranked_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_per_family_ranked_paper.csv). The other design axes and their tests: [Results](#results); the same characteristics against DA-size: [Benchmark characteristics against DA-size](#benchmark-characteristics-against-da-size).
 
 Key findings:
 
-- **The benchmark whose proxies decide most like 1.7B is not an SNR leader.** HellaSwag has the highest DA-size (0.75 mean over 90M–1B on the 23 of its 25 tasks that the paper's reliability filter keeps, and 0.75 on every task above chance) but sits tenth by SNR (0.61); three of the four 2-option SNR leaders read 0.50–0.58 on every task above chance (PAWS-X 0.50, XWinograd 0.51, MultiBLiMP 0.58) and XStoryCloze 0.62 (`design_da_size_per_family_mono_axis.csv`).
-- The reformulated twins do not lift their families into the top band: Belebele 0.46 (3 tasks) vs Belebele RF 0.49 (57) and LLM-RF 0.62 (59); INCLUDE 0.70 (3) vs RF 0.60 (29) and LLM-RF 0.58 (30); Global-MMLU RF 0.41 (29) is the lowest family.
-- The 2- and 3-option families sit above the 4-option ones by SNR (0.89 to 1.70 against 0.41 to 0.83, Global PIQA parallel the exception at 0.48 on one task); option count is the one family-level test under 0.05 (H = 5.69, p = 0.017), one of five uncorrected tests, and it does not carry over to DA-size (ρ = −0.03 on every gated task).
-- Task counts differ by a factor of 59 across families (1 to 59), so the single-task medians (Global-MMLU, Global PIQA) are the least stable bars.
+- **The benchmark whose proxies decide most like 1.7B is now also an SNR leader.** HellaSwag has the highest DA-size on every task above chance (0.75 mean over 90M–1B; 0.77 on the 23 of its 26 tasks that the paper's reliability filter keeps, second there to XCOPA's single task read at two proxies, 0.88) and sits second by SNR (2.29); the 2-option SNR leaders read 0.51–0.60 on every task above chance (PAWS-X 0.52, XWinograd 0.51, MultiBLiMP 0.57, XStoryCloze 0.60; `design_da_size_per_family_mono_axis.csv`).
+- **The reformulated twins do not lift their families into the top band.** Belebele 0.51 (3 tasks) vs Belebele RF 0.61 (57) and LLM-RF 0.83 (59); INCLUDE 0.66 (3) vs RF 0.58 (29) and LLM-RF 0.72 (30); Global-MMLU RF 0.84 (29) vs Global-MMLU 1.26 (1), and the original Belebele is the lowest family.
+- **The 2- and 3-option families mostly sit above the 4-option ones by SNR.** They read 1.01 to 2.39 against 0.51 to 1.26, with HellaSwag (4 options, 2.29) and Global PIQA parallel (2 options, 0.59 on 10 tasks) the exceptions; the option-count test just misses 0.05 (H = 3.81, p = 0.051, one of five uncorrected tests), and option count does not carry over to DA-size (ρ = −0.06 on every gated task).
+- **Task counts differ by a factor of 59 across families (1 to 59).** The single-task median (Global-MMLU) and the three-task ones (Belebele, INCLUDE) are the least stable bars.
 
 Follow-ups:
 
@@ -45,7 +45,7 @@ Follow-ups:
 <!-- BEGIN auto:design-da (design_da.py --pool predictivity) -->
 ## Benchmark characteristics against DA-size
 
-Pool `predictivity`: rq02's per-task DA-size (mono-axis pairs, each proxy's final checkpoint against the 1.7B final, gated at the proxy and at 1.7B, ≥ 3 pairs) over the paper's `above_66_either` tasks (13 families, up to 89 tasks), with the unfiltered reading (every gated task) beside it; a benchmark's DA-size is the median over its tasks at a proxy and the mean of those medians over 90M–1B. Statistic: Spearman ρ against the centred code of an ordinal or binary characteristic (options 2 → 4, no passage → passage, translated → originally multilingual) or a length; curation and task format are binarised, translated → native (written in the language or generated from its treebanks) and continuation → lettered MCQ, and on these families native curation picks the same benchmarks as an originally multilingual source, so those two rows coincide; 95 % bootstrap over the families. The quadrant figure reads every task above chance, so benchmarks fall on both sides of chance agreement; its `above_66_either` twin, where every benchmark sits right of 0.5, stays as an analysis figure. Regenerate with `python analysis/rq09_benchmark_design/design_da.py --pool predictivity`.
+Pool `predictivity`: rq02's per-task DA-size (mono-axis pairs, each proxy's final checkpoint against the 1.7B final, gated at the proxy and at 1.7B, ≥ 3 pairs) over the paper's `above_66_either` tasks (13 families, up to 85 tasks), with the unfiltered reading (every gated task) beside it; a benchmark's DA-size is the median over its tasks at a proxy and the mean of those medians over 90M–1B. Statistic: Spearman ρ against the centred code of an ordinal or binary characteristic (options 2 → 4, no passage → passage, translated → originally multilingual) or a length; curation and task format are binarised, translated → native (written in the language or generated from its treebanks) and continuation → lettered MCQ, and on these families native curation picks the same benchmarks as an originally multilingual source, so those two rows coincide; 95 % bootstrap over the families. The quadrant figure reads every task above chance, so benchmarks fall on both sides of chance agreement; its `above_66_either` twin, where every benchmark sits right of 0.5, stays as an analysis figure. Regenerate with `python analysis/rq09_benchmark_design/design_da.py --pool predictivity`.
 
 ![Characteristics against DA-size](pretraining/predictivity/design_da_size_correlation_above_66_either_mono_axis.png)
 
@@ -55,23 +55,22 @@ Pool `predictivity`: rq02's per-task DA-size (mono-axis pairs, each proxy's fina
 
 Key findings (generated):
 
-- **DA-size, `above_66_either`** (mean over 90M–1B): Curation ρ = -0.18 [-0.68, +0.39] (n = 13); Source ρ = -0.18 [-0.68, +0.39] (n = 13); Answer options ρ = -0.49 [-0.86, +0.07] (n = 13); Reading passage ρ = +0.27 [-0.30, +0.72] (n = 13); Context length ρ = -0.43 [-1.00, +0.37] (n = 8); Option length ρ = +0.64 [-0.26, +0.93] (n = 8).
-- **DA-size, every gated task**: Curation ρ = +0.04 [-0.52, +0.53] (n = 14); Source ρ = +0.04 [-0.52, +0.53] (n = 14); Task format ρ = +0.03 (n = 14); Answer options ρ = -0.03 [-0.61, +0.52] (n = 14); Reading passage ρ = +0.18 [-0.52, +0.73] (n = 14); Context length ρ = +0.12 [-0.84, +0.89] (n = 8); Option length ρ = +0.62 [-0.30, +1.00] (n = 8).
-- **SNR at 1.7B** (the same statistics on rq09's family medians): Curation ρ = +0.10 [-0.46, +0.57] (n = 17); Source ρ = +0.10 [-0.46, +0.57] (n = 17); Task format ρ = -0.23 [-0.61, +0.19] (n = 17); Answer options ρ = -0.66 [-0.91, -0.13] (n = 17); Reading passage ρ = -0.16 [-0.61, +0.32] (n = 17); Context length ρ = -0.35 [-0.92, +0.51] (n = 10); Option length ρ = +0.12 [-0.78, +0.85] (n = 10).
-- **Option count per proxy** (`above_66_either`): 90M ρ = -0.03, 175M ρ = -0.26, 350M ρ = -0.04, 600M ρ = -0.52, 1B ρ = -0.06.
+- **DA-size, `above_66_either`** (mean over 90M–1B): Curation ρ = +0.09 [-0.48, +0.63] (n = 13); Source ρ = +0.09 [-0.48, +0.63] (n = 13); Answer options ρ = -0.07 [-0.64, +0.63] (n = 13); Reading passage ρ = +0.18 [-0.36, +0.70] (n = 13); Context length ρ = -0.67 [-1.00, +0.11] (n = 8); Option length ρ = +0.76 [+0.17, +1.00] (n = 8).
+- **DA-size, every gated task**: Curation ρ = -0.16 [-0.62, +0.42] (n = 15); Source ρ = -0.16 [-0.62, +0.42] (n = 15); Task format ρ = +0.05 (n = 15); Answer options ρ = -0.06 [-0.57, +0.47] (n = 15); Reading passage ρ = +0.17 [-0.50, +0.70] (n = 15); Context length ρ = +0.31 [-0.60, +0.96] (n = 8); Option length ρ = +0.50 [-0.33, +0.94] (n = 8).
+- **SNR at 1.7B** (the same statistics on rq09's family medians): Curation ρ = -0.18 [-0.69, +0.38] (n = 17); Source ρ = -0.18 [-0.69, +0.38] (n = 17); Task format ρ = -0.34 [-0.68, +0.09] (n = 17); Answer options ρ = -0.52 [-0.88, +0.00] (n = 17); Reading passage ρ = -0.03 [-0.58, +0.53] (n = 17); Context length ρ = -0.48 [-0.94, +0.30] (n = 10); Option length ρ = +0.48 [-0.51, +1.00] (n = 10).
+- **Option count per proxy** (`above_66_either`): 90M ρ = +0.35, 175M ρ = -0.03, 350M ρ = +0.15, 600M ρ = -0.54, 1B ρ = +0.15.
 
 GitHub: [design_da_size_correlation_above_66_either_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/design_da_size_correlation_above_66_either_mono_axis.png) · [design_da_size_correlation_above_66_either_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/design_da_size_correlation_above_66_either_mono_axis.csv) · [design_da_size_by_level_above_66_either_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/design_da_size_by_level_above_66_either_mono_axis.png) · [design_da_size_by_level_above_66_either_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/design_da_size_by_level_above_66_either_mono_axis.csv) · [design_da_size_quadrant_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/design_da_size_quadrant_mono_axis.png) · [design_da_size_quadrant_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/design_da_size_quadrant_mono_axis.csv) · [design_da_size_quadrant_above_66_either_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/design_da_size_quadrant_above_66_either_mono_axis.png) · [design_da_size_quadrant_above_66_either_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/design_da_size_quadrant_above_66_either_mono_axis.csv) · [design_da_size_per_family_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/design_da_size_per_family_mono_axis.csv) · [benchmark_characteristics.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/benchmark_characteristics.csv)
 
 Table: `benchmark_characteristics.csv` (`.tex` for the paper) lists each benchmark's characteristics.
 <!-- END auto:design-da -->
 
-Key findings (`design_da_size_correlation_above_66_either_mono_axis.csv`, `design_da_size_per_family_mono_axis.csv`; 13 families in the `above_66_either` reading, 14 on every gated task, 17 for the SNR):
+Key findings (`design_da_size_correlation_above_66_either_mono_axis.csv`, `design_da_size_per_family_mono_axis.csv`; 13 families in the `above_66_either` reading, 15 on every gated task, 17 for the SNR):
 
-- **No characteristic orders the benchmarks by DA-size.** Every signed correlation's 95 % interval crosses 0 in both readings; the SNR's one clear one, option count (ρ = −0.66, CI −0.91 to −0.13), is −0.49 (CI −0.86 to 0.07) on the reliable tasks and −0.03 on every gated task.
-- **HellaSwag is the clean example.** A 4-option, passage-reading, machine-translated benchmark, it is the top DA-size family in both readings (0.75), so the levels it carries are lifted by one benchmark; the outlined dot in the by-level figure.
-- **Curation and task format are binarised** (native vs translated, lettered MCQ vs continuation). On these families native curation picks exactly the benchmarks with an originally multilingual source, so the two rows coincide (ρ = −0.18 on the reliable tasks, 0.04 on every task above chance). ARC is the only lettered-MCQ family among the reliable tasks, so task format has no value there; on every task above chance (ARC and INCLUDE) it is 0.03.
-- **The quadrant figure reads every task above chance**, where four families fall below 0.5 (XCOPA 0.47, Belebele RF 0.49, XNLI 0.49, INCLUDE LLM-RF 0.49) and two sit at it (INCLUDE, Belebele LLM-RF). They fall on both levels of every characteristic but task format (all four score continuations, as 8 of the other 10 families do), so no pair of quadrants dominates. On the reliable tasks every family sits right of 0.5 (the filter keeps tasks with a median DA ≥ 0.66 on one axis); that twin stays as an analysis figure.
-- Option length is the largest signed value on DA-size (ρ = 0.64 and 0.62) but rests on the 8 original families with sampled items.
+- **Only option length orders the benchmarks by DA-size, and only on the reliable tasks.** Its ρ = 0.76 (CI 0.17 to 1.00) rests on the 8 original families with sampled items and drops to 0.50 (CI −0.33 to 0.94) on every gated task; every other signed interval crosses 0 in both readings, and option count, whose SNR interval now reaches 0 (ρ = −0.52, CI −0.88 to 0.00), is −0.07 on the reliable tasks and −0.06 on every gated task.
+- **HellaSwag is the clean example.** A 4-option, passage-reading, machine-translated benchmark, it is the top DA-size family on every gated task (0.75) and second on the reliable tasks (0.77), so the levels it carries are lifted by one benchmark; the outlined dot in the by-level figure.
+- **Curation and task format are binarised** (native vs translated, lettered MCQ vs continuation). On these families native curation picks exactly the benchmarks with an originally multilingual source, so the two rows coincide (ρ = 0.09 on the reliable tasks, −0.16 on every task above chance). ARC is the only lettered-MCQ family among the reliable tasks, so task format has no value there; on every task above chance (ARC and INCLUDE) it is 0.05.
+- **The quadrant figure reads every task above chance, where six families fall below 0.5.** They are XCOPA 0.48, INCLUDE LLM-RF 0.48, INCLUDE 0.49, Belebele RF 0.49, Belebele LLM-RF 0.49 and XNLI 0.49, on both levels of every characteristic (task format too: INCLUDE is lettered MCQ), so no pair of quadrants dominates. On the reliable tasks every family but XNLI (0.48, one task) sits right of 0.5 (the filter keeps tasks with a median DA ≥ 0.66 on one axis); that twin stays as an analysis figure.
 
 Follow-ups:
 
@@ -100,10 +99,10 @@ curation: a benchmark is sharper when the model compares **fewer, longer**
 log-likelihood-scored completions, because each extra option adds another noisy LL
 estimate to rank and longer options concentrate more discriminating tokens. On the ladder one illustration holds and one does not:
 
-- HellaSwag (long 4-option completions, 0.61) sits above ARC (short noun-phrase options, 0.51), but PAWS-X (options `Yes`/`No`, ~2.5 chars) is the fourth-sharpest family (1.37, behind MultiBLiMP 1.70, XStoryCloze 1.53 and XWinograd 1.45).
-- Option length does not track sharpness over the 10 original families with sampled items (Spearman ρ = 0.12, p = 0.75; context length ρ = −0.35, p = 0.33; `group_stats.csv`), so the answer-space account is a hypothesis to test, not a finding.
+- HellaSwag (long 4-option completions, 2.29) sits above ARC (short noun-phrase options, 0.73), but PAWS-X (options `Yes`/`No`, ~2.5 chars) is the fifth-sharpest family (1.55, behind MultiBLiMP 2.39, HellaSwag 2.29, XStoryCloze 2.18 and XWinograd 1.77).
+- Option length does not track sharpness significantly over the 10 original families with sampled items (Spearman ρ = 0.48, p = 0.16; context length ρ = −0.48, p = 0.16; `group_stats.csv`), so the answer-space account is a hypothesis to test, not a finding.
 
-The `passage` flag itself does not separate families: XStoryCloze (4-sentence context, completion, 1.53) is high and Belebele (long passage, MRC, 0.46) is low. What the prompt does with the passage is the candidate explanation.
+The `passage` flag itself does not separate families: XStoryCloze (4-sentence context, completion, 2.18) is high and Belebele (long passage, MRC, 0.51) is low. What the prompt does with the passage is the candidate explanation.
 
 **Inputs & caveats.** Per-family metadata is hand-curated in
 [data_info.md](data_info.md) (paper-style paragraphs cross-referenced against the
@@ -111,9 +110,9 @@ lm-eval task READMEs); the `FAMILY_META` dict in [analyze.py](analyze.py) is its
 machine-readable mirror, with a task-level `xnli_eu` override re-tagged
 `mt_post_edited`. Length features exist only for the 10 original families with sampled items (`length_features.csv`), not for the twins, INCLUDE or Global PIQA.
 
-Hand-written numbers in this README are from the ladder-report snapshot **2026-10-07 15:51** (refresh commit 7966367c, outputs regenerated 2026-10-07; every table here is unchanged from the 2026-10-06 04:26 snapshot). FineTasks' selection criteria, judged on this ladder, live in the surrogates analysis ([README](../rq04_surrogates/README.md#finetasks-criteria-on-the-ladder)).
+Hand-written numbers in this README are from the ladder report **2026-10-08 12:06** (regenerated locally: acc_norm on the cloze-format originals) and the outputs of the 2026-10-08 refresh (detrended checkpoint noise, so every `snr_mpd_1.7B` moved). FineTasks' selection criteria, judged on this ladder, live in the surrogates analysis ([README](../rq04_surrogates/README.md#finetasks-criteria-on-the-ladder)).
 
-**Families without metadata are left out.** `load_per_task_snr` keeps a family only if it has a `FAMILY_META` entry. As of 2026-10-07, 25 benchmark families with a 1.7B SNR in the pool have none, so they are in no table here: the 14 `bbpb_` benchmark-BPB twins, `arc_mt`, `global_piqa_nonparallel_cloze`, `include_v2_en`, `include_v2_og`, `lambada_openai_mt`, `mathqa` and the `rf_` twins of acp_bench, bbh, commonsense_qa, cultural_bench_easy and mmlu (plus per-language `bpb`, which is not a benchmark).
+**Families without metadata are left out.** `load_per_task_snr` keeps a family only if it has a `FAMILY_META` entry. As of 2026-10-08, 26 benchmark families with a 1.7B SNR in the pool have none, so they are in no table here: the 14 `bbpb_` benchmark-BPB twins, `arc_mt`, `global_piqa_nonparallel_cloze`, `include_v2_en`, `include_v2_og`, `lambada_openai_mt`, `mathqa`, `openbookqa` and the `rf_` twins of acp_bench, bbh, commonsense_qa, cultural_bench_easy and mmlu (plus per-language `bpb`, which is not a benchmark).
 
 <!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results
@@ -165,12 +164,12 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 [snr_by_passage.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_by_passage.png) ·
 [snr_vs_length_features.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_vs_length_features.png)
 
-Key findings (17 families, 328 tasks, `snr_mpd_1.7B`):
+Key findings (17 families, 344 tasks, `snr_mpd_1.7B`):
 
-- Option count: the 6 two-option families have a median family SNR of 1.41 and the 10 four-option families 0.59; H = 5.69, p = 0.017 over these 16 (XNLI, the only 3-option family, is a group of one and skipped).
-- No other family-level axis comes near: curation H = 1.62, p = 0.66 (4 groups); source origin H = 0.16, p = 0.69; format H = 1.73, p = 0.42 (3 groups); reading passage H = 0.40, p = 0.53.
-- The per-task curation test (328 tasks, 5 groups) gives H = 91.44, p = 6.5e-19, but its top group, template-generated (median 1.70), is MultiBLiMP alone (34 tasks), against 0.41 to 0.63 for the other four; it measures one family, not a curation method.
-- Length features (10 original families): context length ρ = −0.35 (p = 0.33), option length ρ = 0.12 (p = 0.75), context-to-option ratio ρ = −0.24 (p = 0.51).
+- **Option count comes closest but misses 0.05.** The 6 two-option families have a median family SNR of 1.66 and the 10 four-option families 0.73; H = 3.81, p = 0.051 over these 16 (XNLI, the only 3-option family, is a group of one and skipped).
+- **No other family-level axis comes near.** Curation H = 2.45, p = 0.48 (4 groups); source origin H = 0.49, p = 0.48; format H = 2.46, p = 0.29 (3 groups); reading passage H = 0.01, p = 0.92.
+- **The per-task curation test measures one family, not a curation method.** It gives H = 93.27, p = 2.7e-19 (344 tasks, 5 groups), but its top group, template-generated (median 2.39), is MultiBLiMP alone (34 tasks), against 0.68 to 1.36 for the other four.
+- **No length feature reaches significance.** Over the 10 original families, context length ρ = −0.48 (p = 0.16), option length ρ = 0.48 (p = 0.16), context-to-option ratio ρ = −0.50 (p = 0.14).
 
 Follow-ups:
 
@@ -190,18 +189,18 @@ The family medians above, per language (`predictivity` pool). Regenerate with `p
 GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/highlights.csv) ·
 [snr_family_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_family_by_language.png)
 
-Population (both figures): pool `predictivity` (seed 1904), `log10` of `snr_mpd_1.7B` per (benchmark, language) task at the 1.7B reference, gate survivors only: 17 families, 328 tasks, 49 languages; snapshot 2026-10-07 15:51. The two rank panels of `highlights.png` show the top and bottom eight of each list, so the 17th family, `rfgm_belebele` (the median one, log10 −0.20), and the 33 middle languages are not drawn.
+Population (both figures): pool `predictivity` (seed 1904), `log10` of `snr_mpd_1.7B` per (benchmark, language) task at the 1.7B reference, gate survivors only: 17 families, 344 tasks, 49 languages; snapshot: the 2026-10-08 refresh. The two rank panels of `highlights.png` show the top and bottom eight of each list, so the 17th family, `rf_global_mmlu_full` (the median one, log10 −0.07), and the 33 middle languages are not drawn.
 
 Key findings (`highlights.csv`, `snr_family.csv`):
 
-- Only four families have a median log10 SNR above 0 (signal above noise): MultiBLiMP 0.23, XStoryCloze 0.18, XWinograd 0.16, PAWS-X 0.14; XCOPA (−0.01) and XNLI (−0.05) sit just below, and Global-MMLU RF is lowest (−0.39).
-- Only 2 of 49 languages have a median log10 SNR above 0: Slovenian 0.07 (3 tasks) and Croatian 0.03 (6); English is at −0.02 (12 tasks), and the lowest are Malay −0.51 (5) and Malayalam −0.47 (2).
-- By construction method, template-generated (MultiBLiMP alone) is at 0.23 against −0.20 to −0.39 for originally multilingual, machine-translated, human-translated and MT-post-edited, with MT-post-edited lowest.
-- No cell of the benchmark-by-language grid is grey (`gated` is False for all 328 tasks in `snr_family.csv`), so a white cell is a (benchmark, language) pair with no 1.7B SNR.
+- **Eight of the 17 families have a median log10 SNR above 0 (signal above noise).** They are MultiBLiMP 0.38, HellaSwag 0.36, XStoryCloze 0.34, XWinograd 0.25, PAWS-X 0.19, XCOPA 0.12, Global-MMLU 0.10 and XNLI 0.01; Belebele is lowest (−0.29).
+- **12 of 49 languages have a median log10 SNR above 0.** The highest are Slovenian 0.22 (3 tasks), Croatian 0.16 (7) and English 0.15 (12), and the lowest Malayalam −0.35 (3) and Korean −0.30 (5).
+- **By construction method, template-generated (MultiBLiMP alone) is highest.** It is at 0.38 against 0.13 for machine-translated, −0.07 for MT-post-edited, −0.12 for human-translated and −0.17 for originally multilingual, the lowest.
+- **No cell of the benchmark-by-language grid is grey.** `gated` is False for all 344 tasks in `snr_family.csv`, so a white cell is a (benchmark, language) pair with no 1.7B SNR.
 
 Follow-ups:
 
-- The per-language ranking restricted to languages with at least five tasks, since several extremes (Slovenian 3 tasks, Malayalam 2) rest on very few.
+- The per-language ranking restricted to languages with at least five tasks, since several extremes (Slovenian and Malayalam, 3 tasks each) rest on very few.
 - The per-language ranking within one family with wide coverage (`rfgm_belebele`, 59 tasks), to separate a language effect from which benchmarks a language happens to have.
 
 ## TODO

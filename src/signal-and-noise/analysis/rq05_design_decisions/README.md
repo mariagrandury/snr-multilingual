@@ -63,9 +63,9 @@ per-language one).
 
 Population: pool `predictivity_seeds` (every seed, ladder and data build; benchmarks gated with `predictivity`'s mask), DA-size (left) and DA-ckpt (right) on mono-axis decisions of the four interventions (a scheme decision per data build), proxies 90M–1B at their final checkpoint (left) and the reference's own nine earlier checkpoints, 0.5C–4.5C (right), each line against one reference size and the L's that share it, mean over L; solid = per-language BPB of the languages both levels train, dashed = the gated benchmark tasks; dotted line = 0.75.
 
-**Key finding (2026-10-07 refresh).** Per-language BPB of the trained languages reads the temperature decision from every proxy (0.95–0.99, mean over L15–L50) and the language-list decision at 0.77–1.00 (L8–L30), while on the gated benchmarks only two proxies read a decision at 0.75, both L1 English-data swaps (DCLMP at 350M, 0.79; FWEB at 600M, 0.75): 0.45–0.64 for every intervention but those two swaps (DCLMP 0.50–0.79, FWEB 0.57–0.75).
+**Key finding (2026-10-08 refresh).** **Per-language BPB reads the temperature and list decisions at every proxy size, the gated benchmarks almost never.** The trained languages' BPB reads temperature at 0.95–0.99 (mean over L15–L50) and the language lists at 0.77–1.00 (L8–L30), while on the benchmarks every intervention sits at 0.45–0.63 and only the two L1 English-data swaps come near 0.75 (DCLMP 0.51–0.79, 0.79 at 350M; FWEB 0.57–0.75, 0.746 at 600M).
 
-The depth line on per-language BPB swings from 0.00 (600M) to 0.98 (175M) against a reference whose depth effect is 1.3 seed sds, and the reference's own checkpoints reach 0.76–0.85 on the benchmarks at 90 % of its run, where before 80 % only the L1 FWEB swap reaches 0.75.
+The depth line on per-language BPB swings from 0.00 (600M, whose depth pairs are not size-matched) to 0.98 (175M) against a reference whose depth effect is 1.3 seed sds, and the reference's own checkpoints reach 0.76–0.85 on the benchmarks at 90 % of its run, where before 80 % only the L1 FWEB swap reaches 0.75.
 
 The 600M point of every depth line compares cells that are not size-matched (shallow 600M has 3.7 % more non-embedding parameters, width 2048 against 1536 and about 15 % more compute; [RULES.md, "Size matching"](../RULES.md#size-matching-the-600m-depth-pairs-are-flagged-not-dropped)), which is the likeliest reading of its 0.00: the pairs stay in, and the tables flag them with `size_matched`.
 
@@ -82,8 +82,8 @@ GitHub: [da_all_lines_mono_axis_paper.png](https://github.com/mariagrandury/snr-
   dropped rather than counted as misses, since they leave no decision to
   agree with (the one place this analysis departs from the kernel).
 - **Items per cell.** `n_items` is reported with every cell and a benchmark
-  cell needs ≥ 3 items. At the final checkpoint a benchmark cell holds 14–1,252
-  gated tasks (14–128 at L1, 1,107–1,252 at L50), and a `bpb_trained` cell
+  cell needs ≥ 3 items. At the final checkpoint a benchmark cell holds 14–1,270
+  gated tasks (14–130 at L1, 1,108–1,270 at L50), and a `bpb_trained` cell
   5–50 languages (5, 6 and 26 for the language lists at L8, L15, L30).
 - **Effect at the reference.** Per intervention and L, the median |Δ| at
   the reference in per-task seed standard deviations (the seed sd of the
@@ -92,12 +92,12 @@ GitHub: [da_all_lines_mono_axis_paper.png](https://github.com/mariagrandury/snr-
   scaling-law error in the scaling analysis (`scaling_law_error.py`) and the effect against
   seed and checkpoint noise per cell in the noise-and-SNR analysis (`effect_vs_noise.py`).
 
-Hand-written numbers in this README are from the ladder-report snapshot
-**2026-10-07 15:51** (commit 7966367c), re-read on 2026-10-07. The bBPB twins
-now exist at every checkpoint of every size, so every proxy's benchmark cell
-holds the same task set: before this refresh the 90M, 350M and 600M cells
-lacked the twins (288 tasks at 90M, L50, against 1,107 now), which is why
-their benchmark DAs moved while 175M, 1B and the 1.7B checkpoints did not.
+Hand-written numbers in this README are from the ladder report **2026-10-08
+12:06** (regenerated locally: acc_norm on the cloze-format originals) and the
+outputs of the 2026-10-08 refresh (detrended checkpoint noise). The bBPB twins
+exist at every checkpoint of every size since the 2026-10-07 refresh (288 tasks
+at 90M, L50, before it, against 1,108 now), and since 2026-10-08 for the seed
+replicates too, so every proxy's benchmark cell holds the same task set.
 
 <!-- BEGIN auto:results (analyze.py --pool predictivity_seeds) -->
 ## Results
@@ -200,22 +200,26 @@ GitHub: [rq4_interventions.png](https://github.com/mariagrandury/snr-multilingua
 `predictivity_seeds`, proxies 90M–1B at their final checkpoint, reference
 1.7B at every (intervention, L), DA-size per L)
 
-- On per-language BPB the temperature decision is read at 0.87–1.00 by every
-  proxy at every L, and the language-list decision at 0.83–1.00 except 1B at
-  L30 (0.31).
-- The depth decision on per-language BPB is 0.00 for 600M at all four L and
+- **Per-language BPB reads temperature and the language lists in almost every
+  cell.** The temperature decision is read at 0.87–1.00 by every proxy at every
+  L, and the language-list decision at 0.83–1.00 except 1B at L30 (0.31).
+- **The depth decision on per-language BPB collapses at 350M and 600M.** It is
+  0.00 for 600M at all four L (the 600M depth pairs are not size-matched) and
   0.00–0.97 for 350M, while 90M, 175M and 1B read it at 0.78–1.00; the depth
   bullet under the per-benchmark figures explains why.
-- On the gated benchmarks the per-L cells span 0.41–0.86, and the only ones at
-  ≥ 0.75 are at L1: 350M (depth 0.86, A vs DCLMP 0.79) and 600M (A vs FWEB 0.75).
-- The effect at the reference is 1.0–1.8 seed sds on the benchmarks for every
-  intervention; on per-language BPB it is 1.3 for depth, 1.6 for the language
-  lists and 5.4 for temperature, the one decision far outside seed noise.
+- **On the gated benchmarks only two cells, both at L1, reach 0.75.** The per-L
+  cells span 0.40–0.79, and the two at ≥ 0.75 are 350M at L1 (depth and A vs
+  DCLMP, 0.79 each on 14 tasks); 600M's A vs FWEB at L1 is just under (0.746).
+- **Only temperature on BPB is far outside seed noise at the reference.** The
+  effect there is 1.1–2.1 seed sds on the benchmarks for every intervention;
+  on per-language BPB it is 1.3 for depth, 1.6 for the language lists and 5.4
+  for temperature.
 
 **Follow-ups**
 
-- Bootstrap the per-L benchmark DA over tasks: the L1 cells hold 14–128
-  tasks, so the three ≥ 0.75 cells there need an interval before they are quoted.
+- Bootstrap the per-L benchmark DA over tasks: the L1 cells hold 14–130
+  tasks, so the two ≥ 0.75 cells there (and FWEB's 0.746) need an interval
+  before they are quoted.
 
 ## How small, and how early
 
@@ -308,21 +312,22 @@ GitHub: [rq2_da_goal_early_small_mono_axis.png](https://github.com/mariagrandury
 proxies 90M–1B at ten checkpoints, 0.5C–5C, against the 1.7B final ranking,
 mean over L; the 1.7B row is DA-ckpt)
 
-- On per-language BPB the smallest proxy is enough and early is enough: 90M
-  reads the depth decision at 0.93–0.98 and the list decision at 0.96–1.00 from
-  0.5C on.
-- Larger proxies are not safer on BPB: the 1B depth read climbs from 0.27 at
-  0.5C to 0.95 at 5C, the 1B list read falls from 0.91 at 1C to 0.72–0.77 from 4C on, and 600M
-  reads depth at 0.00–0.19 throughout.
-- On the gated benchmarks no proxy at any checkpoint reaches 0.75 (0.41–0.58
-  over both decisions), and the reference's own checkpoints sit at 0.47–0.64
-  until they reach 0.76 at 4.5C.
+- **On per-language BPB the smallest proxy is enough and early is enough.**
+  90M reads the depth decision at 0.93–0.98 and the list decision at 0.96–1.00
+  from 0.5C on.
+- **Larger proxies are not safer on BPB.** The 1B depth read climbs from 0.27
+  at 0.5C to 0.95 at 5C, the 1B list read falls from 0.91 at 1C to 0.72–0.77
+  from 4C on, and 600M reads depth at 0.00–0.19 throughout (its depth pairs are
+  not size-matched).
+- **On the gated benchmarks no proxy at any checkpoint reaches 0.75.** The
+  proxies read 0.41–0.57 over both decisions, and the reference's own
+  checkpoints sit at 0.48–0.64 until they reach 0.76 at 4.5C.
 
 **Follow-ups**
 
 - The benchmark rows now carry the bBPB twins at every checkpoint (a depth
-  proxy row holds 3,148–3,535 task-cells, against 793–1,735 at 90M–600M
-  before), and the 0.41–0.58 range did not move, so the twins do not rescue
+  proxy row holds 3,153–3,601 task-cells, against 793–1,735 at 90M–600M
+  before), and the range stays at 0.41–0.57, so the twins do not rescue
   the early benchmark decision; split the rows by twin vs native task to check
   that neither half alone reaches 0.75.
 
@@ -338,7 +343,7 @@ mean over L; the 1.7B row is DA-ckpt)
   20-checkpoint run and 12.5 % of a 40-checkpoint one
   ([`plan/1b-models.md`](../../../../plan/1b-models.md)).
 - The reference is TARGET_SIZE, 1.7B (rule 9); an (intervention, L) without a
-  1.7B cell at both levels is skipped. In the 2026-10-07 refresh all 16
+  1.7B cell at both levels is skipped. In the 2026-10-08 refresh all 16
   (intervention, L) settings have one, and the `reference_size` column names
   it per cell.
 
@@ -372,31 +377,32 @@ population, sizes and reference as in the setup above: `predictivity_seeds`,
 the reference per (intervention, L) TARGET_SIZE, 1.7B (rule 9),
 items the reference ties dropped)
 
-- Most decisions on the shared languages are not decisions at the reference:
-  the effect table puts depth at 1.3 seed sds on BPB (per-L medians
-  1.15–1.35) and the language lists at 1.6 (0.59–2.87), against temperature
-  at 5.4 (4.36–7.53). On the benchmarks every intervention sits at 1.0–1.8.
-- `da_all_lines_decided_mono_axis` keeps only the items whose reference |Δ|
-  clears 2 sds of the two-run difference: on the 73 gated benchmark cells
-  (proxy × intervention × L) that keep ≥ 3 decided tasks, the final-checkpoint
-  DA rises from 0.54 to 0.61 (means, a median of 21 decided tasks per cell).
-  That is still short of 0.75, so noise at the reference explains part of the
-  benchmarks' failure but not most of it.
-- On per-language BPB the decided cut keeps 10–41 languages per cell for
-  temperature but at most 2 for depth, so the decided figure has no depth BPB
-  line; on `bpb_macro` and the loss it leaves one item per L, a 0/1 reading.
-- Depth is a vanishing advantage, not a crossover (`depth_crossover.csv`,
-  the batch-84 / batch-168 retrains): deep beats shallow by 1.9–2.1
+- **Most decisions on the shared languages are not decisions at the
+  reference.** The effect table puts depth at 1.3 seed sds on BPB (per-L
+  medians 1.15–1.35) and the language lists at 1.6 (0.59–2.87), against
+  temperature at 5.4 (4.36–7.53); on the benchmarks every intervention sits at
+  1.1–2.1.
+- **Noise at the reference explains part of the benchmarks' failure, not most
+  of it.** `da_all_lines_decided_mono_axis` keeps only the items whose
+  reference |Δ| clears 2 sds of the two-run difference: on the 79 gated
+  benchmark cells (proxy × intervention × L) that keep ≥ 3 decided tasks, the
+  final-checkpoint DA rises from 0.54 to 0.62 (means, a median of 49 decided
+  tasks per cell), still short of 0.75.
+- **The decided figure has no depth BPB line.** On per-language BPB the
+  decided cut keeps 10–41 languages per cell for temperature but at most 2 for
+  depth; on `bpb_macro` and the loss it leaves one item per L, a 0/1 reading.
+- **Depth is a vanishing advantage, not a crossover.** In `depth_crossover.csv`
+  (the batch-84 / batch-168 retrains) deep beats shallow by 1.9–2.1
   difference sds at 90M and 1.1–1.6 at 175M, by |z| ≤ 0.51 at 350M, shallow
-  is ahead by 0.28–1.46 sds at 600M, and deep by 0.48–1.03 at 1B and 0.81–0.95
-  at 1.7B, all inside 2 sds from 350M on. The depth DA on the trained
-  languages' BPB (0.92–1.00 at 90M, 0.94–1.00 at 175M, 0.00–0.97 at 350M,
-  0.00 at 600M, 0.78–1.00 at 1B over L8–L50) therefore reads a reference that
-  has no real preference.
-- Every language's BPB, the languages only one level trains included, is
-  not a population here (rule 2: a score on an untrained language is the
+  is ahead by 0.28–1.46 sds at 600M (whose depth pairs are not size-matched),
+  and deep by 0.48–1.03 at 1B and 0.81–0.95 at 1.7B, all inside 2 sds from
+  350M on. The depth DA on the trained languages' BPB (0.92–1.00 at 90M,
+  0.94–1.00 at 175M, 0.00–0.97 at 350M, 0.00 at 600M, 0.78–1.00 at 1B over
+  L8–L50) therefore reads a reference that has no real preference.
+- **Untrained languages are not a population here.** A score on a language
+  only one level trains is the
   [language-transfer analysis](../rq06_language_transfer/README.md)'s
-  measurement, and the loader no longer delivers those rows).
+  measurement (rule 2), and the loader no longer delivers those rows.
 
 **Follow-ups**
 
@@ -450,15 +456,15 @@ Mean decision accuracy over each transformation's pairs, on the items every tran
 GitHub: [transformation_da_size_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/transformation_da_size_mono_axis.png) · [transformation_da_size_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/transformation_da_size_mono_axis.csv)
 
 **Key findings** (`transformation_da_size_mono_axis`; pool `predictivity_seeds`,
-DA-size of proxies 90M–1B against 1.7B, mono-axis pairs, 128–129 gated
+DA-size of proxies 90M–1B against 1.7B, mono-axis pairs, 130–131 gated
 benchmark tasks shared by every transformation)
 
-- On one task set no transformation is read reliably by any proxy: the means
-  span 0.42 (temperature, 600M and 1B) to 0.62 (A vs C, 350M), and the
+- **On one task set no transformation is read reliably by any proxy.** The
+  means span 0.42 (temperature, 600M) to 0.61 (A vs C, 175M and 600M), and the
   language-count pairs (L vs next L) sit at 0.48–0.60 like the four design
   interventions.
-- The per-language BPB table is empty in this refresh: the CSV carries only
-  `bpb_all` rows (every language), not the trained-language population.
+- **The per-language BPB table is empty in this refresh.** The CSV carries
+  only `bpb_all` rows (every language), not the trained-language population.
 
 **Follow-ups**
 
@@ -476,9 +482,9 @@ DA-size and DA-ckpt against the 1.7B final, mono-axis pairs, every seed (pool `p
 Key findings:
 
 - **The BPB lines and the checkpoint panel do not move.** BPB is never gated, and on the checkpoint axis the gate is read at the reference only, so the populations are already fixed there.
-- **The temperature benchmark line loses its jump at 175M.** On its 645 items at every size it reads 0.51 → 0.56 from 90M to 1B, against 0.51 → 0.62 on 649–2,841 items; the counts jump where the bBPB twins exist (175M, 350M and 1B), and the items that join there lift the line.
-- **The depth and scheme-B lines barely move.** They shift by 0.04 and 0.06 at most, so their shape is not a population effect.
-- **The single-build lines rest on very few items.** DCLMP and FWEB keep 6 items, ZH and ES 22–23; their fixed lines move by up to 0.23 and are not readable.
+- **The temperature benchmark line is flat on both readings.** On its 2,502 items at every size it reads 0.62–0.63 from 90M to 1B, against 0.61–0.63 on 2,508–2,886 items; with the bBPB twins now at every size and seed, the jump at 175M of the 2026-10-07 refresh is gone.
+- **The depth and scheme-B lines barely move.** They shift by 0.04 and 0.01 at most (3,038 and 1,238 fixed items), so their shape is not a population effect.
+- **The two L1 single-build lines rest on very few items.** DCLMP and FWEB keep 14 items and their fixed lines move by up to 0.18, so they are not readable; ZH and ES keep 121–122 items and move by 0.01 at most.
 
 Follow-ups:
 

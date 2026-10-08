@@ -5,11 +5,11 @@ of the task's language, and is that exposure or model size?
 
 **Setup.** A cell is one (task, size, language setting L), read at each of the ten evaluated tenths of the run; it is above chance by the gate's per-run Wilson test, applied to the cell's runs with the gate's half-of-the-runs rule. Its x is the tokens of the task's language the checkpoint had seen: the language's share of the build's mixture × the size's budget × the tenth.
 
-Population: the seed-1904 runs of pool `predictivity_seeds` (the runs of the headline `predictivity` pool: every data build and ladder), sizes 90M–1.7B, L ∈ {1, 2, 8, 15, 30, 50}, 1–6 runs per cell (median 4). That is 841 tasks of 40 benchmarks in 50 languages, 16,602 cells at the final and 166,020 over the tenths; BPB and the benchmark-BPB twins have no chance level and are not in it.
+Population: the seed-1904 runs of pool `predictivity_seeds` (the runs of the headline `predictivity` pool: every data build and ladder), sizes 90M–1.7B, L ∈ {1, 2, 8, 15, 30, 50}, 1–7 runs per cell (median 4). That is 841 tasks of 40 benchmarks in 50 languages, 16,602 cells at the final and 166,020 over the tenths; BPB and the benchmark-BPB twins have no chance level and are not in it.
 
-Numbers below are from the ladder-report snapshot of 2026-10-07 15:51 (outputs regenerated in `7966367c`, prose re-read 2026-10-07). The tables are written by [`../rq01_scaling_predictability/tokens_seen.py`](../rq01_scaling_predictability/tokens_seen.py); the decision-accuracy counterpart is [`../rq02_da_vs_train_tokens/`](../rq02_da_vs_train_tokens/README.md).
+Numbers below are from the ladder-report snapshot of 2026-10-08 12:06 (regenerated locally: acc_norm on the cloze-format originals) and the outputs of the 2026-10-08 refresh (detrended checkpoint noise). The tables are written by [`../rq01_scaling_predictability/tokens_seen.py`](../rq01_scaling_predictability/tokens_seen.py); the decision-accuracy counterpart is [`../rq02_da_vs_train_tokens/`](../rq02_da_vs_train_tokens/README.md).
 
-**Key finding.** Outside English, the share of cells above chance rises with every decade of the language's tokens, from 40 % at 10^7–10^8 tokens to 60 % at 10^10–10^11, but at matched tokens the larger model still clears chance more often (40 % at 90M against 57 % at 1.7B at 10^8–10^9 tokens): exposure is necessary, not sufficient.
+**Key finding.** **Outside English, the share of cells above chance rises with every decade of the language's tokens from 10^7 on, but at matched tokens the larger model still clears chance more often.** The share goes from 40 % at 10^7–10^8 tokens to 62 % at 10^10–10^11, and at 10^8–10^9 tokens it is 40 % at 90M against 60 % at 1.7B: exposure is necessary, not sufficient.
 
 ## Share above chance against tokens seen, per benchmark
 
@@ -20,13 +20,13 @@ Numbers below are from the ladder-report snapshot of 2026-10-07 15:51 (outputs r
 The paper copy of the `1904_ckpts` population: one panel per benchmark (40), one line per size, 3 token bins per decade, the cell count on each point. The bins mix languages, L and sizes, so the population behind a point differs along a line and across lines.
 
 Key findings (numbers from `pass_prob_vs_train_tokens_by_benchmark_1904_ckpts.csv`, 166,020 cells; final-only shares from the `_1904.csv` twin, 16,602 cells):
-- Pooled over every language the curve peaks at 48 % (10^8–10^9), dips to 47 % (10^9–10^10) and drops to 36 % in 10^10–10^11 (23,897 cells), because 80 % of that bin is English: English cells clear chance in 29 % of 38,160 (106 tasks), the other languages in 49 % of 127,860 (735 tasks).
-- Without English the share rises monotonically per decade: 34 % (10^5, 77 cells), 37 % (10^6), 40 % (10^7), 49 % (10^8), 58 % (10^9), 60 % (10^10, 4,711 cells).
-- Within one (task, language), the third of its cells with the most tokens is above chance in 51 % against 37 % for the third with the fewest (non-English 57 % against 40 %); the thirds mix size, L and tenth.
-- Size matters at matched tokens (non-English, 10^8–10^9): 90M 40 %, 175M 42 %, 350M 47 %, 600M 50 %, 1B 54 %, 1.7B 57 %; at 10^9–10^10 the spread is 50 % (90M) to 63 % (1.7B).
-- Along the run the share rises from 39 % at the first tenth to 47 % at the final (1.7B 47 % → 57 %, 90M 33 % → 38 %); 11 % of cells go from below to above chance between the first and the last tenth, 3 % the other way, 44 % are never above chance and 33 % always are.
-- The letter-choice originals of the multilingual knowledge benchmarks stay low at the 1.7B final: INCLUDE 12 % (36 languages), Belebele 19 % (49), Global-MMLU 22 % (29); their reformulated twins reach 83 %, 97 % and 100 %. Separately, the cloze-scored Global PIQA parallel stays at 4 % (46 languages) and has no twin.
-- At the 1.7B final xcopa, xstorycloze, xwinograd, MultiBLiMP and ARC-MT are above chance in every cell, HellaSwag in 96 %, XNLI in 92 %.
+- **Pooled over every language the curve peaks at 10^8–10^9 tokens and falls after, because the top bin is mostly English.** It reads 49 % (10^8–10^9), dips to 48 % (10^9–10^10) and drops to 38 % in 10^10–10^11 (23,877 cells), 80 % of which are English. English cells clear chance in 31 % of 38,160 (106 tasks), the other languages in 50 % of 127,860 (735 tasks).
+- **Without English the share is flat at 40 % up to 10^8 tokens and rises with every decade after.** Per decade: 40 % (10^5, 77 cells), 40 % (10^6), 40 % (10^7), 49 % (10^8), 60 % (10^9), 62 % (10^10, 4,691 cells).
+- **Within one (task, language), more tokens means more cells above chance.** The third of its cells with the most tokens is above chance in 54 % against 37 % for the third with the fewest (non-English 60 % against 40 %); the thirds mix size, L and tenth.
+- **Size matters at matched tokens.** Non-English, 10^8–10^9: 90M 40 %, 175M 42 %, 350M 46 %, 600M 51 %, 1B 55 %, 1.7B 60 %; at 10^9–10^10 the spread is 51 % (90M) to 67 % (1.7B).
+- **Along the run the share rises from 39 % at the first tenth to 48 % at the final.** Per size 1.7B 49 % → 59 %, 90M 33 % → 38 %; 12 % of cells go from below to above chance between the first and the last tenth, 3 % the other way, 42 % are never above chance and 34 % always are.
+- **The letter-choice originals of the multilingual knowledge benchmarks stay low at the 1.7B final.** INCLUDE 12 % (36 languages), Belebele 23 % (49), Global-MMLU 19 % (29); their reformulated twins reach 83 %, 97 % and 100 %. Separately, the cloze-scored Global PIQA parallel reaches only 28 % (46 languages) and has no twin.
+- **The cloze and minimal-pair benchmarks are above chance almost everywhere at the 1.7B final.** XCOPA, XStoryCloze, XWinograd, MultiBLiMP, ARC-MT and HellaSwag are above chance in every cell, XNLI in 92 %.
 
 Follow-ups:
 - The same figure without English, so the pooled line is not bent by the one language whose cells hold the hardest English-only benchmarks.
@@ -44,9 +44,9 @@ The first figure leaves open whether a flat line is the language or the format; 
 Population: `1904_ckpts`, `include_base_44` (top) over `rf_include_base_44` (bottom), 5,700 cells each, every size and tenth.
 
 Key findings (from the `_1904_ckpts.csv` cell table):
-- The original stays at 5–11 % above chance from 10^7 tokens on (11 %, 6 %, 8 %, 5 % per decade up to 10^10–10^11), 9 % of its cells overall.
-- The twin rises with tokens on the same cells: 14 % (10^7), 41 % (10^8), 86 % (10^9), 99 % (10^10), 41 % overall; at 1.7B alone 34 %, 64 %, 86 %, 98 %.
-- Exposure moves the twin and not the original, so the original's flat line is its format, not too few tokens of the language.
+- **The original stays at 5–11 % above chance from 10^7 tokens on.** Per decade 11 %, 6 %, 7 %, 5 % up to 10^10–10^11, 9 % of its cells overall.
+- **The twin rises with tokens on the same cells.** Per decade 13 % (10^7), 41 % (10^8), 85 % (10^9), 99 % (10^10), 41 % overall; at 1.7B alone 35 %, 65 %, 86 %, 98 %.
+- **Exposure moves the twin and not the original.** The original's flat line is its format, not too few tokens of the language.
 
 Follow-ups:
 - The same pair for Belebele and Global-MMLU, the other originals that stay low at 1.7B, to check that the twin's rise with tokens is general.
@@ -88,4 +88,4 @@ Key findings:
 Follow-ups:
 - The `_by_language_` figures with the token bins pooled across sizes, to separate the effect of exposure from the effect of size within a language.
 - A twin restricted to the gate's surviving tasks, to check that the share rises with tokens on the tasks the later analyses keep.
-- A twin over the reformulated (`rf_`) tasks alone, since the letter-choice originals of INCLUDE, Belebele and Global-MMLU stay at 12–22 % above chance even at 1.7B.
+- A twin over the reformulated (`rf_`) tasks alone, since the letter-choice originals of INCLUDE, Belebele and Global-MMLU stay at 12–23 % above chance even at 1.7B.

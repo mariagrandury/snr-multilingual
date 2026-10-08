@@ -6,10 +6,10 @@
 
 ## Setup
 
-- **Snapshot.** Ladder report of **2026-10-06 04:26** (`d053e00c`), pool `predictivity` (seed 1904, every ladder and data build), proxies 90M–1B against the 1.7B final.
+- **Snapshot.** Ladder report of **2026-10-08 12:06** and the outputs of the 2026-10-08 refresh (detrended checkpoint noise), pool `predictivity` (seed 1904, every ladder and data build), proxies 90M–1B against the 1.7B final.
 - **Decision accuracy.** DA-size, no reliability filter, multi-axis and mono-axis pairs (rule 15), pooled as matching over comparable pairs. Gate `predictivity` at the proxy and at 1.7B (rule 1); a cell needs 3 kept pairs (rule 5).
 - **Decisive pairs.** A pair is kept when its 1.7B gap exceeds K × √2 × the task's seed sd, K ∈ {1, 2} (√2: the sd of a difference of two runs). The seed sd is the [design-decisions analysis](../rq05_design_decisions/README.md)'s: per task, the median over the replicated baseline cells (deep, data A; 175M, 600M and 1B in `predictivity_seeds`) of the sd of the final score. There are no replicates at 1.7B, so the threshold assumes the seed noise does not grow with size (the [noise analysis](../rq03_noise_and_snr/README.md) finds it near size-invariant).
-- **Population.** Every line reads the same tasks: those with a seed sd and at least 3 decisive pairs at K = 2, so the lines differ by their pairs alone (rule 13). The bBPB twins have no replicates (their store holds seed 1904 only), so "Benchmarks" here is the accuracy tasks only, unlike the rq02 figures.
+- **Population.** Every line reads the same tasks: those with a seed sd and at least 3 decisive pairs at K = 2, so the lines differ by their pairs alone (rule 13). The bBPB twins now have replicates (their store holds the seed runs), so "Benchmarks" here includes them, as in the rq02 figures.
 
 ## Decisive pairs
 
@@ -19,10 +19,10 @@ DA-size (no filter, multi-axis pairs, gate `predictivity`) on every pair and on 
 
 Key findings:
 
-- **Benchmark DA rises on decisive pairs.** On the same 206–303 tasks, multi-axis DA-size goes from 0.55–0.58 on every pair to 0.61–0.65 above one seed sd and 0.67–0.72 above two; part of the gap to 1 is the reference's own noise, not the proxy's.
-- **Most benchmark pairs are not decisive.** One seed sd keeps 56–57 % of the comparable pairs, two keep 26–27 %; the reference separates few of the design pairs on a single benchmark task.
+- **Benchmark DA rises on decisive pairs.** On the same 849–962 tasks, multi-axis DA-size goes from 0.58–0.59 on every pair to 0.64–0.66 above one seed sd and 0.71–0.73 above two; part of the gap to 1 is the reference's own noise, not the proxy's.
+- **Most benchmark pairs are not decisive.** One seed sd keeps 52 % of the comparable pairs, two keep 25 %; the reference separates few of the design pairs on a single benchmark task.
 - **BPB is near perfect on decisive pairs.** It reads 0.88–0.99 above one seed sd and 0.95–0.995 above two, with 75 % and 56 % of the pairs kept; its dip at 600M shrinks from 0.79 to 0.88 and 0.95.
-- **Mono-axis decisions gain less.** On 131–193 tasks, benchmark DA goes from 0.53–0.54 to 0.57–0.60 and 0.61–0.66, on 57–58 % and 27–28 % of the pairs.
+- **Mono-axis decisions gain less.** On 544–623 tasks, benchmark DA goes from 0.55–0.57 to 0.59–0.62 and 0.63–0.66, on 54 % and 25 % of the pairs.
 
 Follow-ups:
 
@@ -40,17 +40,17 @@ Pooled DA-size (tasks; share of the comparable pairs kept):
 
 | pairs | population | pairs kept | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|---|---|
-| multi-axis | Benchmarks | every pair | 0.550 (206; 100%) | 0.564 (229; 100%) | 0.552 (249; 100%) | 0.562 (271; 100%) | 0.576 (303; 100%) |
+| multi-axis | Benchmarks | every pair | 0.595 (849; 100%) | 0.584 (873; 100%) | 0.586 (892; 100%) | 0.584 (924; 100%) | 0.590 (962; 100%) |
 | multi-axis | BPB | every pair | 0.945 (50; 100%) | 0.944 (50; 100%) | 0.885 (50; 100%) | 0.785 (50; 100%) | 0.910 (50; 100%) |
-| multi-axis | Benchmarks | reference gap > 1 x sqrt(2) seed sd | 0.607 (206; 57%) | 0.626 (229; 57%) | 0.613 (249; 56%) | 0.637 (271; 56%) | 0.648 (303; 56%) |
+| multi-axis | Benchmarks | reference gap > 1 x sqrt(2) seed sd | 0.660 (849; 52%) | 0.643 (873; 52%) | 0.651 (892; 52%) | 0.650 (924; 52%) | 0.656 (962; 52%) |
 | multi-axis | BPB | reference gap > 1 x sqrt(2) seed sd | 0.986 (50; 75%) | 0.986 (50; 75%) | 0.951 (50; 75%) | 0.882 (50; 75%) | 0.975 (50; 75%) |
-| multi-axis | Benchmarks | reference gap > 2 x sqrt(2) seed sd | 0.674 (206; 27%) | 0.691 (229; 27%) | 0.690 (249; 26%) | 0.718 (271; 27%) | 0.722 (303; 26%) |
+| multi-axis | Benchmarks | reference gap > 2 x sqrt(2) seed sd | 0.729 (849; 25%) | 0.709 (873; 25%) | 0.726 (892; 25%) | 0.724 (924; 25%) | 0.725 (962; 25%) |
 | multi-axis | BPB | reference gap > 2 x sqrt(2) seed sd | 0.990 (50; 56%) | 0.993 (50; 56%) | 0.973 (50; 56%) | 0.945 (50; 56%) | 0.995 (50; 56%) |
-| mono-axis | Benchmarks | every pair | 0.528 (131; 100%) | 0.541 (147; 100%) | 0.527 (154; 100%) | 0.539 (172; 100%) | 0.536 (193; 100%) |
+| mono-axis | Benchmarks | every pair | 0.573 (544; 100%) | 0.553 (561; 100%) | 0.558 (569; 100%) | 0.549 (599; 100%) | 0.551 (623; 100%) |
 | mono-axis | BPB | every pair | 0.919 (32; 100%) | 0.923 (32; 100%) | 0.836 (32; 100%) | 0.674 (32; 100%) | 0.865 (32; 100%) |
-| mono-axis | Benchmarks | reference gap > 1 x sqrt(2) seed sd | 0.570 (131; 57%) | 0.585 (147; 58%) | 0.576 (154; 57%) | 0.599 (172; 57%) | 0.580 (193; 57%) |
+| mono-axis | Benchmarks | reference gap > 1 x sqrt(2) seed sd | 0.619 (544; 54%) | 0.588 (561; 54%) | 0.608 (569; 54%) | 0.598 (599; 54%) | 0.594 (623; 54%) |
 | mono-axis | BPB | reference gap > 1 x sqrt(2) seed sd | 0.987 (32; 60%) | 0.987 (32; 60%) | 0.940 (32; 60%) | 0.850 (32; 60%) | 0.969 (32; 60%) |
-| mono-axis | Benchmarks | reference gap > 2 x sqrt(2) seed sd | 0.610 (131; 27%) | 0.634 (147; 28%) | 0.625 (154; 27%) | 0.658 (172; 28%) | 0.629 (193; 27%) |
+| mono-axis | Benchmarks | reference gap > 2 x sqrt(2) seed sd | 0.661 (544; 25%) | 0.625 (561; 25%) | 0.651 (569; 25%) | 0.654 (599; 25%) | 0.642 (623; 25%) |
 | mono-axis | BPB | reference gap > 2 x sqrt(2) seed sd | 0.991 (32; 37%) | 0.991 (32; 37%) | 0.962 (32; 37%) | 0.936 (32; 37%) | 0.991 (32; 37%) |
 
 Table: `decisive_pairs_da_size_both_axes.csv`.

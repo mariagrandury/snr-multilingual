@@ -6,11 +6,11 @@ The [decision-accuracy figures](../rq02_decision_accuracy/README.md) read DA-siz
 
 ## Setup
 
-- **Snapshot.** Ladder report of **2026-10-06 04:26** (`d053e00c`), pool `predictivity` (seed 1904, every ladder and data build), proxies 90M–1B against the 1.7B final.
+- **Snapshot.** Ladder report of **2026-10-08 12:06** and the outputs of the 2026-10-08 refresh (detrended checkpoint noise), pool `predictivity` (seed 1904, every ladder and data build), proxies 90M–1B against the 1.7B final.
 - **Decision accuracy.** DA-size, no reliability filter, multi-axis and mono-axis pairs (rule 15), the pipeline's sign rule with ties (`compute_da.pair_agree`). Gate `predictivity` at the proxy and at 1.7B (rule 1); a cell needs 3 comparable pairs (rule 5).
 - **Null.** Per (task, proxy size, pair set): 1000 shuffles of the proxy's final scores across the cell's families, the 1.7B ranking unchanged. A cell's p is the share of shuffles that match at least as many pairs; q is its Benjamini-Hochberg correction over the gated cells of one pair set.
 - **Pooled lines.** Matching pairs over comparable pairs, as [`scale_convergence.py`](../rq02_decision_accuracy/README.md) pools; the band is the 2.5–97.5 % range of the summed shuffles.
-- **Populations.** Those of the rq02 figures: "Benchmarks" holds every benchmark variant, the bBPB twins included, and "BPB" the 50 per-language BPB tasks. The twins exist at 175M, 350M and 1B only (finals-only store), so the benchmark task count jumps there (298 at 90M, 1154 at 175M).
+- **Populations.** Those of the rq02 figures: "Benchmarks" holds every benchmark variant, the bBPB twins included, and "BPB" the 50 per-language BPB tasks. The twins (816 tasks) now exist at every proxy size, so the benchmark task count runs from 1118 at 90M to 1286 at 1B.
 
 ## The no-signal null
 
@@ -20,10 +20,10 @@ DA-size (no filter, multi-axis pairs, gate `predictivity`) against the null of e
 
 Key findings:
 
-- **The benchmark null sits below 0.5.** Pooled over the benchmark tasks, a shuffled proxy scores 0.47–0.49, because proxy ties count as misses; the observed 0.54–0.59 is 0.07–0.10 above it, not 0.04–0.09.
-- **Few benchmark cells beat their own null.** Only 4–9 % of the multi-axis benchmark cells (1–2 % of the mono-axis ones) are above their null at q < 0.05; the pooled lines are above the null because many weak cells add up, not because single tasks rank the decisions.
-- **BPB is far above its null.** Per-language BPB reaches 0.79–0.95 against a null of 0.50, and 26–64 % of its multi-axis cells are significant (2–38 % mono-axis, where a cell has fewer pairs).
-- **The bBPB twins lift the benchmark line where they exist.** Without the twins, benchmarks read 0.54–0.57 multi-axis (null 0.47); the twins alone read 0.59–0.60 against a null of 0.50.
+- **The benchmark null sits below 0.5.** Pooled over the benchmark tasks, a shuffled proxy scores 0.49, because proxy ties count as misses; the observed 0.58–0.59 is 0.08–0.10 above it, not 0.08–0.09.
+- **Few benchmark cells beat their own null.** Only 8–10 % of the multi-axis benchmark cells (1–2 % of the mono-axis ones) are above their null at q < 0.05; the pooled lines are above the null because many weak cells add up, not because single tasks rank the decisions.
+- **BPB is far above its null.** Per-language BPB reaches 0.79–0.95 against a null of 0.50, and 24–66 % of its multi-axis cells are significant (0–44 % mono-axis, where a cell has fewer pairs).
+- **The bBPB twins lift the benchmark line.** Without the twins, benchmarks read 0.53–0.56 multi-axis (null 0.47); the twins alone read 0.59–0.61 against a null of 0.50.
 
 Follow-ups:
 
@@ -41,10 +41,10 @@ Per cell: observed pooled DA-size / pooled null mean [2.5 %, 97.5 %] / share of 
 
 | pairs | population | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|---|
-| multi-axis | Benchmarks | 0.543 / 0.470 [0.457, 0.484] / 5% (298) | 0.580 / 0.492 [0.485, 0.498] / 9% (1154) | 0.564 / 0.480 [0.471, 0.489] / 4% (915) | 0.553 / 0.466 [0.455, 0.477] / 8% (413) | 0.587 / 0.490 [0.484, 0.496] / 9% (1267) |
-| multi-axis | BPB | 0.945 / 0.501 [0.463, 0.542] / 64% (50) | 0.944 / 0.501 [0.463, 0.538] / 64% (50) | 0.885 / 0.500 [0.463, 0.537] / 64% (50) | 0.785 / 0.500 [0.462, 0.536] / 26% (50) | 0.910 / 0.499 [0.462, 0.534] / 62% (50) |
-| mono-axis | Benchmarks | 0.508 / 0.470 [0.455, 0.486] / 1% (298) | 0.548 / 0.492 [0.484, 0.500] / 1% (1154) | 0.528 / 0.480 [0.470, 0.490] / 1% (803) | 0.520 / 0.467 [0.454, 0.480] / 2% (413) | 0.551 / 0.489 [0.482, 0.497] / 1% (1267) |
-| mono-axis | BPB | 0.924 / 0.500 [0.463, 0.537] / 38% (50) | 0.931 / 0.500 [0.463, 0.536] / 36% (50) | 0.844 / 0.500 [0.463, 0.535] / 22% (50) | 0.661 / 0.500 [0.463, 0.537] / 2% (50) | 0.868 / 0.500 [0.461, 0.533] / 20% (50) |
+| multi-axis | Benchmarks | 0.591 / 0.492 [0.486, 0.499] / 9% (1118) | 0.576 / 0.492 [0.485, 0.497] / 9% (1158) | 0.579 / 0.490 [0.484, 0.495] / 8% (1193) | 0.578 / 0.488 [0.482, 0.494] / 9% (1245) | 0.584 / 0.488 [0.483, 0.494] / 10% (1286) |
+| multi-axis | BPB | 0.945 / 0.500 [0.463, 0.536] / 66% (50) | 0.944 / 0.500 [0.463, 0.537] / 64% (50) | 0.885 / 0.499 [0.461, 0.538] / 66% (50) | 0.785 / 0.500 [0.465, 0.536] / 24% (50) | 0.910 / 0.499 [0.462, 0.538] / 60% (50) |
+| mono-axis | Benchmarks | 0.572 / 0.492 [0.485, 0.499] / 1% (1118) | 0.545 / 0.492 [0.484, 0.499] / 2% (1158) | 0.556 / 0.490 [0.482, 0.497] / 1% (1193) | 0.541 / 0.489 [0.481, 0.496] / 1% (1245) | 0.548 / 0.489 [0.481, 0.495] / 1% (1286) |
+| mono-axis | BPB | 0.924 / 0.500 [0.464, 0.537] / 38% (50) | 0.931 / 0.500 [0.464, 0.540] / 44% (50) | 0.844 / 0.500 [0.464, 0.536] / 26% (50) | 0.661 / 0.500 [0.463, 0.537] / 0% (50) | 0.868 / 0.501 [0.465, 0.537] / 20% (50) |
 
 Tables: `permutation_null_da_size_per_task_both_axes.csv` (every cell's DA, null mean, null p95, p and q) and `permutation_null_da_size_both_axes.csv` (the pooled lines).
 <!-- END auto:permutation-null -->
