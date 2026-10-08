@@ -243,6 +243,39 @@ GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/
 [above_random_mask.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv) ·
 [score_curves.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/score_curves.csv)
 
+**The map condensed, for the paper** (`first_size_share_paper.png`, one bar
+per benchmark, and its full-width twin `first_size_share_paper_horizontal.png`,
+the same bars standing along x; `panels.py --paper`). *Pool `predictivity`,
+sizes 90M–1.7B, the same gate; the trained languages of the L50 list only, a
+benchmark's languages in brackets; 40 benchmarks, the `rf_`/`rfgm_` twins
+among them. The two CSVs are identical.*
+
+![Share of languages above chance from each size](pretraining/predictivity/first_size_share_paper.png)
+
+![Share of languages above chance from each size, horizontal](pretraining/predictivity/first_size_share_paper_horizontal.png)
+
+**Key findings** (`first_size_share_paper_horizontal.csv`)
+
+- **12 of the 40 benchmarks never clear the gate in any trained language,
+  7 clear it from 90M in all of them.** The 12: `mmlu`, `commonsense_qa`,
+  `bbh_mcq` / `bbh_cloze`, `acp_bench_mcq` / `acp_bench_cloze`,
+  `cultural_bench_easy` / `_hard`, `blend_sample`, `toxigen` and both
+  TruthfulQA families; the 7: `hellaswag`, `multiblimp`, `mathqa`,
+  `openbookqa`, `rfgm_belebele`, `rf_mmlu`, `rf_commonsense_qa`.
+- **The twins flip the verdict.** `belebele` never clears in 0.94 of its
+  languages, `rf_belebele` in none (0.86 from 90M); `global_mmlu_full` never
+  in 0.97, `rf_global_mmlu_full` in none (figure 3).
+
+**Follow-ups**
+
+- Order the bars by benchmark kind (original, `rf_`, `rfgm_`) beside the
+  share order, so each twin sits next to its original.
+
+GitHub: [first_size_share_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/first_size_share_paper.png) ·
+[first_size_share_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/first_size_share_paper.csv) ·
+[first_size_share_paper_horizontal.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/first_size_share_paper_horizontal.png) ·
+[first_size_share_paper_horizontal.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/first_size_share_paper_horizontal.csv)
+
 What the gate leaves open — whether the at-chance families are unreadable
 for any model of these sizes or only for this ladder — is figure 4; whether
 the format is the cause is figure 3.
@@ -519,6 +552,10 @@ Every cell the `predictivity_seeds` pool holds (all seeds and data builds), afte
 ![Benchmark curves](pretraining/predictivity_seeds/benchmark_curves.png)
 
 The paper version, `benchmark_curves_paper.png` (`--paper`, redrawn from `benchmark_curves.csv`), drops the header for a legend of the line encoding; its size twin, `benchmark_size_curves_paper.png`, draws each design's final accuracy against non-embedding parameters, colour = L (the scaling-predictability appendix's size figure).
+
+![Benchmark curves, paper version](pretraining/predictivity_seeds/benchmark_curves_paper.png)
+
+![Final accuracy against size, paper version](pretraining/predictivity_seeds/benchmark_size_curves_paper.png)
 <!-- END auto:curves -->
 
 *The benchmark panel draws 202 of the 207 cells: four of the 12 muon cells and
@@ -553,6 +590,36 @@ one of the 19 swiglu cells have loss curves only.*
 [loss_curves.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/loss_curves.csv) ·
 [benchmark_curves.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_curves.png) ·
 [benchmark_curves.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_curves.csv)
+
+**The two paper grids** (`benchmark_curves_paper.png`, `benchmark_size_curves_paper.png`,
+five panels per row, `curves.py --paper`). *Pool `predictivity_seeds`, the
+same cells as above; no gate, no task filter. The size twin reads each
+design's final checkpoint, one line per (L, ladder, data build, seed) across
+its rungs: 46 designs, 29 of them at 1.7B, 41 families; each L averages over
+its own trained languages, so the populations differ across L.*
+
+**Key findings** (`benchmark_size_curves_paper.csv`)
+
+- **The cloze and completion families climb with size; the letter-format
+  ones do not.** Mean over the designs, 90M → 1.7B: `hellaswag` 0.304 →
+  0.533, `xwinograd` 0.573 → 0.747, `rf_commonsense_qa` 0.304 → 0.462, while
+  `mmlu`, `global_mmlu_full`, `include_base_44`, `bbh_mcq`, `acp_bench_mcq`
+  and `commonsense_qa` move by 0.013 or less, and `cultural_bench_easy`
+  (0.393 → 0.259), `toxigen` and both TruthfulQA families fall.
+- **At 1.7B the English-only cell scores highest on most families.** On the
+  deep data-A seed-1904 designs, L1 is the top line on 24 of the 33 families
+  with a value at every L and above L50 on 28 (`hellaswag` 0.675 against
+  0.450, `arc` 0.576 against 0.322). L1 averages its English tasks only, so
+  this is partly the task population, not a ranking of the mixtures.
+
+**Follow-ups**
+
+- A twin of the size figure on the English tasks alone, so the L lines read
+  one task population.
+
+GitHub: [benchmark_curves_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_curves_paper.png) ·
+[benchmark_size_curves_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_size_curves_paper.png) ·
+[benchmark_size_curves_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_size_curves_paper.csv)
 
 ## Extensions from other sweeps
 

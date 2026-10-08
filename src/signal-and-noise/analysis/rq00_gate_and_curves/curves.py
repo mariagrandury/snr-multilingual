@@ -265,7 +265,9 @@ def generate_readme(pool: str) -> None:
             "The paper version, `benchmark_curves_paper.png` (`--paper`, redrawn from `benchmark_curves.csv`), "
             "drops the header for a legend of the line encoding; its size twin, `benchmark_size_curves_paper.png`, draws "
             "each design's final accuracy against non-embedding parameters, colour = L (the scaling-predictability "
-            "appendix's size figure).")
+            "appendix's size figure).\n\n"
+            f"![Benchmark curves, paper version]({rel}/benchmark_curves_paper.png)\n\n"
+            f"![Final accuracy against size, paper version]({rel}/benchmark_size_curves_paper.png)")
     readme = OUT_ROOT / "README.md"
     replace_block(readme, "curves", body, f"curves.py --pool {pool}")
     print(f"Wrote auto README block → {readme}")

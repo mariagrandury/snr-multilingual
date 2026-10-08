@@ -571,6 +571,33 @@ GitHub: [rq2_da_all_above_66_both_transformation_multi_axes.png](https://github.
 GitHub: [rq2_da_all_above_66_own_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_own_multi_axes.png) · [rq2_da_all_above_66_own_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_own_multi_axes.csv) ·
 GitHub: [scale_convergence_da_size_above_66_size_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_above_66_size_mono_axis.png) · [scale_convergence_da_size_above_66_size_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_above_66_size_mono_axis.csv)
 
+**Each panel on its own population** (`rq2_da_all_above_66_own_transformation_mono_axis.png`,
+`paper_rq2.py --axes mono-axis`, the paper figure's populations before
+2026-10-07). **DA-size, DA-ckpt, DA-goal · filter per panel: `above_66_size`
+(left), `above_66_ckpt` (middle), `above_66_either` (right) · mono-axis pairs
+· pairs from `predictivity` at seed 1904 · gate `predictivity`.** Three
+populations, so the 1.7B line and the 5C points need not match across panels.
+
+![Decision accuracy, each panel its own population, mono-axis pairs](pretraining/predictivity/rq2_da_all_above_66_own_transformation_mono_axis.png)
+
+**Key findings** (`rq2_da_all_above_66_own_transformation_mono_axis.csv`)
+
+- **On the DA-size passers the proxy agrees more, and still not more with
+  size.** All pairs read 0.70–0.76 (0.758 at 90M, 0.757 at 1B) over 263–283
+  tasks, against 0.60–0.64 on the `either` population; temperature 0.83–0.87,
+  language count 0.69–0.76, the data scheme 0.52–0.57 on 25–28 tasks. The
+  cut is on DA-size itself, so the lift is the selection (figure 1).
+- **The other two panels barely move.** DA-ckpt on the DA-ckpt passers
+  (669–700 tasks) is within 0.01 of the paper figure's at every point (0.65 →
+  0.84 at 1.7B), and DA-goal reads the same `either` tasks as there.
+
+**Follow-ups**
+
+- The DA-size panel on the DA-ckpt passers, the selection that does not cut
+  on the plotted quantity.
+
+GitHub: [rq2_da_all_above_66_own_transformation_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_own_transformation_mono_axis.png) · [rq2_da_all_above_66_own_transformation_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_own_transformation_mono_axis.csv)
+
 **The same figure split by scoring** (`rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.png`,
 `paper_rq2.py --axes mono-axis`, the paper's `app_rq02_bbpb`). **DA-size,
 DA-ckpt, DA-goal · filter `above_66_either` · mono-axis pairs · pairs from
