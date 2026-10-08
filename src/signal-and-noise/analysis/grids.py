@@ -380,11 +380,13 @@ def matrix_ax(ax, mat: pd.DataFrame, title: str, *, cnt: pd.DataFrame | None = N
 
 
 def stack_ax(ax, level: pd.DataFrame, title: str, *, levels: list, level_label=str, xlabel: str = "share of languages",
-             rows: list | None = None, name=display, legend_cols: int = 4) -> pd.DataFrame:
+             rows: list | None = None, name=display, legend_cols: int = 4, upright: bool = False) -> pd.DataFrame:
     """A level map condensed: per benchmark, the share of its languages at
     each level (never in red, filtered out by the gate in grey, only where
     the map has such cells). `rows` is the benchmark order (default: the
-    panel order), `name` labels the bars."""
+    panel order), `name` labels the bars. `upright`: the bars stand along the
+    x axis (benchmark names under them, `xlabel` on the y axis) and the caller
+    draws the legend."""
     level = level.reindex(index=rows if rows is not None else panel_order(level.index))
     gated = bool((level == GATED).any().any())
     codes = [float(i) for i in range(len(levels))] + [NEVER_CODE] + ([GATED] if gated else [])
@@ -393,14 +395,23 @@ def stack_ax(ax, level: pd.DataFrame, title: str, *, levels: list, level_label=s
     share = pd.DataFrame({n: (level == c).sum(axis=1) for n, c in zip(names, codes)})
     total = share.sum(axis=1)
     share = share.div(total.where(total > 0), axis=0)
-    left = np.zeros(len(share))
+    base = np.zeros(len(share))
+    labels = [f"{name(f)} ({int(n)})" for f, n in zip(share.index, total)]
     for n, c in zip(names, colours):
-        ax.barh(range(len(share)), share[n].fillna(0), left=left, color=c, label=n, height=0.8)
-        left += share[n].fillna(0).to_numpy()
-    ax.set_yticks(range(len(share))); ax.set_yticklabels([f"{name(f)} ({int(n)})" for f, n in zip(share.index, total)], fontsize=6.5)
-    ax.invert_yaxis(); ax.set_xlim(0, 1); ax.set_xlabel(xlabel, fontsize=7.5)
-    ax.set_title(title, loc="left", fontsize=8.5); S.clean(ax); ax.tick_params(axis="y", length=0)
-    ax.legend(fontsize=6, frameon=False, ncol=legend_cols, loc="upper left", bbox_to_anchor=(0, -0.12))
+        if upright:
+            ax.bar(range(len(share)), share[n].fillna(0), bottom=base, color=c, label=n, width=0.8)
+        else:
+            ax.barh(range(len(share)), share[n].fillna(0), left=base, color=c, label=n, height=0.8)
+        base += share[n].fillna(0).to_numpy()
+    if upright:
+        ax.set_xticks(range(len(share))); ax.set_xticklabels(labels, fontsize=6.5, rotation=90)
+        ax.set_xlim(-0.5, len(share) - 0.5); ax.set_ylim(0, 1); ax.set_ylabel(xlabel, fontsize=7.5)
+    else:
+        ax.set_yticks(range(len(share))); ax.set_yticklabels(labels, fontsize=6.5)
+        ax.invert_yaxis(); ax.set_xlim(0, 1); ax.set_xlabel(xlabel, fontsize=7.5)
+    ax.set_title(title, loc="left", fontsize=8.5); S.clean(ax); ax.tick_params(axis="x" if upright else "y", length=0)
+    if not upright:
+        ax.legend(fontsize=6, frameon=False, ncol=legend_cols, loc="upper left", bbox_to_anchor=(0, -0.12))
     t = share.rename_axis(index="row", columns="col").stack().dropna().rename("value").reset_index()
     return t.assign(panel=title)
 

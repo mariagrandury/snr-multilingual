@@ -20,6 +20,7 @@ comes from). The .tex carries the source path as a comment next to the
     rq3  surrogates       <- rq04_surrogates/analyze.py              (pool predictivity)
                              rq3_surrogates_paper.png
     app_rq00_chance_share      <- rq00_gate_and_curves/panels.py --paper    first_size_share_paper
+    app_rq00_chance_share_horizontal <- the same, first_size_share_paper_horizontal (its bars along the x axis)
     app_rq00_chance_full       <- the same                                  first_size_above_random_paper
     app_rq00_chance_reformulation <- rq00_task_reformulation/reformulations_gate.py --paper  reformulations_gate_paper
     app_rq02_da_goal_multi_axes_bpb <- rq01_scaling_predictability/tokens_seen.py --paper  da_goal_multi_axes_across_langs_bpb_paper
@@ -79,6 +80,7 @@ FIGURES = {
             / "rq2_da_all_above_66_either_transformation_mono_axis", ("png",)),
     "rq3": (ANALYSIS.joinpath("rq04_surrogates", *PRED, "rq3_surrogates_paper"), ("png",)),
     "app_rq00_chance_share": (GATE / "first_size_share_paper", ("png",)),
+    "app_rq00_chance_share_horizontal": (GATE / "first_size_share_paper_horizontal", ("png",)),
     "app_rq00_chance_full": (GATE / "first_size_above_random_paper", ("png",)),
     "app_rq00_chance_reformulation": (ANALYSIS / "rq00_task_reformulation" / "reformulations_gate_paper", ("png",)),
     "app_rq02_da_goal_multi_axes_bpb": (DA_TOKENS / "da_goal_multi_axes_across_langs_bpb_paper", ("png",)),

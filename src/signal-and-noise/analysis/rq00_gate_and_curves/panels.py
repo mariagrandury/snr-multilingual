@@ -11,6 +11,7 @@ curves of every language.
                                             gate, the trained languages of the L50 list only (rule 2), no header
     first_size_share_paper.png/.csv    the paper map condensed: per benchmark the share of its languages at each
                                             smallest size (highlights' right panel, in the same order and population)
+    first_size_share_paper_horizontal.png/.csv  the same bars standing along the x axis, for a full-width figure
     score_curves.csv                        the curves below
     score_curves/<language>.png             score vs training tokens (Chinchilla multiples, 5C = the full run),
                                             one line per size, one subplot per benchmark
@@ -116,9 +117,18 @@ def paper_figures(out_dir: Path) -> None:
     ax.get_legend().remove()
     fig.legend(handles, labels, fontsize=6, frameon=False, ncol=4, loc="lower center", bbox_to_anchor=(0.5, 0))
     fig.tight_layout(rect=(0, 0.3 / height, 1, 1))       # the legend right under the axis label
-    tab.drop(columns="panel").rename(columns={"row": "benchmark", "col": "level", "value": "share"}) \
-       .to_csv(out_dir / "first_size_share_paper.csv", index=False)
+    tab = tab.drop(columns="panel").rename(columns={"row": "benchmark", "col": "level", "value": "share"})
+    tab.to_csv(out_dir / "first_size_share_paper.csv", index=False)
     S.save_paper(fig, out_dir / "first_size_share_paper")
+    # the same bars standing along the x axis, for a full-width figure (legend on top)
+    height = 3.4
+    fig, ax = plt.subplots(figsize=(0.125 * len(order) + 0.9, height))
+    G.stack_ax(ax, level, "", levels=sizes, rows=order, name=G.paper_name, upright=True,
+               xlabel="Share of languages\nabove the chance threshold")
+    fig.legend(handles, labels, fontsize=6, frameon=False, ncol=len(labels), loc="upper center", bbox_to_anchor=(0.5, 1))
+    fig.tight_layout(rect=(0, 0, 1, 1 - 0.25 / height))   # the legend right above the bars
+    tab.to_csv(out_dir / "first_size_share_paper_horizontal.csv", index=False)
+    S.save_paper(fig, out_dir / "first_size_share_paper_horizontal")
 
 
 def threshold_panels(out_dir: Path) -> None:
