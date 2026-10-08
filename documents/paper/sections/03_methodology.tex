@@ -89,6 +89,8 @@ Appendix~\ref{app:evaluation-protocol} gives the families, task counts, and scor
 \item \textbf{Bits-per-byte.} We measure the negative log-likelihood of held-out text in bits, normalized by its UTF-8 byte count.
 Lower BPB indicates better prediction of the held-out text. \AR{We include BPB as a reference signal, connecting our analysis to established loss-based scaling laws and providing a point of comparison for the scaling behavior of downstream benchmarks.}
 
+\item \textbf{Benchmark bits-per-byte (bBPB).} For every benchmark task with a gold answer, we also score the gold answer by its log-likelihood, as \citet{heineman_signal_2025} do. The bBPB of a task is the mean over its items of $-\log p(a^{*} \mid x) / (\ln 2 \cdot |a^{*}|)$, where $a^{*}$ is the gold answer of item $x$ and $|a^{*}|$ its length in UTF-8 bytes. It is read on the same items and checkpoints as accuracy, lower is better, and it has no chance level.
+
 \end{itemize}
 
 We evaluate both at the same aligned training fractions for every model size, allowing us to compare rankings across size and training progress.
