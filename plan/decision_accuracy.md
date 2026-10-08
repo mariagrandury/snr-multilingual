@@ -446,7 +446,12 @@ review of this session's rq02 work is committed (`2f6c05c`).
    diagnostic?
 7. **The 600M dip** (two of four DA-size axes; language count peaks there and
    falls at 1B): a 1B-rung effect or a population effect? The balanced-panel
-   check on the pooled line did not remove it.
+   check on the pooled line did not remove it. **On the depth axis, explained
+   (2026-10-08):** 600M shallow is not size-matched to 600M deep (+3.7 %
+   non-embedding parameters, width 2048 vs 1536, about +15 % compute), so it
+   beats deep on `bpb_dclm` in 9 of 10 settings there and loses at every other
+   size (`plan/signal-audit-2026-10-08.md` F5). The pairs are kept and
+   flagged (`size_matched`, `analysis/RULES.md` "Size matching").
 
 
 ---

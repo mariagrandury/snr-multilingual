@@ -30,6 +30,10 @@ rq00–rq04 ask which *benchmarks* carry reliable signal; this RQ asks which
                       cells with 3 replicates): where the reference's own
                       preference is inside seed noise there is no decision to
                       agree with.
+                      `size_matched` is False on the 600M depth cells:
+                      shallow 600M is not size-matched to deep 600M
+                      (utils.UNMATCHED_PAIRS; kept, flagged; RULES.md
+                      "Size matching").
   effect at the reference — per intervention, the |Δ| in seed standard
                       deviations (the paper's "is there a decision to make?").
 
@@ -69,7 +73,8 @@ from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.utils import (CKPT_DA_EARLY_FRACS,  # noqa: E402
-    GRID_SEED, RELIABLE_DA, TARGET_SIZE, at_fraction, data_build, finals, ladder_frame, lower_is_better, passes_gate, size_order, trained_bpb_tasks)
+    GRID_SEED, RELIABLE_DA, TARGET_SIZE, at_fraction, data_build, finals, ladder_frame, lower_is_better, passes_gate,
+    size_match_note, size_matched, size_order, trained_bpb_tasks)
 from pretrain.launch_trainings import DATA_SCHEMES  # noqa: E402
 
 OUT_ROOT = DESIGN_DECISIONS
@@ -460,7 +465,8 @@ def generate_readme(pool: str, out_dir: Path, da: pd.DataFrame, ev: pd.DataFrame
         if not bench.empty:
             m = bench.groupby("proxy_size")["decision_acc"].mean()
             bullets.append("- **Depth decision on benchmarks** — mean DA over L by proxy: "
-                           + ", ".join(f"{s} {fmt(m[s])}" for s in size_order(m.index)) + ".")
+                           + ", ".join(f"{s} {fmt(m[s])}" for s in size_order(m.index)) + "."
+                           + size_match_note([("arch", s) for s in m.index]))
         blocks.append(f"![Intervention DA grid]({rel}/intervention_da_all_mono_axis.png)")
     if not ev.empty:
         med = (by_recipe(ev).groupby(["intervention", "population"])["median_effect_over_seed_sd"].median()
@@ -494,6 +500,8 @@ def main(pool: str, out_dir: Path) -> None:
           f"seeds {sorted(df['seed'].unique())}, data builds {sorted(df['data'].unique())}")
 
     da, items, _ = intervention_da(df, mask=gate_mask(pool))
+    if not da.empty:                     # the 600M depth pairs are not size-matched: kept, flagged
+        da["size_matched"] = [size_matched(k, s) for k, s in zip(da["intervention"], da["proxy_size"])]
     da.to_csv(out_dir / "intervention_da_all_mono_axis.csv", index=False)
     if not items.empty:
         # the same agreement, per benchmark and per language (panels.py draws them);
@@ -511,6 +519,7 @@ def main(pool: str, out_dir: Path) -> None:
         dag = (rec[rec["frac"] == 1.0].groupby(["intervention", "label", "population", "proxy_size"])
                .agg(decision_acc=("decision_acc", "mean"), cells=("decision_acc", "size"),
                     refs=("reference_size", lambda s: ",".join(sorted(set(s))))).reset_index())
+        dag["size_matched"] = [size_matched(k, s) for k, s in zip(dag["intervention"], dag["proxy_size"])]
         dag.to_csv(out_dir / "rq4_da_size_by_intervention_mono_axis.csv", index=False)
 
     ev = effect_at_reference(fin, gate_mask(pool))

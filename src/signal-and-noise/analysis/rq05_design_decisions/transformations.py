@@ -9,7 +9,8 @@ no reformulated evals yet pools only the predictable families).
                             DA on the pair's own items the reference decides (`decision_acc_own`, `n_own`)
                             and on the items every transformation decides somewhere (`decision_acc_shared`,
                             `n_shared`); benchmarks are gated by rq00's above-random mask at the proxy and
-                            at the reference; `mean_abs_delta_ref` is the reference's effect on the own items
+                            at the reference; `mean_abs_delta_ref` is the reference's effect on the own items;
+                            `size_matched` is False on the 600M depth pairs (utils.UNMATCHED_PAIRS: kept, flagged)
     transformation_da_size_mono_axis.png   mean over a transformation's pairs of the shared-item DA vs proxy size;
                             solid benchmarks, dashed per-language BPB (all 100 validation languages)
 
@@ -38,7 +39,8 @@ if str(_SRC) not in sys.path:
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.rq05_design_decisions.analyze import CANONICAL, COLOUR, MIN_ITEMS, OUT_ROOT, gate_mask  # noqa: E402
-from analysis.utils import GRID_SEED, TARGET_SIZE, data_build, finals, ladder_frame, passes_gate, size_order  # noqa: E402
+from analysis.utils import (GRID_SEED, TARGET_SIZE, data_build, finals, ladder_frame, passes_gate,  # noqa: E402
+                            size_match_note, size_matched, size_order)
 from pretrain.launch_trainings import DATA_SCHEMES, exp_name, mix_label  # noqa: E402
 
 mpl.rcParams.update(S.RC)
@@ -152,8 +154,10 @@ def transformation_da(df: pd.DataFrame, mask: pd.DataFrame | None) -> pd.DataFra
                         "n_transformations": len(per_tr)})
     cols = ["transformation", "label", "population", "pair", "proxy_size", "reference_size",
             "n_own", "decision_acc_own", "n_shared", "decision_acc_shared", "n_transformations",
-            "mean_abs_delta_ref"]
-    return pd.DataFrame(out)[cols].sort_values(["population", "transformation", "pair", "proxy_size"])
+            "mean_abs_delta_ref", "size_matched"]
+    out = pd.DataFrame(out)
+    out["size_matched"] = [size_matched(k, s) for k, s in zip(out["transformation"], out["proxy_size"])]
+    return out[cols].sort_values(["population", "transformation", "pair", "proxy_size"])
 
 
 def summary(da: pd.DataFrame) -> pd.DataFrame:
@@ -191,8 +195,9 @@ def generate_readme(pool: str, out_dir: Path, sm: pd.DataFrame) -> None:
     blocks = ["## Transformations on one item set",
               f"Mean decision accuracy over each transformation's pairs, on the items every transformation "
               f"decides somewhere (benchmarks gated by rq00's above-random mask at the proxy and the reference); "
-              f"`transformation_da_size_mono_axis.csv` has every pair. Regenerate with "
-              f"`python analysis/rq05_design_decisions/transformations.py --pool {pool}`."]
+              f"`transformation_da_size_mono_axis.csv` has every pair."
+              + size_match_note([("arch", s) for s in sm["proxy_size"].unique()])
+              + f" Regenerate with `python analysis/rq05_design_decisions/transformations.py --pool {pool}`."]
     for pop, title in (("benchmark", "benchmarks"), ("bpb_all", "per-language BPB (trained languages)")):
         g = sm[sm["population"] == pop]
         if g.empty:

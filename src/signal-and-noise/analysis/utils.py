@@ -719,6 +719,29 @@ def checkpoint_noise(frac, scores, detrend: bool = NOISE_DETREND) -> float:
     return float(np.sqrt((res ** 2).sum() / (len(y) - 2)))
 
 
+# Pairs kept in every analysis whose two cells are NOT size-matched (RULES.md,
+# "Size matching"): (design axis, size) -> what differs. The depth pairs at
+# 175M-1.7B match their non-embedding count within -2.4 % to +0.8 %.
+UNMATCHED_PAIRS = {
+    ("arch", "600M"): "600M shallow is not size-matched to 600M deep: +3.7 % non-embedding parameters "
+                      "(616.6M vs 594.5M), width 2048 vs 1536 and about +15 % compute",
+}
+
+
+def size_matched(axis: str, size: str) -> bool:
+    """False for the pairs that move `axis` at `size` between cells that are
+    not size-matched (`UNMATCHED_PAIRS`): flagged in every output that reports
+    them, never dropped."""
+    return (axis, size) not in UNMATCHED_PAIRS
+
+
+def size_match_note(cells) -> str:
+    """The caption sentence for the (axis, size) `cells` an output reports
+    that are not size-matched; empty when there are none."""
+    hit = [UNMATCHED_PAIRS[c] for c in dict.fromkeys(cells) if c in UNMATCHED_PAIRS]
+    return "".join(f" Kept and flagged (size_matched = False): {h}." for h in hit)
+
+
 def passes_gate(mask: pd.DataFrame | None, tasks, *sizes) -> pd.Series:
     """True where the above-random gate keeps a task at every one of `sizes`
     (rule 1): a mask of 0 rejects, 1 passes, and NA (no chance level: BPB, the

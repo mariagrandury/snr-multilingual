@@ -381,6 +381,8 @@ How small a **fully trained** model may be and still decide the way the 1.7B fin
 ![Scale convergence, transformation](pretraining/predictivity/scale_convergence_da_size_transformation_multi_axes.png)
 <!-- END auto:scale-convergence -->
 
+The 600M depth pairs are not size-matched (shallow has 3.7 % more non-embedding parameters, width 2048 against 1536 and about 15 % more compute; [RULES.md, "Size matching"](../RULES.md#size-matching-the-600m-depth-pairs-are-flagged-not-dropped)), so the depth axis at 600M reads depth plus a little size: the pairs stay in, the per-axis tables carry `size_matched` and the per-axis captions say so.
+
 <!-- BEGIN auto:scale-convergence-transformation-panels (scale_convergence.py --by transformation) -->
 ## Scale convergence per design axis, one panel each
 

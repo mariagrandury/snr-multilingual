@@ -68,7 +68,9 @@ panel over every mono-axis pair. Same gate, pair minimum and filter variants;
 the reliability filter is the mono-axis one (rule 15). Task counts sit at the
 end of every line.
 
-    da_all_by_transformation_per_task_mono_axis.csv                    per task, axis, proxy size and fraction
+    da_all_by_transformation_per_task_mono_axis.csv                    per task, axis, proxy size and fraction;
+                                                                       `size_matched` False on the 600M depth pairs
+                                                                       (utils.UNMATCHED_PAIRS, kept and flagged)
     early_small_da_{goal,ckpt}_by_transformation[_<variant>]_mono_axis.png / .csv
 
     python analysis/rq02_decision_accuracy/by_L.py --pool predictivity --by transformation
@@ -107,7 +109,7 @@ from analysis.rq02_decision_accuracy.reliable_tasks import FILTERS, load_reliabl
 from analysis.rq02_decision_accuracy.scale_convergence import AXIS_LABEL, OVERALL, pairs_by_group  # noqa: E402
 from analysis.utils import (  # noqa: E402
     AXES_SUFFIX, DESIGN_AXES, GRID_SEED, SMALL_SIZES, TARGET_SIZE, _is_parent_task, build_snr_pool, design_axes,
-    pair_sets)
+    pair_sets, size_match_note, size_matched)
 
 OUT_ROOT = DECISION_ACCURACY
 GITHUB = "https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis"
@@ -156,6 +158,7 @@ def _da_table(df: pd.DataFrame, label, pairs=None) -> list[dict]:
     return rows
 
 
+AXIS_KEY = {v: k for k, v in AXIS_LABEL.items()}        # an axis label back to its DESIGN_AXES key
 COLS = ["task", "L", "proxy_size", "frac", "da_ref", "n_pairs_ref", "da_own", "n_pairs_own", "compute", "compute_share"]
 
 
@@ -188,6 +191,7 @@ def da_by_transformation() -> tuple[pd.DataFrame, pd.DataFrame]:
     by_axis = pd.DataFrame([r for g, rows in zip(groups, tables) if g != OVERALL for r in rows],
                            columns=COLS).rename(columns={"L": "axis"})
     pooled = pd.DataFrame(tables[list(groups).index(OVERALL)], columns=COLS).drop(columns="L")
+    by_axis["size_matched"] = [size_matched(AXIS_KEY.get(a, a), s) for a, s in zip(by_axis["axis"], by_axis["proxy_size"])]
     return by_axis, pooled
 
 
@@ -384,7 +388,8 @@ def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
                     f"the gated {'tasks' if variant == 'with_bpb' else 'benchmark tasks'}"
                     + (f" reliable on {crit} (DA ≥ {thresh:g}, {red} reduction, reliable_tasks.py, {axes} pairs)" if filt else "")
                     + f" with ≥ {MIN_PAIRS} pairs; dotted line = {SAFE_DA}"
-                    + (f". Left out for having fewer than {MIN_PAIRS} pairs: {', '.join(map(lab, few))}" if few else ""))
+                    + (f". Left out for having fewer than {MIN_PAIRS} pairs: {', '.join(map(lab, few))}" if few else "")
+                    + (size_match_note([("arch", s_) for s_ in sizes]) if by == "transformation" else ""))
     # the first empty cell becomes the reliable-cell inventory. It cannot share the
     # grid's y axis (a task index, not a DA), so the placeholder is replaced by a
     # fresh subplot in the same grid slot, which tight_layout still manages.
@@ -393,6 +398,8 @@ def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
         _reliable_panel(fig.add_subplot(2, ncols, spare[0] + 1), keep, red, thresh, crit)
     fig.tight_layout(rect=(0, 0, 1, top))
     summary = pd.concat([head.assign(**{col: "all"}), summary])
+    if by == "transformation":
+        summary["size_matched"] = [size_matched(AXIS_KEY.get(a, a), s_) for a, s_ in zip(summary[col], summary["proxy_size"])]
     summary.to_csv(out_dir / f"{stem}.csv", index=False)
     S.save(fig, out_dir / f"{stem}.png", dpi=150)
     return summary

@@ -269,6 +269,24 @@ deep architecture only. They are three levels of the scheme axis at that L —
 the L2 analogue of A vs B at higher L — and that is what makes them the three
 families rule 5 counts at L2.
 
+## Size matching: the 600M depth pairs are flagged, not dropped
+
+A depth pair (deep vs shallow, the `arch` axis) compares two cells of one
+nominal size. At 175M, 350M, 1B and 1.7B their non-embedding counts match
+within −2.4 % to +0.8 % (90M shallow is 5.2 % smaller, 88.1M against 92.9M,
+and not flagged); at **600M they do not**: shallow has 616.6M
+non-embedding parameters against deep's 594.5M (+3.7 %), width 2048 against
+1536 (a 33 % larger tied embedding) and 14 layers, the depth of shallow 350M,
+so with D = 100 N it spends about 15 % more compute
+(`src/pretrain/hyperparams/hyperparams_{deep,shallow}.json`;
+`plan/signal-audit-2026-10-08.md` F5). Shallow beats deep on `bpb_dclm` in 9
+of 10 settings at 600M and loses at every other size, which is the "600M dip"
+of depth-pair DA. The pairs stay in every analysis (retraining the cell
+would move the grid); every output that reports depth-pair DA by size carries
+`size_matched` (False on these) and its caption says so, both from
+`utils.UNMATCHED_PAIRS` through `utils.size_matched` / `utils.size_match_note`.
+A depth result at 600M is read as "depth plus a little size".
+
 ## Anonymity (double-blind review)
 
 No figure, README, site page or paper text may link or name our HF orgs,

@@ -67,6 +67,8 @@ Population: pool `predictivity_seeds` (every seed, ladder and data build; benchm
 
 The depth line on per-language BPB swings from 0.00 (600M) to 0.98 (175M) against a reference whose depth effect is 1.3 seed sds, and the reference's own checkpoints reach 0.76–0.85 on the benchmarks at 90 % of its run, where before 80 % only the L1 FWEB swap reaches 0.75.
 
+The 600M point of every depth line compares cells that are not size-matched (shallow 600M has 3.7 % more non-embedding parameters, width 2048 against 1536 and about 15 % more compute; [RULES.md, "Size matching"](../RULES.md#size-matching-the-600m-depth-pairs-are-flagged-not-dropped)), which is the likeliest reading of its 0.00: the pairs stay in, and the tables flag them with `size_matched`.
+
 GitHub: [da_all_lines_mono_axis_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/da_all_lines_mono_axis_paper.png) · [da_all_lines_mono_axis_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/da_all_lines_mono_axis_paper.csv). The same on the decided items and per benchmark: [Per benchmark and per language](#per-benchmark-and-per-language).
 
 ## Methodology

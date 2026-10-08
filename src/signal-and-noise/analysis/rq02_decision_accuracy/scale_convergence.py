@@ -131,7 +131,7 @@ from analysis.rq02_decision_accuracy.reliable_tasks import FILTERS, load_reliabl
 from analysis.utils import (  # noqa: E402
     AXES_SUFFIX, CKPT_DA_EARLY_FRACS, GRID_SEED, MIN_PAIRS, NON_EMB, TARGET_SIZE,
     assign_language, at_fraction, design_axes, finals, jackknife_ratio, ladder_frame, moved_axes,
-    pair_sets, size_order)
+    pair_sets, size_match_note, size_order)
 from pretrain.launch_trainings import cell_languages  # noqa: E402
 
 OUT_ROOT = DECISION_ACCURACY
@@ -525,7 +525,8 @@ def figure(out: pd.DataFrame, path: Path, by: str, pool: str, tau: float,
                     f"the dashed segment into it is not evidence of convergence. The shaded band on `{OVERALL}` is a "
                     f"leave-one-design-variant-out jackknife (90 %): how much the line depends on which variants are "
                     f"in the grid, not on seed noise (no replicate exists at {TARGET_SIZE}). Gate and pair "
-                    f"minimum as everywhere in rq02; pairs from the {POOL} pool, gated with {pool}'s mask." + note)
+                    f"minimum as everywhere in rq02; pairs from the {POOL} pool, gated with {pool}'s mask." + note
+                    + (size_match_note([("arch", s) for s in out["size"].unique()]) if by == "transformation" else ""))
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path, dpi=150)
 
@@ -576,7 +577,8 @@ def panel_figure(out: pd.DataFrame, path: Path, pool: str, tau: float, populatio
                     f"share no variant; units in the title, so a 4-unit band is four numbers); "
                     f"dotted line = τ = {tau:g}, the ring = N_min(τ); the hollow {TARGET_SIZE} point is 1.0 by construction"
                     + ("; the number under a point = tasks behind it" if counts else "")
-                    + f". Pairs from the {POOL} pool, gated with {pool}'s mask." + note)
+                    + f". Pairs from the {POOL} pool, gated with {pool}'s mask." + note
+                    + size_match_note([("arch", s) for s in out["size"].unique()]))
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path, dpi=150)
 
