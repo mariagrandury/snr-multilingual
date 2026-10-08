@@ -1,19 +1,24 @@
 """Write one appendix page per analysis folder from its README.
 
 For every src/signal-and-noise/analysis/rqNN_<name>/ this writes
-documents/paper/sections/app_rqNN_<name>.tex: \\clearpage, a section title, the
-question, the setup, the key finding and the main figure (the paper copy
-make_rq_figures.py puts in this folder). The question and the key finding are
-read from the README on every run, so the pages follow each refresh; the title,
-the setup and the figure are fixed below (the setup names no counts that a
-refresh moves).
+documents/paper/sections/app_rqNN_<name>.tex, one page: \\clearpage, then a
+full-width block at the top of the page (\\twocolumn[...], so it cannot drift
+to another page as a figure* would): the section title, the research question
+and the setup in the left column, the key findings in the right one, and the
+main figure (the paper copy make_rq_figures.py puts in this folder) across
+both columns under them. A main figure taller than wide goes on a float page
+of its own instead. The question and the findings are read from the README on
+every run, so the pages follow each refresh; the title, the setup, the figure
+and its description are fixed below (they name no counts that a refresh
+moves). Every caption starts with the figure's takeaway in bold: the lead of
+the first finding for the main figure, a fixed sentence for the extras.
 
     question     the README's **Question.** paragraph or the first paragraph of
                  its "Research question" / "Question" section (or, failing that,
                  the first paragraph), cut after its last "?"; without one, the
                  question in the title line
     findings     an rqfinding box (defined in main.tex) of at most three
-                 findings: the opening key finding, i.e. the **Key finding.**
+                 findings, each a bold lead sentence and its elaboration: the opening key finding, i.e. the **Key finding.**
                  paragraph if the README has one, else the bold lead and first
                  sentence of a bullet after the figure's image in the README
                  (the folder's first image when the figure is not drawn there),
@@ -21,8 +26,8 @@ refresh moves).
                  the first "Key findings" list after the paragraph), each cut
                  to its bold lead and first sentence
     extras       optional sixth PAGES element: further figures after the main
-                 one, each (paper figure stem, caption in LaTeX, label), on a
-                 float page of their own
+                 one, each (paper figure stem, caption in LaTeX starting with
+                 its bold takeaway, label), on a full-width float page of their own
 
 The text is double-blind: links, file names and rule numbers are dropped.
 plain() gives every written sentence the appendix punctuation: no dash and no
@@ -33,6 +38,7 @@ The paper writes the number of languages as K where the analysis writes L
     python make_rq_appendix.py
 """
 import re
+import struct
 import sys
 from pathlib import Path
 
@@ -43,7 +49,7 @@ SECTIONS = HERE.parent / "sections"
 # folder -> title, paper figure stem, setup, (README image the finding follows, which bullet)[, extras]
 PAGES = {
     "rq00_gate_and_curves": (
-        "The above-chance gate", "app_rq00_chance_share",
+        "The above-chance gate", "app_rq00_chance_share_horizontal",
         "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B. A run clears chance on a "
         "task when the one-sided 95\\% Wilson lower bound of its accuracy over the task's items is above the chance "
         "level. A (task, size) cell is above chance when at least half of the runs of that size that train the task's "
@@ -73,7 +79,8 @@ PAGES = {
         "the median over its language settings.",
         None, 0,
         (("app_rq00_benchmark_size_curves",
-          "Benchmark accuracy against model size. For each benchmark family, we plot the final-checkpoint accuracy "
+          "\\textbf{The reformulated twins rise with model size while their letter-format originals stay at "
+          "chance up to 1.7B.} Benchmark accuracy against model size. For each benchmark family, we plot the final-checkpoint accuracy "
           "of every design against non-embedding parameters. This accuracy is the mean over the tasks in the "
           "languages the design trains on. There is one line per (number of languages, ladder, data build, seed), "
           "90M--1.7B, for every seed and data build. Colour gives the number of trained languages, line "
@@ -81,7 +88,8 @@ PAGES = {
           "gated, so a family at chance stays visible.",
           "fig:app_size_scaling"),
          ("app_rq00_benchmark_curves",
-          "Benchmark accuracy along training. For each benchmark family, we plot the accuracy of every run at the "
+          "\\textbf{Along training the letter-format originals stay at chance for the whole run while their "
+          "reformulated twins climb steadily.} Benchmark accuracy along training. For each benchmark family, we plot the accuracy of every run at the "
           "ten evaluated tenths of the run. This accuracy is the mean over the tasks in the languages the run trains "
           "on. Training progress is given in Chinchilla multiples of the run's token budget. The figure covers "
           "every seed and data build, 90M--1.7B. Colour gives the model size, line width the ladder and "
@@ -185,13 +193,88 @@ PAGES = {
         None, 0),
 }
 
-# a caption for a figure the README does not draw (otherwise the README's alt text)
-CAPTIONS = {"rq00_gate_and_curves": "Share of each benchmark's language tasks above chance, by the smallest size "
-                                    "from which the gate holds",
-            "rq03_noise_and_snr": "Median absolute effect of each design decision over the seed noise and over the "
-                                  "checkpoint noise, per size (1 = the effect equals the noise)",
-            "rq13_english_only": "English benchmark scores of the English-only cells against the multilingual cells "
-                                 "of the same size"}
+# what each main figure draws, after its bold takeaway (the README's alt text when a folder has none)
+CAPTIONS = {
+    "rq00_gate_and_curves":
+        "One bar per benchmark gives the share of its language tasks that clear the above-chance gate, split by the "
+        "smallest model size from which the gate holds (a darker blue is a larger size). Red marks the tasks that stay "
+        "at chance up to 1.7B. The number in parentheses is the benchmark's number of language tasks. The benchmarks "
+        "are ordered from the most to the fewest tasks above chance.",
+    "rq00_task_reformulation":
+        "For each letter-format benchmark (its number of tasks in parentheses), the share of tasks above the chance "
+        "threshold for the original items (grey bars), for the RF version at each model size (blue bars, a darker blue "
+        "is a larger size) and for the LLM-RF version (orange diamonds). A star marks a size at which the McNemar test "
+        "between the original and its twin gives p < 0.05.",
+    "rq00_chance_vs_train_tokens":
+        "One panel per benchmark (its number of tasks in parentheses). Each point is the share of (language, K, "
+        "checkpoint) cells above chance, binned by the training tokens of the task's language that the checkpoint had "
+        "seen (log scale). There is one line per model size, a darker blue for a larger size.",
+    "rq01_scaling_predictability":
+        "Each point is one benchmark-language task. Left: the median Spearman ρ of the score with model size against "
+        "the median R² of the log-linear fits across model size. Right: the median R² of the fits along training "
+        "against the same x axis. The shading splits each axis at 0.5. Bold labels name each benchmark family at its "
+        "median point (its number of tasks in parentheses) and small labels name the outlying tasks.",
+    "rq02_decision_accuracy":
+        "DA-size of the final checkpoint of each proxy size against the final checkpoint of the 1.7B reference, on "
+        "multi-axis design pairs. Left: the benchmark tasks above chance. Right: the per-language bits per byte. The "
+        "band is the jackknife interval, the dotted line marks 0.9 and the circle marks the smallest proxy above it. "
+        "The dashed segment joins the 1B proxy to the reference itself.",
+    "rq02_da_vs_train_tokens":
+        "Mean DA-goal over the bits per byte of the 50 trained languages against the training tokens of the language "
+        "that the checkpoint had seen (log scale). There is one line per proxy size, a darker blue for a larger size, "
+        "and one point per evaluated tenth of the run. The bars give the uncertainty over languages and the dotted "
+        "line marks 0.75.",
+    "rq03_noise_and_snr":
+        "Median absolute effect of each design decision over the noise, per model size, on the benchmarks, the "
+        "per-language bits per byte, the macro average of the bits per byte and the training loss. Top row: over the "
+        "seed noise. Bottom row: over the checkpoint noise. There is one column per decision. The dashed line at 1 is "
+        "where the effect equals the noise (log scale).",
+    "rq04_surrogates":
+        "For each of the 22 SNR definitions, the mean over languages of the Pearson r between log₁₀ SNR and decision "
+        "accuracy across the tasks of one language, for DA-size (blue) and DA-ckpt (orange). The definitions are "
+        "ordered by their DA-size correlation.",
+    "rq05_design_decisions":
+        "Decision accuracy (mean over K) of each single-axis design decision. Left: the final checkpoint of each proxy "
+        "size against the 1.7B final checkpoint (DA-size). Right: the earlier checkpoints of the 1.7B run against its "
+        "final checkpoint (DA-ckpt), in Chinchilla multiples. Solid lines read the decision on the bits per byte of the "
+        "trained languages and dashed lines on the benchmark tasks above chance. The dotted line marks 0.75.",
+    "rq06_language_transfer":
+        "Decision accuracy (mean over K) of the language-list decision (scheme A vs B), read on the bits per byte of "
+        "four groups of languages: trained by both lists, trained by one list, not trained but written in a trained "
+        "script, and not trained in an untrained script. Left: DA-size by proxy size. Right: DA-ckpt along the 1.7B "
+        "run, in Chinchilla multiples. The dotted line marks 0.75.",
+    "rq07_external_frameworks":
+        "Each point is one English task that both our ladder and DataDecide evaluate and that clears the above-chance "
+        "gate on our side. The x axis gives the SNR of our 1B rung and the y axis the SNR of the DataDecide 1B rung, "
+        "both on a log10 scale.",
+    "rq08_subset_selection":
+        "For each benchmark (rows, accuracy and bBPB versions) and model size (columns), the SNR of the best language "
+        "subset minus the 95th percentile of 100 random subsets of the same size. Blue means that the chosen subset "
+        "beats the null. White cells have no value.",
+    "rq09_benchmark_design":
+        "Median SNR at 1.7B over the languages of each benchmark family that clears the above-chance gate, ranked. "
+        "The colour gives the number of answer options.",
+    "rq10_size_generalisation":
+        "Left: for each benchmark with at least five tasks whose share moves, the share of its tasks above chance at "
+        "1.7B (open circles) and at 3B (filled circles). Right: DA-size of the proxies 90M--1B against the 3B final "
+        "checkpoint (solid) and against the 1.7B final checkpoint (dashed), on benchmark accuracy (black) and on "
+        "per-language bits per byte (orange). The bands are 90% leave-one-family-out jackknife bands and the dotted "
+        "line marks 0.5.",
+    "rq11_evaluation_recipe":
+        "Mean DA-size against the 1.7B accuracy for each way of reading a benchmark, by proxy size. The colour gives "
+        "the item format (original, RF, LLM-RF) and the line style the score (solid for accuracy, dotted for bBPB). "
+        "The dashed black line pools every variant and the dotted line marks 0.75.",
+    "rq12_above_chance_items":
+        "Left: median SNR over the tasks of the full benchmark (black), of the above-chance items selected after the "
+        "gate (blue) and of the gate applied after the selection (orange), per model size. The numbers give the tasks "
+        "behind each point. Middle: the median ratio of the selected items to the full benchmark for the SNR, the "
+        "signal and the k-fold noise. Right: Spearman ρ between SNR and DA-size across tasks.",
+    "rq13_english_only":
+        "(a) and (b): the English-only cells (K = 1) minus the cells with K > 1 of the same size, in accuracy points "
+        "above chance averaged over the English tasks above chance, for the deep and the shallow ladder. There is one "
+        "line per K, the thick line pools every K > 1 and the dotted line is their median. (c): the share of (task, K) "
+        "comparisons in which the English-only cell is ahead.",
+}
 
 UNICODE = {"≥": "$\\geq$", "≤": "$\\leq$", "×": "$\\times$", "−": "$-$", "→": "$\\rightarrow$",
            "↔": "$\\leftrightarrow$", "ρ": "$\\rho$", "τ": "$\\tau$", "α": "$\\alpha$", "Δ": "$\\Delta$",
@@ -339,17 +422,60 @@ def key_findings(lines, image, n=3):
     return [short(b) for b in bullets[image[1]: image[1] + n]]
 
 
-def extra_figure(stem, caption, label):
+def sentence(s):
+    """`s` as a sentence: a capital first word (names such as p or rf stay as they
+    are) and a full stop."""
+    s = re.sub(r"^([a-z]+)\b", lambda m: m[1] if m[1] in LOWER_KEEP else m[1].capitalize(), s.strip())
+    return s if not s or s.endswith(".") else s.rstrip(":") + "."
+
+
+def bold_lead(tex):
+    """A finding as (its bold lead, the finding): the lead is the bold opening, or the
+    first sentence when the finding opens unbolded, cut to one sentence. A README
+    bullet bold from end to end keeps as its lead its first sentence, else what comes
+    before its colon, else (when that is still long) what comes before its ", but"; the
+    rest of it becomes the elaboration."""
+    if tex.startswith("\\textbf{"):
+        depth = 0
+        for end in range(len("\\textbf"), len(tex)):
+            depth += (tex[end] == "{") - (tex[end] == "}")
+            if depth == 0:
+                break
+        lead, rest = tex[len("\\textbf{"):end], tex[end + 1:]
+    else:
+        m = re.search(r"(?<=[\w%)$])\.\s+(?=[A-Z])", tex)
+        lead, rest = (tex[:m.start()], tex[m.end():]) if m else (tex, "")
+    lead, extra = lead.strip().rstrip(":.").strip(), ""
+    if m := re.search(r"(?<=[\w%)$])\.\s+(?=[A-Z])", lead):
+        lead, extra = lead[:m.start()], lead[m.end():]
+    elif (m := re.search(r":\s", lead)) and len(lead[:m.start()].split()) >= 6:
+        lead, extra = lead[:m.start()], lead[m.end():]
+    if len(lead.split()) > 30 and ", but " in lead:
+        lead, but = lead.split(", but ", 1)
+        extra = f"{sentence('but ' + but)} {extra}"
+    lead = sentence(lead)
+    rest = f"{sentence(extra)} {sentence(rest)}" if extra.strip() else sentence(rest)
+    return lead, f"\\textbf{{{lead}}} {rest}".strip()
+
+
+def float_page(stem, caption, label):
+    """A full-width figure on a float page of its own."""
     return "\n".join([
-        "\\begin{figure}[p]",
+        "\\begin{figure*}[p]",
         "\\centering",
-        f"\\includegraphics[width=\\textwidth,height=0.9\\textheight,keepaspectratio]{{figures/{stem}.png}}",
+        f"\\includegraphics[width=\\textwidth,height=0.85\\textheight,keepaspectratio]{{figures/{stem}.png}}",
         f"% source: {FIGURES[stem][0].relative_to(ANALYSIS.parents[2])}.png",
-        f"\\caption{{{plain(caption)}}}",
+        f"\\caption{{{caption}}}",
         f"\\label{{{label}}}",
-        "\\end{figure}",
+        "\\end{figure*}",
         "",
     ])
+
+
+def tall(stem):
+    """A paper figure taller than wide (the PNG header's width and height)."""
+    w, h = struct.unpack(">II", (HERE / f"{stem}.png").read_bytes()[16:24])
+    return h > w
 
 
 def page(folder, title, stem, setup, kf_image, kf_bullet, extras=()):
@@ -357,37 +483,52 @@ def page(folder, title, stem, setup, kf_image, kf_bullet, extras=()):
     alt = next(re.match(r"!\[([^\]]*)\]", l)[1] for l in lines if l.startswith("!["))
     src = FIGURES[stem][0]
     # a `_paper` twin the README does not show is read through the figure it is a twin of
-    shown = src.name if any(f"/{src.name}.png)" in l for l in lines) else src.name.removesuffix("_paper")
+    shown = (src.name if any(f"/{src.name}.png)" in l for l in lines)
+             else src.name.removesuffix("_horizontal").removesuffix("_paper"))
     image = (kf_image or shown, kf_bullet)
     caption = CAPTIONS.get(folder) or next((re.match(r"!\[([^\]]*)\]", l)[1] for l in lines
                     if l.startswith("![") and f"/{shown}.png)" in l), None) or alt
     caption = re.sub(r",\s*(the )?paper (figure|copy)$", "", caption.rstrip("."))
     label = f"fig:app_{folder}"
-    findings = [plain(to_tex(k)) for k in key_findings(lines, image)]
-    findings[0] += f" (Figure~\\ref{{{label}}}.)"
+    leads, findings = zip(*(bold_lead(plain(to_tex(k))) for k in key_findings(lines, image)))
+    findings = [findings[0] + f" (Figure~\\ref{{{label}}}.)", *findings[1:]]
+    caption = f"\\textbf{{{leads[0]}}} {plain(to_tex(caption))}."
+    main = [] if tall(stem) else [
+        "",
+        "\\vspace{\\baselineskip}",
+        "\\noindent\\begin{minipage}{\\textwidth}",
+        "\\centering",
+        f"\\includegraphics[width=\\textwidth,height=0.4\\textheight,keepaspectratio]{{figures/{stem}.png}}",
+        f"% source: {src.relative_to(ANALYSIS.parents[2])}.png",
+        f"\\captionof{{figure}}{{{caption}}}",
+        f"\\label{{{label}}}",
+        "\\end{minipage}",
+    ]
     return "\n".join([
         f"% Generated by documents/paper/figures/make_rq_appendix.py from the {folder} README; do not edit.",
         "\\clearpage",
+        "\\twocolumn[{%",
         f"\\section{{{title}}}",
         f"\\label{{app:{folder}}}",
         "",
-        "\\begin{rqfinding}",
-        "\n\n".join(f"{i}. {k}" for i, k in enumerate(findings, 1)),
-        "\\end{rqfinding}",
-        "",
-        f"\\paragraph{{Question.}} {plain(to_tex(question(lines)))}",
+        "\\noindent\\begin{minipage}[t]{0.485\\textwidth}",
+        "\\vspace{0pt}",
+        f"\\paragraph{{Research Question.}} \\emph{{{plain(to_tex(question(lines)))}}}",
         "",
         f"\\paragraph{{Setup.}} {plain(setup)}",
+        "\\end{minipage}\\hfill",
+        "\\begin{minipage}[t]{0.485\\textwidth}",
+        "\\vspace{0pt}",
+        "\\begin{rqfinding}",
+        "\n\n".join(findings),
+        "\\end{rqfinding}",
+        "\\end{minipage}",
+        *main,
+        "\\vspace{\\baselineskip}",
+        "}]",
         "",
-        "\\begin{figure}[h]",
-        "\\centering",
-        f"\\includegraphics[width=\\textwidth]{{figures/{stem}.png}}",
-        f"% source: {src.relative_to(ANALYSIS.parents[2])}.png",
-        f"\\caption{{{plain(to_tex(caption))}.}}",
-        f"\\label{{{label}}}",
-        "\\end{figure}",
-        "",
-    ] + [extra_figure(*e) for e in extras])
+    ] + ([float_page(stem, caption, label)] if tall(stem) else [])
+      + [float_page(e_stem, plain(e_caption), e_label) for e_stem, e_caption, e_label in extras])
 
 
 def main():
