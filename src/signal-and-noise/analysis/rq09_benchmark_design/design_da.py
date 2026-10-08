@@ -16,13 +16,17 @@ This reads the same characteristics against DA-size instead of SNR:
   benchmark   per proxy size, the median DA-size over a family's tasks (rq09 takes the
               median over a family's tasks for the SNR); the benchmark's DA-size is the
               mean of those medians over the proxies 90M-1B that have one.
-  statistic   per characteristic, a rank correlation over the benchmarks: Spearman rho
-              against the characteristic's numeric code (`ENCODING`: an ordinal
-              characteristic ranked, a binary one -1/+1, both centred at 0; a length
-              feature as is) and, for a nominal characteristic with more than two levels
-              (curation, task format), the rank correlation ratio eta = sqrt(H / (n - 1)),
-              H the Kruskal-Wallis statistic of rq09 (groups of one benchmark skipped, as
-              there), which has no sign. 95 % percentile bootstrap over the benchmarks.
+  statistic   per characteristic, Spearman rho over the benchmarks against the
+              characteristic's centred code (`encode`: an ordinal characteristic ranked, a
+              binary one -1/+1; a length as is). The two characteristics with more than two
+              unordered levels are binarised (the user's call, 2026-10-08): curation as
+              translated (human, MT, MT + post-edit) vs native (written in the language or
+              generated from its treebanks), task format as continuation (the options scored
+              as continuations: completion, minimal pair, classification labels, RF cloze,
+              LLM-RF statement) vs lettered MCQ (question or passage with lettered options).
+              On these families native curation and an originally multilingual source pick
+              the same benchmarks, so those two rows coincide. 95 % percentile bootstrap over
+              the benchmarks; the Kruskal-Wallis H and p of every two-group split beside.
               The same statistics on rq09's SNR (median `snr_mpd_1.7B`) sit beside.
 
     benchmark_characteristics.csv / .tex        one row per benchmark of either reading, one column per
@@ -35,9 +39,12 @@ This reads the same characteristics against DA-size instead of SNR:
     design_da_size_by_level_above_66_either_mono_axis.png/.csv (+ _paper)
                                                 a row per characteristic level, one dot per benchmark at its
                                                 DA-size - 0.5 (0 = chance agreement)
+    design_da_size_quadrant_mono_axis.png/.csv (+ _paper)
+                                                one panel per characteristic: x = DA-size - 0.5 on every gated
+                                                task, y = the centred code, the benchmarks counted per quadrant
     design_da_size_quadrant_above_66_either_mono_axis.png/.csv (+ _paper)
-                                                one panel per ordinal or binary characteristic: x = DA-size - 0.5,
-                                                y = the centred code, the benchmarks counted per quadrant
+                                                the same on the above_66_either tasks (every benchmark lands
+                                                right of chance there)
 
     python analysis/rq09_benchmark_design/design_da.py --pool predictivity
 """
@@ -77,17 +84,19 @@ CHANCE = 0.5
 # characteristic -> (label, kind, the FAMILY_META / length column, the level order). Ordinal and
 # binary levels are listed low to high: the code is the level's rank, centred at 0.
 CHARACTERISTICS = {
-    "curation_category": ("Curation", "nominal", ["originally_multilingual", "human_translation", "template_generated",
-                                                  "mt_post_edited", "machine_translation"]),
+    "curation": ("Curation", "binary", ["translated", "native"]),
     "source_origin": ("Source", "binary", ["english_translated", "originally_multilingual"]),
-    "format": ("Task format", "nominal", ["minimal_pair", "completion", "classification", "mcq_question_only",
-                                          "mrc_passage", "cloze_completion", "statement_continuation"]),
+    "format_type": ("Task format", "binary", ["continuation", "lettered MCQ"]),
     "n_options": ("Answer options", "ordinal", [2, 3, 4]),
     "passage": ("Reading passage", "binary", [False, True]),
     "context_len_chars_median": ("Context length", "continuous", None),
     "option_len_chars_median": ("Option length", "continuous", None),
 }
-LEVEL_NAMES = {"originally_multilingual": "originally multilingual", "human_translation": "human translation",
+# the binarised characteristics: FAMILY_META level -> binary level
+NATIVE_CURATION = {"originally_multilingual", "template_generated"}
+LETTERED_FORMATS = {"mcq_question_only", "mrc_passage"}
+LEVEL_NAMES = {"translated": "translated", "native": "native", "continuation": "continuation",
+               "lettered MCQ": "lettered MCQ","originally_multilingual": "originally multilingual", "human_translation": "human translation",
                "template_generated": "template generated", "mt_post_edited": "MT post-edited",
                "machine_translation": "machine translation", "english_translated": "translated from English",
                "minimal_pair": "minimal pair", "completion": "completion", "classification": "classification",
@@ -108,6 +117,8 @@ def encode(col: str, v):
 def features() -> pd.DataFrame:
     meta = pd.DataFrame.from_dict(FAMILY_META, orient="index")
     meta.index.name = "family"
+    meta["curation"] = np.where(meta["curation_category"].isin(NATIVE_CURATION), "native", "translated")
+    meta["format_type"] = np.where(meta["format"].isin(LETTERED_FORMATS), "lettered MCQ", "continuation")
     lf = pd.read_csv(LENGTH_CSV).set_index("family")
     return meta.join(lf[["context_len_chars_median", "option_len_chars_median"]])
 
@@ -138,20 +149,15 @@ def benchmark_values(fam: pd.DataFrame, snr: pd.DataFrame) -> dict[str, pd.Serie
 
 
 def statistic(col: str, values: pd.Series, feat: pd.DataFrame) -> float:
-    """Spearman rho against the centred code (ordinal, binary, continuous), or the Kruskal-Wallis
-    rank correlation ratio (nominal), over the benchmarks of `values` (its index may repeat: a
-    bootstrap draw)."""
+    """Spearman rho against the centred code (ordinal, binary) or the length, over the benchmarks of
+    `values` (its index may repeat: a bootstrap draw); NaN for a binary characteristic one of whose
+    levels holds fewer than two distinct benchmarks."""
     x = feat.loc[values.index, col]
     ok = x.notna().to_numpy() & values.notna().to_numpy()
     x, y = x[ok], values[ok].to_numpy(float)
     kind = CHARACTERISTICS[col][1]
-    if kind == "nominal":
-        groups = [y[(x == lv).to_numpy()] for lv in pd.unique(x)]
-        groups = [g for g in groups if len(g) >= 2]
-        if len(groups) < 2 or len(np.unique(np.concatenate(groups))) < 2:
-            return np.nan
-        n = sum(map(len, groups))
-        return float(np.sqrt(stats.kruskal(*groups).statistic / (n - 1)))
+    if kind == "binary" and x[~x.index.duplicated()].value_counts().min() < 2:
+        return np.nan                 # a level held by one benchmark: its rank is that benchmark's, not the level's
     xs = x.map(lambda v: encode(col, v)).to_numpy(float) if kind != "continuous" else x.to_numpy(float)
     if len(y) < 3 or len(np.unique(xs)) < 2 or len(np.unique(y)) < 2:
         return np.nan
@@ -167,7 +173,7 @@ def correlations(values: dict[str, pd.Series], feat: pd.DataFrame) -> pd.DataFra
         for col, (label, kind, _) in CHARACTERISTICS.items():
             n = int(feat.loc[v.index, col].notna().sum())
             row = {"reading": reading, "characteristic": col, "label": label, "kind": kind,
-                   "statistic": "eta" if kind == "nominal" else "spearman_rho", "value": statistic(col, v, feat),
+                   "statistic": "spearman_rho", "value": statistic(col, v, feat),
                    "n_benchmarks": n, "ci_low": np.nan, "ci_high": np.nan, "kruskal_H": np.nan, "kruskal_p": np.nan}
             if draws:
                 b = np.array([statistic(col, d, feat) for d in draws])
@@ -184,7 +190,7 @@ def correlations(values: dict[str, pd.Series], feat: pd.DataFrame) -> pd.DataFra
 
 
 def _row_label(r) -> str:
-    return f"{r.label} (η)" if r.kind == "nominal" else r.label
+    return r.label
 
 
 def fig_correlation(c: pd.DataFrame, path: Path, paper: bool) -> None:
@@ -197,7 +203,7 @@ def fig_correlation(c: pd.DataFrame, path: Path, paper: bool) -> None:
     for k, (reading, label, colour, marker, fill) in enumerate(series):
         g = c[c["reading"] == reading].set_index("characteristic").reindex(order)
         yy = np.array([y[o] for o in order]) + (k - 1) * 0.22
-        a.errorbar(g["value"], yy, xerr=[g["value"] - g["ci_low"], g["ci_high"] - g["value"]], fmt=marker,
+        a.errorbar(g["value"], yy, xerr=[(g["value"] - g["ci_low"]).clip(lower=0), (g["ci_high"] - g["value"]).clip(lower=0)], fmt=marker,
                    color=colour, mfc=colour if fill == "full" else "white", ms=4, lw=.8, capsize=1.5, label=label)
     sizes = [r.split(":")[1] for r in dict.fromkeys(c["reading"]) if r.startswith("size:")]
     for s in sizes:
@@ -220,8 +226,8 @@ def fig_correlation(c: pd.DataFrame, path: Path, paper: bool) -> None:
         return
     top = G._header(fig, "Benchmark characteristics against DA-size (and SNR)",
                     f"rank correlation over the benchmark families: Spearman ρ against the centred code of an ordinal or binary "
-                    f"characteristic (options 2 → 4, no passage → passage, translated → originally multilingual) or a length, "
-                    f"η = √(H/(n−1)) for a nominal one (no sign); DA-size = rq02's mono-axis DA-size against 1.7B, median over a "
+                    f"characteristic (options 2 → 4, no passage → passage, translated → originally multilingual or native, "
+                    f"continuation → lettered MCQ) or a length; DA-size = rq02's mono-axis DA-size against 1.7B, median over a "
                     f"family's tasks per proxy; left: its mean over 90M–1B with a 95 % bootstrap CI over the families, on the "
                     f"{FILTER} tasks (filled), on every gated task (hollow) and rq09's SNR at 1.7B (diamond); right: one line "
                     f"per proxy ({FILTER})")
@@ -240,7 +246,7 @@ def level_table(values: dict[str, pd.Series], feat: pd.DataFrame) -> pd.DataFram
                 lv = feat.at[fam, col]
                 rows.append({"population": pop, "characteristic": col, "label": label, "kind": kind,
                              "level": LEVEL_NAMES[lv], "level_rank": levels.index(lv),
-                             "code": np.nan if kind == "nominal" else encode(col, lv),
+                             "code": encode(col, lv),
                              "family": fam, "name": G.paper_name(fam), "da_size": v, "x": v - CHANCE})
     return pd.DataFrame(rows)
 
@@ -294,47 +300,51 @@ def fig_levels(t: pd.DataFrame, path: Path, paper: bool) -> None:
     S.save(fig, path)
 
 
-def fig_quadrant(t: pd.DataFrame, path: Path, paper: bool) -> pd.DataFrame:
-    """One panel per ordinal or binary characteristic: x = DA-size - 0.5, y = the centred code; the
-    filtered population filled, the unfiltered hollow, the counts per quadrant as filtered (unfiltered)."""
-    t = t[t["kind"] != "nominal"]
+def fig_quadrant(t: pd.DataFrame, pop: str, path: Path, paper: bool) -> pd.DataFrame:
+    """One panel per characteristic: x = DA-size - 0.5 of population `pop`, y = the centred code
+    (jittered); the benchmarks counted per quadrant, the highest DA-size outlined."""
+    top_fam = example(t)
+    t = t[t["population"] == pop]
     cols = list(dict.fromkeys(t["characteristic"]))
     rng = np.random.default_rng(0)
-    fig, axes = plt.subplots(1, len(cols), figsize=(2.35 * len(cols), 2.5), sharex=True)
+    ncol = 3
+    nrow = -(-len(cols) // ncol)
+    fig, axes = plt.subplots(nrow, ncol, figsize=(2.35 * ncol, 2.2 * nrow + 0.3), sharex=True, squeeze=False)
     counts = []
     lim = max(0.3, t["x"].abs().max() * 1.15)
-    for ax, col in zip(axes, cols):
-        g = t[(t["characteristic"] == col) & (t["population"] == FILTER)]
-        u = t[(t["characteristic"] == col) & (t["population"] == "unfiltered")]
+    for ax, col in zip(axes.flat, cols):
+        g = t[t["characteristic"] == col]
+        top = (g["family"] == top_fam).to_numpy()
         ax.axhspan(0, 1.4, xmin=0.5, xmax=1, color=S.RAMP[0], alpha=.12, lw=0)
         ax.axhspan(-1.4, 0, xmin=0, xmax=0.5, color=S.RAMP[0], alpha=.12, lw=0)
         ax.axvline(0, color=S.MUTED, lw=.7); ax.axhline(0, color=S.MUTED, lw=.7)
-        ax.scatter(u["x"], u["code"] - 0.2 + rng.uniform(-0.06, 0.06, len(u)), s=13, facecolor="white",
-                   edgecolor=S.SERIES[0], lw=.7, zorder=2)
-        ax.scatter(g["x"], g["code"] + 0.2 + rng.uniform(-0.06, 0.06, len(g)), s=13, color=S.SERIES[0], lw=.3,
-                   edgecolor="white", zorder=2)
+        ax.scatter(g["x"], g["code"] + rng.uniform(-0.15, 0.15, len(g)), s=np.where(top, 20, 14), color=S.SERIES[0],
+                   lw=np.where(top, .8, .3), edgecolor=np.where(top, S.INK, "white"), zorder=2)
         for sx, sy in ((1, 1), (-1, 1), (1, -1), (-1, -1)):
-            n = {pop: int(((np.sign(d["x"]) == sx) & (np.sign(d["code"]) == sy)).sum()) for pop, d in ((FILTER, g), ("unfiltered", u))}
-            counts.append({"characteristic": col, "x_side": sx, "code_side": sy, "n_benchmarks": n[FILTER],
-                           "n_benchmarks_unfiltered": n["unfiltered"]})
-            ax.text(sx * lim * .92, sy * 1.3, f"{n[FILTER]} ({n['unfiltered']})", ha="right" if sx > 0 else "left",
-                    va="center", fontsize=7, color=S.INK)
+            n = int(((np.sign(g["x"]) == sx) & (np.sign(g["code"]) == sy)).sum())
+            counts.append({"characteristic": col, "x_side": sx, "code_side": sy, "n_benchmarks": n})
+            ax.text(sx * lim * .92, sy * 1.3, str(n), ha="right" if sx > 0 else "left", va="center", fontsize=7,
+                    color=S.INK)
         levels = CHARACTERISTICS[col][2]
         ax.set_yticks([encode(col, lv) for lv in levels]); ax.set_yticklabels([LEVEL_NAMES[lv] for lv in levels], fontsize=7)
         ax.set_ylim(-1.45, 1.45); ax.set_xlim(-lim, lim); ax.set_title(CHARACTERISTICS[col][0], fontsize=8, loc="left")
         S.clean(ax)
-    axes[len(cols) // 2].set_xlabel("DA-size minus 0.5")
+    for ax in axes.flat[len(cols):]:
+        ax.axis("off")
+    axes[-1, 1].set_xlabel("DA-size minus 0.5")
+    for ax in axes.flat:
+        ax.tick_params(labelbottom=True)
     if paper:
         fig.tight_layout()
         S.save_paper(fig, path.with_suffix(""))
     else:
-        top = G._header(fig, "Benchmark DA-size against the coded characteristics",
-                        "dot = one benchmark family; x = DA-size − 0.5 (mean over 90M–1B, median over its "
-                        f"{FILTER} tasks, mono-axis, against 1.7B); y = the characteristic's centred code (ordinal levels "
-                        "ranked, binary ±1), filled = the filtered tasks, hollow = every gated task (offset down); "
-                        "number = benchmarks per quadrant, filtered (unfiltered); a benchmark on a zero line is in no "
-                        "quadrant; shaded = the quadrants a positive correlation fills")
-        fig.tight_layout(rect=(0, 0, 1, top))
+        what = f"its {FILTER} tasks" if pop == FILTER else "every task above chance at the proxy and at 1.7B"
+        top_ = G._header(fig, "Benchmark DA-size against the coded characteristics",
+                         f"dot = one benchmark family; x = DA-size − 0.5 (0 = chance agreement; mean over 90M–1B of the median "
+                         f"over {what}, mono-axis, against 1.7B); y = the characteristic's centred code (ordinal levels "
+                         "ranked, binary ±1), jittered; number = benchmarks per quadrant (a benchmark on a zero line is in "
+                         f"none); shaded = the quadrants a positive correlation fills; outlined = {G.paper_name(top_fam)}")
+        fig.tight_layout(rect=(0, 0, 1, top_))
         S.save(fig, path)
     return pd.DataFrame(counts)
 
@@ -347,16 +357,17 @@ TABLE_NAMES = {"originally_multilingual": "native", "human_translation": "human 
                "statement_continuation": "statement (LLM-RF)", False: "no", True: "yes"}
 TABLE_HEAD = {"curation_category": "Curation", "source_origin": "Source", "format": "Format", "n_options": "Options",
               "passage": "Passage", "context_len_chars_median": "Context", "option_len_chars_median": "Option"}
+LENGTHS = ("context_len_chars_median", "option_len_chars_median")
 
 
 def characteristics_table(families: list, feat: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
     """One row per benchmark, one column per characteristic: the CSV, and the tabular the paper prints
     (lengths are the median characters of 100 sampled items; -- where none were sampled)."""
-    t = feat.loc[families, list(CHARACTERISTICS)].copy()
+    t = feat.loc[families, list(TABLE_HEAD) + ["curation", "format_type"]].copy()
     t.insert(0, "benchmark", [G.paper_name(f) for f in families])
     t = t.sort_values("benchmark")
     t.to_csv(out_dir / "benchmark_characteristics.csv", index_label="family")
-    cell = lambda c, v: ("--" if pd.isna(v) else f"{v:.0f}" if CHARACTERISTICS[c][1] == "continuous"
+    cell = lambda c, v: ("--" if pd.isna(v) else f"{v:.0f}" if c in LENGTHS
                          else str(v) if c == "n_options" else TABLE_NAMES[v])
     lines = ["\\begin{tabular}{lllllrrr}", "\\toprule",
              " & ".join(["Benchmark"] + list(TABLE_HEAD.values())) + " \\\\", "\\midrule"]
@@ -375,7 +386,7 @@ def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, quad: pd.Data
 
     def line(reading):
         g = c[c["reading"] == reading].set_index("characteristic")
-        return "; ".join(f"{r.label} {'η' if r.kind == 'nominal' else 'ρ'} = {r.value:+.2f}"
+        return "; ".join(f"{r.label} ρ = {r.value:+.2f}"
                          + (f" [{r.ci_low:+.2f}, {r.ci_high:+.2f}]" if np.isfinite(r.ci_low) else "")
                          + f" (n = {r.n_benchmarks})" for r in g.itertuples() if np.isfinite(r.value))
     sizes = [r for r in dict.fromkeys(c["reading"]) if r.startswith("size:")]
@@ -386,12 +397,15 @@ def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, quad: pd.Data
         f"at the proxy and at 1.7B, ≥ 3 pairs) over the paper's `{FILTER}` tasks ({n_fam} families, up to {n_tasks} tasks), "
         "with the unfiltered reading (every gated task) beside it; a benchmark's DA-size is the median over its tasks at a "
         "proxy and the mean of those medians over 90M–1B. Statistic: Spearman ρ against the centred code of an ordinal or "
-        "binary characteristic (options 2 → 4, no passage → passage, translated → originally multilingual) or a length, "
-        "and the Kruskal–Wallis rank correlation ratio η (no sign) for curation and task format; 95 % bootstrap over the "
-        f"families. Regenerate with `python analysis/rq09_benchmark_design/design_da.py --pool {pool}`.",
+        "binary characteristic (options 2 → 4, no passage → passage, translated → originally multilingual) or a length; "
+        "curation and task format are binarised, translated → native (written in the language or generated from its "
+        "treebanks) and continuation → lettered MCQ, and on these families native curation picks the same benchmarks as "
+        "an originally multilingual source, so those two rows coincide; 95 % bootstrap over the families. The quadrant "
+        "figure reads every task above chance, so benchmarks fall on both sides of chance agreement; its "
+        f"`{FILTER}` twin, where every benchmark sits right of 0.5, stays as an analysis figure. Regenerate with `python analysis/rq09_benchmark_design/design_da.py --pool {pool}`.",
         f"![Characteristics against DA-size]({stage}/{pool}/design_da_size_correlation_above_66_either_mono_axis.png)",
         f"![DA-size by characteristic level]({stage}/{pool}/design_da_size_by_level_above_66_either_mono_axis.png)",
-        f"![DA-size against the coded characteristics]({stage}/{pool}/design_da_size_quadrant_above_66_either_mono_axis.png)",
+        f"![DA-size against the coded characteristics, every task above chance]({stage}/{pool}/design_da_size_quadrant_mono_axis.png)",
         "Key findings (generated):",
         "\n".join([f"- **DA-size, `{FILTER}`** (mean over 90M–1B): {line(FILTER)}.",
                    f"- **DA-size, every gated task**: {line('unfiltered')}.",
@@ -403,6 +417,7 @@ def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, quad: pd.Data
             f"rq09_benchmark_design/{stage}/{pool}/{n})"
             for n in (f"design_da_size_correlation_{FILTER}_mono_axis.png", f"design_da_size_correlation_{FILTER}_mono_axis.csv",
                       f"design_da_size_by_level_{FILTER}_mono_axis.png", f"design_da_size_by_level_{FILTER}_mono_axis.csv",
+                      "design_da_size_quadrant_mono_axis.png", "design_da_size_quadrant_mono_axis.csv",
                       f"design_da_size_quadrant_{FILTER}_mono_axis.png", f"design_da_size_quadrant_{FILTER}_mono_axis.csv",
                       "design_da_size_per_family_mono_axis.csv", "benchmark_characteristics.csv")),
         "Table: `benchmark_characteristics.csv` (`.tex` for the paper) lists each benchmark's characteristics."])
@@ -429,10 +444,13 @@ def main(pool: str) -> None:
         sfx = "_paper" if paper else ""
         lv[lv["population"] == FILTER].to_csv(out_dir / f"design_da_size_by_level_{FILTER}_mono_axis{sfx}.csv", index=False)
         fig_levels(lv, out_dir / f"design_da_size_by_level_{FILTER}_mono_axis{sfx}.png", paper)
-        q = out_dir / f"design_da_size_quadrant_{FILTER}_mono_axis{sfx}"
-        quad = fig_quadrant(lv, q.with_suffix(".png"), paper)
-        pd.concat([lv[lv["kind"] != "nominal"].assign(row="benchmark"), quad.assign(row="quadrant count")]) \
-            .to_csv(q.with_suffix(".csv"), index=False)
+        for pop, name in (("unfiltered", "design_da_size_quadrant_mono_axis"),
+                          (FILTER, f"design_da_size_quadrant_{FILTER}_mono_axis")):
+            q = out_dir / f"{name}{sfx}"
+            counts = fig_quadrant(lv, pop, q.with_suffix(".png"), paper)
+            quad = counts if pop == "unfiltered" else quad
+            pd.concat([lv[lv["population"] == pop].assign(row="benchmark"), counts.assign(row="quadrant count")]) \
+                .to_csv(q.with_suffix(".csv"), index=False)
     families = sorted(set(snr["family"]) | set(fam["family"]))
     characteristics_table(families, feat, out_dir)
     print(c[c["reading"].isin([FILTER, "unfiltered", "snr"])].round(3).to_string(index=False))
