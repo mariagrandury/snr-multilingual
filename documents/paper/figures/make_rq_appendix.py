@@ -465,7 +465,7 @@ PAGES = {
         "task when the one-sided 95\\% Wilson lower bound of its accuracy over the task's items is above the chance "
         "level. A (task, size) cell is above chance when at least half of the runs of that size that train the task's "
         "language clear it. Tasks without a chance level (bits per byte) are not gated.",
-        None, 0),
+        "highlights", 0),
     "rq00_task_reformulation": (
         "Task reformulation", "app_rq00_chance_reformulation",
         "We compare the letter-format multiple-choice benchmarks (Belebele, Global-MMLU, INCLUDE) with two "
@@ -861,7 +861,8 @@ def question(lines):
 
 
 def bullet_list(lines, start):
-    """The first Markdown bullet list after line `start`, one string per bullet."""
+    """The first Markdown bullet list after line `start`, one string per bullet; it
+    ends at the next "## " heading or "**Follow-ups**" line."""
     bullets, cur = [], None
     for l in lines[start + 1:]:
         if l.startswith("- "):
@@ -869,7 +870,7 @@ def bullet_list(lines, start):
             bullets.append(cur)
         elif cur is not None and l.startswith("  ") and l.strip():
             cur.append(l.strip())
-        elif l.startswith("## ") and bullets:
+        elif (l.startswith("## ") or l.startswith("**Follow-ups**")) and bullets:
             break
         else:
             cur = None
