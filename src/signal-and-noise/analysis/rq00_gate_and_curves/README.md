@@ -280,6 +280,45 @@ What the gate leaves open — whether the at-chance families are unreadable
 for any model of these sizes or only for this ladder — is figure 4; whether
 the format is the cause is figure 3.
 
+### 1b. The early passes: a constant answer, the longest option, or a related language?
+
+Figure 1 found CulturalBench-easy above chance at 90M and at chance from 175M on, and the token curves (`../rq00_chance_vs_train_tokens`) show a few tasks above chance at very small token counts of their language and at chance at intermediate ones. The paper names two candidate causes, a preference for the longest option early in training and the tokens of a related language; the letter bias suspected above is a third. The table tests the three on the stored per-option log-likelihoods and on the all-language evaluation of the deep scheme-A ladder.
+
+<!-- BEGIN auto:early-passes (early_passes.py --pool predictivity) -->
+## The early passes: a constant answer, the longest option, or a related language?
+
+**Gate verdicts per run · tasks selected on the seed-1904 cell table (`../rq00_chance_vs_train_tokens`, every build and ladder): above chance in at least half of the cells below 1e+08 tokens of the language and in fewer than half of those between 1e+08 and 1e+10, 10 cells at least on each side · runs read: the deep scheme-A seed-1904 ladder, every evaluated tenth, trained and untrained languages (rule 2 opt-out: a control of the gate, not a population).** 10 tasks. Per task: the share of runs above chance with few (`low`) and intermediate (`mid`) tokens of the language, and of the untrained runs (no tokens of the language, no language of its subfamily trained: `untrained, related` has 0 runs) at the same (size, checkpoint) points as the low ones; then, over the passing low-token runs, the median share of items answered with the run's most picked option, the share of those runs whose most picked option alone would clear chance, and the median share of picks and of gold answers on the single longest option. Regenerate with `python analysis/rq00_gate_and_curves/early_passes.py --pool predictivity`.
+
+| task | lang. | items | pass low (runs) | pass mid (runs) | pass untrained (runs) | passing low runs | one-option share | constant passes | picks longest | gold longest |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `cultural_bench_easy_argentina` | es | 35 | 0.79 (14) | 0.31 (226) | 0.88 (8) | 11 | 0.91 | 0.91 | 0.13 | 0.23 |
+| `cultural_bench_easy_chile` | es | 22 | 0.64 (14) | 0.23 (226) | 0.62 (8) | 9 | 0.91 | 0.89 | 0.26 | 0.32 |
+| `cultural_bench_easy_india` | hi | 46 | 0.38 (87) | 0.09 (33) | 0.31 (166) | 33 | 0.78 | 0.97 | 0.18 | 0.22 |
+| `cultural_bench_easy_japan` | ja | 53 | 0.79 (14) | 0.28 (226) | 0.75 (8) | 11 | 0.94 | 0.91 | 0.20 | 0.28 |
+| `cultural_bench_easy_mexico` | es | 49 | 0.64 (14) | 0.26 (226) | 0.75 (8) | 9 | 0.94 | 1.00 | 0.26 | 0.24 |
+| `cultural_bench_easy_morocco` | ar | 17 | 0.45 (71) | 0.22 (109) | 0.42 (71) | 32 | 0.88 | 1.00 | 0.24 | 0.18 |
+| `cultural_bench_easy_peru` | es | 19 | 0.57 (14) | 0.20 (226) | 0.62 (8) | 8 | 0.97 | 1.00 | 0.06 | 0.31 |
+| `cultural_bench_easy_spain` | es | 40 | 0.64 (14) | 0.27 (226) | 0.62 (8) | 9 | 0.95 | 1.00 | 0.27 | 0.35 |
+| `include_base_44_georgian` | ka | 500 | 0.30 (60) | nan (0) | 0.33 (290) | 18 | 0.97 | 0.94 | 0.22 | 0.23 |
+| `paws_ja` | ja | 2000 | 0.64 (14) | 0.11 (226) | 0.12 (8) | 9 | 0.89 | 1.00 | 0.89 | 0.56 |
+
+Over the 149 passing low-token runs: 74% answer one option on at least 80% of the items, and in 97% that option alone clears chance.
+
+Files: [`early_passes.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/early_passes.csv) / [`.tex`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/early_passes.tex), [`early_passes_runs.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/early_passes_runs.csv).
+<!-- END auto:early-passes -->
+
+Key findings (`early_passes.csv`, `early_passes_runs.csv`; snapshot of the 2026-10-08 refresh):
+- **Ten tasks pass early and fail later: eight CulturalBench-easy countries, INCLUDE Georgian and PAWS-X Japanese.** CulturalBench-easy asks in English about a country and is placed at the tokens of the country's language, so its token axis says little about it.
+- **The early passes are a constant answer.** Over the 149 passing low-token runs, 74 % give one option on at least 80 % of the items (median share 0.78–0.97 per task), and in 97 % that option alone would clear chance: the answer keys of these 17–53-item tasks are unbalanced, and the model's accuracy is the constant answer's to within 0.02 in the median run (0.13 at the 90th percentile).
+- **They fail later because the preferred option moves.** In the failing runs the most picked option sits on a minority gold position (median constant accuracy 0.11–0.32 per CulturalBench-easy task), and the share of items it takes drops to 0.55–0.72.
+- **A longest-option preference explains only PAWS-X Japanese.** There the passing runs pick the longer continuation (the "no" answer) on 89 % of the items and it is gold on 56 %; elsewhere the picks on the longest option (0.06–0.27) sit at or below the gold share on it (0.18–0.35).
+- **Related-language tokens are not needed.** None of the ten languages has a trained relative in the untrained deep scheme-A runs, and those runs, which see no token of the language, pass as often at the same size and checkpoint (0.31–0.88 against 0.30–0.79 for the low-token trained runs); the exception is PAWS-X Japanese (0.12 against 0.64).
+
+Follow-ups:
+- Gate every task against its constant-answer accuracy (the share of its majority gold label) instead of 1/n, which would remove these passes at the source.
+- The same per-option test on every task at 90M, to count the passes the constant answer explains beyond these ten.
+
+
 ### 2. The gate by answer count, and the Signal ranking
 
 *Pool `predictivity`; the Signal of a task is (max − min) / mean of the
@@ -771,6 +810,9 @@ Headline numbers from the `custom_swissai_hf` pool (Signal) and the `custom` abo
 - `pretraining/predictivity/above_random_example.{png,csv}` — the gate on
   one task, an educational reading of the rule (`above_random_example.py
   --task <task>`; its block sits under the setup above).
+- `pretraining/predictivity/early_passes.{csv,tex}`, `early_passes_runs.csv` —
+  the tasks that pass at very few tokens and fail later, tested for a constant
+  answer, the longest option and a related language (`early_passes.py`, section 1b).
 - Scripts: `above_random.py` (gate), `run_apertus.py` (accuracy vs FLOPs,
   Signal), `curves.py`, `panels.py`, `above_random_external.py`,
-  `above_random_example.py`.
+  `above_random_example.py`, `early_passes.py`.

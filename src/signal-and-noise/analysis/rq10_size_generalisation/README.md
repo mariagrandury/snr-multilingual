@@ -459,6 +459,109 @@ Follow-ups:
 
 - **The jackknife band on the fixed set.** The per-task table has no family pairs, so the twin draws no band.
 
+## Other references: the 1B rung at three seeds, and the 3B model at K = 30
+
+The 1.7B reference is one run per design, and the 3B reading above pools six families. Two other references are available on part of the decisions: the 1B rung, the only one above 600M trained at three seeds (deep L1, L2, L30-A, L30-B), whose three finals show how much the reference's own seed moves DA; and the one 3B family at K = 30 (A-L30), read on the decisions that involve it.
+
+<!-- BEGIN auto:reference-choice (reference_choice.py --pool predictivity) -->
+## Other references: the 1B rung at three seeds, and the 3B model at K = 30
+
+**DA-size and DA-goal · pool `predictivity_seeds` read at the grid seed (the replicates enter as references only) · multi-axis and mono-axis pairs · gate `predictivity` at the proxy and at the reference (Wilson rule on the 3B runs) · no filter · ≥ 3 pairs.** The 1B readings take a reference below 1.7B on purpose (rule 9: the only rung above 600M with seed replicates). Within a block a cell counts only where every reading scores it, so the readings differ in the reference alone (`all pairs` reads more pairs per task). Regenerate with `python analysis/rq10_size_generalisation/reference_choice.py --pool predictivity`.
+
+**1B seeds, benchmarks** — DA-size (tasks)
+
+| axes | proxy | 1B seed 28 | 1B seed 1797 | 1B seed 1904 | 1.7B seed 1904 |
+|---|---|---|---|---|---|
+| mono-axis | 90M | 0.53 (123) | 0.57 (123) | 0.57 (123) | 0.57 (123) |
+| mono-axis | 175M | 0.67 (125) | 0.54 (125) | 0.56 (125) | 0.56 (125) |
+| mono-axis | 350M | 0.70 (15) | 0.68 (15) | 0.70 (15) | 0.73 (15) |
+| mono-axis | 600M | 0.59 (132) | 0.52 (132) | 0.54 (132) | 0.50 (132) |
+| multi-axis | 90M | 0.56 (151) | 0.60 (151) | 0.57 (151) | 0.57 (151) |
+| multi-axis | 175M | 0.68 (155) | 0.57 (155) | 0.58 (155) | 0.60 (155) |
+| multi-axis | 350M | 0.59 (158) | 0.60 (158) | 0.59 (158) | 0.58 (158) |
+| multi-axis | 600M | 0.63 (162) | 0.55 (162) | 0.57 (162) | 0.56 (162) |
+
+**1B seeds, bpb** — DA-size (tasks)
+
+| axes | proxy | 1B seed 28 | 1B seed 1797 | 1B seed 1904 | 1.7B seed 1904 |
+|---|---|---|---|---|---|
+| mono-axis | 90M | 0.75 (2) | 0.88 (2) | 0.75 (2) | 0.88 (2) |
+| mono-axis | 175M | 0.75 (2) | 0.88 (2) | 0.75 (2) | 0.88 (2) |
+| mono-axis | 350M | 0.75 (2) | 0.88 (2) | 0.75 (2) | 0.88 (2) |
+| mono-axis | 600M | 0.88 (2) | 1.00 (2) | 0.88 (2) | 1.00 (2) |
+| multi-axis | 90M | 0.87 (3) | 0.93 (3) | 0.80 (3) | 0.87 (3) |
+| multi-axis | 175M | 0.87 (3) | 0.93 (3) | 0.80 (3) | 0.87 (3) |
+| multi-axis | 350M | 0.80 (3) | 0.87 (3) | 0.73 (3) | 0.93 (3) |
+| multi-axis | 600M | 0.93 (3) | 1.00 (3) | 0.87 (3) | 0.93 (3) |
+
+**3B K=30, benchmarks** — DA-size (tasks)
+
+| axes | proxy | 3B, K=30 pairs | 1.7B, K=30 pairs | 3B, all pairs |
+|---|---|---|---|---|
+| mono-axis | 90M | 0.50 (101) | 0.52 (101) | 0.50 (101) |
+| mono-axis | 175M | 0.46 (114) | 0.52 (114) | 0.47 (114) |
+| mono-axis | 350M | 0.48 (129) | 0.51 (129) | 0.49 (129) |
+| mono-axis | 600M | 0.50 (150) | 0.46 (150) | 0.51 (150) |
+| mono-axis | 1B | 0.52 (160) | 0.49 (160) | 0.52 (160) |
+| mono-axis | 1.7B | 0.54 (168) | — | 0.50 (168) |
+| multi-axis | 90M | 0.46 (111) | 0.51 (111) | 0.49 (111) |
+| multi-axis | 175M | 0.46 (128) | 0.52 (128) | 0.48 (128) |
+| multi-axis | 350M | 0.49 (143) | 0.52 (143) | 0.49 (143) |
+| multi-axis | 600M | 0.51 (165) | 0.48 (165) | 0.51 (165) |
+| multi-axis | 1B | 0.52 (179) | 0.52 (179) | 0.53 (179) |
+| multi-axis | 1.7B | 0.54 (189) | — | 0.51 (189) |
+
+**3B K=30, bpb** — DA-size (tasks)
+
+| axes | proxy | 1.7B, K=30 pairs | 3B, all pairs |
+|---|---|---|---|
+| mono-axis | 90M | 0.74 (9) | 0.96 (9) |
+| mono-axis | 175M | 0.78 (9) | 0.96 (9) |
+| mono-axis | 350M | 0.67 (9) | 0.82 (9) |
+| mono-axis | 600M | 0.78 (9) | 0.93 (9) |
+| mono-axis | 1B | 0.70 (9) | 0.91 (9) |
+| mono-axis | 1.7B | — | 0.96 (10) |
+| multi-axis | 90M | 0.84 (12) | 0.94 (12) |
+| multi-axis | 175M | 0.84 (12) | 0.94 (12) |
+| multi-axis | 350M | 0.76 (12) | 0.88 (12) |
+| multi-axis | 600M | 0.86 (12) | 0.91 (12) |
+| multi-axis | 1B | 0.78 (12) | 0.90 (12) |
+| multi-axis | 1.7B | — | 0.95 (12) |
+
+DA-goal (the nine tenths before the final, benchmark accuracy), range over the proxy sizes and checkpoints:
+
+| block | reading | axes | DA-goal |
+|---|---|---|---|
+| 1B seeds | 1B seed 28 | mono-axis | 0.54–0.68 |
+| 1B seeds | 1B seed 28 | multi-axis | 0.46–0.68 |
+| 1B seeds | 1B seed 1797 | mono-axis | 0.48–0.77 |
+| 1B seeds | 1B seed 1797 | multi-axis | 0.52–0.63 |
+| 1B seeds | 1B seed 1904 | mono-axis | 0.50–0.75 |
+| 1B seeds | 1B seed 1904 | multi-axis | 0.52–0.63 |
+| 1B seeds | 1.7B seed 1904 | mono-axis | 0.48–0.75 |
+| 1B seeds | 1.7B seed 1904 | multi-axis | 0.49–0.62 |
+| 3B K=30 | 3B, K=30 pairs | mono-axis | 0.41–0.55 |
+| 3B K=30 | 3B, K=30 pairs | multi-axis | 0.42–0.56 |
+| 3B K=30 | 1.7B, K=30 pairs | mono-axis | 0.40–0.57 |
+| 3B K=30 | 1.7B, K=30 pairs | multi-axis | 0.44–0.57 |
+| 3B K=30 | 3B, all pairs | mono-axis | 0.43–0.54 |
+| 3B K=30 | 3B, all pairs | multi-axis | 0.46–0.54 |
+
+Files: [`reference_choice_da_all_both_axes.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_choice_da_all_both_axes.csv), [`reference_choice_da_size_both_axes.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_choice_da_size_both_axes.csv) / [`.tex`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_choice_da_size_both_axes.tex) (the paper table).
+<!-- END auto:reference-choice -->
+
+Key findings (`reference_choice_da_all_both_axes.csv`; snapshot of the 2026-10-08 refresh):
+- **The 1B reference's own seed moves a proxy's DA-size as much as the move from 1B to 1.7B.** On the four replicated designs (benchmark accuracy, mostly English and Russian tasks), mono-axis DA-size at 175M is 0.67, 0.54 and 0.56 against the three 1B seeds and 0.56 against 1.7B; at 600M 0.59, 0.52 and 0.54 against 0.50. The spread over the reference seeds is up to 0.13 per proxy, against at most 0.04 between the seed-1904 1B and 1.7B readings.
+- **No reference seed lifts benchmark accuracy above 0.70.** Every 1B reading stays at 0.52–0.70 (mono) and 0.55–0.68 (multi) from every proxy, the 350M mono-axis cell resting on 15 tasks.
+- **BPB stays high against every reference seed.** 0.73–1.00 on two to three BPB tasks (English, Russian, the macro), too few to read the spread.
+- **The 3B model at K = 30 decides like the other 3B models: at chance.** On its decisions with the five other 3B families, benchmark DA-size is 0.46–0.54 from every proxy, 1.7B included, against 0.47–0.53 for every 3B pair and 0.46–0.52 for the same pairs read to 1.7B. DA-goal stays at 0.41–0.56.
+- **Its BPB cannot be read yet.** The 3B K = 30 cell has no BPB final; the same pairs read to 1.7B give 0.67–0.86 in BPB, below the 0.82–0.96 of every 3B pair.
+
+Follow-ups:
+- B-L30 at 3B, once evaluated, gives a within-K = 30 decision (scheme A vs B) at 3B, still one pair per task.
+- Replicate seeds of a 1.7B design, which would give the reference-side spread at the reference itself.
+
+
 ## Extensions from other sweeps
 
 None: the 36-model sweep has no rung above its 1B reference, and the public
@@ -476,6 +579,9 @@ ladder's.
   to 3B against 1.7B on the same decisions, the DA and SNR rankings of the
   benchmarks under each, the SNR at both rungs; and the key figure
   (`--paper` redraws it from the CSVs on disk).
+- `reference_choice.py` — two other references: the 1B rung at each of its
+  three seeds, and the 3B K = 30 family on the decisions that involve it
+  (`reference_choice_da_all_both_axes.csv`, `reference_choice_da_size_both_axes.{csv,tex}`).
 - `pretraining/predictivity/above_reference_<ref>[_design<d>].{png,csv}`,
   `..._per_task.csv`, `gate_crossover{,_by_benchmark}.{png,csv}`,
   `gate_crossover_per_task.csv`,

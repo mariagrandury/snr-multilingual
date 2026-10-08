@@ -171,6 +171,11 @@ run $PY analysis/rq01_scaling_predictability/regimes_survivorship.py --pool pred
 run $PY analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_seeds
 # a language's evaluation against the tokens of that language the proxy saw (BPB DA-goal; the gate per benchmark)
 run $PY analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_seeds
+# both read tokens_seen's tables: what leaving out the cells below a benchmark's token threshold does to its
+# aggregate (SE, DA-size), and whether the tasks that pass at very few tokens and fail later are a constant answer,
+# the longest option or a related language (reads the harness samples of the deep scheme-A ladder)
+run $PY analysis/rq00_chance_vs_train_tokens/token_exclusion.py --pool predictivity
+run $PY analysis/rq00_gate_and_curves/early_passes.py --pool predictivity
 
 pass "rq02 — decision accuracy"
 lane da gate
@@ -389,6 +394,8 @@ run $PY analysis/rq10_size_generalisation/gate_crossover.py --pool predictivity
 # decisions (jackknife bands), the DA and SNR rankings of benchmarks under each, the SNR at both
 # rungs; then the rq10 paper figure, which reads gate_crossover_by_benchmark.csv (so after it)
 run $PY analysis/rq10_size_generalisation/reference_consistency.py --pool predictivity
+# two other references: the 1B rung at each of its three seeds, and the one 3B family at K = 30
+run $PY analysis/rq10_size_generalisation/reference_choice.py --pool predictivity
 
 pass "rq11 — the evaluation recipe"
 # which benchmark, posed how (original, rf, rfgm) and scored how (accuracy, bBPB), reads the reference

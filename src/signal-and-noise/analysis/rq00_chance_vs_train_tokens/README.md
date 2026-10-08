@@ -7,7 +7,7 @@ of the task's language, and is that exposure or model size?
 
 Population: the seed-1904 runs of pool `predictivity_seeds` (the runs of the headline `predictivity` pool: every data build and ladder), sizes 90M–1.7B, L ∈ {1, 2, 8, 15, 30, 50}, 1–7 runs per cell (median 4). That is 841 tasks of 40 benchmarks in 50 languages, 16,602 cells at the final and 166,020 over the tenths; BPB and the benchmark-BPB twins have no chance level and are not in it.
 
-Numbers below are from the ladder-report snapshot of 2026-10-08 12:06 (regenerated locally: acc_norm on the cloze-format originals) and the outputs of the 2026-10-08 refresh (detrended checkpoint noise). The tables are written by [`../rq01_scaling_predictability/tokens_seen.py`](../rq01_scaling_predictability/tokens_seen.py); the decision-accuracy counterpart is [`../rq02_da_vs_train_tokens/`](../rq02_da_vs_train_tokens/README.md).
+Numbers below are from the ladder-report snapshot of 2026-10-08 12:06 (regenerated locally: acc_norm on the cloze-format originals) and the outputs of the 2026-10-08 refresh (detrended checkpoint noise). The tables are written by [`../rq01_scaling_predictability/tokens_seen.py`](../rq01_scaling_predictability/tokens_seen.py), the exclusion section by [`token_exclusion.py`](token_exclusion.py); the decision-accuracy counterpart is [`../rq02_da_vs_train_tokens/`](../rq02_da_vs_train_tokens/README.md).
 
 **Key finding.** **Outside English, the share of cells above chance rises with every decade of the language's tokens from 10^7 on, but at matched tokens the larger model still clears chance more often.** The share goes from 40 % at 10^7–10^8 tokens to 62 % at 10^10–10^11, and at 10^8–10^9 tokens it is 40 % at 90M against 60 % at 1.7B: exposure is necessary, not sufficient.
 
@@ -107,8 +107,64 @@ Key findings (numbers from `pass_threshold_tokens_by_benchmark_1904_ckpts.csv`; 
 Follow-ups:
 - The table without English, since from 10^10 tokens on most cells are English and the high thresholds (ARC, XNLI, PAWS-X, Global PIQA at 2.2×10^10 and above) may be English thresholds.
 - Per-size thresholds on the fixed set of languages each size covers at a token bin (`utils.fixed_population`), so a threshold shift between sizes is not a shift in which languages fill the bin.
-- CulturalBench-easy, where at 2.2×10^8–4.6×10^9 tokens 90M clears chance in 72–95 % of its cells against 11–29 % at 1.7B: check the 25-item tasks for a constant-answer artefact (rule 1 does not test a constant answer).
+- CulturalBench-easy, where at 2.2×10^8–4.6×10^9 tokens 90M clears chance in 72–95 % of its cells against 11–29 % at 1.7B: check the 25-item tasks for a constant-answer artefact (rule 1 does not test a constant answer). Done: the early passes are a constant answer on an unbalanced key ([the gate README, section 1b](../rq00_gate_and_curves/README.md#1b-the-early-passes-a-constant-answer-the-longest-option-or-a-related-language)).
 - A cluster bootstrap over (task, size, L) runs for the threshold bin, since a run's ten tenths are not independent cells.
+
+## What the exclusion does to an aggregate score
+
+The thresholds above say from which token count a benchmark is measurable. The paper leaves out every (task, language) cell below its family's threshold, from the decisions and from the aggregate scores; this asks whether the aggregate gains from it, in its standard error and in the decisions it ranks.
+
+<!-- BEGIN auto:token-exclusion (token_exclusion.py --pool predictivity) -->
+## Aggregate scores with and without the cells below the token threshold
+
+**DA-size of an aggregate ranking · pool `predictivity` (seed 1904), finals 90M–1.7B · multi-axis and mono-axis pairs · the 18 benchmark families every policy scores · no filter.** Per run and family, the aggregate is the mean of the family's per-language tasks over the languages the run trains: every cell (`all`), the cells at or above the family's pooled 50% token threshold (`tokens`), or the cells above chance at the size and at 1.7B (`gate`). A family that never reaches the threshold has no `tokens` aggregate and is left out of every pooled row (rule 13). `reference` says whether the 1.7B aggregate takes the same policy or every cell. The `all` policy keeps at-chance cells on purpose (rule 1): it is the counterfactual. Regenerate with `python analysis/rq00_chance_vs_train_tokens/token_exclusion.py --pool predictivity`.
+
+| reference | axes | proxy | DA all | DA tokens | DA gate | pairs (min) |
+|---|---|---|---|---|---|---|
+| all cells | mono-axis | 90M | 0.770 | 0.701 | 0.714 | 891 |
+| all cells | mono-axis | 175M | 0.750 | 0.720 | 0.724 | 910 |
+| all cells | mono-axis | 350M | 0.772 | 0.737 | 0.736 | 930 |
+| all cells | mono-axis | 600M | 0.796 | 0.745 | 0.753 | 1091 |
+| all cells | mono-axis | 1B | 0.830 | 0.767 | 0.789 | 1103 |
+| all cells | multi-axis | 90M | 0.819 | 0.743 | 0.771 | 4878 |
+| all cells | multi-axis | 175M | 0.838 | 0.800 | 0.779 | 5023 |
+| all cells | multi-axis | 350M | 0.852 | 0.812 | 0.804 | 5184 |
+| all cells | multi-axis | 600M | 0.877 | 0.810 | 0.827 | 6056 |
+| all cells | multi-axis | 1B | 0.886 | 0.820 | 0.849 | 6134 |
+| same policy | mono-axis | 90M | 0.770 | 0.703 | 0.720 | 891 |
+| same policy | mono-axis | 175M | 0.750 | 0.712 | 0.718 | 910 |
+| same policy | mono-axis | 350M | 0.772 | 0.747 | 0.745 | 930 |
+| same policy | mono-axis | 600M | 0.796 | 0.757 | 0.758 | 1091 |
+| same policy | mono-axis | 1B | 0.830 | 0.770 | 0.788 | 1103 |
+| same policy | multi-axis | 90M | 0.819 | 0.743 | 0.767 | 4878 |
+| same policy | multi-axis | 175M | 0.838 | 0.793 | 0.786 | 5023 |
+| same policy | multi-axis | 350M | 0.852 | 0.821 | 0.816 | 5184 |
+| same policy | multi-axis | 600M | 0.877 | 0.820 | 0.827 | 6056 |
+| same policy | multi-axis | 1B | 0.886 | 0.827 | 0.854 | 6134 |
+
+| size | median SE all | median SE tokens | median SE gate | cells kept by tokens |
+|---|---|---|---|---|
+| 90M | 0.0086 | 0.0110 | 0.0083 | 0.56 |
+| 175M | 0.0099 | 0.0123 | 0.0095 | 0.66 |
+| 350M | 0.0100 | 0.0121 | 0.0100 | 0.71 |
+| 600M | 0.0120 | 0.0131 | 0.0112 | 0.78 |
+| 1B | 0.0138 | 0.0146 | 0.0135 | 0.83 |
+| 1.7B | 0.0159 | 0.0162 | 0.0147 | 0.85 |
+
+Files: [`token_exclusion_da_size_both_axes.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity/token_exclusion_da_size_both_axes.csv), [`token_exclusion_da_size_mono_axis.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity/token_exclusion_da_size_mono_axis.csv) / [`.tex`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity/token_exclusion_da_size_mono_axis.tex) (the paper table), [`token_exclusion_da_size_per_family_both_axes.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity/token_exclusion_da_size_per_family_both_axes.csv).
+<!-- END auto:token-exclusion -->
+
+Key findings (`token_exclusion_da_size_both_axes.csv`, `token_exclusion_da_size_per_family_both_axes.csv`; snapshot of the 2026-10-08 refresh):
+- **On the families that keep an aggregate, leaving out the cells below the threshold lowers the decision accuracy of the aggregate.** Over the 18 families every policy scores, mono-axis DA-size is 0.75–0.83 with every cell and 0.70–0.77 without the excluded ones (−0.02 to −0.07 per proxy size), multi-axis 0.82–0.89 against 0.74–0.83. Holding the 1.7B aggregate at every cell gives the same picture (0.70–0.77), so the drop is on the proxy side.
+- **The drop sits in the families the exclusion cuts deepest.** Mono-axis, pooled over the proxies: Global PIQA (parallel) 0.74 → 0.47, ARC 0.86 → 0.68, PAWS-X 0.66 → 0.49, INCLUDE v2 (original) 0.79 → 0.63; the families with no excluded cell (HellaSwag, MultiBLiMP, Belebele RF and LLM-RF, XCOPA, INCLUDE v2 EN) do not move.
+- **The standard error of the aggregate rises.** The median SE goes from 0.0086 to 0.0110 at 90M and from 0.0159 to 0.0162 at 1.7B, since the exclusion keeps 56 % of the cells at 90M and 85 % at 1.7B: fewer languages outweigh the smaller spread.
+- **What the exclusion does remove is the families at chance.** The nine families that never reach the threshold lose their aggregate; with every cell it ranks the designs at 0.44–0.65 (mono-axis), so the exclusion keeps those near-coin-flip aggregates out of a decision, while within a kept family the at-chance languages still help the ranking.
+- **The gate behaves like the token threshold.** Keeping only the cells above chance gives 0.72–0.79 mono-axis and a median SE at or below the all-cells one.
+
+Follow-ups:
+- Per-size thresholds (the 90M and 1.7B columns of the threshold table) instead of the pooled one, since one threshold per family does not hold across sizes.
+- A pair-wise aggregate over the languages both runs train, so an L-moving pair compares the same language set.
+
 
 ## Every population and view
 
