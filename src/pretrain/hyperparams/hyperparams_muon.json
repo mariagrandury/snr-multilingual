@@ -8,7 +8,7 @@
     "predictivity_schedule": "D = 100 x n_non_emb_params tokens (5x Chinchilla) at global_batch_size x seq_len tokens/iter; train_iters rounded to the checkpoint grid (20 evenly spaced checkpoints per run, 40 once train_iters >= 30000 (the 1B rung) and 60 once train_iters >= 60000 (1.7B and 3B) \u2014 save_interval = train_iters/n divides exactly, 1xC = train_iters/5 on-grid; the EVALUATED set is 12 at every size, see launch_trainings.due_iters); lr_warmup_iters ~4% and lr_wsd_decay_iters ~20% of train_iters, rounded to 100; lr from the 6ND law at the run's own budget (C = 6 x N x 100N = 600 N^2)",
     "optimizer": "muon",
     "muon_extra_scale_factor": 0.2,
-    "muon_settings": "deep's configs (shape, LR, schedule, nodes, MBS) unchanged, 90M-1.7B, trained with the Moonlight recipe (Liu et al. 2025, arXiv 2502.16982) on the upstream Megatron-LM core_v0.16.0 Muon port (patches/optimizer_muon.py): Muon on the 2D hidden weights, the orthogonalized update rescaled by 0.2 x sqrt(max(fan_out, fan_in)) (--muon-scale-mode spectral --muon-extra-scale-factor 0.2), which matches AdamW's update RMS so the AdamW peak LR and decoupled weight decay 0.1 carry over unchanged; momentum 0.95 with Nesterov (--muon-momentum 0.95 --muon-nesterov), 5 Newton-Schulz steps (--muon-num-ns-steps 5, quintic coefficients, bf16 'medium' NS matmuls), Q, K and V orthogonalized separately per query group; AdamW (betas 0.9/0.999) on embeddings, output layer and norms. No distributed optimizer. Only muon_extra_scale_factor is read from this file (launch_trainings.cell_env -> MUON_EXTRA_SCALE_FACTOR); the other flags are constants in megatron_args.sh"
+    "muon_settings": "deep's configs (shape, LR, schedule, nodes, MBS) unchanged, 90M-1.7B, except the 1B MBS 6 -> 3 (2026-10-08: the replicated Muon state OOMs at MBS 6 on iteration 2, max allocated 82.0 GB after iteration 1; same global batch, 2 micro-batches per DP rank instead of 1, so the update is unchanged up to fp summation order), trained with the Moonlight recipe (Liu et al. 2025, arXiv 2502.16982) on the upstream Megatron-LM core_v0.16.0 Muon port (patches/optimizer_muon.py): Muon on the 2D hidden weights, the orthogonalized update rescaled by 0.2 x sqrt(max(fan_out, fan_in)) (--muon-scale-mode spectral --muon-extra-scale-factor 0.2), which matches AdamW's update RMS so the AdamW peak LR and decoupled weight decay 0.1 carry over unchanged; momentum 0.95 with Nesterov (--muon-momentum 0.95 --muon-nesterov), 5 Newton-Schulz steps (--muon-num-ns-steps 5, quintic coefficients, bf16 'medium' NS matmuls), Q, K and V orthogonalized separately per query group; AdamW (betas 0.9/0.999) on embeddings, output layer and norms. No distributed optimizer. Only muon_extra_scale_factor is read from this file (launch_trainings.cell_env -> MUON_EXTRA_SCALE_FACTOR); the other flags are constants in megatron_args.sh"
   },
   "configs": {
     "90M": {
@@ -99,7 +99,7 @@
       "num_query_groups": 7,
       "n_non_emb_params": 944111616.0,
       "nodes": 21,
-      "micro_batch_size": 6,
+      "micro_batch_size": 3,
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 50000,

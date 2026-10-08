@@ -93,7 +93,12 @@ are constants of `megatron_args.sh`'s muon branch.
 `--use-distributed-optimizer` for muon, so `megatron_args.sh` drops it and
 `--overlap-param-gather` for muon and every DP rank holds the full optimizer
 state and runs every Newton–Schulz — more memory per GPU than the deep cell
-it mirrors, at the same MBS. Scheme A at L ∈ {8, 15, 30}, seed 1904, like
+it mirrors, at the same MBS. That OOMs at 1B: MBS 6 crashed every link on
+iteration 2 (CUDA OOM allocating the 12 GiB fp32 logits, (4096, 6, 131072),
+in the fused cross-entropy; 82.0 GB max allocated after iteration 1 against
+77.5 GB for deep 1B), so muon 1B runs MBS 3 — same GBS 504, two micro-batches
+per DP rank, the same samples per step and the same token-mean loss (no EOD
+masking, dropout 0), so the update differs only in fp summation order. Scheme A at L ∈ {8, 15, 30}, seed 1904, like
 swiglu. Converting a muon checkpoint to HF has not been tested.
 
 Cell name everywhere (checkpoint dir, W&B run id/name, models.json key,
