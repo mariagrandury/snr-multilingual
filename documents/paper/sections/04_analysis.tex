@@ -18,7 +18,7 @@ Using these views, we ask which multilingual measurements track learning, when t
 
 
 We first ask whether each benchmark provides measurable signal at the model scales considered.
-For each benchmark--language task $b_\ell$ and model size $N$, we compare performance against the corresponding chance level, calculated as explained in §\ref{subsec:evaluation}.
+For each benchmark-language task $b_\ell$ and model size $N$, we compare performance against the corresponding chance level, calculated as explained in §\ref{subsec:evaluation}.
 
 \begin{figure}
     \centering
@@ -35,7 +35,7 @@ To isolate this effect, we reformulate the three benchmarks of Belebele, Global-
 We apply two reformulations. The first is programmatic: we remove the answer labels and score the four options directly, leaving the text of every item unchanged. 
 The second is model-based: we prompt \texttt{gemini-3.8-flash} \citep{gemini_team_gemini_2024} to restate each question as a declarative stem and each option as a statement completing it, without revealing which option is correct. 
 %\AR{Do we have detailed results somewhere? A figure or a table?}
-Both reformulations substantially increase the number of benchmark--language subsets that pass the above-chance filter at 1.7B, from 5 to 86 of 105 for Belebele, from 1 to 35 of 37 total language subsets for Global-MMLU, and from 3 to 31 of 43 for INCLUDE. Accuracy on the trained-language subsets rises by 0.098, 0.058, and 0.047, respectively, measured on the same models and checkpoints as the original items. The model-based reformulation, \checknum{which we have so far completed for INCLUDE}, is stronger still: 32 of 43 subsets pass the filter and accuracy rises by 0.075. Gains widen with model size, from 0.015 at 175M to 0.075 at 1.7B, and the rewrite introduces no length cue, as the correct option is the single longest in 22.2\% of original items and 21.9\% of rewritten ones against 25\% by chance. Detailed results by benchmark are in Appendix~\ref{app:chance-threshold}.
+Both reformulations substantially increase the number of benchmark-language subsets that pass the above-chance filter at 1.7B, from 5 to 86 of 105 for Belebele, from 1 to 35 of 37 total language subsets for Global-MMLU, and from 3 to 31 of 43 for INCLUDE. Accuracy on the trained-language subsets rises by 0.098, 0.058, and 0.047, respectively, measured on the same models and checkpoints as the original items. The model-based reformulation, \checknum{which we have so far completed for INCLUDE}, is stronger still: 32 of 43 subsets pass the filter and accuracy rises by 0.075. Gains widen with model size, from 0.015 at 175M to 0.075 at 1.7B, and the rewrite introduces no length cue, as the correct option is the single longest in 22.2\% of original items and 21.9\% of rewritten ones against 25\% by chance. Detailed results by benchmark are in Appendix~\ref{app:chance-threshold}.
 
 \begin{figure*}[t]
 \centering
@@ -121,7 +121,7 @@ Early checkpoints recover only around 61--68\% of the final decisions, while agr
 % src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_66_either_transformation_one_axis.png
 \includegraphics[width=\textwidth]{figures/rq2.png}
 \caption{\textbf{Decision reliability across scale and training.}
-Decision accuracy of a proxy against the 1.7B reference on single-axis decisions, over the benchmark--language tasks whose median DA under each panel's own definition is at least 0.66.
+Decision accuracy of a proxy against the 1.7B reference on single-axis decisions, over the benchmark-language tasks whose median DA under each panel's own definition is at least 0.66.
 \textbf{(a)} Scale convergence: DA of the final checkpoint of each model size against the final 1.7B ranking, pooled over decisions, one line per design axis and a black line over all pairs. 
 \textbf{(b)} Within-model training convergence: DA of each intermediate checkpoint relative to the final checkpoint of the same model size, averaged over tasks. 
 \textbf{(c)} Full-scale decision prediction: DA of each intermediate checkpoint relative to the final 1.7B reference model, measuring how early partially trained and smaller models recover the full-scale decision.}
@@ -154,11 +154,11 @@ These methods have primarily been studied in English settings and at scales wher
 In this experiment, we investigate first whether existing surrogate metrics remain predictive of DA in the multilingual setting and second, which surrogate provides a reliable signal at the smallest model scale.
 
 We first test whether statistics proposed to characterize evaluation reliability can serve as surrogates for DA without requiring the reference model. 
-\textcolor{blue}{For each benchmark–language task and proxy size, we compute each surrogate using only information available at the proxy scale and measure its Spearman ($\rho$) association with DA}, i.e., agreement between the proxy-size ranking and the ranking at the 1.7B reference model.
+\textcolor{blue}{For each benchmark-language task and proxy size, we compute each surrogate using only information available at the proxy scale and measure its Spearman ($\rho$) association with DA}, i.e., agreement between the proxy-size ranking and the ranking at the 1.7B reference model.
 Figure~\ref{fig:rq3} shows the Spearman ($\rho$) association with DA of different surrogate implementations across model sizes over all benchmarks that have passed the above-chance threshold, depicting how their predictive strength changes as the proxy scale increases and whether any surrogate remains consistently informative across scales. 
 We compare several families of surrogate statistics that can be computed without the reference model, including scaling-fit \(R^2\), SNR-based measures \citep{heineman_signal_2025} and their signal/noise components, margin above chance, and early-checkpoint ranking agreement. 
-Scaling-fit \(R^2\) measures how well benchmark performance follows a log-linear trend across the model sizes available up to the proxy point; margin above chance measures how far the benchmark score is above random-guessing performance; and early-checkpoint ranking agreement measures how well the ranking of model variants at an early training checkpoint matches their ranking at the final checkpoint of the same model size.
-For each benchmark--language task and proxy size, we compute the surrogate using only information available up to that proxy point and measure its Spearman association with DA.
+Scaling-fit \(R^2\) measures how well benchmark performance follows a log-linear trend across the model sizes available up to the proxy point. Margin above chance measures how far the benchmark score is above random-guessing performance. Early-checkpoint ranking agreement measures how well the ranking of model variants at an early training checkpoint matches their ranking at the final checkpoint of the same model size.
+For each benchmark-language task and proxy size, we compute the surrogate using only information available up to that proxy point and measure its Spearman association with DA.
 For detailed implementation for the SNR variants, please refer to the Appendix~\ref{app:surrogates}.
 
 
@@ -167,7 +167,7 @@ For detailed implementation for the SNR variants, please refer to the Appendix~\
     \centering
     \includegraphics[width=\columnwidth]{figures/rq3.png}
 \caption{\textbf{Surrogate predictivity across proxy model sizes.} 
-Spearman rank correlation (\(\rho\)) between each surrogate statistic and DA-size for benchmark--language tasks at different proxy sizes. 
+Spearman rank correlation (\(\rho\)) between each surrogate statistic and DA-size for benchmark-language tasks at different proxy sizes. 
 Higher values indicate that the surrogate is more strongly associated with preserving model-variant rankings at the reference scale.
 Scaling-fit \(R^2\) is reported only from 350M onward, as at least three model-size points are required for a meaningful fit.}
     \label{fig:rq3}
@@ -179,15 +179,15 @@ Scaling-fit \(R^2\) is reported only from 350M onward, as at least three model-s
 We find that \textcolor{blue}{no single surrogate consistently predicts decision accuracy} across the multilingual settings of our model ladder.
 Figure~\ref{fig:rq3} shows that \checknum{among the simple candidates, early-checkpoint ranking agreement and the relative-standard-deviation SNR provide the strongest overall association with DA}, \textcolor{blue}{suggesting that benchmarks whose ranking settles early in training and whose scores vary little across checkpoints are also more likely to preserve the ranking of model variants across scales.}
 For SNR-based surrogates, however, performance depends strongly on how noise is defined, with some noise estimates yielding substantially stronger associations than others. For example, replacing checkpoint-based noise with k-fold benchmark noise lowers the association with DA from \(\rho=0.68\) to \(\rho=0.51\).
-The aggregate results in Figure~\ref{fig:rq3} pool all benchmark--language tasks that pass the chance threshold. When we stratify the analysis by benchmark or multilingual training regime, however, the relationships differ by stratum. 
+The aggregate results in Figure~\ref{fig:rq3} pool all benchmark-language tasks that pass the chance threshold. When we stratify the analysis by benchmark or multilingual training regime, however, the relationships differ by stratum. 
 While the strongest association in the pooled benchmark analysis is \(\rho=0.79\), surrogate predictivity rises to \(\rho=0.93\) for HellaSwag but reaches only \(\rho=0.62\) for per-language BPB and \(\rho=0.70\) for models trained on \(8\) languages. 
 These values are \(0.14\) higher, \(0.17\) lower, and \(0.09\) lower than the pooled association, respectively.
-Detailed stratification of surrogate--DA Spearman correlations across benchmarks, numbers of training languages, and model sizes can be found in Appendix~\ref{app:rq04_surrogates}.
+Detailed stratification of surrogate-DA Spearman correlations across benchmarks, numbers of training languages, and model sizes can be found in Appendix~\ref{app:rq04_surrogates}.
 
 
 \textbf{At what model scale does surrogate signal emerge?}
 \textcolor{blue}{We next ask how early in model development a surrogate becomes informative about DA.}
-Using the same analysis in Figure~\ref{fig:rq3}, we compare surrogate--DA associations across increasing proxy model sizes, from 90M to 1B.
+Using the same analysis in Figure~\ref{fig:rq3}, we compare surrogate-DA associations across increasing proxy model sizes, from 90M to 1B.
 This allows us to test whether useful surrogate signal is already present at the smallest scale and whether it strengthens or remains stable as model scale increases.
 \textcolor{blue}{At the smallest proxy scale, no surrogate provides a strong and stable signal of DA.}
 Early-checkpoint ranking agreement is strongest at 175M ($\rho=0.62$), and its association drops only to $\rho=0.58$ at 350M, indicating that this early signal is fairly consistent across scales.

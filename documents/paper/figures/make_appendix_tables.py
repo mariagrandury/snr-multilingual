@@ -198,7 +198,9 @@ def grid_table(runs: list[dict], done: int, missing: list[str]) -> str:
     status = ("" if done < 0 else
               f" All {total} runs had finished at the ladder-report snapshot." if not missing else
               f" At the ladder-report snapshot, {done} of the {total} runs had finished. "
-              f"The unfinished {'run is' if len(missing) == 1 else 'runs are'} {esc(and_list(missing))}.")
+              f"The unfinished {'run is' if len(missing) == 1 else 'runs are'} "
+              # the run names say L<k> for the language setting; the paper calls it K
+              f"{esc(and_list([re.sub(r'(?<=-)L(?=[0-9])', 'K', m) for m in missing]))}.")
     return "\n".join([
         r"\begin{table*}[t]", r"\centering", r"\small", r"\setlength{\tabcolsep}{3.5pt}",
         r"\resizebox{\linewidth}{!}{",
