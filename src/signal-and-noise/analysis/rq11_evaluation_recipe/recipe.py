@@ -517,14 +517,16 @@ def variants_paper(ov: pd.DataFrame, path: Path) -> None:
 
 PAPER_AXES = "multi-axis"   # rq11's headline pair set, the one its paper figures read
 TOP = 8                 # the benchmarks the per-benchmark paper figure draws
-# line -> (legend label, style): one colour per kind of line in every row of the figure
-LINES = {"bpb": ("BPB", dict(color=S.ALERT, ls="-")),
-         "acc": ("Accuracy, every format", dict(color=S.INK, ls="-")),
-         "original": ("Original accuracy", dict(color=S.MUTED, ls="-")),
-         "rf": ("RF accuracy", dict(color=S.SERIES[0], ls="-")),
-         "rfgm": ("LLM-RF accuracy", dict(color=S.SERIES[2], ls="-")),
-         "bbpb_acc": (f"bBPB {against('bbpb_acc')}", dict(color=S.SERIES[1], ls=":")),
-         "bbpb_bbpb": (f"bBPB {against('bbpb_bbpb')}", dict(color=S.SERIES[1], ls="--"))}
+# line -> (legend label, style): one Okabe-Ito colour per kind of line in every row of the
+# figure, solid for accuracy and dashed for BPB and bBPB
+_C = S.OKABE_ITO
+LINES = {"bpb": ("BPB", dict(color=_C["sky"], ls="--")),
+         "acc": ("Accuracy, every format", dict(color=_C["black"], ls="-")),
+         "original": ("Original accuracy", dict(color=_C["blue"], ls="-")),
+         "rf": ("RF accuracy", dict(color=_C["orange"], ls="-")),
+         "rfgm": ("LLM-RF accuracy", dict(color=_C["green"], ls="-")),
+         "bbpb_acc": (f"bBPB {against('bbpb_acc')}", dict(color=_C["vermillion"], ls="--")),
+         "bbpb_bbpb": (f"bBPB {against('bbpb_bbpb')}", dict(color=_C["purple"], ls="--"))}
 OVERALL_ROW = "Overall"
 BENCHMARKS_PAPER = "recipe_da_all_by_benchmark_multi_axes_paper.png"
 
