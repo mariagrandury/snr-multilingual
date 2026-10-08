@@ -20,7 +20,7 @@ For each we give the formula as implemented, the paper it comes from, and, where
 \label{app:sur-notation}
 
 A task is scored on the $V$ design variants of one proxy size.
-Variant $a$ has a training curve $x_a(t)$ at the ten evaluated tenths $t \in \{0.1,\dots,1\}$ of its run, a final score $x_a = x_a(1)$, and a \emph{noise window} $W_a = \{x_a(t) : t \in \{0.80, 0.85, 0.90, 0.95, 1\}\}$ with mean $\bar{w}_a$ and standard deviation $s_a$.
+Variant $a$ has a training curve $x_a(t)$ at the ten evaluated tenths $t \in \{0.1,\dots,1\}$ of its run, a final score $x_a = x_a(1)$, and a \emph{noise window} $W_a = \{x_a(t) : t \in \{0.80, 0.85, 0.90, 0.95, 1\}\}$ with mean $\bar{w}_a$ and checkpoint noise $s_a$, the residual standard deviation of $W_a$ around a least-squares line through its five points (three degrees of freedom). Scores still rise over the learning-rate decay, and the raw standard deviation of $W_a$ would count that rise as noise. We keep the raw standard deviation $s^{0}_a$ (divide by $n_c$) as a variant.
 $\mathcal{P}$ is the set of variant pairs (every pair, or the pairs that differ in one design axis), $n$ the number of test items, $c$ the chance level, $\bar{x}$ the mean final score over variants, and $\Phi$ the standard normal distribution function.
 Scores are oriented so that higher is better (bits per byte enter with a flipped sign).
 
@@ -52,7 +52,7 @@ with the noise averaged over the small models and $n_c = 5$.
 They report $R = 0.791$ ($R^2 = 0.626$) between this SNR and decision accuracy over their benchmarks.
 
 We compute the SNR with the code released with that paper, which differs from Eq.~\ref{eq:sur-snr-paper} in three ways.
-With $s^{0}_a$ the population (divide by $n_c$) standard deviation of $W_a$:
+With the raw standard deviation $s^{0}_a$ of $W_a$, which the released code uses:
 \begin{equation}
 \text{Signal}_{\text{code}} = \frac{\max_{a,b} |x_a - x_b|}{\frac{1}{V}\sum_a \bar{w}_a}, \qquad
 \text{Noise}_{\text{code}} = \frac{\frac{1}{V}\sum_a s^{0}_a}{\frac{1}{V}\sum_a \bar{w}_a}.
@@ -61,7 +61,7 @@ With $s^{0}_a$ the population (divide by $n_c$) standard deviation of $W_a$:
 (i) The signal is divided by the mean of the window means, not by the mean of the final scores.
 (ii) The noise is a ratio of means over models, not a mean of per-model ratios.
 (iii) The standard deviation divides by $n_c$, not $n_c - 1$, which makes the noise smaller by $\sqrt{4/5}$ at $n_c = 5$ and the SNR larger by 1.118.
-Our window is five checkpoints spread over the last 20\,\% of the run, where the original uses the last five saved checkpoints.
+Our window is five checkpoints spread over the last 20\,\% of the run, where the original uses the last five saved checkpoints. Our noise replaces $s^{0}_a$ in Eq.~\ref{eq:sur-snr-code} by the detrended $s_a$, and the raw $s^{0}_a$ remains as a variant.
 
 \subsection{Signal variants}
 \label{app:sur-signals}
@@ -172,7 +172,7 @@ Tables~\ref{tab:sur-separation}--\ref{tab:sur-agreement} define the catalogue (\
 Most of these statistics were proposed for a different unit of replication, such as test items, topics, seeds or public models.
 We port each one to what one proxy size offers, that is, the checkpoints of its noise window and the rungs below it. The last column states what we changed.
 ``Own'' marks a statistic that the cited paper motivates but does not define.
-Throughout, $s_a$ is the sample standard deviation of $W_a$, $s = \sqrt{\frac{1}{V}\sum_a s_a^2}$ the pooled one, $d_{ab} = |x_a - x_b|$, $z_{ab} = d_{ab}/\sqrt{s_a^2 + s_b^2}$ (capped at 50), and $\mathrm{se}_p = \sqrt{p(1-p)/n}$ the binomial standard error \citep{miller_adding_2024}.
+Throughout, $s_a$ is the checkpoint noise of $W_a$ (\S\ref{app:sur-notation}), $s = \sqrt{\frac{1}{V}\sum_a s_a^2}$ the pooled one, $d_{ab} = |x_a - x_b|$, $z_{ab} = d_{ab}/\sqrt{s_a^2 + s_b^2}$ (capped at 50), and $\mathrm{se}_p = \sqrt{p(1-p)/n}$ the binomial standard error \citep{miller_adding_2024}.
 $\mathrm{MS_B}$ and $\mathrm{MS_W}$ are the between-variant and within-variant mean squares of the $V \times 5$ matrix of window scores.
 
 \begin{table}[h]
