@@ -31,6 +31,10 @@ the first finding for the main figure, a fixed sentence for the extras.
                  one, each (paper figure stem, caption in LaTeX starting with
                  its bold takeaway, label), on a full-width float page of their own
 
+A FIGURE_PAGES entry writes sections/<stem>.tex, one more figure on a float page
+of its own, with a caption built from the figure's CSV on every run:
+app_rq02_bbpb, the main-text rq2 figure split into an accuracy and a bBPB row.
+
 The text is double-blind: links, file names and rule numbers are dropped.
 plain() gives every written sentence the appendix punctuation: no dash and no
 ";" outside math and code. A numeric range keeps its en dash (90M--1.7B).
@@ -43,6 +47,8 @@ import re
 import struct
 import sys
 from pathlib import Path
+
+import pandas as pd
 
 from make_rq_figures import ANALYSIS, FIGURES, HERE
 
@@ -462,6 +468,32 @@ def bold_lead(tex):
     return lead, f"\\textbf{{{lead}}} {rest}".strip()
 
 
+def rq02_bbpb_caption(d):
+    """The caption of app_rq02_bbpb, its numbers read from the figure's CSV `d`."""
+    size = d[(d["panel"] == "DA-size") & (d["group"] == "all pairs") & (d["size"] != "1.7B")]
+    acc, bb = (size[size["row"] == r].set_index("size") for r in ("Accuracy", "bBPB"))
+    n_acc, n_bb = acc["n_tasks"].astype(int), bb["n_tasks"].astype(int)
+    lo, hi = bb["reliability_macro"].min(), bb["reliability_macro"].max()
+    tasks_bb = f"the same {n_bb.iloc[0]} tasks" if n_bb.nunique() == 1 else f"{n_bb.min()}--{n_bb.max()} tasks"
+    return (
+        "\\textbf{On accuracy alone a larger proxy decides more like the 1.7B reference, while on the bBPB twins it "
+        "does not.} This figure splits the panels of Figure~\\ref{fig:rq2} by how a task is scored. Top row: accuracy (the original "
+        "items and their RF and LLM-RF versions). Bottom row: the bBPB twins, the bits per byte of the gold answer. A "
+        "twin is ranked against its own bBPB (bBPB $\\rightarrow$ 1.7B bBPB): at the 1.7B final checkpoint for DA-size "
+        "and DA-goal, and at the proxy's own final checkpoint for DA-ckpt. It has no chance level, so the above-chance "
+        "gate keeps it at every size. Both rows use the mono-axis design pairs of the seed-1904 runs and the task filter "
+        "of Figure~\\ref{fig:rq2} (median DA-size or median DA-ckpt at least 0.66), and together they hold exactly its "
+        f"tasks. On accuracy, DA-size over all pairs goes from {acc.at['90M', 'reliability_macro']:.2f} at 90M to "
+        f"{acc.at['1B', 'reliability_macro']:.2f} at 1B over {n_acc.min()}--{n_acc.max()} tasks (the gate keeps more "
+        f"tasks at larger sizes). On bBPB it stays at {lo:.2f}--{hi:.2f} over {tasks_bb}. Left: DA-size, one black "
+        "line over all pairs and one green line per design axis. Middle: DA-ckpt. Right: DA-goal, one line per proxy "
+        "size. A hollow point is 1.0 by comparing a ranking with itself.")
+
+
+# paper figure stem -> (its caption from its CSV, label): one float page each, sections/<stem>.tex
+FIGURE_PAGES = {"app_rq02_bbpb": (rq02_bbpb_caption, "fig:app_rq02_bbpb")}
+
+
 def float_page(stem, caption, label):
     """A full-width figure on a float page of its own."""
     return "\n".join([
@@ -546,6 +578,12 @@ def main():
         if not out.is_file() or out.read_text() != tex:
             out.write_text(tex)
         print(f"\\input{{sections/app_{folder}}}")
+    for stem, (caption, label) in FIGURE_PAGES.items():
+        tex = float_page(stem, plain(caption(pd.read_csv(FIGURES[stem][0].with_suffix(".csv")))), label)
+        out = SECTIONS / f"{stem}.tex"
+        if not out.is_file() or out.read_text() != tex:
+            out.write_text(tex)
+        print(f"\\input{{sections/{stem}}}")
     for f in missing:
         print(f"  NO PAGE for {f}: add it to PAGES")
     return 1 if missing else 0

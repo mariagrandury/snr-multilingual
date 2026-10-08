@@ -546,8 +546,8 @@ lines. CSVs: `rq2_da_all_above_66_either_transformation_mono_axis.csv`,
 - Bootstrap over design variants (not tasks, which share the variants) for a
   90 % interval on every line: a task in most L50-only languages has six
   pairs (28 for he, ka, ml and ta), so its DA moves in steps of 1/6.
-- An accuracy-only twin of the paper figure (no `bbpb_` tasks): 621 of its
-  757 tasks are twins, so its lines say mostly how bBPB decides.
+- An accuracy-only twin of the paper figure: done below, the same panels split
+  by scoring.
 
 GitHub: [rq2_da_all_above_66_either_transformation_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis.png) · [rq2_da_all_above_66_either_transformation_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis.csv) ·
 GitHub: [rq2_da_all_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_multi_axes.png) · [rq2_da_all_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_multi_axes.csv) ·
@@ -557,6 +557,36 @@ GitHub: [rq2_da_all_above_66_both_multi_axes.png](https://github.com/mariagrandu
 GitHub: [rq2_da_all_above_66_both_transformation_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_both_transformation_multi_axes.png) · [rq2_da_all_above_66_both_transformation_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_both_transformation_multi_axes.csv) ·
 GitHub: [rq2_da_all_above_66_own_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_own_multi_axes.png) · [rq2_da_all_above_66_own_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_own_multi_axes.csv) ·
 GitHub: [scale_convergence_da_size_above_66_size_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_above_66_size_mono_axis.png) · [scale_convergence_da_size_above_66_size_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_above_66_size_mono_axis.csv)
+
+**The same figure split by scoring** (`rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.png`,
+`paper_rq2.py --axes mono-axis`, the paper's `app_rq02_bbpb`). **DA-size,
+DA-ckpt, DA-goal · filter `above_66_either` · mono-axis pairs · pairs from
+`predictivity` at seed 1904 · gate `predictivity`.** Top row: the accuracy tasks
+(originals and their `rf_`/`rfgm_` twins); bottom row: the `bbpb_` twins, read
+as bBPB → 1.7B bBPB (never gated, no chance level). The two rows partition the
+paper figure's tasks exactly; they are reduced from by_L's per-task tables
+with by_L's `_summary`, which reproduces the paper figure's CSV to 1e-12.
+
+![Decision accuracy by scoring, mono-axis pairs](pretraining/predictivity/rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.png)
+
+**Key findings**
+
+- Accuracy alone does improve with the proxy's size: DA-size over all pairs
+  goes from 0.58 at 90M to 0.70 at 1B, over 85–121 tasks (the gate
+  keeps more tasks at larger sizes, so the population moves along the line).
+- The bBPB twins stay flat at 0.60–0.66 over the same 621 tasks at every size:
+  the paper figure's flat line is mostly theirs.
+- DA-ckpt at 4.5C is 0.78–0.86 on accuracy and 0.84–0.93 on bBPB; DA-goal of
+  the proxies at 5C is 0.58–0.70 on accuracy and 0.60–0.66 on bBPB.
+
+**Follow-ups**
+
+- The accuracy row on a fixed task set (the tasks gated in at every size), so
+  its rise is not partly the gate admitting easier tasks.
+- The bBPB row read as bBPB → 1.7B accuracy (rq11's other reading) for
+  DA-size and DA-goal.
+
+GitHub: [rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.png) · [rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_transformation_by_scoring_mono_axis.csv)
 
 The population behind the cuts — which (benchmark, language) cells rank
 reliably at all, and in which languages — is the block below.

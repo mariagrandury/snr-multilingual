@@ -41,6 +41,8 @@ comes from). The .tex carries the source path as a comment next to the
     app_rq11_evaluation_recipe <- rq11_evaluation_recipe/recipe.py --paper               recipe_da_size_variants_multi_axes_paper
 
     app_rq02_decision_accuracy <- rq02_decision_accuracy/scale_convergence.py --paper  scale_convergence_da_size_multi_axes_paper
+    app_rq02_bbpb               <- rq02_decision_accuracy/paper_rq2.py --axes mono-axis  rq2_da_all_above_66_either_transformation_by_scoring_mono_axis
+                             (rq2 in two rows: accuracy above, the bBPB twins below)
     app_rq03_noise_and_snr     <- rq03_noise_and_snr/effect_vs_noise.py --paper (pool predictivity_seeds)  effect_vs_noise_paper
     app_rq04_surrogates        <- rq04_surrogates/snr_definition_postprocess.py --pool predictivity --paper  top_variants_overall_paper
     app_rq12_above_chance_items <- rq12_above_chance_items/above_chance_items.py --paper  above_chance_items_snr_paper
@@ -101,6 +103,8 @@ FIGURES = {
     "app_rq11_evaluation_recipe": (ANALYSIS.joinpath("rq11_evaluation_recipe", *PRED, "recipe_da_size_variants_multi_axes_paper"),
                               ("png",)),
     # the main figures of the per-analysis appendix pages (make_rq_appendix.py)
+    "app_rq02_bbpb": (ANALYSIS / "rq02_decision_accuracy" / "pretraining" / "predictivity"
+                      / "rq2_da_all_above_66_either_transformation_by_scoring_mono_axis", ("png",)),
     "app_rq02_decision_accuracy": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED, "scale_convergence_da_size_multi_axes_paper"),
                               ("png",)),
     "app_rq03_noise_and_snr": (ANALYSIS.joinpath("rq03_noise_and_snr", *SEEDS, "effect_vs_noise_paper"), ("png",)),

@@ -76,13 +76,28 @@ exception, and says so below.
                                  Three populations, so its 1.7B lines and its 5C points
                                  need not match across panels.
 
+    rq2_da_all_above_66_either_transformation_by_scoring.*
+                                 the paper figure in two rows, split by how a task is
+                                 scored (`utils.variant`): accuracy on top (originals and
+                                 their `rf_`/`rfgm_` twins), the `bbpb_` twins below. A
+                                 twin is read as bBPB -> 1.7B bBPB (its own bBPB at the
+                                 reference and at its own final, as rq02's tables hold
+                                 it), so it has no chance level and rule 1 passes it.
+                                 Same filter, pairs, pool and gate as the paper figure,
+                                 whose two populations these rows partition.
+
 Every name above carries the pair set's AXES_SUFFIX (rule 15), `rq2_da_all_multi_axes.*`
 or `rq2_da_all_mono_axis.*` with --axes mono-axis, and reads the tables with the same one.
 
 This module reads CSVs and draws them. It derives nothing, so a change to how a
 panel's own figure is computed reaches rq2 the moment that script reruns — the
 two can never disagree. Keep it that way: new logic belongs in the script that
-owns the table, not here.
+owns the table, not here. The one exception is the `_by_scoring` split, which
+the summary tables cannot give: it reduces by_L's per-task tables
+(`da_all_pooled_per_task<axes>.csv`, `da_all_by_transformation_per_task_mono_axis.csv`)
+with by_L's own `_summary`, the reduction behind the three tables above. Over
+both scorings at once that reproduces the paper figure's CSV (to 1e-12, same
+task counts), so the two rows are the paper figure's population, split.
 
 Runs after `scale_convergence.py` and `by_L.py`, whose CSVs it reads.
 
@@ -112,8 +127,10 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
+from analysis.rq02_decision_accuracy.by_L import READINGS, _summary  # noqa: E402
+from analysis.rq02_decision_accuracy.reliable_tasks import load_reliable  # noqa: E402
 from analysis.rq02_decision_accuracy.scale_convergence import OVERALL  # noqa: E402
-from analysis.utils import AXES_SUFFIX, NON_EMB, SMALL_SIZES, TARGET_SIZE, size_order  # noqa: E402
+from analysis.utils import AXES_SUFFIX, NON_EMB, SMALL_SIZES, TARGET_SIZE, size_order, variant  # noqa: E402
 
 OUT_ROOT = DECISION_ACCURACY
 YLIM = (0.25, 1.02)           # one scale for the three panels; 1.0 (the hollow self-references) inside it
@@ -134,6 +151,9 @@ RQ2_VARIANTS = {
     "above_66_own_transformation": ("scale_convergence_da_size_transformation_above_66_size",
                                     "_above_66_ckpt", "_above_66_either"),
 }
+# the `_by_scoring` split: the paper variant it splits, its reliability filter, and one row per scoring
+SCORING_VARIANT, SCORING_FILTER = "above_66_either_transformation", "above_66_either"
+SCORING_ROWS = {"acc": "Accuracy", "bbpb": "bBPB"}
 mpl.rcParams.update(S.RC)
 
 
@@ -156,8 +176,14 @@ def _scale_panel(ax, out_dir: Path, stem: str = "scale_convergence_da_size") -> 
     which scale-convergence table, and so whether this is the single pooled
     line or one line per design axis."""
     d = pd.read_csv(out_dir / f"{stem}.csv")
-    d = d[d["population"] == "all benchmarks"].sort_values("non_emb")
-    rest = [g for g in dict.fromkeys(d["group"]) if g != OVERALL]
+    return _scale_lines(ax, d[d["population"] == "all benchmarks"])
+
+
+def _scale_lines(ax, d: pd.DataFrame, order: list | None = None) -> pd.DataFrame:
+    """The DA-size lines of `d` (group, size, non_emb, reliability_macro).
+    `order` fixes the design axes' order, and so their shades of green."""
+    d = d.sort_values("non_emb")
+    rest = order or [g for g in dict.fromkeys(d["group"]) if g != OVERALL]
     groups = [OVERALL] + rest           # OVERALL heads the legend and sits on top
     shades = mpl.colormaps["Greens"](np.linspace(.95, .55, len(rest))) if rest else []
     colours = dict(zip(rest, shades))
@@ -184,7 +210,12 @@ def _run_panel(ax, out_dir: Path, name: str, ylabel: str, legend: bool, suffix: 
     A line with no 5C point is ranked against its own final there (every size
     under DA-ckpt, the reference under DA-goal), which is 1.0 and drawn hollow."""
     d = pd.read_csv(out_dir / f"early_small_da_{name}_by_L{suffix}.csv")
-    d = d[(d["L"].astype(str) == "all") & (d["group"] == "all benchmarks")].sort_values("chinchilla")
+    return _run_lines(ax, d[(d["L"].astype(str) == "all") & (d["group"] == "all benchmarks")], name, ylabel, legend)
+
+
+def _run_lines(ax, d: pd.DataFrame, name: str, ylabel: str, legend: bool) -> pd.DataFrame:
+    """The DA-ckpt / DA-goal lines of `d` (proxy_size, chinchilla, da), one per proxy size."""
+    d = d.sort_values("chinchilla")
     sizes = [s for s in SMALL_SIZES + [TARGET_SIZE] if s in set(d["proxy_size"])]
     x_final = G.CHINCHILLA_AT_FULL
     for s_ in sizes:
@@ -227,6 +258,63 @@ def figure(out_dir: Path, variant: str = "", axes: str = "multi-axis") -> None:
     S.save_paper(fig, out_dir / f"rq2_da_all{suffix}")       # rule 18: every rq2 figure is a bare paper figure
 
 
+def scoring_panels(out_dir: Path, pool: str, axes: str, scoring: str) -> tuple[pd.DataFrame, ...]:
+    """The three panels of the paper variant over the tasks of one scoring, from
+    by_L's per-task tables reduced by its `_summary` (gate, pair minimum, mean
+    over tasks): DA-size per design axis and pooled (the 5C column of DA-goal),
+    DA-ckpt and DA-goal over every pair of `axes`. As in scale_convergence, the
+    per-axis lines keep the cells reliable on the mono-axis pairs and the pooled
+    lines those reliable on `axes`'."""
+    keep = set(load_reliable(out_dir, SCORING_FILTER, axes)["task"])
+    mono = set(load_reliable(out_dir, SCORING_FILTER, "mono-axis")["task"])
+    pooled = pd.read_csv(out_dir / f"da_all_pooled_per_task{AXES_SUFFIX[axes]}.csv")
+    trans = pd.read_csv(out_dir / "da_all_by_transformation_per_task_mono_axis.csv")
+    pooled, trans = (t[[variant(x)[1] == scoring for x in t["task"]]] for t in (pooled, trans))
+    pooled = pooled[pooled["task"].isin(keep)]
+    trans = trans[trans["task"].isin(mono) & (trans["frac"] == 1.0)]
+
+    def summary(t, keys, name):
+        d = _summary(pool, t, keys, READINGS[name])
+        return d[d["group"] == "all benchmarks"].drop(columns="group")
+    goal, ckpt = summary(pooled, [], "goal"), summary(pooled, [], "ckpt")
+    size = pd.concat([goal[goal["frac"] == 1.0].assign(axis=OVERALL), summary(trans, ["axis"], "goal")])
+    size = size.rename(columns={"axis": "group", "proxy_size": "size", "da": "reliability_macro", "tasks": "n_tasks"})
+    size = size[size["size"] != TARGET_SIZE]
+    # the reference is 1.0 by comparing its ranking with itself (drawn hollow), as in scale_convergence's table
+    ref = pd.DataFrame({"group": size["group"].unique(), "size": TARGET_SIZE, "frac": 1.0, "reliability_macro": 1.0})
+    size = pd.concat([size, ref], ignore_index=True).assign(non_emb=lambda d: d["size"].map(NON_EMB))
+    return size, ckpt, goal
+
+
+def scoring_figure(out_dir: Path, pool: str, axes: str = "multi-axis") -> None:
+    """`rq2_da_all_<SCORING_VARIANT>_by_scoring<axes>`: the paper figure's three
+    panels, one row per scoring (accuracy above, the bBPB twins below), on one y axis."""
+    a = AXES_SUFFIX[axes]
+    # the design axes in the order (and so the colours) of the paper figure's DA-size panel
+    sz = pd.read_csv(out_dir / f"{RQ2_VARIANTS[SCORING_VARIANT][0]}{a}.csv")
+    sz = sz[sz["population"] == "all benchmarks"].sort_values("non_emb")
+    order = [g for g in dict.fromkeys(sz["group"]) if g != OVERALL]
+    fig, grid = plt.subplots(len(SCORING_ROWS), 3, figsize=(13.5, 7.6), sharey=True, sharex="col")
+    rows = []
+    for i, (ax3, (scoring, label)) in enumerate(zip(grid, SCORING_ROWS.items())):
+        size, ckpt, goal = scoring_panels(out_dir, pool, axes, scoring)
+        rows += [d.assign(row=label) for d in (
+            _scale_lines(ax3[0], size, order),
+            _run_lines(ax3[1], ckpt, "ckpt", "DA-ckpt (reference is the final checkpoint of the same size)", i == 0),
+            _run_lines(ax3[2], goal, "goal", f"DA-goal (reference is the final checkpoint of {TARGET_SIZE})", False))]
+        ax3[0].set_title(label, loc="left", fontsize=9.5, fontweight="bold")
+        if i:                             # the design-axis legend once, in the top row
+            ax3[0].get_legend().remove()
+    for ax in grid.ravel():
+        ax.set_ylim(*YLIM); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    for ax in grid[0]:
+        ax.set_xlabel("")
+    fig.tight_layout()
+    stem = f"rq2_da_all_{SCORING_VARIANT}_by_scoring{a}"
+    pd.concat(rows, ignore_index=True).to_csv(out_dir / f"{stem}.csv", index=False)
+    S.save_paper(fig, out_dir / stem)
+
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL_POOL)
@@ -234,5 +322,6 @@ if __name__ == "__main__":
                    help="the pair set (rule 15); mono-axis writes the `_mono_axis` twins")
     args = p.parse_args()
     out = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
-    for variant in RQ2_VARIANTS:
-        figure(out, variant, args.axes)
+    for v in RQ2_VARIANTS:
+        figure(out, v, args.axes)
+    scoring_figure(out, args.pool, args.axes)
