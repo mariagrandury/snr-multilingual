@@ -70,6 +70,18 @@ B) pass_prob_vs_train_tokens_by_benchmark_<population>.png/.csv, _points.csv
    DA-goal figure without its header. Every paper copy goes through
    `style.save_paper` (rule 18).
 
+C) pass_threshold_tokens_by_benchmark_1904_ckpts.csv/.tex
+   The paper's threshold table, from B's `_by_benchmark_1904_ckpts` cell
+   table: per benchmark family with cells in at least two languages (format
+   original / rf / rfgm read off the family name), the token bin from which
+   the share of its cells above chance is at or above 50 % / 90 % in that bin
+   and in every higher bin with at least MIN_BIN_CELLS cells ("never" when no
+   bin is, "<= lowest bin" when the first such bin is, "no bin" and -- in the
+   .tex when no bin has that many cells), pooled over sizes and
+   per size, beside the family's median margin over chance the gate's Wilson
+   test implies (`above_random_example.needed_score` − chance) and its median
+   item count. The `.tex` is the bare tabular (pooled, 90M, 1.7B).
+
     python analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_seeds
     python analysis/rq01_scaling_predictability/tokens_seen.py --paper     # the paper copies alone, from the tables on disk
 """
@@ -98,12 +110,14 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import CHANCE_VS_TRAIN_TOKENS, DA_VS_TRAIN_TOKENS  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import MIN_SHARE, above_chance  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import MIN_SHARE, above_chance, task_chance, task_n_items  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random_example import needed_score  # noqa: E402
 from analysis.rq02_decision_accuracy.compute_da import _scores_at, compute_early_small_decision_accuracy  # noqa: E402
 from analysis.rq02_decision_accuracy.early_small import SAFE_DA  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    AXES_SUFFIX, GRID_SEED, MIN_PAIRS, SHARED_FRACS, TARGET_SIZE, assign_language, at_fraction, benchmark_family,
-    design_axes, finals, ladder_frame, language_tokens, languages_only, pair_sets, size_order)
+    AXES_SUFFIX, FORMATS, GRID_SEED, MIN_PAIRS, SHARED_FRACS, TARGET_SIZE, assign_language, at_fraction,
+    benchmark_family, design_axes, finals, ladder_frame, language_tokens, languages_only, pair_sets, size_order,
+    variant)
 
 CANONICAL = "predictivity_seeds"
 BINS_PER_DECADE = 3
@@ -117,6 +131,12 @@ DA_MODES = {"goal": (f"the {TARGET_SIZE} final", SHARED_FRACS),
             "size": (f"the {TARGET_SIZE} final, the proxy at its own final", (1.0,))}
 PASS_NAME = "pass_prob_vs_train_tokens"
 PANELS = ("benchmark", "language", "all")         # what a panel of the pass figure holds
+THRESHOLD_NAME = "pass_threshold_tokens_by_benchmark"
+PASS_LEVELS = (0.5, 0.9)                 # the share of a family's cells above chance a threshold asks for
+THRESHOLD_SIZES = ("90M", TARGET_SIZE)   # the per-size columns of the paper table: the smallest rung and the reference
+MIN_THRESHOLD_LANGS = 2                  # a family enters the threshold table with cells in at least this many languages
+MIN_BIN_CELLS = 20                       # a token bin with fewer cells has no value for the thresholds (the edge bins hold 1-19)
+FORMAT_NAMES = {"original": "Original", "rf": "RF", "rfgm": "LLM-RF"}
 # population -> (the runs of a (task, size, L) cell, how the cell is called above chance)
 POPULATIONS = {
     "deep_A_1904": ("the plan grid, deep / data A / seed 1904: one run per cell",
@@ -376,12 +396,102 @@ def plot_pass_include_rf(points: pd.DataFrame, cells: pd.DataFrame, out_dir: Pat
     S.save_paper(fig, out_dir / stem)
 
 
+def _threshold(points: pd.DataFrame, level: float) -> dict:
+    """The smallest token bin from which the share above chance is at or above
+    `level` in that bin AND every higher bin with a value: `never` when no bin
+    is, `<= lowest bin` when it is the first bin with a value, `no bin` when
+    no bin has a value."""
+    p = points.sort_values("bin").reset_index(drop=True)
+    if p.empty:
+        return {"status": "no bin"}
+    stays = np.logical_and.accumulate((p["share_above"] >= level).to_numpy()[::-1])[::-1]
+    if not stays.any():
+        return {"status": "never"}
+    r = p.iloc[int(np.argmax(stays))]
+    return {"status": "<= lowest bin" if r.name == 0 else "bin", "bin": int(r["bin"]), "bin_lo": r["bin_lo"],
+            "bin_hi": r["bin_hi"], "share_in_bin": r["share_above"], "n_cells_in_bin": int(r["n_cells"])}
+
+
+def _sci(x: float) -> str:
+    """A token count in LaTeX math: 2.2\\times10^{8}, 10^{9}."""
+    e = int(np.floor(np.log10(x) + 1e-9)); m = x / 10 ** e
+    return f"10^{{{e}}}" if round(m, 1) == 1 else f"{m:.1f}\\times10^{{{e}}}"
+
+
+def pass_thresholds(cells: pd.DataFrame, out_dir: Path, population: str = "1904", ckpts: bool = True) -> pd.DataFrame:
+    """`pass_threshold_tokens_by_benchmark_<population>.csv/.tex`: per benchmark
+    family (original / rf / rfgm are three) with cells in at least
+    MIN_THRESHOLD_LANGS languages, the token bin (the pass figure's bins,
+    BINS_PER_DECADE per decade; a bin with fewer than MIN_BIN_CELLS cells has
+    no value) at which the share of its cells above chance reaches each of
+    PASS_LEVELS and stays there in every higher bin with a value
+    (`_threshold`), pooled over sizes (`sizes` = all) and per size; with
+    the family's median per-task margin over chance the gate's Wilson test
+    implies (`needed_score` − chance, as in the gate's above_random_thresholds)
+    and its median item count. The `.tex` is the paper's tabular: pooled, 90M
+    and the reference, no caption."""
+    c = cells.dropna(subset=["train_tokens"])
+    langs = c.groupby("benchmark")["language"].nunique()
+    fams = sorted(langs[langs >= MIN_THRESHOLD_LANGS].index,
+                  key=lambda f: (G.paper_name(G.base(f)).lower(), FORMATS.index(variant(f)[0])))
+    rows = []
+    for fam in fams:
+        cf = c[c["benchmark"] == fam]
+        tasks = cf["task"].unique()
+        head = {"benchmark": fam, "name": G.paper_name(G.base(fam)), "format": variant(fam)[0],
+                "n_languages": cf["language"].nunique(), "n_tasks": len(tasks),
+                "margin_median": np.median([needed_score(t) - task_chance(t) for t in tasks]),
+                "n_items_median": np.median([task_n_items(t) for t in tasks])}
+        for size in ["all"] + size_order(cf["model_size"].unique()):
+            cs = cf.assign(model_size="all") if size == "all" else cf[cf["model_size"] == size]
+            points = bin_cells(cs)
+            points = points[points["n_cells"] >= MIN_BIN_CELLS]
+            for level in PASS_LEVELS:
+                rows.append(head | {"sizes": size, "level": level, "n_cells": len(cs), "min_bin_cells": MIN_BIN_CELLS,
+                                    "n_bins": len(points),
+                                    "lowest_bin_lo": points["bin_lo"].min(), "highest_bin_hi": points["bin_hi"].max()}
+                            | _threshold(points, level))
+    t = pd.DataFrame(rows)
+    stem = f"{THRESHOLD_NAME}_{population}" + ("_ckpts" if ckpts else "")
+    t.to_csv(out_dir / f"{stem}.csv", index=False)
+
+    def cell(fam, size, level):
+        r = t[(t["benchmark"] == fam) & (t["sizes"] == size) & (t["level"] == level)]
+        if r.empty or r.iloc[0]["status"] == "no bin":
+            return "--"
+        r = r.iloc[0]
+        if r["status"] == "never":
+            return "never"
+        return "$" + ("\\leq " if r["status"] == "<= lowest bin" else "") + _sci(r["bin_lo"]) + "$"
+    views = [("all", "All sizes")] + [(s, s) for s in THRESHOLD_SIZES]
+    lines = ["\\begin{tabular}{llr" + "cc" * len(views) + "rr}", "\\toprule",
+             " & & & " + " & ".join(f"\\multicolumn{{2}}{{c}}{{{lab}}}" for _, lab in views) + " & & \\\\",
+             "".join(f"\\cmidrule(lr){{{4 + 2 * i}-{5 + 2 * i}}}" for i in range(len(views))),
+             "Benchmark & Format & Lang. & " + " & ".join(f"{lv:.0%}".replace("%", "\\%") for _ in views for lv in PASS_LEVELS)
+             + " & Margin & Items \\\\", "\\midrule"]
+    last = None
+    for fam in fams:
+        h = t[t["benchmark"] == fam].iloc[0]
+        name = h["name"] if h["name"] != last else ""
+        if last is not None and name:
+            lines.append("\\addlinespace")
+        last = h["name"]
+        lines.append(" & ".join([name, FORMAT_NAMES[h["format"]], str(h["n_languages"])]
+                                + [cell(fam, s, lv) for s, _ in views for lv in PASS_LEVELS]
+                                + [f"{h['margin_median']:.3f}", f"{h['n_items_median']:,.0f}".replace(",", "{,}")]) + " \\\\")
+    (out_dir / f"{stem}.tex").write_text("\n".join(lines + ["\\bottomrule", "\\end{tabular}", ""]))
+    print(f"Thresholds: {len(fams)} benchmark families with cells in ≥ {MIN_THRESHOLD_LANGS} languages → {out_dir / stem}.csv/.tex; "
+          f"left out (fewer languages): {', '.join(sorted(langs[langs < MIN_THRESHOLD_LANGS].index))}")
+    return t
+
+
 def paper(pass_dir: Path, da_dir: Path, population: str = "1904", ckpts: bool = True) -> None:
     """The paper copies, from the `_by_benchmark_` tables on disk."""
     stem = pass_stem("benchmark", population, ckpts)
     cells, points = pd.read_csv(pass_dir / f"{stem}.csv"), pd.read_csv(pass_dir / f"{stem}_points.csv")
     plot_pass(points, cells, pass_dir, population, ckpts, "benchmark", paper=True)
     plot_pass_include_rf(points, cells, pass_dir, population, ckpts)
+    pass_thresholds(cells, pass_dir, population, ckpts)
     summary = pd.read_csv(da_dir / f"{DA_NAME}.csv")
     if summary.empty:
         print(f"!!! {DA_NAME}.csv is empty (no cell had a token count): its paper copy is not redrawn")

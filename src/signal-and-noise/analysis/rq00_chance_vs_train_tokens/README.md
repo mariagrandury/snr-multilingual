@@ -49,7 +49,66 @@ Key findings (from the `_1904_ckpts.csv` cell table):
 - **Exposure moves the twin and not the original.** The original's flat line is its format, not too few tokens of the language.
 
 Follow-ups:
-- The same pair for Belebele and Global-MMLU, the other originals that stay low at 1.7B, to check that the twin's rise with tokens is general.
+- The same pair for Belebele and Global-MMLU, the other originals that stay low at 1.7B, to check that the twin's rise with tokens is general. The [token thresholds per benchmark and format](#token-thresholds-per-benchmark-and-format) below give their reading as one number per family.
+
+## Token thresholds per benchmark and format
+
+The INCLUDE pair shows the format deciding for one benchmark; the table below reads every multilingual family and format the same way, as the token count of the language from which most of its cells clear chance.
+
+[CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_seeds/pass_threshold_tokens_by_benchmark_1904_ckpts.csv) · [LaTeX on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_seeds/pass_threshold_tokens_by_benchmark_1904_ckpts.tex)
+
+Population: the `1904_ckpts` cell table of the figures above (seed-1904 runs, every build and ladder, 90M–1.7B, every evaluated tenth), the 27 benchmark families with cells in at least two languages, the format (Original, RF, LLM-RF) read off the family name. Left out (one language, English): ACP-Bench (cloze, MCQ and its RF), BBH (cloze, MCQ and its RF), CommonsenseQA and its RF, MathQA, MMLU and its RF, OpenBookQA, ToxiGen.
+
+Definition (`pass_thresholds` in [`tokens_seen.py`](../rq01_scaling_predictability/tokens_seen.py)):
+- **Bins.** The figure's bins, 3 per decade of the language's tokens; a bin with fewer than 20 cells has no value (the edge bins hold 1–19 cells and flipped thresholds by a decade or more).
+- **Threshold.** The smallest bin from which the share of cells above chance is at or above the level (50 %, 90 %) in that bin and in every higher bin with a value; the table gives the bin's lower edge. "never": no such bin. "≤": already at the level in the first bin with a value. "–": no bin with 20 cells. The CSV carries the cell count of the threshold bin and every size's thresholds.
+- **Views.** Pooled over sizes ("all"), and per size; the pooled bins hold small sizes at low tokens and large sizes at high tokens, and from 10^10 tokens on 53–100 % of a bin's cells are English, so the population moves along the token axis (rule 13).
+- **Margin.** The family's median per-task margin over chance a run must reach for its one-sided 95 % Wilson bound to clear chance (the gate's `needed_score` − chance, as in `rq00_gate_and_curves`' `above_random_thresholds`), beside the median item count.
+
+| Benchmark | Format | Lang. | 50 % all | 90 % all | 50 % 90M | 90 % 90M | 50 % 1.7B | 90 % 1.7B | Margin | Items |
+|---|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| ARC | Original | 27 | 10^9 | 2.2×10^10 | never | never | 4.6×10^8 | 10^9 | 0.021 | 1,169 |
+| ARC (MT) | Original | 11 | 10^9 | never | never | never | ≤ 2.2×10^8 | 4.6×10^8 | 0.021 | 1,172 |
+| Belebele | Original | 49 | never | never | never | never | never | never | 0.024 | 900 |
+| Belebele | RF | 49 | ≤ 2.2×10^6 | 2.2×10^8 | ≤ 2.2×10^6 | 2.2×10^9 | ≤ 4.6×10^7 | ≤ 4.6×10^7 | 0.024 | 900 |
+| Belebele | LLM-RF | 49 | ≤ 2.2×10^6 | ≤ 2.2×10^6 | ≤ 2.2×10^6 | ≤ 2.2×10^6 | ≤ 4.6×10^7 | ≤ 4.6×10^7 | 0.024 | 898 |
+| BLEnD | Original | 4 | never | never | 2.2×10^9 | never | never | never | 0.032 | 500 |
+| CulturalBench-easy | Original | 8 | never | never | never | never | never | never | 0.157 | 25 |
+| CulturalBench-easy | RF | 8 | never | never | never | never | never | never | 0.157 | 25 |
+| CulturalBench-hard | Original | 8 | never | never | never | never | never | never | 0.090 | 100 |
+| Global PIQA (non-parallel) | Original | 2 | 4.6×10^7 | 2.2×10^8 | – | – | – | – | 0.090 | 100 |
+| Global PIQA (parallel) | Original | 46 | 2.2×10^10 | never | never | never | 2.2×10^10 | never | 0.070 | 103 |
+| Global-MMLU | Original | 29 | never | never | never | never | never | never | 0.006 | 14,042 |
+| Global-MMLU | RF | 29 | 10^8 | 4.6×10^8 | 4.6×10^7 | 2.2×10^9 | ≤ 10^8 | 2.2×10^8 | 0.006 | 14,042 |
+| HellaSwag | Original | 26 | ≤ 2.2×10^6 | ≤ 2.2×10^6 | ≤ 2.2×10^6 | ≤ 2.2×10^6 | ≤ 4.6×10^7 | ≤ 4.6×10^7 | 0.007 | 9,276 |
+| INCLUDE | Original | 36 | never | never | never | never | never | never | 0.032 | 548 |
+| INCLUDE | RF | 36 | 4.6×10^8 | 4.6×10^9 | 4.6×10^8 | never | 2.2×10^8 | 10^10 | 0.032 | 548 |
+| INCLUDE | LLM-RF | 36 | 4.6×10^8 | 4.6×10^9 | 4.6×10^8 | never | 10^8 | 10^10 | 0.032 | 546 |
+| INCLUDE v2 (EN) | Original | 42 | ≤ 2.2×10^6 | never | 4.6×10^6 | never | ≤ 4.6×10^7 | never | 0.024 | 886 |
+| INCLUDE v2 (OG) | Original | 42 | 4.6×10^8 | never | 10^9 | never | 2.2×10^8 | never | 0.024 | 886 |
+| MultiBLiMP | Original | 34 | ≤ 2.2×10^6 | ≤ 2.2×10^6 | ≤ 2.2×10^6 | ≤ 2.2×10^6 | ≤ 4.6×10^7 | ≤ 4.6×10^7 | 0.017 | 2,291 |
+| PAWS-X | Original | 8 | 2.2×10^10 | 4.6×10^10 | never | never | 2.2×10^10 | 4.6×10^10 | 0.018 | 2,000 |
+| TruthfulQA (mc2) | Original | 3 | never | never | never | never | never | never | 0.030 | 788 |
+| TruthfulQA-Multi | Original | 2 | never | never | never | never | never | never | 0.024 | 817 |
+| XCOPA | Original | 8 | ≤ 4.6×10^6 | 4.6×10^9 | never | never | ≤ 10^8 | ≤ 10^8 | 0.038 | 500 |
+| XNLI | Original | 15 | 4.6×10^7 | 2.2×10^10 | 10^8 | never | ≤ 10^8 | 2.2×10^10 | 0.016 | 2,490 |
+| XStoryCloze | Original | 8 | 2.2×10^8 | 2.2×10^9 | 10^9 | never | ≤ 2.2×10^8 | ≤ 2.2×10^8 | 0.022 | 1,511 |
+| XWinograd | Original | 6 | 2.2×10^8 | 10^9 | 2.2×10^8 | 10^9 | ≤ 10^9 | ≤ 10^9 | 0.043 | 410 |
+
+Key findings (numbers from `pass_threshold_tokens_by_benchmark_1904_ckpts.csv`; the matched-token shares from `pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_points.csv`, bins with at least 20 cells at both sizes):
+- **Pooled over sizes, 9 of the 27 families never reach 50 % above chance and 13 never reach 90 %.** The nine are the letter-choice originals of Belebele, Global-MMLU and INCLUDE, CulturalBench-easy (both formats) and -hard, BLEnD and the two TruthfulQA families; six are at 50 % from their first bin (HellaSwag, MultiBLiMP, Belebele RF and LLM-RF, INCLUDE v2 EN, XCOPA) and twelve have a threshold bin.
+- **For the letter-choice families the format decides, not the tokens.** The originals of Belebele, Global-MMLU and INCLUDE never reach 50 %; their RF twins reach 50 % at ≤ 2.2×10^6, 10^8 and 4.6×10^8 tokens and 90 % at 2.2×10^8, 4.6×10^8 and 4.6×10^9. Belebele LLM-RF is at 90 % from its first bin, INCLUDE LLM-RF has the RF thresholds pooled, and CulturalBench-easy's RF twin does not help (never at either level).
+- **The minimum detectable margin does not order the thresholds.** An original and its twin share the items and so the margin (Global-MMLU 0.006 over 14,042 items, Belebele 0.024 over 900), yet one never clears 50 % and the other does by 10^8 and ≤ 2.2×10^6; HellaSwag (0.007) clears from its first bin. The largest margin is CulturalBench-easy's 0.157 over 25 items, which reaches 50 % in neither format.
+- **Among the cloze and minimal-pair families the 90 % thresholds spread over four decades.** HellaSwag and MultiBLiMP from ≤ 2.2×10^6, XWinograd 10^9, XStoryCloze 2.2×10^9, XCOPA 4.6×10^9, ARC and XNLI 2.2×10^10, PAWS-X 4.6×10^10; Global PIQA (parallel) reaches 50 % at 2.2×10^10 and never 90 %.
+- **One threshold per family does not hold across the proxy sizes.** At 50 %, 90M has a threshold in 13 families and 1.7B in 17; ARC goes from never (90M and 175M, whose bins with a value end at 4.6×10^9 and 10^10 tokens) to 10^10 (350M), 4.6×10^9 (600M) and 4.6×10^8 (1B, 1.7B). At 90 %, Belebele RF needs 2.2×10^9 tokens at 90M against ≤ 4.6×10^7 at 1.7B and Global-MMLU RF 2.2×10^9 against 2.2×10^8.
+- **At matched tokens 1.7B clears chance more often.** Over the 109 (family, bin) pairs both sizes populate (24 families), 1.7B is at least 10 points higher in 53, within 10 points in 50 (29 of them at 0–5 % or 95–100 % at both sizes) and at least 10 points lower in 6 (five CulturalBench-easy bins and one BLEnD bin); at 10^9–2.2×10^9 tokens ARC is above chance in 31 % of 90M cells (36) against 99 % of 1.7B cells (144).
+- **The sizes coincide only where a family is saturated or at chance throughout.** HellaSwag, MultiBLiMP and Belebele LLM-RF are above chance from the first bin at every size, the letter-choice originals, CulturalBench and TruthfulQA never are, and among the rest only XNLI (50 % at 10^8 at 90M and ≤ 10^8 at 1.7B) and Global-MMLU RF (4.6×10^7 and ≤ 10^8) roughly agree.
+
+Follow-ups:
+- The table without English, since from 10^10 tokens on most cells are English and the high thresholds (ARC, XNLI, PAWS-X, Global PIQA at 2.2×10^10 and above) may be English thresholds.
+- Per-size thresholds on the fixed set of languages each size covers at a token bin (`utils.fixed_population`), so a threshold shift between sizes is not a shift in which languages fill the bin.
+- CulturalBench-easy, where at 2.2×10^8–4.6×10^9 tokens 90M clears chance in 72–95 % of its cells against 11–29 % at 1.7B: check the 25-item tasks for a constant-answer artefact (rule 1 does not test a constant answer).
+- A cluster bootstrap over (task, size, L) runs for the threshold bin, since a run's ten tenths are not independent cells.
 
 ## Every population and view
 
