@@ -528,13 +528,18 @@ def tasks_for_benchmarks(benchmarks: list[str], languages: set[str],
     A task matches a benchmark by exact name or a `<benchmark>_…` extension
     (so "global_mmlu" also selects benchmark "global_mmlu_full"). Language
     tags are canonicalized ("jp" → "ja", "cn" → "zh"); tasks tagged "multi"
-    (cross-language aggregates) or "??" (unresolved) are never auto-selected.
+    (cross-language aggregates) or "??" (unresolved) are never auto-selected,
+    and neither are the task names in the `discarded` group (probe tasks not
+    above chance at 1B nor at 1.7B).
     Used by the auto-eval watchers: the `auto` group in tasks.json lists
     benchmark names, and each model is evaluated on every listed benchmark's
     tasks in the languages it was trained on.
     """
     out = []
+    discarded = set(_load_groups(path).get("discarded", []))
     for name, e in load_tasks(path).items():
+        if name in discarded:
+            continue
         b = e.get("benchmark", "")
         if not any(b == g or b.startswith(g + "_") for g in benchmarks):
             continue

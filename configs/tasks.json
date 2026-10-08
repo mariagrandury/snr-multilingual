@@ -3731,66 +3731,83 @@
     },
     "truthfulqa_ar_mc1": {
       "language": "ar",
-      "benchmark": "truthfulqa",
+      "benchmark": "m_truthfulqa_mc1",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 773
     },
     "truthfulqa_ar_mc2": {
       "language": "ar",
-      "benchmark": "truthfulqa",
+      "benchmark": "m_truthfulqa_mc2",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 6,
+      "n_items": 773
     },
     "truthfulqa_es_mc1": {
       "language": "es",
-      "benchmark": "truthfulqa",
+      "benchmark": "m_truthfulqa_mc1",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 789
     },
     "truthfulqa_es_mc2": {
       "language": "es",
-      "benchmark": "truthfulqa",
+      "benchmark": "m_truthfulqa_mc2",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 6,
+      "n_items": 789
     },
     "truthfulqa_eu_mc1": {
       "language": "eu",
-      "benchmark": "truthfulqa",
+      "benchmark": "m_truthfulqa_mc1",
       "stages": [
         "pretraining"
       ]
     },
     "truthfulqa_eu_mc2": {
       "language": "eu",
-      "benchmark": "truthfulqa",
+      "benchmark": "m_truthfulqa_mc2",
       "stages": [
         "posttraining"
       ]
     },
     "truthfulqa_hi_mc1": {
       "language": "hi",
-      "benchmark": "truthfulqa",
+      "benchmark": "m_truthfulqa_mc1",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 773
     },
     "truthfulqa_hi_mc2": {
       "language": "hi",
-      "benchmark": "truthfulqa",
+      "benchmark": "m_truthfulqa_mc2",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 6,
+      "n_items": 773
     },
     "truthfulqa_mc1": {
       "language": "en",
       "benchmark": "truthfulqa_mc1",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 817
     },
     "truthfulqa_mc2": {
       "language": "en",
@@ -3815,24 +3832,31 @@
     },
     "truthfulqa_ru_mc1": {
       "language": "ru",
-      "benchmark": "truthfulqa",
+      "benchmark": "m_truthfulqa_mc1",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 788
     },
     "truthfulqa_ru_mc2": {
       "language": "ru",
-      "benchmark": "truthfulqa",
+      "benchmark": "m_truthfulqa_mc2",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 6,
+      "n_items": 788
     },
     "truthfulqa_vi_mc1": {
       "language": "vi",
-      "benchmark": "truthfulqa_mc1",
+      "benchmark": "m_truthfulqa_mc1",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 785
     },
     "truthfulqa_vi_mc2": {
       "language": "vi",
@@ -3858,10 +3882,12 @@
     },
     "truthfulqa_zh_mc1": {
       "language": "zh",
-      "benchmark": "truthfulqa_mc1",
+      "benchmark": "m_truthfulqa_mc1",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 788
     },
     "truthfulqa_zh_mc2": {
       "language": "zh",
@@ -30176,6 +30202,2193 @@
         "gold": null
       },
       "source": "google/xquad (xquad.es)"
+    },
+    "multiblimp_lav": {
+      "language": "lv",
+      "benchmark": "multiblimp-extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 3032,
+      "metric": "acc_norm"
+    },
+    "multiblimp_sqi": {
+      "language": "sq",
+      "benchmark": "multiblimp-extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 243,
+      "metric": "acc_norm"
+    },
+    "multiblimp_hbs": {
+      "language": "hr",
+      "benchmark": "multiblimp-extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 3286,
+      "metric": "acc_norm"
+    },
+    "truthfulqa_bn_mc1": {
+      "language": "bn",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 781
+    },
+    "truthfulqa_ca_mc1": {
+      "language": "ca",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 777
+    },
+    "truthfulqa_da_mc1": {
+      "language": "da",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 781
+    },
+    "truthfulqa_de_mc1": {
+      "language": "de",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 788
+    },
+    "truthfulqa_fr_mc1": {
+      "language": "fr",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 787
+    },
+    "truthfulqa_hr_mc1": {
+      "language": "hr",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 769
+    },
+    "truthfulqa_hu_mc1": {
+      "language": "hu",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 771
+    },
+    "truthfulqa_id_mc1": {
+      "language": "id",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 778
+    },
+    "truthfulqa_it_mc1": {
+      "language": "it",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 783
+    },
+    "truthfulqa_ml_mc1": {
+      "language": "ml",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 694
+    },
+    "truthfulqa_mr_mc1": {
+      "language": "mr",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 764
+    },
+    "truthfulqa_ne_mc1": {
+      "language": "ne",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 774
+    },
+    "truthfulqa_nl_mc1": {
+      "language": "nl",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 785
+    },
+    "truthfulqa_pt_mc1": {
+      "language": "pt",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 788
+    },
+    "truthfulqa_ro_mc1": {
+      "language": "ro",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 779
+    },
+    "truthfulqa_sk_mc1": {
+      "language": "sk",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 778
+    },
+    "truthfulqa_sr_mc1": {
+      "language": "sr",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 785
+    },
+    "truthfulqa_sv_mc1": {
+      "language": "sv",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 774
+    },
+    "truthfulqa_ta_mc1": {
+      "language": "ta",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 743
+    },
+    "truthfulqa_uk_mc1": {
+      "language": "uk",
+      "benchmark": "m_truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 770
+    },
+    "truthfulqa_bn_mc2": {
+      "language": "bn",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 781
+    },
+    "truthfulqa_ca_mc2": {
+      "language": "ca",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 777
+    },
+    "truthfulqa_da_mc2": {
+      "language": "da",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 781
+    },
+    "truthfulqa_de_mc2": {
+      "language": "de",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 788
+    },
+    "truthfulqa_fr_mc2": {
+      "language": "fr",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 787
+    },
+    "truthfulqa_hr_mc2": {
+      "language": "hr",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 769
+    },
+    "truthfulqa_hu_mc2": {
+      "language": "hu",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 771
+    },
+    "truthfulqa_id_mc2": {
+      "language": "id",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 778
+    },
+    "truthfulqa_it_mc2": {
+      "language": "it",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 783
+    },
+    "truthfulqa_ml_mc2": {
+      "language": "ml",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 694
+    },
+    "truthfulqa_mr_mc2": {
+      "language": "mr",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 764
+    },
+    "truthfulqa_ne_mc2": {
+      "language": "ne",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 774
+    },
+    "truthfulqa_nl_mc2": {
+      "language": "nl",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 785
+    },
+    "truthfulqa_pt_mc2": {
+      "language": "pt",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 788
+    },
+    "truthfulqa_ro_mc2": {
+      "language": "ro",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 779
+    },
+    "truthfulqa_sk_mc2": {
+      "language": "sk",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 778
+    },
+    "truthfulqa_sr_mc2": {
+      "language": "sr",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 785
+    },
+    "truthfulqa_sv_mc2": {
+      "language": "sv",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 774
+    },
+    "truthfulqa_ta_mc2": {
+      "language": "ta",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 743
+    },
+    "truthfulqa_uk_mc2": {
+      "language": "uk",
+      "benchmark": "m_truthfulqa_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 770
+    },
+    "truthfulqa-multi_mc1_ca": {
+      "language": "ca",
+      "benchmark": "ibero_truthfulqa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 817
+    },
+    "truthfulqa-multi_mc2_en": {
+      "language": "en",
+      "benchmark": "truthfulqa-multi_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 817
+    },
+    "truthfulqa-multi_mc2_es": {
+      "language": "es",
+      "benchmark": "truthfulqa-multi_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 817
+    },
+    "truthfulqa-multi_mc2_ca": {
+      "language": "ca",
+      "benchmark": "truthfulqa-multi_mc2",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 817
+    },
+    "noropenbookqa_nob_p0": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 374,
+      "metric": "acc_norm"
+    },
+    "noropenbookqa_nob_p1": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 374,
+      "metric": "acc_norm"
+    },
+    "noropenbookqa_nob_p2": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 374,
+      "metric": "acc_norm"
+    },
+    "noropenbookqa_nob_p3": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 374,
+      "metric": "acc_norm"
+    },
+    "noropenbookqa_nob_p4": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 374,
+      "metric": "acc_norm"
+    },
+    "noropenbookqa_nno_p0": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 90,
+      "metric": "acc_norm"
+    },
+    "noropenbookqa_nno_p1": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 90,
+      "metric": "acc_norm"
+    },
+    "noropenbookqa_nno_p2": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 90,
+      "metric": "acc_norm"
+    },
+    "noropenbookqa_nno_p3": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 90,
+      "metric": "acc_norm"
+    },
+    "noropenbookqa_nno_p4": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 90,
+      "metric": "acc_norm"
+    },
+    "nrk_quiz_qa_nob_p0": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 3600,
+      "metric": "acc_norm"
+    },
+    "nrk_quiz_qa_nob_p1": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 3600,
+      "metric": "acc_norm"
+    },
+    "nrk_quiz_qa_nob_p2": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 3600,
+      "metric": "acc_norm"
+    },
+    "nrk_quiz_qa_nob_p3": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 3600,
+      "metric": "acc_norm"
+    },
+    "nrk_quiz_qa_nob_p4": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 3600,
+      "metric": "acc_norm"
+    },
+    "nrk_quiz_qa_nno_p0": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1330,
+      "metric": "acc_norm"
+    },
+    "nrk_quiz_qa_nno_p1": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1330,
+      "metric": "acc_norm"
+    },
+    "nrk_quiz_qa_nno_p2": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1330,
+      "metric": "acc_norm"
+    },
+    "nrk_quiz_qa_nno_p3": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1330,
+      "metric": "acc_norm"
+    },
+    "nrk_quiz_qa_nno_p4": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1330,
+      "metric": "acc_norm"
+    },
+    "nortruthfulqa_mc_nob_p0": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 488
+    },
+    "nortruthfulqa_mc_nob_p1": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 488
+    },
+    "nortruthfulqa_mc_nob_p2": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 488
+    },
+    "nortruthfulqa_mc_nob_p3": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 488
+    },
+    "nortruthfulqa_mc_nob_p4": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 488
+    },
+    "nortruthfulqa_mc_nno_p0": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 57
+    },
+    "nortruthfulqa_mc_nno_p1": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 57
+    },
+    "nortruthfulqa_mc_nno_p2": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 57
+    },
+    "nortruthfulqa_mc_nno_p3": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 57
+    },
+    "nortruthfulqa_mc_nno_p4": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 57
+    },
+    "norec_document_p0": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 2955
+    },
+    "norec_document_p1": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 2955
+    },
+    "norec_document_p2": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 2955
+    },
+    "norec_document_p3": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 2955
+    },
+    "norec_document_p4": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 2955
+    },
+    "norec_sentence_p0": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 583
+    },
+    "norec_sentence_p1": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 583
+    },
+    "norec_sentence_p2": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 583
+    },
+    "norec_sentence_p3": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 583
+    },
+    "norec_sentence_p4": {
+      "language": "no",
+      "benchmark": "noreval_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 583
+    },
+    "kobest_boolq": {
+      "language": "ko",
+      "benchmark": "kobest",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1404
+    },
+    "kobest_copa": {
+      "language": "ko",
+      "benchmark": "kobest",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000
+    },
+    "kobest_hellaswag": {
+      "language": "ko",
+      "benchmark": "kobest",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "kobest_sentineg": {
+      "language": "ko",
+      "benchmark": "kobest",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 397
+    },
+    "kobest_wic": {
+      "language": "ko",
+      "benchmark": "kobest",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1260
+    },
+    "evalita-mp_faq_prompt-1": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 401
+    },
+    "evalita-mp_faq_prompt-2": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 401
+    },
+    "evalita-mp_faq_prompt-3": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 401
+    },
+    "evalita-mp_faq_prompt-4": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 401
+    },
+    "evalita-mp_faq_prompt-5": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 401
+    },
+    "evalita-mp_faq_prompt-6": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 401
+    },
+    "evalita-mp_hs_prompt-1": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1763
+    },
+    "evalita-mp_hs_prompt-2": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1763
+    },
+    "evalita-mp_hs_prompt-3": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1763
+    },
+    "evalita-mp_hs_prompt-4": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1763
+    },
+    "evalita-mp_hs_prompt-5": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1763
+    },
+    "evalita-mp_hs_prompt-6": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1763
+    },
+    "evalita-mp_sa_prompt-1": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 2000
+    },
+    "evalita-mp_sa_prompt-2": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 2000
+    },
+    "evalita-mp_sa_prompt-3": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 2000
+    },
+    "evalita-mp_sa_prompt-4": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 2000
+    },
+    "evalita-mp_sa_prompt-5": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 2000
+    },
+    "evalita-mp_sa_prompt-6": {
+      "language": "it",
+      "benchmark": "evalita_llm_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 2000
+    },
+    "copa_es": {
+      "language": "es",
+      "benchmark": "ibero_copa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 500
+    },
+    "copa_ca": {
+      "language": "ca",
+      "benchmark": "ibero_copa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 500
+    },
+    "teca": {
+      "language": "ca",
+      "benchmark": "ibero_nli",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "n_items": 2117
+    },
+    "xnli_va": {
+      "language": "ca",
+      "benchmark": "ibero_nli",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "n_items": 5010
+    },
+    "assin2_rte": {
+      "language": "pt",
+      "benchmark": "ibero_nli",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 2448
+    },
+    "parafraseja": {
+      "language": "ca",
+      "benchmark": "ibero_paraphrase",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 4000
+    },
+    "copal_id_standard": {
+      "language": "id",
+      "benchmark": "copal_id",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 559
+    },
+    "copal_id_colloquial": {
+      "language": "id",
+      "benchmark": "copal_id",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 559
+    },
+    "headqa_es": {
+      "language": "es",
+      "benchmark": "headqa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 2742,
+      "metric": "acc_norm"
+    },
+    "careqa_es": {
+      "language": "es",
+      "benchmark": "careqa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 5621
+    },
+    "french_bench_boolqa": {
+      "language": "fr",
+      "benchmark": "french_bench_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 178,
+      "metric": "acc_norm"
+    },
+    "french_bench_fquadv2_bool": {
+      "language": "fr",
+      "benchmark": "french_bench_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 800,
+      "metric": "acc_norm"
+    },
+    "french_bench_hellaswag": {
+      "language": "fr",
+      "benchmark": "french_bench_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 9338,
+      "metric": "acc_norm"
+    },
+    "french_bench_topic_based_nli": {
+      "language": "fr",
+      "benchmark": "french_bench_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "n_items": 600,
+      "metric": "acc_norm"
+    },
+    "arabic_leaderboard_alghafa_mcq_exams_test_ar": {
+      "language": "ar",
+      "benchmark": "oall_alghafa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 557,
+      "metric": "acc_norm"
+    },
+    "arabic_leaderboard_alghafa_meta_ar_dialects": {
+      "language": "ar",
+      "benchmark": "oall_alghafa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 5395,
+      "metric": "acc_norm"
+    },
+    "arabic_leaderboard_alghafa_meta_ar_msa": {
+      "language": "ar",
+      "benchmark": "oall_alghafa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 895,
+      "metric": "acc_norm"
+    },
+    "arabic_leaderboard_alghafa_multiple_choice_facts_truefalse_balanced_task": {
+      "language": "ar",
+      "benchmark": "oall_alghafa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 75,
+      "metric": "acc_norm"
+    },
+    "arabic_leaderboard_alghafa_multiple_choice_grounded_statement_soqal_task": {
+      "language": "ar",
+      "benchmark": "oall_alghafa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 150,
+      "metric": "acc_norm"
+    },
+    "arabic_leaderboard_alghafa_multiple_choice_grounded_statement_xglue_mlqa_task": {
+      "language": "ar",
+      "benchmark": "oall_alghafa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 150,
+      "metric": "acc_norm"
+    },
+    "arabic_leaderboard_alghafa_multiple_choice_rating_sentiment_no_neutral_task": {
+      "language": "ar",
+      "benchmark": "oall_alghafa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 7995,
+      "metric": "acc_norm"
+    },
+    "arabic_leaderboard_alghafa_multiple_choice_rating_sentiment_task": {
+      "language": "ar",
+      "benchmark": "oall_alghafa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "n_items": 5995,
+      "metric": "acc_norm"
+    },
+    "arabic_leaderboard_alghafa_multiple_choice_sentiment_task": {
+      "language": "ar",
+      "benchmark": "oall_alghafa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "n_items": 1720,
+      "metric": "acc_norm"
+    },
+    "arabic_exams": {
+      "language": "ar",
+      "benchmark": "oall_exams",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 537,
+      "metric": "acc_norm"
+    },
+    "arabic_leaderboard_arabic_mmlu": {
+      "language": "ar",
+      "benchmark": "oall_arabic_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 14042,
+      "metric": "acc_norm"
+    },
+    "arabic_leaderboard_acva": {
+      "language": "ar",
+      "benchmark": "oall_acva",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 8710,
+      "metric": "acc_norm"
+    },
+    "arabic_mt_arc_challenge": {
+      "language": "ar",
+      "benchmark": "oall_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1160,
+      "metric": "acc_norm"
+    },
+    "arabic_mt_arc_easy": {
+      "language": "ar",
+      "benchmark": "oall_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 2364,
+      "metric": "acc_norm"
+    },
+    "arabic_mt_boolq": {
+      "language": "ar",
+      "benchmark": "oall_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 3260,
+      "metric": "acc_norm"
+    },
+    "arabic_mt_copa": {
+      "language": "ar",
+      "benchmark": "oall_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 90,
+      "metric": "acc_norm"
+    },
+    "arabic_mt_hellaswag": {
+      "language": "ar",
+      "benchmark": "oall_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 9171,
+      "metric": "acc_norm"
+    },
+    "arabic_mt_mmlu": {
+      "language": "ar",
+      "benchmark": "oall_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 12923,
+      "metric": "acc_norm"
+    },
+    "arabic_mt_openbook_qa": {
+      "language": "ar",
+      "benchmark": "oall_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 495,
+      "metric": "acc_norm"
+    },
+    "arabic_mt_piqa": {
+      "language": "ar",
+      "benchmark": "oall_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1833,
+      "metric": "acc_norm"
+    },
+    "arabic_mt_race": {
+      "language": "ar",
+      "benchmark": "oall_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 4929,
+      "metric": "acc_norm"
+    },
+    "arabic_mt_sciq": {
+      "language": "ar",
+      "benchmark": "oall_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 995,
+      "metric": "acc_norm"
+    },
+    "arabic_mt_toxigen": {
+      "language": "ar",
+      "benchmark": "oall_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 935,
+      "metric": "acc_norm"
+    },
+    "arabicmmlu": {
+      "language": "ar",
+      "benchmark": "arabicmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "n_items": 14455
+    },
+    "m_mmlu_ar": {
+      "language": "ar",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 12928
+    },
+    "m_mmlu_bn": {
+      "language": "bn",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 12227
+    },
+    "m_mmlu_ca": {
+      "language": "ca",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13156
+    },
+    "m_mmlu_da": {
+      "language": "da",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13206
+    },
+    "m_mmlu_de": {
+      "language": "de",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13258
+    },
+    "m_mmlu_es": {
+      "language": "es",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13334
+    },
+    "m_mmlu_fr": {
+      "language": "fr",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13091
+    },
+    "m_mmlu_hi": {
+      "language": "hi",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 12437
+    },
+    "m_mmlu_hr": {
+      "language": "hr",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13148
+    },
+    "m_mmlu_hu": {
+      "language": "hu",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13024
+    },
+    "m_mmlu_id": {
+      "language": "id",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13101
+    },
+    "m_mmlu_it": {
+      "language": "it",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13237
+    },
+    "m_mmlu_ml": {
+      "language": "ml",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 11028
+    },
+    "m_mmlu_mr": {
+      "language": "mr",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 12313
+    },
+    "m_mmlu_nb": {
+      "language": "no",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13258
+    },
+    "m_mmlu_ne": {
+      "language": "ne",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 12453
+    },
+    "m_mmlu_nl": {
+      "language": "nl",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13177
+    },
+    "m_mmlu_pt": {
+      "language": "pt",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13324
+    },
+    "m_mmlu_ro": {
+      "language": "ro",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13240
+    },
+    "m_mmlu_ru": {
+      "language": "ru",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13007
+    },
+    "m_mmlu_sk": {
+      "language": "sk",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13062
+    },
+    "m_mmlu_sr": {
+      "language": "sr",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13173
+    },
+    "m_mmlu_sv": {
+      "language": "sv",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13226
+    },
+    "m_mmlu_ta": {
+      "language": "ta",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 11599
+    },
+    "m_mmlu_uk": {
+      "language": "uk",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 12909
+    },
+    "m_mmlu_vi": {
+      "language": "vi",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13062
+    },
+    "m_mmlu_zh": {
+      "language": "zh",
+      "benchmark": "m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 13165
+    },
+    "mmmlu_ar_xy": {
+      "language": "ar",
+      "benchmark": "mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 14042,
+      "metric": "acc_norm"
+    },
+    "mmmlu_bn_bd": {
+      "language": "bn",
+      "benchmark": "mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 14042,
+      "metric": "acc_norm"
+    },
+    "mmmlu_de_de": {
+      "language": "de",
+      "benchmark": "mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 14042,
+      "metric": "acc_norm"
+    },
+    "mmmlu_es_la": {
+      "language": "es",
+      "benchmark": "mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 14042,
+      "metric": "acc_norm"
+    },
+    "mmmlu_fr_fr": {
+      "language": "fr",
+      "benchmark": "mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 14042,
+      "metric": "acc_norm"
+    },
+    "mmmlu_hi_in": {
+      "language": "hi",
+      "benchmark": "mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 14042,
+      "metric": "acc_norm"
+    },
+    "mmmlu_id_id": {
+      "language": "id",
+      "benchmark": "mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 14042,
+      "metric": "acc_norm"
+    },
+    "mmmlu_it_it": {
+      "language": "it",
+      "benchmark": "mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 14042,
+      "metric": "acc_norm"
+    },
+    "mmmlu_ja_jp": {
+      "language": "ja",
+      "benchmark": "mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 14042,
+      "metric": "acc_norm"
+    },
+    "mmmlu_ko_kr": {
+      "language": "ko",
+      "benchmark": "mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 14042,
+      "metric": "acc_norm"
+    },
+    "mmmlu_pt_br": {
+      "language": "pt",
+      "benchmark": "mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 14042,
+      "metric": "acc_norm"
+    },
+    "mmmlu_zh_cn": {
+      "language": "zh",
+      "benchmark": "mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 14042,
+      "metric": "acc_norm"
+    },
+    "rf_careqa_es": {
+      "language": "es",
+      "benchmark": "rf_careqa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 5621
+    },
+    "rf_french_bench_fquadv2_bool": {
+      "language": "fr",
+      "benchmark": "rf_french_bench_extra",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "metric": "acc_norm",
+      "n_items": 800
+    },
+    "rf_arabic_exams": {
+      "language": "ar",
+      "benchmark": "rf_oall_exams",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 537
+    },
+    "rf_arabic_leaderboard_arabic_mmlu": {
+      "language": "ar",
+      "benchmark": "rf_oall_arabic_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14042
+    },
+    "rf_arabicmmlu": {
+      "language": "ar",
+      "benchmark": "rf_arabicmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "metric": "acc_norm",
+      "n_items": 14455
+    },
+    "rf_m_mmlu_ar": {
+      "language": "ar",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 12928
+    },
+    "rf_m_mmlu_bn": {
+      "language": "bn",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 12227
+    },
+    "rf_m_mmlu_ca": {
+      "language": "ca",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13156
+    },
+    "rf_m_mmlu_da": {
+      "language": "da",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13206
+    },
+    "rf_m_mmlu_de": {
+      "language": "de",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13258
+    },
+    "rf_m_mmlu_es": {
+      "language": "es",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13334
+    },
+    "rf_m_mmlu_fr": {
+      "language": "fr",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13091
+    },
+    "rf_m_mmlu_hi": {
+      "language": "hi",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 12437
+    },
+    "rf_m_mmlu_hr": {
+      "language": "hr",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13148
+    },
+    "rf_m_mmlu_hu": {
+      "language": "hu",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13024
+    },
+    "rf_m_mmlu_id": {
+      "language": "id",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13101
+    },
+    "rf_m_mmlu_it": {
+      "language": "it",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13237
+    },
+    "rf_m_mmlu_ml": {
+      "language": "ml",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 11028
+    },
+    "rf_m_mmlu_mr": {
+      "language": "mr",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 12313
+    },
+    "rf_m_mmlu_nb": {
+      "language": "no",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13258
+    },
+    "rf_m_mmlu_ne": {
+      "language": "ne",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 12453
+    },
+    "rf_m_mmlu_nl": {
+      "language": "nl",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13177
+    },
+    "rf_m_mmlu_pt": {
+      "language": "pt",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13324
+    },
+    "rf_m_mmlu_ro": {
+      "language": "ro",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13240
+    },
+    "rf_m_mmlu_ru": {
+      "language": "ru",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13007
+    },
+    "rf_m_mmlu_sk": {
+      "language": "sk",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13061
+    },
+    "rf_m_mmlu_sr": {
+      "language": "sr",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13173
+    },
+    "rf_m_mmlu_sv": {
+      "language": "sv",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13226
+    },
+    "rf_m_mmlu_ta": {
+      "language": "ta",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 11599
+    },
+    "rf_m_mmlu_uk": {
+      "language": "uk",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 12909
+    },
+    "rf_m_mmlu_vi": {
+      "language": "vi",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13062
+    },
+    "rf_m_mmlu_zh": {
+      "language": "zh",
+      "benchmark": "rf_m_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 13165
+    },
+    "rf_mmmlu_ar_xy": {
+      "language": "ar",
+      "benchmark": "rf_mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14042
+    },
+    "rf_mmmlu_bn_bd": {
+      "language": "bn",
+      "benchmark": "rf_mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14042
+    },
+    "rf_mmmlu_de_de": {
+      "language": "de",
+      "benchmark": "rf_mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14040
+    },
+    "rf_mmmlu_es_la": {
+      "language": "es",
+      "benchmark": "rf_mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14042
+    },
+    "rf_mmmlu_fr_fr": {
+      "language": "fr",
+      "benchmark": "rf_mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14042
+    },
+    "rf_mmmlu_hi_in": {
+      "language": "hi",
+      "benchmark": "rf_mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14042
+    },
+    "rf_mmmlu_id_id": {
+      "language": "id",
+      "benchmark": "rf_mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14042
+    },
+    "rf_mmmlu_it_it": {
+      "language": "it",
+      "benchmark": "rf_mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14042
+    },
+    "rf_mmmlu_ja_jp": {
+      "language": "ja",
+      "benchmark": "rf_mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14041
+    },
+    "rf_mmmlu_ko_kr": {
+      "language": "ko",
+      "benchmark": "rf_mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14042
+    },
+    "rf_mmmlu_pt_br": {
+      "language": "pt",
+      "benchmark": "rf_mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14042
+    },
+    "rf_mmmlu_zh_cn": {
+      "language": "zh",
+      "benchmark": "rf_mmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14040
     }
   },
   "groups": {
@@ -30849,47 +33062,177 @@
     "auto_probe": [
       "acp_bench_cloze",
       "acp_bench_mcq",
+      "arabicmmlu",
       "arc_mt",
       "bangla",
       "bbh_cloze",
       "bbh_mcq",
       "blend_sample",
       "blimp_nl",
+      "careqa",
       "ceval",
       "commonsense_qa",
+      "copal_id",
       "cultural_bench_easy",
       "cultural_bench_hard",
       "evalita_llm",
+      "evalita_llm_extra",
       "french_bench",
-      "haerae",
+      "french_bench_extra",
+      "headqa",
       "ibero_arc",
       "ibero_cola",
+      "ibero_copa",
+      "ibero_nli",
       "ibero_openbookqa",
+      "ibero_paraphrase",
       "ibero_piqa",
       "ibero_siqa",
       "ibero_truthfulqa",
       "include_v2_en",
       "include_v2_og",
       "kmmlu",
+      "kobest",
+      "m_mmlu",
+      "m_truthfulqa_mc1",
+      "m_truthfulqa_mc2",
       "mathqa",
       "mela",
       "mmlu",
+      "mmmlu",
+      "multiblimp-extra",
       "noreval",
+      "noreval_extra",
+      "oall_acva",
+      "oall_alghafa",
+      "oall_arabic_mmlu",
+      "oall_exams",
+      "oall_mt",
       "openbookqa",
       "rf_acp_bench_mcq",
+      "rf_arabicmmlu",
       "rf_bbh_mcq",
+      "rf_careqa",
       "rf_commonsense_qa",
       "rf_cultural_bench_easy",
+      "rf_french_bench_extra",
+      "rf_m_mmlu",
       "rf_mmlu",
+      "rf_mmmlu",
+      "rf_oall_arabic_mmlu",
+      "rf_oall_exams",
       "toksuite",
       "toksuite_math",
       "toksuite_stem",
       "toxigen",
+      "truthfulqa-multi_mc2",
+      "truthfulqa_mc1",
       "truthfulqa_mc2",
       "turblimp",
-      "turkishmmlu",
       "xquad",
       "zhoblimp"
+    ],
+    "discarded": [
+      "bangla_commonsenseqa",
+      "bangla_mmlu",
+      "blimp_nl__argument_structure__ditransitive_nomdat_1",
+      "blimp_nl__binding_principle_a__c_command",
+      "blimp_nl__finite_argument_clause__sluicing_2",
+      "blimp_nl__infinitival_argument_clause__bare_verb_type_1",
+      "blimp_nl__infinitival_argument_clause__te_om_te_difference_1",
+      "blimp_nl__infinitival_argument_clause__te_om_te_difference_2",
+      "blimp_nl__parasitic_gaps__structure_type_3",
+      "blimp_nl__wh_movement__filler_effect_gap",
+      "ceval-valid_accountant",
+      "ceval-valid_advanced_mathematics",
+      "ceval-valid_basic_medicine",
+      "ceval-valid_business_administration",
+      "ceval-valid_chinese_language_and_literature",
+      "ceval-valid_civil_servant",
+      "ceval-valid_clinical_medicine",
+      "ceval-valid_college_chemistry",
+      "ceval-valid_college_economics",
+      "ceval-valid_college_physics",
+      "ceval-valid_college_programming",
+      "ceval-valid_computer_architecture",
+      "ceval-valid_computer_network",
+      "ceval-valid_discrete_mathematics",
+      "ceval-valid_education_science",
+      "ceval-valid_electrical_engineer",
+      "ceval-valid_environmental_impact_assessment_engineer",
+      "ceval-valid_fire_engineer",
+      "ceval-valid_high_school_biology",
+      "ceval-valid_high_school_chemistry",
+      "ceval-valid_high_school_chinese",
+      "ceval-valid_high_school_geography",
+      "ceval-valid_high_school_history",
+      "ceval-valid_high_school_mathematics",
+      "ceval-valid_high_school_physics",
+      "ceval-valid_high_school_politics",
+      "ceval-valid_ideological_and_moral_cultivation",
+      "ceval-valid_law",
+      "ceval-valid_legal_professional",
+      "ceval-valid_logic",
+      "ceval-valid_mao_zedong_thought",
+      "ceval-valid_marxism",
+      "ceval-valid_metrology_engineer",
+      "ceval-valid_middle_school_biology",
+      "ceval-valid_middle_school_chemistry",
+      "ceval-valid_middle_school_geography",
+      "ceval-valid_middle_school_history",
+      "ceval-valid_middle_school_mathematics",
+      "ceval-valid_middle_school_physics",
+      "ceval-valid_middle_school_politics",
+      "ceval-valid_modern_chinese_history",
+      "ceval-valid_operating_system",
+      "ceval-valid_physician",
+      "ceval-valid_plant_protection",
+      "ceval-valid_probability_and_statistics",
+      "ceval-valid_professional_tour_guide",
+      "ceval-valid_sports_science",
+      "ceval-valid_tax_accountant",
+      "ceval-valid_teacher_qualification",
+      "ceval-valid_urban_and_rural_planner",
+      "ceval-valid_veterinary_medicine",
+      "evalita-mp_at_prompt-3",
+      "evalita-mp_at_prompt-4",
+      "haerae_general_knowledge",
+      "haerae_history",
+      "haerae_loan_word",
+      "haerae_rare_word",
+      "haerae_standard_nomenclature",
+      "norbelebele_p0",
+      "norbelebele_p2",
+      "norbelebele_p3",
+      "norbelebele_p4",
+      "norcommonsenseqa_nno_p1",
+      "norcommonsenseqa_nno_p3",
+      "norcommonsenseqa_nno_p4",
+      "norcommonsenseqa_nob_p1",
+      "norcommonsenseqa_nob_p4",
+      "openbookqa_bn",
+      "turblimp_ellipsis",
+      "turblimp_island_effects",
+      "turblimp_passives",
+      "turkishmmlu_biology",
+      "turkishmmlu_chemistry",
+      "turkishmmlu_geography",
+      "turkishmmlu_history",
+      "turkishmmlu_mathematics",
+      "turkishmmlu_philosophy",
+      "turkishmmlu_physics",
+      "turkishmmlu_religion_and_ethics",
+      "turkishmmlu_turkish_language_and_literature",
+      "zhoblimp_classifier_noun_subj",
+      "zhoblimp_ellipsis_adj",
+      "zhoblimp_ellipsis_double_object",
+      "zhoblimp_nominal_definite_men",
+      "zhoblimp_principle_A_c_command",
+      "zhoblimp_principle_A_domain",
+      "zhoblimp_principle_A_domain_number",
+      "zhoblimp_question_A_not_A",
+      "zhoblimp_superlative_quantifiers_1",
+      "zhoblimp_you_yige"
     ]
   },
   "benchmarks": {
@@ -31132,9 +33475,9 @@
       "languages": 1
     },
     "ibero_truthfulqa": {
-      "name": "TruthfulQA mc1 (Galician)",
-      "url": "https://huggingface.co/proxectonos",
-      "languages": 1
+      "name": "TruthfulQA mc1 (Galician proxectonos; Catalan HiTZ truthfulqa-multi)",
+      "url": "https://huggingface.co/datasets/HiTZ/truthfulqa-multi",
+      "languages": 2
     },
     "toksuite": {
       "name": "TokSuite parallel set (Altintas et al. 2025)",
@@ -31220,6 +33563,163 @@
       "name": "XQuAD (extractive QA)",
       "url": "https://huggingface.co/datasets/google/xquad",
       "languages": 1
+    },
+    "m_truthfulqa_mc1": {
+      "name": "Okapi m_TruthfulQA mc1 (machine-translated, alexandrainst/m_truthfulqa)",
+      "url": "https://huggingface.co/datasets/alexandrainst/m_truthfulqa",
+      "languages": 27
+    },
+    "copal_id": {
+      "name": "COPAL-ID (Indonesian)",
+      "url": "https://huggingface.co/datasets/haryoaw/COPAL",
+      "languages": 1
+    },
+    "oall_arabic_mmlu": {
+      "name": "OALL: Arabic MMLU (translated), lettered, 57-subject group",
+      "url": "https://huggingface.co/OALL",
+      "languages": 1
+    },
+    "careqa": {
+      "name": "CareQA (Spanish), lettered",
+      "url": "https://huggingface.co/datasets/HPAI-BSC/CareQA",
+      "languages": 1
+    },
+    "truthfulqa-multi_mc2": {
+      "name": "TruthfulQA-multi mc2 (HiTZ, professional translation)",
+      "url": "https://huggingface.co/datasets/HiTZ/truthfulqa-multi",
+      "languages": 3
+    },
+    "oall_mt": {
+      "name": "OALL: AlGhafa translated (arc, boolq, copa, hellaswag, mmlu, obqa, piqa, race, sciq, toxigen)",
+      "url": "https://huggingface.co/OALL",
+      "languages": 1
+    },
+    "ibero_copa": {
+      "name": "COPA-es / COPA-ca (IberoBench)",
+      "url": "https://huggingface.co/collections/BSC-LT",
+      "languages": 2
+    },
+    "ibero_nli": {
+      "name": "NLI (IberoBench: TE-ca, XNLI-va, ASSIN2-RTE)",
+      "url": "https://huggingface.co/collections/BSC-LT",
+      "languages": 2
+    },
+    "headqa": {
+      "name": "HEAD-QA (Spanish)",
+      "url": "https://huggingface.co/datasets/EleutherAI/headqa",
+      "languages": 1
+    },
+    "french_bench_extra": {
+      "name": "FrenchBench extras (boolqa, fquadv2_bool, hellaswag, topic_based_nli)",
+      "url": "https://huggingface.co/manu",
+      "languages": 1
+    },
+    "oall_exams": {
+      "name": "OALL: Arabic EXAMS, lettered",
+      "url": "https://huggingface.co/OALL",
+      "languages": 1
+    },
+    "m_truthfulqa_mc2": {
+      "name": "Okapi m_TruthfulQA mc2 (vi/zh mc2 stay in `truthfulqa_mc2`, which is in auto)",
+      "url": "https://huggingface.co/datasets/alexandrainst/m_truthfulqa",
+      "languages": 25
+    },
+    "arabicmmlu": {
+      "name": "ArabicMMLU (MBZUAI, native; OALL v2), lettered, 40-subject group",
+      "url": "https://huggingface.co/datasets/MBZUAI/ArabicMMLU",
+      "languages": 1
+    },
+    "noreval_extra": {
+      "name": "NorEval MC extras (NorOpenBookQA, NRK-Quiz-QA, NorTruthfulQA-MC, NoReC)",
+      "url": "https://huggingface.co/ltg",
+      "languages": 1
+    },
+    "oall_acva": {
+      "name": "OALL: ACVA (True/False), 58-subject group",
+      "url": "https://huggingface.co/OALL",
+      "languages": 1
+    },
+    "oall_alghafa": {
+      "name": "OALL: AlGhafa native",
+      "url": "https://huggingface.co/OALL",
+      "languages": 1
+    },
+    "ibero_paraphrase": {
+      "name": "Paraphrase (IberoBench: Parafraseja)",
+      "url": "https://huggingface.co/collections/BSC-LT",
+      "languages": 1
+    },
+    "multiblimp-extra": {
+      "name": "MultiBLiMP 1.0, trained languages missing from `multiblimp` (lav, sqi, hbs; hbs tagged hr, shared by bs/hr/sr)",
+      "url": "https://huggingface.co/datasets/jumelet/multiblimp",
+      "languages": 3
+    },
+    "truthfulqa_mc1": {
+      "name": "TruthfulQA mc1 (English)",
+      "url": "https://huggingface.co/datasets/truthfulqa/truthful_qa",
+      "languages": 1
+    },
+    "evalita_llm_extra": {
+      "name": "EVALITA-LLM extras (FAQ, hate speech, sentiment)",
+      "url": "https://huggingface.co/evalitahf",
+      "languages": 1
+    },
+    "kobest": {
+      "name": "KoBEST (Korean)",
+      "url": "https://huggingface.co/datasets/skt/kobest_v1",
+      "languages": 1
+    },
+    "mmmlu": {
+      "name": "OpenAI MMMLU (professional human translation), lettered, 57-subject group",
+      "url": "https://huggingface.co/datasets/openai/MMMLU",
+      "languages": 12
+    },
+    "m_mmlu": {
+      "name": "Okapi m_MMLU (machine-translated, alexandrainst/m_mmlu), lettered",
+      "url": "https://huggingface.co/datasets/alexandrainst/m_mmlu",
+      "languages": 27
+    },
+    "rf_careqa": {
+      "name": "CareQA (Spanish), lettered",
+      "url": "https://huggingface.co/datasets/HPAI-BSC/CareQA",
+      "languages": 1,
+      "format": "cloze reformulation of careqa: question only (no lettered option list), the options scored as continuations"
+    },
+    "rf_french_bench_extra": {
+      "name": "FrenchBench extras (boolqa, fquadv2_bool, hellaswag, topic_based_nli)",
+      "url": "https://huggingface.co/manu",
+      "languages": 1,
+      "format": "cloze reformulation of french_bench_extra: question only (no lettered option list), the options scored as continuations"
+    },
+    "rf_oall_exams": {
+      "name": "OALL: Arabic EXAMS, lettered",
+      "url": "https://huggingface.co/OALL",
+      "languages": 1,
+      "format": "cloze reformulation of oall_exams: question only (no lettered option list), the options scored as continuations"
+    },
+    "rf_oall_arabic_mmlu": {
+      "name": "OALL: Arabic MMLU (translated), lettered, 57-subject group",
+      "url": "https://huggingface.co/OALL",
+      "languages": 1,
+      "format": "cloze reformulation of oall_arabic_mmlu: question only (no lettered option list), the options scored as continuations"
+    },
+    "rf_arabicmmlu": {
+      "name": "ArabicMMLU (MBZUAI, native; OALL v2), lettered, 40-subject group",
+      "url": "https://huggingface.co/datasets/MBZUAI/ArabicMMLU",
+      "languages": 1,
+      "format": "cloze reformulation of arabicmmlu: question only (no lettered option list), the options scored as continuations"
+    },
+    "rf_m_mmlu": {
+      "name": "Okapi m_MMLU (machine-translated, alexandrainst/m_mmlu), lettered",
+      "url": "https://huggingface.co/datasets/alexandrainst/m_mmlu",
+      "languages": 27,
+      "format": "cloze reformulation of m_mmlu: question only (no lettered option list), the options scored as continuations"
+    },
+    "rf_mmmlu": {
+      "name": "OpenAI MMMLU (professional human translation), lettered, 57-subject group",
+      "url": "https://huggingface.co/datasets/openai/MMMLU",
+      "languages": 12,
+      "format": "cloze reformulation of mmmlu: question only (no lettered option list), the options scored as continuations"
     }
   }
 }

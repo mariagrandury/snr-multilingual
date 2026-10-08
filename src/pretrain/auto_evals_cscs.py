@@ -511,9 +511,16 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
     # worker can share, so x EVAL_WORKERS, because eval_minutes divides the
     # count across the workers. Without this the solo top-up job the watcher
     # gives it is 15 min, the kill is not a recorded failure, and it is
-    # resubmitted every pass forever.
+    # resubmitted every pass forever. The 2026-10-08 probe's MMLU-sized
+    # tasks (11-14.5k items: m_mmlu, MMMLU, ArabicMMLU, OALL's Arabic MMLU and
+    # their rf_ twins) weigh six too: global_mmlu_full_* and mmlu, the same
+    # item count, take 183-199 s per worker-task at 1.7B (per_task timings,
+    # seed 1904), not the 41 s the fit assumes.
     TASK_WEIGHT = {"bbq": 36 * EVAL_WORKERS}
-    n_tasks = sum(TASK_WEIGHT.get(t, 6 if t.startswith(("rf_global_mmlu_full", "rfgm_global_mmlu_full")) else 1)
+    n_tasks = sum(TASK_WEIGHT.get(t, 6 if t.startswith((
+        "rf_global_mmlu_full", "rfgm_global_mmlu_full", "m_mmlu_", "rf_m_mmlu_", "mmmlu_", "rf_mmmlu_",
+        "arabicmmlu", "rf_arabicmmlu", "arabic_leaderboard_arabic_mmlu", "rf_arabic_leaderboard_arabic_mmlu",
+        "arabic_mt_mmlu")) else 1)
                   for t in remaining)
     # Prefix-export via the process env rather than --export=ALL,K=V,...:
     # sbatch's --export uses commas as separators BETWEEN vars, so the

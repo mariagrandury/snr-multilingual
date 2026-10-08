@@ -231,6 +231,11 @@ left `auto_probe` on 2026-10-01. A
 promoted benchmark stays listed in `auto_probe` as the record of what was
 screened, which costs nothing: the watcher's idempotency is per task, so a
 later `--group auto_probe` pass finds the work done and submits only gaps.
+The reverse move (2026-10-08): a screened task at chance at both 1B and 1.7B
+goes into `groups.discarded`, a list of TASK names that
+`tasks_for_benchmarks` skips, so it leaves the probe while its siblings in
+the same benchmark stay; relabelling its `benchmark` instead would move
+results already on disk to another family.
 
 **A running watcher does not see a tasks.json edit.** `auto_evals_cscs.py`
 reads the group once, before the `--watch` loop (`benchmarks =
