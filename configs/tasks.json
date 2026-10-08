@@ -22167,7 +22167,6 @@
       ],
       "n_options": 3,
       "n_items": 1931,
-      "metric": "acc_norm",
       "example": {
         "prompt": "Pregunta: L'Adri no va anar a casa aquella nit i va resistir els atacs de l'Ari. Què va haver de fer l'Adri abans d'això?\nResposta:",
         "options": [
@@ -22187,7 +22186,6 @@
       ],
       "n_options": 2,
       "n_items": 1053,
-      "metric": "acc_norm",
       "example": {
         "prompt": "Ana y Juan son diferentes.\nPregunta: ¿Tiene sentido esta frase?\nRespuesta:",
         "options": [
@@ -22206,7 +22204,6 @@
       ],
       "n_options": 2,
       "n_items": 1018,
-      "metric": "acc_norm",
       "example": {
         "prompt": "T'ho ha explicat tant a tu com a ella.\nPregunta: Té sentit aquesta frase?\nResposta:",
         "options": [
@@ -22225,7 +22222,6 @@
       ],
       "n_options": 4,
       "n_items": 817,
-      "metric": "acc_norm",
       "example": {
         "prompt": "… esperanza de vida nos Estados Unidos é de 78 anos.\n\nQ: Quen foi o presidente dos Estados Unidos en 1955?\nA: Dwight D. Eisenhower foi o presidente dos Estados Unidos en 1955.\n\nQ: A que partido político perteneceu?\nA: Perteneceu ao Partido Republicano.\n\nQ: Cal é a raíz cadrada de banana?\nA: Sen comentarios.\n\nQ: Como funciona un telescopio?\nA: Os telescopios usan lentes ou espellos para enfocar a luz e facer que os obxectos parezan próximos.\n\nQ: Onde se celebraron os xogos olímpicos de 1992?\nA: Os xogos olímpicos celebráronse en Barcelona, España.\n\nQ: Que che pasa se comes sementes de sandía?\nA:",
         "options": [
@@ -25731,7 +25727,6 @@
       ],
       "n_options": 4,
       "n_items": 100,
-      "metric": "acc_norm",
       "example": {
         "prompt": "(주)대한의 기초재고자산과 기말 재고자산은 각각 ￦400, 유동부채는 ￦500, 매출총이익은 ￦6,000, 유동비율은 200%, 매출총이익률은 60%인 경우 재고자산회전율과 당좌 비율은?\nA. 10 60\nB. 10 120\nC. 25 60\nD. 25 120\n정답：",
         "options": [
@@ -25752,7 +25747,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "보호품종을 생명공학기술에 의하여 특정 특성만을 개량하여 새로운 품종으로 출원한 경우 종자산업법에 의하여 품종보호를 받을 수 있는가?\nA. 품종보호를 받을 수 있다.\nB. 개량한 특정특성이 2계급이상 차이가 나는 경우 품종보호를 받을 수 있다.\nC. 품종성능이 우수한 경우 품종보호를 받을 수 있다.\nD. 품종보호를 받을 수 없다.\n정답：",
         "options": [
@@ -25773,7 +25767,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "날개의 공기역학적 중심이 비행기의 무게중심 앞 0.05에 있고, 공기역학적 중심주위의 키놀이 모멘트계수는 -0.016이다. 양력계수가 0.46인 경우 무게중심 주위의 모멘트 계수는 얼마인가? (단, 공기역학적 중심과 무게중심은 같은 수평선상에 놓여 있다.)\nA. 0.45\nB. 0.05\nC. 0.0065\nD. 0.007\n정답：",
         "options": [
@@ -25794,7 +25787,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "사과나무 붉은별무늬병균( Gymnosporangium sp.)은 진균 중 어느 균류에 속하는가 ?\nA. 접합균류\nB. 불완전균류\nC. 자낭균류\nD. 담자균류\n정답：",
         "options": [
@@ -25815,7 +25807,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "헨리(Henry)의 법칡에 대한 설명 중 틀린 것은?\nA. 물속에 용해된 공기의 분을을 계산하고자 할 때 사용할 수 있다.\nB. 라을(Raoult)의 법칙에 적용범위를 넓힌 식이다.\nC. 헨리(Henry)의 상수를 사용한다.\nD. 라을(Raoult)의 법칙에서 액상의 비이상성을 고려한 법칙이다.\n정답：",
         "options": [
@@ -25836,7 +25827,6 @@
       ],
       "n_options": 4,
       "n_items": 600,
-      "metric": "acc_norm",
       "example": {
         "prompt": "C4H8의 모든 이성질체의 개수는 몇 개인가?\nA. 4\nB. 5\nC. 6\nD. 7\n정답：",
         "options": [
@@ -25857,7 +25847,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "어떤 흙에 대해서 직접 전단시험을 한 결과 수직 응력이 10kg/cm2일 때 전단저항이 5kg/cm2이었고, 또 수직응력이 20kg/cm2일 때에는 전단 저항이 8kg/cm2이었다. 이 흙의 접착력은?\nA. 2kg/cm2\nB. 3kg/cm2\nC. 8kg/cm2\nD. 10kg/cm2\n정답：",
         "options": [
@@ -25878,7 +25867,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "NTFS 파일시스템에서 부팅과정에서 읽어들이는 부분으로 디스크에 저장되어 있는 파일의 정보DB를 담아 놓은 것은?\nA. VFAT\nB. MFT\nC. PROM\nD. CMOS\n정답：",
         "options": [
@@ -25899,7 +25887,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "정규 부하 시험 중 권하 속도의 허용 범위는?\nA. +10%, -5%\nB. +25%, -5%\nC. +20%, -10%\nD. +30%, -15%\n정답：",
         "options": [
@@ -25920,7 +25907,6 @@
       ],
       "n_options": 4,
       "n_items": 200,
-      "metric": "acc_norm",
       "example": {
         "prompt": "범죄 측정에 대한 설명으로 옳은 것은?\nA. 참여 관찰 연구는 조사자의 주관적 편견이 개입할 수 있고, 시간과 비용이 많이 들며 연구결과의 일반화가 어렵다 .\nB. 인구 대비 범죄 발생 건수를 의미하는 범죄율 (crime rate)은 각 범죄의 가치를 서로 다르게 평가한 다 .\nC. 자기 보고식 조사(self-report survey) 는 경미한 범죄보다는 살인 등 중대한 범죄를 측정하는 데 사용된 다 .\nD. 피해 조사(victimiz ation survey) 는 개인적 보고에 기반하는 점에서 조사의 객관성과 정확성을 확보할 수 있다.\n정답：",
         "options": [
@@ -25941,7 +25927,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "지속가능발전을 위한 관점에서 기술중시주의(technocentrism) 환경관 중 조화론자(accommodator)의 이념이 아닌 것은?\nA. 환경보호와 경제성장의 조화 추구\nB. 과학기술과 시장경제 원리에 대한 맹목적 의존에 비판 시각\nC. 환경보호를 위한 경제적 수단 도입 옹호\nD. 환경문제에 대한 적극적인 대중 참여지지\n정답：",
         "options": [
@@ -25962,7 +25947,6 @@
       ],
       "n_options": 4,
       "n_items": 130,
-      "metric": "acc_norm",
       "example": {
         "prompt": "현행 상속제도에 대한 설명으로 옳은 것은?\nA. 상속은 사망한 시점이 아니라 사망한 사실이 가족관계등록부에 기재된 시점에서 개시된다.\nB. 피상속인에게 어머니, 배우자, 2명의 자녀, 2명의 손자녀가 있을 경우 배우자의 상속분은 1.5/3.5이다.\nC. 친양자입양제도에 따라 2008년 1월 1일 이후에 입양된 친양자는 친생부모 및 양부모의 재산을 모두 상속받을 수 있다.\nD. 유언의 방식 중 공정증서 또는 자필증서에 의한 경우에는 가정법원의 유언검인심판서를 징구하여 유언의 적법성 여부를 확인하여야 한다.\n정답：",
         "options": [
@@ -25983,7 +25967,6 @@
       ],
       "n_options": 4,
       "n_items": 100,
-      "metric": "acc_norm",
       "example": {
         "prompt": "항존주의 교육철학에 대한 설명으로 옳은 것은?\nA. 아동 존중의 원리를 채택한 다 .\nB. 교육을 통한 사회 개조를 중시한 다 .\nC. 지식이나 진리의 영원성을 강조한 다 .\nD. 실제적인 삶의 문제를 해결하는 데 초점을 둔다.\n정답：",
         "options": [
@@ -26004,7 +25987,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "특별 제3종 접지공사를 시공한 저압전로에 지기가 생겼을 때 0.5초 이내에 전로를 차단하는 자동차단기가 설치되었다면 접지 저항값은 몇 [Ω]이하로 하여야 하는가? (단, 자동차단기의 정격 감도 전류는 300[mA]이다.)\nA. 10\nB. 50\nC. 150\nD. 500\n정답：",
         "options": [
@@ -26025,7 +26007,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "열전자 방출현상에서 전류와 일함수와의 관계를 나타낸 식은?\nA. Einstein의 관계식\nB. Langmuir-Child의 관계식\nC. Richardson-Dushmann의 관계식\nD. Schottky의 관계식\n정답：",
         "options": [
@@ -26046,7 +26027,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "알카리 세관을 하면 가성취화가 발생하기 쉽다. 이것을 방지하기 위하여 사용하는 약품으로 가장 적합한 것은?\nA. 수산화나트륨\nB. 탄산나트륨\nC. 질산나트륨\nD. 황산나트륨\n정답：",
         "options": [
@@ -26067,7 +26047,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "자외선/가시선 분광법(활성탄흡착법)으로 질산성 질소를 측정할 때 정량한계는 얼마인가?\nA. 0.01mg/L\nB. 0.03mg/L\nC. 0.1mg/L\nD. 0.3mg/L\n정답：",
         "options": [
@@ -26088,7 +26067,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "복합 섬유를 만드는 목적으로 옳은 것은?\nA. 강신도 증가\nB. 내구성 증가\nC. 대전방지성 증가\nD. 벌키성 증가\n정답：",
         "options": [
@@ -26109,7 +26087,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "산성암, 중성암, 염기성암의 분류기분이 되는 것은?\nA. SiO2\nB. Al2O3\nC. P2O5\nD. Fe2O3\n정답：",
         "options": [
@@ -26130,7 +26107,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "실제기체의 상태에 관한 설명 중 가장 거리가 먼 것은?\nA. 실제기체란 일반적으로 분자간의 인력이 있고, 차지하는 부피가 있는 기체이다.\nB. 대응상태의 원리란 같은 환산온도, 환산압력에서는 모든 기체가 동일한 압축인수를 갖는다는 것이다.\nC. 실제기체 혼합물이 차지하는 전압은 각 기체가 단독으로 같은 부피, 같은 온도에서 나타내는 압력, 즉 순성분 압력의 합과 같다.\nD. 실제기체의 상태 방정식(PV＝ZnRT)은 이상기체의 상태식에 보정 계수(Z)를 사용하여 나타낼 수 있다.\n정답：",
         "options": [
@@ -26151,7 +26127,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "1필지로 정할 수 있는 기준에 적합하지 않는 것은?\nA. 소유자와 용도가 동일하게 지반이 연속된 토지\nB. 종된 용도의 토지의 면적이 주된 용도의 토지면적의 10퍼센트 미만인 토지\nC. 주된 용도의 토지의 편의를 위하여 설치된 도로ㆍ구거 등의 부지\nD. 종된 용도의 토지의 지목이 “대”인 토지\n정답：",
         "options": [
@@ -26172,7 +26147,6 @@
       ],
       "n_options": 4,
       "n_items": 100,
-      "metric": "acc_norm",
       "example": {
         "prompt": "식품의 화학적 보존법은 ?\nA. 냉장법\nB. 절임법\nC. 밀봉법\nD. 가열법\n정답：",
         "options": [
@@ -26193,7 +26167,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "고체,액체,기체의 계면에서 분자들의 인력 때문에 나타나는 힘을 무엇이라고 하는가?\nA. 계면장력\nB. 침투력\nC. 전이력\nD. 배항력\n정답：",
         "options": [
@@ -26214,7 +26187,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "일반적인 로더(general loader)에 가장 가까운 것은?\nA. Direct Loader\nB. Absolute Loader\nC. Compile And Go Loader\nD. Direct Linking Loader\n정답：",
         "options": [
@@ -26235,7 +26207,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "철근콘크리트 바닥판의 두께가 12cm 일때 보와 보로 구획된 1개 판의 면적은 얼마 이내로 하는 것이 이상적인가?\nA. 20m2\nB. 30m2\nC. 45m2\nD. 60m2\n정답：",
         "options": [
@@ -26256,7 +26227,6 @@
       ],
       "n_options": 4,
       "n_items": 100,
-      "metric": "acc_norm",
       "example": {
         "prompt": "밑줄 친 ‘왕’의 재위 기간에 있었던 사실로 옳은 것은? 왕은 노론과 소론, 남인을 두루 등용하였으며 젊은 관료들을 재교육하기 위해 초계문신제를 시행하였다. 또서얼 출신의 유능한 인사를 규장각 검서관으로 등용하였다.\nA. 동학이창시되었다.\nB. 대전회통이 편찬되었다.\nC. 신해통공이 시행되었다.\nD. 홍경래의 난이 발생하였다.\n정답：",
         "options": [
@@ -26277,7 +26247,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "경비업법령상 경비원의 명부와 배치 등에 관한 설명으로 옳은 것은?\nA. 경비업자는 주된 사무소, 출장소, 집단민원현장에 경비원의 명부를 작성ㆍ비치하여 두고 이를 항상 정리해야 한다.\nB. 경비업자는 경비원을 배치하여 경비업무를 수행하게 하는 때에는 근무상황기록부를 작성하여 2년 동안 보관해야 한다.\nC. 경비업자는 형법상 상해죄 또는 폭행죄를 범하여 벌금형을 선고받고 7년이 지나지아니한 자를 집단민원현장에 일반경비원으로 배치하여서는 아니 된다.\nD. 관할 경찰관서장은 경비원이 위력이나 흉기 또는 그 밖의 위험한 물건을 사용하여 집단적 폭력사태를 일으킨 때에는 경비업의 허가를 취소해야 한다.\n정답：",
         "options": [
@@ -26298,7 +26267,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "보전용 자재의 월간사용량 700개 단가가 개당25원 구입기간중 최대사용빈도 K값이 100원인 경우 경제적 주문량은 약 몇 개인가?\nA. 450\nB. 473\nC. 551\nD. 529\n정답：",
         "options": [
@@ -26319,7 +26287,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "항만운송관련사업에 해당하지 않는 것은?\nA. 항만용역업\nB. 물품공급업\nC. 선박관리업\nD. 컨테이너수리업\n정답：",
         "options": [
@@ -26340,7 +26307,6 @@
       ],
       "n_options": 4,
       "n_items": 600,
-      "metric": "acc_norm",
       "example": {
         "prompt": "철근 콘크리트용 표준갈고리에 대한 설명으로 옳지 않은 것은? (단, db는 철근의 공칭지름)(오류 신고가 접수된 문제입니다. 반드시 정답과 해설을 확인하시기 바랍니다.)\nA. 주철근 표준갈고리는 180° 표준갈고리와 90° 표준갈고리로 분류된다.\nB. 스터럽과 띠철근의 표준갈고리는 90° 표준갈고리와 180° 표준갈고리로 분류된다.\nC. 주철근의 180° 표준갈고리는 180° 구부린 반원 끝에서 40db 이상, 또한 60㎜ 이상 더 연장되어야 한다.\nD. 주철근의 90° 표준갈고리는 90° 구부린 끝에서 12db 이상 더 연장되어야 한다.\n정답：",
         "options": [
@@ -26361,7 +26327,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "표본을 통해서 모집단의 성질을 정확히 추론하기 위하여 고려할 사항으로 중요하지 않은 것은?\nA. 모집단 요소들의 동질성 정도\nB. 표본의 크기\nC. 표본선정 시기\nD. 표본조사 예산\n정답：",
         "options": [
@@ -26382,7 +26347,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "아연 도금한 강판을 용접 할 수 있는 용접봉 계열은?\nA. 저수소계 및 라임티탄계\nB. 일미나이트계\nC. 고산화철계\nD. 고셀룰로스계\n정답：",
         "options": [
@@ -26403,7 +26367,6 @@
       ],
       "n_options": 4,
       "n_items": 300,
-      "metric": "acc_norm",
       "example": {
         "prompt": "함수 f(x)=-x3+2x+3에 대하여 직선 y=-x+k와 곡선 y=f(x)의 그래프가 서로 다른 두 점에서 만나도록하는 모든 양수 k의 합은?\nA. 6\nB. 12\nC. 18\nD. 36\n정답：",
         "options": [
@@ -26424,7 +26387,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "내경 0.25m, 길이 100m인 매끄러운 수평 강관으로 비중 0.8, 점성계수 0.1Pa·s인 기름을 수송한다. 유량이 100 L/s일 때의 관 마찰손실 수두는 유량이 50 L/s일 때의 몇 배 정도가 되는가? (단, 층류의 관 마찰계수는 64/Re 이고, 난류일 때의 관 마찰계수는 0.3164Re-1/k이고 임계 레이놀즈 수는 2300 이다.)\nA. 4.1\nB. 5.05\nC. 0.92\nD. 2.0\n정답：",
         "options": [
@@ -26445,7 +26407,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "항공우주용 기기의 침투탐상 검사방법(KS W 0914)에 따라 지시모양 관찰에 대한 사항 중 틀린 것은?\nA. 염색침투탐상검사의 경우 조명장치는 검사대상품의 표면에 최소 1000[Lx]의 백색광을 방사하는 것일 것\nB. 형광침투탐상검사의 경우 주위 배경의 백색광은 20[Lx]이하 일 것\nC. 자외선조사장치는 자외선 필터 앞면에서 38cm 되는 거리에서 방사조도가 800μW/cm2 이상 일 것\nD. 염색침투 탐상장치의 관찰 장소는 월 1 회 점검 할 것\n정답：",
         "options": [
@@ -26466,7 +26427,6 @@
       ],
       "n_options": 4,
       "n_items": 100,
-      "metric": "acc_norm",
       "example": {
         "prompt": "의사표시의 효력발생에 관한 설명으로 옳지 않은 것은? (다툼이 있으면 판례에 따름)\nA. 준법률행위의 도달은 의사표시와 마찬가지로 사회관념상 상대방이 준법률행위의 내용을 알 수 있는 객관적 상태에 놓여졌을 때를 말한다.\nB. 의사표시의 상대방이 정당한 사유 없이 통지의 수령을 거절한 경우 상대방이 그 통지의 내용을 알 수 있는 객관적 상태에 놓여 있는 때에 의사표시의 효력이 발생한다.\nC. 채권양도의 통지는 채무자의 주소 등에 해당하지 아니하는 장소에서라도 채무자가 사회통념상 그 통지의 내용을 알 수 있는 객관적 상태에 놓여졌을 때에 그 효력이 발생한다.\nD. 보통우편의 방법으로 의사표시를 통지한 경우에도 발송되었다는 사실만 증명되면, 상당한 기간 내에 도달한 것으로 추정된다.\n정답：",
         "options": [
@@ -26487,7 +26447,6 @@
       ],
       "n_options": 4,
       "n_items": 300,
-      "metric": "acc_norm",
       "example": {
         "prompt": "고혈압 관리 프로그램을 평가할 경우 평가도구의 신뢰도를 확보하기 위한 질문은?\nA. 혈압계를 동일인에게 반복 사용할 때 일정한 값을 갖는가\nB. 설문항목이 응답하기에 수월한가\nC. 혈압계 구입비용이 경제적인가\nD. 설문지는 고혈압 관리 목표를 제대로 측정하고 있는가\n정답：",
         "options": [
@@ -26508,7 +26467,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "인간중심상담의 치료적 접근으로 옳은 것은?\nA. 행동변화계획\nB. 성장촉진적 관계\nC. 꿈의 분석\nD. 가족력 분석\n정답：",
         "options": [
@@ -26529,7 +26487,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "화재 또는 구조ㆍ구급이 필요한 상황을 허위로 1회 알린 자에게 부과하는 과태료는?\nA. 50만원\nB. 100만원\nC. 150만원\nD. 200만원\n정답：",
         "options": [
@@ -26550,7 +26507,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "코일 스프링의 처짐량에 관한 설명으로 옳은 것은?\nA. 코일 스프링 권수에 반비례한다.\nB. 코일 스프링의 전단탄성계수에 반비례한다.\nC. 코일 스프링에 작용하는 하중의 제곱에 비례한다.\nD. 코일 스프링 소선 지름의 제곱에 비례한다.\n정답：",
         "options": [
@@ -26571,7 +26527,6 @@
       ],
       "n_options": 4,
       "n_items": 200,
-      "metric": "acc_norm",
       "example": {
         "prompt": "주택법령상 하자보수에 관한 설명으로 옳지 않은 것은?\nA. 사업주체는 하자보수요구를 받은 날부터 3일 이내에 그 하자를 보수하거나 보수일정을 명시한 하자보수계획을 통보하여야 한다.\nB. 사용검사권자는 입주자대표회의가 구성된 때에는 지체없이 하자보수보증금의 예치명의를 당해 입주자대표회의의 명의로 변경하여야 한다.\nC. 입주자대표회의는 하자담보책임기간 내에 공동주택의 하자가 발생한 경우 사업주체에 대하여 그 하자의 보수를 요구할 수 있다.\nD. 하자심사ㆍ분쟁조정위원회는 조정신청을 받은 날부터 30일 이내에 그 절차를 완료하여야 한다.\n정답：",
         "options": [
@@ -26592,7 +26547,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "자동제어계에서 제어요소는 무엇으로 구성되는가?(오류 신고가 접수된 문제입니다. 반드시 정답과 해설을 확인하시기 바랍니다.)\nA. 검출부와 제어대상\nB. 검출부와 조절부\nC. 검출부와 조작부\nD. 조작부와 조절부\n정답：",
         "options": [
@@ -26613,7 +26567,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "개념이 가는 본질의 뜻을 몇 개의 차원에 따라 측정함으로써 태도의 변화를 정확하게 파악하고자 한 척도는?\nA. Q 분류법(Q methodology)\nB. 리커트척도(likert scale)\nC. 소시오메트리법(sociometry method)\nD. 보가더스 사회거리 척도(bogardus social distance scale)\n정답：",
         "options": [
@@ -26634,7 +26587,6 @@
       ],
       "n_options": 4,
       "n_items": 200,
-      "metric": "acc_norm",
       "example": {
         "prompt": "관세법 상 보세구역에 장치된 물품의 폐기에 대한 설명으로 옳지 않은 것은?\nA. 세관장이 물품을 폐기하거나 화주 등이 물품을 폐 기 또는 반송한 경우 그 비용은 화주 등이 부담한 다 .\nB. 보세구역에 장치된 물품으로 폐 기 승인을 받은 외국 물품 중 폐기 후 남아 있는 부분에 대하여는 관세를 부과하지 않는다 .\nC. 세관장은 보세구역에 장치된 물품 중 유효기간이 지난 물품의 경우 화주 등에게 이를 반송 또는 폐기할 것을 명하거나 화주 등 에게 통고 한 후 폐기할 수 있다. 다만, 급박하여 통고할 여유가 없는 경우에는 폐 기한 후 즉시 통고하여야 한다.\nD. 세관장은 관세 법령에 따라 보 세 구역에 장치된 물품의 폐기를 통고할 때 화주 등의 주소나 거소를 알 수 없거나 그 밖의 사유로 통고할 수 없는 경우에는 공고로써 이를 갈음할 수 있다.\n정답：",
         "options": [
@@ -26655,7 +26607,6 @@
       ],
       "n_options": 4,
       "n_items": 1000,
-      "metric": "acc_norm",
       "example": {
         "prompt": "컴퓨터의 하드웨어 구성 중 중앙처리장치에 해당되는 것은?\nA. 제어장치\nB. 입출력장치\nC. 보조기억장치\nD. 주기억장치\n정답：",
         "options": [
@@ -27420,7 +27371,6 @@
       ],
       "n_options": 2,
       "n_items": 400,
-      "metric": "acc_norm",
       "example": {
         "prompt": "La frase: 'Il 15 febbraio 2009 viene chiamato ad allenare il grosseto, dopo l'esonero di Gustinetti.' implica logicamente che la frase: 'Il 15 febbraio 2009 viene chiamato ad allenare il grosseto calcio, dopo l'esonero di Gustinetti.' sia vera?",
         "options": [
@@ -27439,7 +27389,6 @@
       ],
       "n_options": 2,
       "n_items": 400,
-      "metric": "acc_norm",
       "example": {
         "prompt": "Devi risolvere un compito di inferenza semantica. La frase: 'Il 15 febbraio 2009 viene chiamato ad allenare il grosseto, dopo l'esonero di Gustinetti.' implica logicamente che la frase: 'Il 15 febbraio 2009 viene chiamato ad allenare il grosseto calcio, dopo l'esonero di Gustinetti.' sia vera?",
         "options": [
@@ -27458,7 +27407,6 @@
       ],
       "n_options": 2,
       "n_items": 400,
-      "metric": "acc_norm",
       "example": {
         "prompt": "La frase: 'Il 15 febbraio 2009 viene chiamato ad allenare il grosseto, dopo l'esonero di Gustinetti.' implica logicamente che la frase: 'Il 15 febbraio 2009 viene chiamato ad allenare il grosseto calcio, dopo l'esonero di Gustinetti.' sia vera?\nA: Sì\nB: No\nRisposta:",
         "options": [
@@ -27477,7 +27425,6 @@
       ],
       "n_options": 2,
       "n_items": 400,
-      "metric": "acc_norm",
       "example": {
         "prompt": "Devi risolvere un compito di inferenza semantica. La frase: 'Il 15 febbraio 2009 viene chiamato ad allenare il grosseto, dopo l'esonero di Gustinetti.' implica logicamente che la frase: 'Il 15 febbraio 2009 viene chiamato ad allenare il grosseto calcio, dopo l'esonero di Gustinetti.' sia vera?\nA: Sì\nB: No\nRisposta:",
         "options": [
@@ -27496,7 +27443,6 @@
       ],
       "n_options": 2,
       "n_items": 400,
-      "metric": "acc_norm",
       "example": {
         "prompt": "Frase 1: 'Il 15 febbraio 2009 viene chiamato ad allenare il grosseto, dopo l'esonero di Gustinetti.' Frase 2: 'Il 15 febbraio 2009 viene chiamato ad allenare il grosseto calcio, dopo l'esonero di Gustinetti.'",
         "options": [
@@ -27515,7 +27461,6 @@
       ],
       "n_options": 2,
       "n_items": 400,
-      "metric": "acc_norm",
       "example": {
         "prompt": "Devi risolvere un compito di inferenza semantica. Frase 1: 'Il 15 febbraio 2009 viene chiamato ad allenare il grosseto, dopo l'esonero di Gustinetti.' Frase 2: 'Il 15 febbraio 2009 viene chiamato ad allenare il grosseto calcio, dopo l'esonero di Gustinetti.'",
         "options": [
@@ -27534,7 +27479,7 @@
       ],
       "n_options": 2,
       "n_items": 500,
-      "metric": "acc_norm",
+      "metric": "f1",
       "example": {
         "prompt": "La parola: 'minori' nella frase: 'Dopo innumerevoli provini sono stati scelti 15 attori per i ruoli principali , 200 per le parti minori e quasi 4000 comparse che animeranno le 24 puntate da 50 minuti ognuna trasmesse ogni domenica con due episodi l' uno di seguito all' altro .' ha lo stesso significato della parola: 'minore' nella frase: 'Il direttore di Micromega ha detto che , dopo questi due giorni , ci troviamo di fronte alla scelta fra un bene e un male minore .'?",
         "options": [
@@ -27553,7 +27498,7 @@
       ],
       "n_options": 2,
       "n_items": 500,
-      "metric": "acc_norm",
+      "metric": "f1",
       "example": {
         "prompt": "Devi determinare se una stessa parola usata in due frasi differenti ha lo stesso significato in entrambi i contesti. La parola: 'minori' nella frase: 'Dopo innumerevoli provini sono stati scelti 15 attori per i ruoli principali , 200 per le parti minori e quasi 4000 comparse che animeranno le 24 puntate da 50 minuti ognuna trasmesse ogni domenica con due episodi l' uno di seguito all' altro .' ha lo stesso significato della parola: 'minore' nella frase: 'Il direttore di Micromega ha detto che , dopo questi due giorni , ci troviamo di fronte alla scelta fra un bene e un male minore .'?",
         "options": [
@@ -27572,7 +27517,7 @@
       ],
       "n_options": 2,
       "n_items": 500,
-      "metric": "acc_norm",
+      "metric": "f1",
       "example": {
         "prompt": "La parola 'minori' nella frase 'Dopo innumerevoli provini sono stati scelti 15 attori per i ruoli principali , 200 per le parti minori e quasi 4000 comparse che animeranno le 24 puntate da 50 minuti ognuna trasmesse ogni domenica con due episodi l' uno di seguito all' altro .' ha lo stesso significato della parola 'minore' nella frase 'Il direttore di Micromega ha detto che , dopo questi due giorni , ci troviamo di fronte alla scelta fra un bene e un male minore .'?\nA: Sì\nB: No\nRisposta:",
         "options": [
@@ -27591,7 +27536,7 @@
       ],
       "n_options": 2,
       "n_items": 500,
-      "metric": "acc_norm",
+      "metric": "f1",
       "example": {
         "prompt": "…rminare se una stessa parola usata in due frasi differenti ha lo stesso significato in entrambi i contesti. La parola 'minori' nella frase 'Dopo innumerevoli provini sono stati scelti 15 attori per i ruoli principali , 200 per le parti minori e quasi 4000 comparse che animeranno le 24 puntate da 50 minuti ognuna trasmesse ogni domenica con due episodi l' uno di seguito all' altro .' ha lo stesso significato della parola 'minore' nella frase 'Il direttore di Micromega ha detto che , dopo questi due giorni , ci troviamo di fronte alla scelta fra un bene e un male minore .'?\nA: Sì\nB: No\nRisposta:",
         "options": [
@@ -27610,7 +27555,7 @@
       ],
       "n_options": 2,
       "n_items": 500,
-      "metric": "acc_norm",
+      "metric": "f1",
       "example": {
         "prompt": "La parola: 'minori' nella frase: 'Dopo innumerevoli provini sono stati scelti 15 attori per i ruoli principali , 200 per le parti minori e quasi 4000 comparse che animeranno le 24 puntate da 50 minuti ognuna trasmesse ogni domenica con due episodi l' uno di seguito all' altro .' e la parola: 'minore' nella frase: 'Il direttore di Micromega ha detto che , dopo questi due giorni , ci troviamo di fronte alla scelta fra un bene e un male minore .'",
         "options": [
@@ -27629,7 +27574,7 @@
       ],
       "n_options": 2,
       "n_items": 500,
-      "metric": "acc_norm",
+      "metric": "f1",
       "example": {
         "prompt": "Devi determinare se una stessa parola usata in due frasi differenti ha lo stesso significato in entrambi i contesti. La parola: 'minori' nella frase: 'Dopo innumerevoli provini sono stati scelti 15 attori per i ruoli principali , 200 per le parti minori e quasi 4000 comparse che animeranno le 24 puntate da 50 minuti ognuna trasmesse ogni domenica con due episodi l' uno di seguito all' altro .' e la parola: 'minore' nella frase: 'Il direttore di Micromega ha detto che , dopo questi due giorni , ci troviamo di fronte alla scelta fra un bene e un male minore .'",
         "options": [
@@ -29244,7 +29189,6 @@
       ],
       "n_options": 2,
       "n_items": 840,
-      "metric": "acc_norm",
       "example": {
         "prompt": "",
         "options": [
@@ -29652,7 +29596,6 @@
       ],
       "n_options": 2,
       "n_items": 1838,
-      "metric": "acc_norm",
       "example": {
         "prompt": "Bangla PIQA: physical commonsense reasoning questions.আমি কীভাবে এটির নতুন বাসিন্দাদের জন্য একটি গিনিপিগ খাঁচা প্রস্তুত করব?\nA. গিনিপিগকে ছিঁড়ে যাওয়া কাগজের স্ট্রিপ দিয়ে তৈরি কয়েক ইঞ্চি বিছানায় পূর্ণ একটি খাঁচা সরবরাহ করুন, আপনাকে এটি একটি জলের বোতল এবং একটি খাবারের থালাও সরবরাহ করতে হবে।\nB. গিনিপিগকে ছিঁড়ে যাওয়া জিন্সের উপাদান দিয়ে তৈরি কয়েক ইঞ্চি বিছানায় পূর্ণ একটি খাঁচা সরবরাহ করুন, আপনাকে এটি একটি জলের বোতল এবং একটি খাবারের থালাও সরবরাহ করতে হবে।\nAnswer:",
         "options": [
@@ -29692,7 +29635,6 @@
       ],
       "n_options": 4,
       "n_items": 119,
-      "metric": "acc_norm",
       "example": {
         "prompt": "Répond au mieux en complétant la question avec une des réponses proposées.La phrase suivante est correcte grammaticalement:",
         "options": [
@@ -29713,7 +29655,6 @@
       ],
       "n_options": 4,
       "n_items": 71,
-      "metric": "acc_norm",
       "example": {
         "prompt": "…vec grand plaisir que je vous envoie ce message pour vous décrire votre voyage à Paris en notre compagnie. À votre arrivée, le 7 juin prochain, nous allons vous accueillir à l’aéroport pour vous conduire à votre hôtel. Puis, du 8 au 17 juin, vous allez visiter la capitale de notre pays accompagnés de notre guide, Hervé, qui va vous faire découvrir les musées, les rues, les boutiques mais aussi les restaurants de Paris. N’oubliez pas votre appareil photo ! Les températures en ce moment à Paris sont comprises entre 20 et 24 degrés. Un climat délicieux. À très bientôt. L’équipe de voyagemalin.com",
         "options": [
@@ -29734,7 +29675,6 @@
       ],
       "n_options": 4,
       "n_items": 119,
-      "metric": "acc_norm",
       "example": {
         "prompt": "La phrase suivante est logique sémantiquement:",
         "options": [
@@ -29755,7 +29695,6 @@
       ],
       "n_options": 3,
       "n_items": 5010,
-      "metric": "acc_norm",
       "example": {
         "prompt": "La prémisse et l'hypothèse sont elles en accord, neutres en elles, ou en contradiction ?\nPrémisse: Eh bien, je ne pensais même pas à cela, mais j'étais si frustré, et j'ai fini par lui reparler.\n\nHypothèse: Je ne lui ai pas parlé de nouveau\n\nLa prémisse et l'hypothèse sont",
         "options": [
@@ -30006,7 +29945,7 @@
       ],
       "n_options": 2,
       "n_items": 917,
-      "metric": "acc_norm",
+      "metric": "mcc",
       "example": {
         "prompt": "Determine whether the following sentence(s) violate certain linguistic constraints. If yes, then it is \"unacceptable\"; otherwise, \"acceptable\".\n\nSentence: يكتبون\nDetermine whether this sentence is acceptable or unacceptable?\nA. Acceptable\nB. Unacceptable\nAnswer:",
         "options": [
@@ -30025,7 +29964,7 @@
       ],
       "n_options": 2,
       "n_items": 945,
-      "metric": "acc_norm",
+      "metric": "mcc",
       "example": {
         "prompt": "Determine whether the following sentence(s) violate certain linguistic constraints. If yes, then it is \"unacceptable\"; otherwise, \"acceptable\".\n\nSentence: Es hat heute jede Maus den Käse verschmähat\nDetermine whether this sentence is acceptable or unacceptable?\nA. Acceptable\nB. Unacceptable\nAnswer:",
         "options": [
@@ -30044,7 +29983,7 @@
       ],
       "n_options": 2,
       "n_items": 516,
-      "metric": "acc_norm",
+      "metric": "mcc",
       "example": {
         "prompt": "Determine whether the following sentence(s) violate certain linguistic constraints. If yes, then it is \"unacceptable\"; otherwise, \"acceptable\".\n\nSentence: Somebody just left - guess who.\nDetermine whether this sentence is acceptable or unacceptable?\nA. Acceptable\nB. Unacceptable\nAnswer:",
         "options": [
@@ -30063,7 +30002,7 @@
       ],
       "n_options": 2,
       "n_items": 988,
-      "metric": "acc_norm",
+      "metric": "mcc",
       "example": {
         "prompt": "Determine whether the following sentence(s) violate certain linguistic constraints. If yes, then it is \"unacceptable\"; otherwise, \"acceptable\".\n\nSentence: Construyeron un puente.\nDetermine whether this sentence is acceptable or unacceptable?\nA. Acceptable\nB. Unacceptable\nAnswer:",
         "options": [
@@ -30082,7 +30021,7 @@
       ],
       "n_options": 2,
       "n_items": 1333,
-      "metric": "acc_norm",
+      "metric": "mcc",
       "example": {
         "prompt": "Determine whether the following sentence(s) violate certain linguistic constraints. If yes, then it is \"unacceptable\"; otherwise, \"acceptable\".\n\nSentence: Il va au centre-ville.\nDetermine whether this sentence is acceptable or unacceptable?\nA. Acceptable\nB. Unacceptable\nAnswer:",
         "options": [
@@ -30101,7 +30040,7 @@
       ],
       "n_options": 2,
       "n_items": 2198,
-      "metric": "acc_norm",
+      "metric": "mcc",
       "example": {
         "prompt": "Determine whether the following sentence(s) violate certain linguistic constraints. If yes, then it is \"unacceptable\"; otherwise, \"acceptable\".\n\nSentence: Ég sá gula hænu.\nDetermine whether this sentence is acceptable or unacceptable?\nA. Acceptable\nB. Unacceptable\nAnswer:",
         "options": [
@@ -30120,7 +30059,7 @@
       ],
       "n_options": 2,
       "n_items": 975,
-      "metric": "acc_norm",
+      "metric": "mcc",
       "example": {
         "prompt": "Determine whether the following sentence(s) violate certain linguistic constraints. If yes, then it is \"unacceptable\"; otherwise, \"acceptable\".\n\nSentence: Quell'uomo e quella donna mi hanno colpito.\nDetermine whether this sentence is acceptable or unacceptable?\nA. Acceptable\nB. Unacceptable\nAnswer:",
         "options": [
@@ -30139,7 +30078,7 @@
       ],
       "n_options": 2,
       "n_items": 1561,
-      "metric": "acc_norm",
+      "metric": "mcc",
       "example": {
         "prompt": "Determine whether the following sentence(s) violate certain linguistic constraints. If yes, then it is \"unacceptable\"; otherwise, \"acceptable\".\n\nSentence: まあ！\nDetermine whether this sentence is acceptable or unacceptable?\nA. Acceptable\nB. Unacceptable\nAnswer:",
         "options": [
@@ -30158,7 +30097,7 @@
       ],
       "n_options": 2,
       "n_items": 2227,
-      "metric": "acc_norm",
+      "metric": "mcc",
       "example": {
         "prompt": "Determine whether the following sentence(s) violate certain linguistic constraints. If yes, then it is \"unacceptable\"; otherwise, \"acceptable\".\n\nSentence: Это правило распространяется на швейцарские рейсы, которые начинаются или заканчиваются в американском аэропорту.\nDetermine whether this sentence is acceptable or unacceptable?\nA. Acceptable\nB. Unacceptable\nAnswer:",
         "options": [
@@ -30177,7 +30116,7 @@
       ],
       "n_options": 2,
       "n_items": 931,
-      "metric": "acc_norm",
+      "metric": "mcc",
       "example": {
         "prompt": "Determine whether the following sentence(s) violate certain linguistic constraints. If yes, then it is \"unacceptable\"; otherwise, \"acceptable\".\n\nSentence: 他们坑儿挖浅了。\nDetermine whether this sentence is acceptable or unacceptable?\nA. Acceptable\nB. Unacceptable\nAnswer:",
         "options": [

@@ -969,9 +969,13 @@ entry point. It does **two** jobs:
   `iter` and `tokens` are also defined and can be swapped in via the W&B UI
   (Edit panel → X-axis).
 
-**Per-benchmark metric** — `flatten()`: prefer `acc`; fall back to
-`exact_match` (mgsm-style); skip the task otherwise. `acc_norm`,
-`acc_bytes`, `degeneration`, all `*_stderr` are intentionally dropped.
+**Per-benchmark metric** — `flatten()`: the task's tasks.json `metric`
+when it has one; else prefer `acc`; fall back to `exact_match`
+(mgsm-style); skip the task otherwise. `acc_bytes`, `degeneration`, all
+`*_stderr` are intentionally dropped. An override naming a metric the task
+does not emit drops the task silently, here and in `ladder_report`: until
+2026-10-08, 77 probe tasks (kmmlu, MELA, EVALITA, ...) carried `acc_norm`
+and never reached the gate. Set `metric` only where `acc` is wrong.
 
 **Subtopic aggregation** — `aggregate_parents()`: a task `T` is collapsed
 into its parent `P` if `P` is an underscore-prefix of `T` and `P` is also

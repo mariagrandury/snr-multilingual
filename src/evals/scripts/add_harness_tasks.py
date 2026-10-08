@@ -173,7 +173,8 @@ BENCHMARK_META = {
 
 
 def measure(names: list[str]) -> dict[str, dict]:
-    """task -> {n_items, n_options}, read off the harness's own documents.
+    """task -> {n_items, n_options, metrics}, read off the harness's own
+    documents and metric list.
 
     A group resolves to its children; its counts are theirs summed, which is
     what the harness reports for the group row and what the gate then reads.
@@ -197,11 +198,12 @@ def measure(names: list[str]) -> dict[str, dict]:
             print(f"  !! {name}: {type(e).__name__}: {str(e)[:120]}")
             continue
         counts: Counter = Counter()
-        items = 0
+        items, metrics = 0, []
         for obj in loaded.values():
             for t in (obj.values() if isinstance(obj, dict) else [obj]):
                 if not hasattr(t, "eval_docs"):
                     continue
+                metrics += [m for m in t._metric_fn_list if m not in metrics]
                 for d in t.eval_docs:
                     counts[len(t.doc_to_choice(d))] += 1
                     items += 1
@@ -209,7 +211,7 @@ def measure(names: list[str]) -> dict[str, dict]:
             print(f"  !! {name}: no documents")
             continue
         out[name] = {"n_items": items, "n_options": _effective_options(counts),
-                     "spread": dict(sorted(counts.items()))}
+                     "spread": dict(sorted(counts.items())), "metrics": metrics}
         print(f"  {name:32s} {items:7d} items, {out[name]['n_options']} options "
               f"{'(mixed: ' + str(out[name]['spread']) + ')' if len(counts) > 1 else ''}")
     return out
@@ -234,7 +236,16 @@ def main() -> None:
         entry = data["tasks"].setdefault(task, {})
         entry.update({"language": lang, "benchmark": bench, "stages": ["pretraining"],
                       "n_options": stats[task]["n_options"],
-                      "n_items": stats[task]["n_items"], "metric": "acc_norm"})
+                      "n_items": stats[task]["n_items"]})
+        # `metric` must name a metric the task emits: results_io.flatten and
+        # ladder_report drop the task otherwise (kmmlu, MELA, ... scored
+        # nothing until 2026-10-08). acc_norm where emitted; `acc` is the
+        # readers' default, so no override; else the task's own (mela: mcc).
+        m = stats[task]["metrics"]
+        if "acc_norm" in m or "acc" not in m:
+            entry["metric"] = "acc_norm" if "acc_norm" in m else m[0]
+        else:
+            entry.pop("metric", None)
         added += 1
     benches = sorted({b for t, _, b in wanted if t in stats})
     data["groups"]["auto_probe"] = sorted(set(data["groups"].get("auto_probe", [])) | set(benches))
