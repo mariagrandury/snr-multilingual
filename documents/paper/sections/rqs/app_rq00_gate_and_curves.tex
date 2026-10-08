@@ -35,3 +35,12 @@
 \end{minipage}
 \vspace{\baselineskip}
 }]
+
+\begin{table*}[p]
+\centering
+\small
+\caption{\textbf{The tasks that pass at very small token counts answer with one option.} The ten tasks above chance in at least half of their cells below $10^{8}$ tokens of their language and in fewer than half of their cells at $10^{8}$--$10^{10}$ tokens. We read the deep runs with the baseline data at seed 1904, at every evaluated tenth, from their stored option log-likelihoods. Share of runs above chance: trained runs below $10^{8}$ tokens of the language (Low), trained runs at $10^{8}$--$10^{10}$ tokens (Mid), and runs that never trained the language nor a language of its subfamily, at the sizes and checkpoints of the Low runs (Untrained). Over the Low runs above chance: their number, the median share of items answered with the option the run picks most often (One option), and the share of these runs in which that option alone would clear chance (Constant passes). Longest option: the median share of picks on the single longest option and the share of gold answers on it. CulturalBench-easy asks in English about a country and is placed at the tokens of the country's language.}
+\label{tab:app_rq00_early_passes}
+\input{tables/app_rq00_early_passes}
+% source: src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/early_passes.tex
+\end{table*}

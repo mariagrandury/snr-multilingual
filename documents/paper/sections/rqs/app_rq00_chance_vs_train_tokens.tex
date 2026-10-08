@@ -40,3 +40,12 @@
 \input{tables/rq00_thresholds}
 % source: src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_seeds/pass_threshold_tokens_by_benchmark_1904_ckpts.tex
 \end{table*}
+
+\begin{table*}[p]
+\centering
+\small
+\caption{\textbf{Leaving out the cells below the token threshold lowers the decision accuracy of an aggregate score.} For each benchmark and each seed-1904 run at its final checkpoint, the aggregate is the mean of the benchmark's tasks over the languages the run trains. We compute it on every cell, on the cells at or above the benchmark's pooled 50\% token threshold (Table~\ref{tab:rq0_thresholds}), and on the cells above chance at the run's size and at 1.7B. SE is the median over runs of the standard deviation of the per-language values divided by the square root of their number. DA-size compares the aggregate of each proxy with the 1.7B aggregate under the same rule, on single-axis pairs, pooled over the 18 benchmarks that keep an aggregate under every rule. The nine benchmarks that never reach their threshold lose every cell.}
+\label{tab:app_rq00_token_exclusion}
+\input{tables/app_rq00_token_exclusion}
+% source: src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity/token_exclusion_da_size_mono_axis.tex
+\end{table*}

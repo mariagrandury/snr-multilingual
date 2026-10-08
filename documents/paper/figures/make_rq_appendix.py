@@ -473,7 +473,20 @@ PAGES = {
         "task when the one-sided 95\\% Wilson lower bound of its accuracy over the task's items is above the chance "
         "level. A (task, size) cell is above chance when at least half of the runs of that size that train the task's "
         "language clear it. Tasks without a chance level (bits per byte) are not gated.",
-        "highlights", 0),
+        "highlights", 0,
+        (("app_rq00_early_passes",
+          "\\textbf{The tasks that pass at very small token counts answer with one option.} The ten tasks above chance "
+          "in at least half of their cells below $10^{8}$ tokens of their language and in fewer than half of their cells "
+          "at $10^{8}$--$10^{10}$ tokens. We read the deep runs with the baseline data at seed 1904, at every evaluated "
+          "tenth, from their stored option log-likelihoods. Share of runs above chance: trained runs below $10^{8}$ "
+          "tokens of the language (Low), trained runs at $10^{8}$--$10^{10}$ tokens (Mid), and runs that never trained "
+          "the language nor a language of its subfamily, at the sizes and checkpoints of the Low runs (Untrained). Over "
+          "the Low runs above chance: their number, the median share of items answered with the option the run picks "
+          "most often (One option), and the share of these runs in which that option alone would clear chance "
+          "(Constant passes). Longest option: the median share of picks on the single longest option and the share of "
+          "gold answers on it. CulturalBench-easy asks in English about a country and is placed at the tokens of the "
+          "country's language.",
+          "tab:app_rq00_early_passes"),)),
     "rq00_task_reformulation": (
         "Task reformulation", "app_rq00_chance_reformulation",
         "We compare the letter-format multiple-choice benchmarks (Belebele, Global-MMLU, INCLUDE) with two "
@@ -501,7 +514,17 @@ PAGES = {
           "bound to clear chance, and Items its median item count. Seed-1904 runs of every data build and ladder, every "
           "evaluated tenth of a run. The pooled bins mix sizes, and from $10^{10}$ tokens on most of their cells are "
           "English.",
-          "tab:rq0_thresholds"),)),
+          "tab:rq0_thresholds"),
+         ("app_rq00_token_exclusion",
+          "\\textbf{Leaving out the cells below the token threshold lowers the decision accuracy of an aggregate "
+          "score.} For each benchmark and each seed-1904 run at its final checkpoint, the aggregate is the mean of the "
+          "benchmark's tasks over the languages the run trains. We compute it on every cell, on the cells at or above "
+          "the benchmark's pooled 50\\% token threshold (Table~\\ref{tab:rq0_thresholds}), and on the cells above chance "
+          "at the run's size and at 1.7B. SE is the median over runs of the standard deviation of the per-language "
+          "values divided by the square root of their number. DA-size compares the aggregate of each proxy with the "
+          "1.7B aggregate under the same rule, on single-axis pairs, pooled over the 18 benchmarks that keep an "
+          "aggregate under every rule. The nine benchmarks that never reach their threshold lose every cell.",
+          "tab:app_rq00_token_exclusion"))),
     "rq01_scaling_predictability": (
         "Scaling predictability", "rq1",
         "We fit the final score of each task against model size with a log-linear fit, one series per task and "
@@ -666,7 +689,17 @@ PAGES = {
         "to the 3B final checkpoint and to the 1.7B final checkpoint, on the same single-axis decisions. "
         "Benchmark accuracy (tasks above chance at the proxy, at 1.7B and at 3B) and per-language bits per byte "
         "are pooled separately. The bands are 90\\% leave-one-family-out jackknife bands.",
-        None, 0),
+        None, 0,
+        (("app_rq10_reference_choice",
+          "\\textbf{Neither the seed of the reference nor a 3B reference at $K=30$ lifts benchmark accuracy far above a "
+          "coin flip.} DA-size of benchmark accuracy (with the bBPB twins) from the final checkpoint of each proxy. "
+          "Top: against the 1B final checkpoint of each of its three seeds, on the four designs trained with three "
+          "seeds at 1B (deep, $K \\in \\{1, 2, 30\\}$ with scheme A and $K=30$ with scheme B), and against the 1.7B "
+          "final checkpoint on the same designs. Bottom: against the 3B final checkpoint, on the decisions between "
+          "the one 3B model at $K=30$ and the five other 3B models. Then the same decisions against 1.7B, and every "
+          "decision among the six 3B models. Within a block a task counts only where every column scores it. A task "
+          "is above chance at the proxy and at the reference and has at least three pairs.",
+          "tab:app_rq10_reference_choice"),)),
     "rq11_evaluation_recipe": (
         "Evaluation recipe", "app_rq11_evaluation_recipe",
         "Seed-1904 runs of every cell. We report the DA-size of the proxies 90M--1B against the 1.7B final "

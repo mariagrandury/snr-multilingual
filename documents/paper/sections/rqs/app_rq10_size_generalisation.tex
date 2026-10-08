@@ -32,3 +32,12 @@
 \end{minipage}
 \vspace{\baselineskip}
 }]
+
+\begin{table*}[p]
+\centering
+\small
+\caption{\textbf{Neither the seed of the reference nor a 3B reference at $K=30$ lifts benchmark accuracy far above a coin flip.} DA-size of benchmark accuracy (with the bBPB twins) from the final checkpoint of each proxy. Top: against the 1B final checkpoint of each of its three seeds, on the four designs trained with three seeds at 1B (deep, $K \in \{1, 2, 30\}$ with scheme A and $K=30$ with scheme B), and against the 1.7B final checkpoint on the same designs. Bottom: against the 3B final checkpoint, on the decisions between the one 3B model at $K=30$ and the five other 3B models. Then the same decisions against 1.7B, and every decision among the six 3B models. Within a block a task counts only where every column scores it. A task is above chance at the proxy and at the reference and has at least three pairs.}
+\label{tab:app_rq10_reference_choice}
+\input{tables/app_rq10_reference_choice}
+% source: src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_choice_da_size_both_axes.tex
+\end{table*}

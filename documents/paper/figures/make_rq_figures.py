@@ -48,6 +48,10 @@ comes from). The .tex carries the source path as a comment next to the
     app_rq09_design_da_quadrant    <- the same                       design_da_size_quadrant_mono_axis_paper (every task above chance)
     app_rq09_benchmark_characteristics <- the same                   benchmark_characteristics.tex (a LaTeX table)
                              (these four: the extra float pages of the benchmark-design appendix page)
+    app_rq00_token_exclusion <- rq00_chance_vs_train_tokens/token_exclusion.py  token_exclusion_da_size_mono_axis.tex
+    app_rq00_early_passes      <- rq00_gate_and_curves/early_passes.py           early_passes.tex
+    app_rq10_reference_choice  <- rq10_size_generalisation/reference_choice.py   reference_choice_da_size_both_axes.tex
+                             (these three: LaTeX tables, extra floats of their folders' appendix pages)
     app_rq10_size_generalisation <- rq10_size_generalisation/reference_consistency.py --paper
                              gate_share_and_da_size_mono_axis_paper
     app_rq11_evaluation_recipe <- rq11_evaluation_recipe/recipe.py --paper               recipe_da_size_variants_multi_axes_paper
@@ -115,6 +119,11 @@ PRED, SEEDS = ("pretraining", "predictivity"), ("pretraining", "predictivity_see
 FIGURES = {
     "rq0": (CHANCE_TOKENS / "pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_include_rf_paper_vertical", ("png",)),
     "rq00_thresholds": (CHANCE_TOKENS / "pass_threshold_tokens_by_benchmark_1904_ckpts", ("tex",)),
+    "app_rq00_token_exclusion": (ANALYSIS.joinpath("rq00_chance_vs_train_tokens", *PRED, "token_exclusion_da_size_mono_axis"),
+                                 ("tex",)),
+    "app_rq00_early_passes": (GATE / "early_passes", ("tex",)),
+    "app_rq10_reference_choice": (ANALYSIS.joinpath("rq10_size_generalisation", *PRED, "reference_choice_da_size_both_axes"),
+                                  ("tex",)),
     "rq1": (RQ01 / "scaling_regimes_outliers_paper", ("png",)),
     "rq2": (ANALYSIS / "rq02_decision_accuracy" / "pretraining" / "predictivity"
             / "rq2_da_all_above_66_either_transformation_mono_axis", ("png",)),
