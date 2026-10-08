@@ -1330,19 +1330,31 @@ subtitle: "Results (auto) — per-family SNR, above-random survivors"
 | `multiblimp` | 2.39 | 2 | minimal_pair |
 | `hellaswag` | 2.29 | 4 | completion |
 | `xstorycloze` | 2.18 | 2 | completion |
+| `global_piqa_nonparallel_cloze` | 2.06 | 2 | completion |
 | `xwinograd` | 1.77 | 2 | completion |
 | `paws` | 1.55 | 2 | classification |
 | `xcopa` | 1.32 | 2 | completion |
 | `global_mmlu_full` | 1.26 | 4 | mcq_question_only |
+| `rf_mmlu` | 1.09 | 4 | cloze_completion |
 | `xnli` | 1.01 | 3 | classification |
+| `rf_acp_bench_mcq` | 0.97 | 4 | cloze_completion |
+| `rf_commonsense_qa` | 0.95 | 5 | cloze_completion |
+| `lambada_openai_mt` | 0.94 |  | last_word |
+| `rf_bbh_mcq` | 0.90 |  | cloze_completion |
+| `include_v2_og` | 0.89 | 4 | cloze_completion |
 | `rf_global_mmlu_full` | 0.84 | 4 | cloze_completion |
 | `rfgm_belebele` | 0.83 | 4 | statement_continuation |
-| `arc` | 0.73 | 4 | mcq_question_only |
+| `rf_cultural_bench_easy` | 0.83 | 4 | cloze_completion |
+| `openbookqa` | 0.76 | 4 | completion |
+| `arc` | 0.73 | 4 | cloze_completion |
 | `rfgm_include_base_44` | 0.72 | 4 | statement_continuation |
+| `include_v2_en` | 0.68 | 4 | cloze_completion |
 | `include_base_44` | 0.66 | 4 | mcq_question_only |
+| `arc_mt` | 0.64 | 4 | cloze_completion |
 | `rf_belebele` | 0.61 | 4 | cloze_completion |
-| `global_piqa_parallel_cloze` | 0.59 | 2 | completion |
+| `global_piqa_parallel_cloze` | 0.59 | 4 | completion |
 | `rf_include_base_44` | 0.58 | 4 | cloze_completion |
+| `mathqa` | 0.56 | 5 | cloze_completion |
 | `belebele` | 0.51 | 4 | mrc_passage |
 
 <style>

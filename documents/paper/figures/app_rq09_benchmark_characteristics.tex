@@ -2,18 +2,30 @@
 \toprule
 Benchmark & Curation & Source & Format & Options & Passage & Context & Option \\
 \midrule
-ARC & MT & translated & MCQ & 4 & no & 122 & 28 \\
+ACP-Bench (MCQ) RF & template & English & cloze & 4 & yes & -- & -- \\
+ARC & MT & translated & cloze & 4 & no & 122 & 28 \\
+ARC (MT) & MT & translated & cloze & 4 & no & -- & -- \\
+BBH (MCQ) RF & unknown & English & cloze & 2--8 & unknown & -- & -- \\
 Belebele & human transl. & translated & MCQ + passage & 4 & yes & 558 & 21 \\
 Belebele LLM-RF & human transl. & translated & statement (LLM-RF) & 4 & yes & -- & -- \\
-Belebele RF & human transl. & translated & cloze (RF) & 4 & yes & -- & -- \\
-Global PIQA (parallel) & native & native & completion & 2 & no & -- & -- \\
+Belebele RF & human transl. & translated & cloze & 4 & yes & -- & -- \\
+CommonsenseQA RF & English & English & cloze & 5 & no & -- & -- \\
+CulturalBench-easy RF & English & English & cloze & 4 & no & -- & -- \\
+Global PIQA (non-parallel) & native & native & completion & 2 & no & -- & -- \\
+Global PIQA (parallel) & MT + post-edit & translated & completion & 4 & no & -- & -- \\
 Global-MMLU & MT + post-edit & translated & MCQ & 4 & no & 120 & 11 \\
-Global-MMLU RF & MT + post-edit & translated & cloze (RF) & 4 & no & -- & -- \\
+Global-MMLU RF & MT + post-edit & translated & cloze & 4 & no & -- & -- \\
 HellaSwag & MT & translated & completion & 4 & yes & 118 & 61 \\
 INCLUDE & native & native & MCQ & 4 & no & -- & -- \\
 INCLUDE LLM-RF & native & native & statement (LLM-RF) & 4 & no & -- & -- \\
-INCLUDE RF & native & native & cloze (RF) & 4 & no & -- & -- \\
+INCLUDE RF & native & native & cloze & 4 & no & -- & -- \\
+INCLUDE v2 (EN) & transl. (unknown) & native & cloze & 4 & no & -- & -- \\
+INCLUDE v2 (OG) & native & native & cloze & 4 & no & -- & -- \\
+LAMBADA & MT & translated & last word & -- & yes & -- & -- \\
+MMLU RF & English & English & cloze & 4 & no & -- & -- \\
+MathQA & English & English & cloze & 5 & no & -- & -- \\
 MultiBLiMP & template & native & minimal pair & 2 & no & 46 & 119 \\
+OpenBookQA & English & English & completion & 4 & no & -- & -- \\
 PAWS-X & human transl. & translated & classification & 2 & no & 224 & 2 \\
 XCOPA & human transl. & translated & completion & 2 & no & 37 & 31 \\
 XNLI & human transl. & translated & classification & 3 & no & 127 & 10 \\

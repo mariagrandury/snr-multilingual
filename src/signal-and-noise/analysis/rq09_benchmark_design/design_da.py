@@ -18,14 +18,15 @@ This reads the same characteristics against DA-size instead of SNR:
               mean of those medians over the proxies 90M-1B that have one.
   statistic   per characteristic, Spearman rho over the benchmarks against the
               characteristic's centred code (`encode`: an ordinal characteristic ranked, a
-              binary one -1/+1; a length as is). The two characteristics with more than two
+              binary one -1/+1; a length as is). The characteristics with more than two
               unordered levels are binarised (the user's call, 2026-10-08): curation as
-              translated (human, MT, MT + post-edit) vs native (written in the language or
-              generated from its treebanks), task format as continuation (the options scored
-              as continuations: completion, minimal pair, classification labels, RF cloze,
-              LLM-RF statement) vs lettered MCQ (question or passage with lettered options).
-              On these families native curation and an originally multilingual source pick
-              the same benchmarks, so those two rows coincide. 95 % percentile bootstrap over
+              translated (human, MT, MT + post-edit, method unknown) vs native (written in the
+              language, English originals included, or generated from treebanks or planning
+              problems), source as translated from English vs not, task format as continuation
+              (the options scored as continuations: completion, minimal pair, classification
+              labels, cloze, LLM-RF statement, LAMBADA's last word) vs lettered MCQ (question
+              or passage with lettered options). A characteristic FAMILY_META leaves None
+              (no source settles it) drops that benchmark from that row only. 95 % percentile bootstrap over
               the benchmarks; the Kruskal-Wallis H and p of every two-group split beside.
               The same statistics on rq09's SNR (median `snr_mpd_1.7B`) sit beside.
 
@@ -43,7 +44,7 @@ This reads the same characteristics against DA-size instead of SNR:
                                                 one panel per characteristic: x = DA-size - 0.5 on every gated
                                                 task, y = the centred code, the benchmarks counted per quadrant
     design_da_size_quadrant_above_66_either_mono_axis.png/.csv (+ _paper)
-                                                the same on the above_66_either tasks (every benchmark lands
+                                                the same on the above_66_either tasks (most benchmarks land
                                                 right of chance there)
 
     python analysis/rq09_benchmark_design/design_da.py --pool predictivity
@@ -85,23 +86,27 @@ CHANCE = 0.5
 # binary levels are listed low to high: the code is the level's rank, centred at 0.
 CHARACTERISTICS = {
     "curation": ("Curation", "binary", ["translated", "native"]),
-    "source_origin": ("Source", "binary", ["english_translated", "originally_multilingual"]),
+    "source": ("Source", "binary", ["english_translated", "original"]),
     "format_type": ("Task format", "binary", ["continuation", "lettered MCQ"]),
-    "n_options": ("Answer options", "ordinal", [2, 3, 4]),
+    "n_options": ("Answer options", "ordinal", [2, 3, 4, 5]),
     "passage": ("Reading passage", "binary", [False, True]),
     "context_len_chars_median": ("Context length", "continuous", None),
     "option_len_chars_median": ("Option length", "continuous", None),
 }
 # the binarised characteristics: FAMILY_META level -> binary level
-NATIVE_CURATION = {"originally_multilingual", "template_generated"}
+NATIVE_CURATION = {"originally_multilingual", "template_generated", "english_original"}
+TRANSLATED_CURATION = {"human_translation", "mt_post_edited", "machine_translation", "translation_unknown"}
 LETTERED_FORMATS = {"mcq_question_only", "mrc_passage"}
 LEVEL_NAMES = {"translated": "translated", "native": "native", "continuation": "continuation",
+               "original": "not translated", "english_original": "English original",
+               "translation_unknown": "translated, method unknown", "cloze_completion": "cloze",
+               "last_word": "last word", 5: "5 options",
                "lettered MCQ": "lettered MCQ","originally_multilingual": "originally multilingual", "human_translation": "human translation",
                "template_generated": "template generated", "mt_post_edited": "MT post-edited",
                "machine_translation": "machine translation", "english_translated": "translated from English",
                "minimal_pair": "minimal pair", "completion": "completion", "classification": "classification",
                "mcq_question_only": "question with options", "mrc_passage": "passage with options",
-               "cloze_completion": "cloze (RF)", "statement_continuation": "statement (LLM-RF)",
+               "statement_continuation": "statement (LLM-RF)",
                2: "2 options", 3: "3 options", 4: "4 options", False: "no passage", True: "passage"}
 LENGTH_CSV = HERE / "length_features.csv"
 mpl.rcParams.update(S.RC)
@@ -117,7 +122,11 @@ def encode(col: str, v):
 def features() -> pd.DataFrame:
     meta = pd.DataFrame.from_dict(FAMILY_META, orient="index")
     meta.index.name = "family"
-    meta["curation"] = np.where(meta["curation_category"].isin(NATIVE_CURATION), "native", "translated")
+    cat = meta["curation_category"]
+    # an unknown method (BBH) is still untranslated when the benchmark is an English original
+    meta["curation"] = np.select([cat.isin(NATIVE_CURATION), cat.isin(TRANSLATED_CURATION),
+                                  meta["source_origin"] == "english_original"], ["native", "translated", "native"], None)
+    meta["source"] = np.where(meta["source_origin"] == "english_translated", "english_translated", "original")
     meta["format_type"] = np.where(meta["format"].isin(LETTERED_FORMATS), "lettered MCQ", "continuation")
     lf = pd.read_csv(LENGTH_CSV).set_index("family")
     return meta.join(lf[["context_len_chars_median", "option_len_chars_median"]])
@@ -226,8 +235,8 @@ def fig_correlation(c: pd.DataFrame, path: Path, paper: bool) -> None:
         return
     top = G._header(fig, "Benchmark characteristics against DA-size (and SNR)",
                     f"rank correlation over the benchmark families: Spearman ρ against the centred code of an ordinal or binary "
-                    f"characteristic (options 2 → 4, no passage → passage, translated → originally multilingual or native, "
-                    f"continuation → lettered MCQ) or a length; DA-size = rq02's mono-axis DA-size against 1.7B, median over a "
+                    f"characteristic (options 2 → 5, no passage → passage, translated → native, translated from English → "
+                    f"not, continuation → lettered MCQ) or a length; DA-size = rq02's mono-axis DA-size against 1.7B, median over a "
                     f"family's tasks per proxy; left: its mean over 90M–1B with a 95 % bootstrap CI over the families, on the "
                     f"{FILTER} tasks (filled), on every gated task (hollow) and rq09's SNR at 1.7B (diamond); right: one line "
                     f"per proxy ({FILTER})")
@@ -244,6 +253,8 @@ def level_table(values: dict[str, pd.Series], feat: pd.DataFrame) -> pd.DataFram
                 continue
             for fam, v in values[pop].dropna().items():
                 lv = feat.at[fam, col]
+                if pd.isna(lv):           # no source settles it (FAMILY_META None)
+                    continue
                 rows.append({"population": pop, "characteristic": col, "label": label, "kind": kind,
                              "level": LEVEL_NAMES[lv], "level_rank": levels.index(lv),
                              "code": encode(col, lv),
@@ -259,7 +270,7 @@ def example(t: pd.DataFrame) -> str:
 
 def fig_levels(t: pd.DataFrame, path: Path, paper: bool) -> None:
     """A row per characteristic level, grouped and coloured by characteristic; x = DA-size - 0.5
-    (the filtered population), the highest benchmark outlined and named."""
+    (the filtered population), the highest benchmark named on its dot once per characteristic."""
     top_fam = example(t)
     t = t[t["population"] == FILTER]
     t = t.sort_values(["characteristic", "level_rank"], key=lambda s: s.map(list(CHARACTERISTICS).index)
@@ -272,16 +283,18 @@ def fig_levels(t: pd.DataFrame, path: Path, paper: bool) -> None:
     for (col, lv), g in t.groupby(["characteristic", "level"], sort=False):
         y = pos[(col, lv)] + rng.uniform(-0.22, 0.22, len(g))
         top = (g["family"] == top_fam).to_numpy()
-        ax.scatter(g["x"], y, s=np.where(top, 20, 12), color=colours[col], lw=np.where(top, .8, .3),
-                   edgecolor=np.where(top, S.INK, "white"), zorder=2)
+        ax.scatter(g["x"], y, s=12, color=colours[col], lw=.3, edgecolor="white", zorder=2)
+        # the highest benchmark is the rightmost dot of its row, so its name to the right never covers a dot
         for x0, y0 in zip(g["x"][top], y[top]):
-            ax.annotate(G.paper_name(top_fam), (x0, y0), xytext=(-3, 0), textcoords="offset points", ha="right",
-                        va="center", fontsize=6, color=S.INK)
+            ax.annotate(G.paper_name(top_fam), (x0, y0), xytext=(2.5, 0), textcoords="offset points", ha="left",
+                        va="center", fontsize=5.5, color=S.INK)
         ax.plot([g["x"].median()] * 2, [pos[(col, lv)] - .35, pos[(col, lv)] + .35], color=S.INK, lw=1, zorder=3)
     for i, (col, lv) in enumerate(rows):
         if i and rows[i - 1][0] != col:
             ax.axhline(i - .5, color=S.GRID, lw=.6)
     ax.axvline(0, color=S.MUTED, lw=.7, ls=":")
+    lo, hi = t["x"].min(), t["x"].max()
+    ax.set_xlim(lo - .05 * (hi - lo), hi + .22 * (hi - lo))     # room for the name inside the frame
     ax.set_yticks(range(len(rows)))
     ax.set_yticklabels([f"{CHARACTERISTICS[c][0]}: {lv} ({int(((t['characteristic'] == c) & (t['level'] == lv)).sum())})"
                         for c, lv in rows], fontsize=6.5)
@@ -295,16 +308,17 @@ def fig_levels(t: pd.DataFrame, path: Path, paper: bool) -> None:
         return
     top = G._header(fig, "Benchmark DA-size by characteristic level",
                     f"dot = one benchmark family (jittered): its DA-size − 0.5 (0 = chance agreement), the mean over 90M–1B of "
-                    f"the median over its {FILTER} tasks (mono-axis, against 1.7B); bar = the level's median; count = benchmarks")
+                    f"the median over its {FILTER} tasks (mono-axis, against 1.7B); bar = the level's median; count = benchmarks; "
+                    f"{G.paper_name(top_fam)}, the highest, named once per characteristic")
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path)
 
 
 def fig_quadrant(t: pd.DataFrame, pop: str, path: Path, paper: bool) -> pd.DataFrame:
     """One panel per characteristic: x = DA-size - 0.5 of population `pop`, y = the centred code
-    (jittered); the benchmarks counted per quadrant, the highest DA-size outlined."""
-    top_fam = example(t)
+    (jittered); the benchmarks counted per quadrant, the highest DA-size of `pop` outlined."""
     t = t[t["population"] == pop]
+    top_fam = t.loc[t["da_size"].idxmax(), "family"]
     cols = list(dict.fromkeys(t["characteristic"]))
     rng = np.random.default_rng(0)
     ncol = 3
@@ -353,25 +367,33 @@ def fig_quadrant(t: pd.DataFrame, pop: str, path: Path, paper: bool) -> pd.DataF
 TABLE_NAMES = {"originally_multilingual": "native", "human_translation": "human transl.", "template_generated": "template",
                "mt_post_edited": "MT + post-edit", "machine_translation": "MT", "english_translated": "translated",
                "minimal_pair": "minimal pair", "completion": "completion", "classification": "classification",
-               "mcq_question_only": "MCQ", "mrc_passage": "MCQ + passage", "cloze_completion": "cloze (RF)",
-               "statement_continuation": "statement (LLM-RF)", False: "no", True: "yes"}
+               "mcq_question_only": "MCQ", "mrc_passage": "MCQ + passage", "cloze_completion": "cloze",
+               "statement_continuation": "statement (LLM-RF)", "last_word": "last word",
+               "english_original": "English", "translation_unknown": "transl. (unknown)", False: "no", True: "yes"}
 TABLE_HEAD = {"curation_category": "Curation", "source_origin": "Source", "format": "Format", "n_options": "Options",
               "passage": "Passage", "context_len_chars_median": "Context", "option_len_chars_median": "Option"}
 LENGTHS = ("context_len_chars_median", "option_len_chars_median")
 
 
 def characteristics_table(families: list, feat: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
-    """One row per benchmark, one column per characteristic: the CSV, and the tabular the paper prints
-    (lengths are the median characters of 100 sampled items; -- where none were sampled)."""
-    t = feat.loc[families, list(TABLE_HEAD) + ["curation", "format_type"]].copy()
+    """One row per benchmark, one column per characteristic: the CSV (with each annotation's source),
+    and the tabular the paper prints (lengths are the median characters of 100 sampled items, --
+    where none were sampled; options -- where none are scored, LAMBADA, or the range where the
+    subtasks differ; `unknown` where no source settles a characteristic)."""
+    t = feat.loc[families, list(TABLE_HEAD) + ["curation", "source", "format_type", "n_options_range",
+                                                "data_source", "curation_process"]].copy()
     t.insert(0, "benchmark", [G.paper_name(f) for f in families])
     t = t.sort_values("benchmark")
     t.to_csv(out_dir / "benchmark_characteristics.csv", index_label="family")
-    cell = lambda c, v: ("--" if pd.isna(v) else f"{v:.0f}" if c in LENGTHS
-                         else str(v) if c == "n_options" else TABLE_NAMES[v])
+    def cell(c, v, r):
+        if c == "n_options":
+            return f"{v:.0f}" if pd.notna(v) else r["n_options_range"] if pd.notna(r["n_options_range"]) else "--"
+        if pd.isna(v):
+            return "--" if c in LENGTHS else "unknown"
+        return f"{v:.0f}" if c in LENGTHS else TABLE_NAMES[v]
     lines = ["\\begin{tabular}{lllllrrr}", "\\toprule",
              " & ".join(["Benchmark"] + list(TABLE_HEAD.values())) + " \\\\", "\\midrule"]
-    lines += [" & ".join([r["benchmark"]] + [cell(c, r[c]) for c in TABLE_HEAD]) + " \\\\" for _, r in t.iterrows()]
+    lines += [" & ".join([r["benchmark"]] + [cell(c, r[c], r) for c in TABLE_HEAD]) + " \\\\" for _, r in t.iterrows()]
     lines += ["\\bottomrule", "\\end{tabular}", ""]
     (out_dir / "benchmark_characteristics.tex").write_text("\n".join(lines))
     return t
@@ -383,6 +405,7 @@ def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, quad: pd.Data
     stage = load_pools()[pool].get("stage", "pretraining")
     rel = fam[fam["population"] == FILTER]
     n_fam, n_tasks = rel["family"].nunique(), int(rel.groupby("family")["n_tasks"].max().sum())
+    below = (rel.groupby("family")["da_size"].mean() < CHANCE).sum()
 
     def line(reading):
         g = c[c["reading"] == reading].set_index("characteristic")
@@ -397,12 +420,13 @@ def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, quad: pd.Data
         f"at the proxy and at 1.7B, ≥ 3 pairs) over the paper's `{FILTER}` tasks ({n_fam} families, up to {n_tasks} tasks), "
         "with the unfiltered reading (every gated task) beside it; a benchmark's DA-size is the median over its tasks at a "
         "proxy and the mean of those medians over 90M–1B. Statistic: Spearman ρ against the centred code of an ordinal or "
-        "binary characteristic (options 2 → 4, no passage → passage, translated → originally multilingual) or a length; "
-        "curation and task format are binarised, translated → native (written in the language or generated from its "
-        "treebanks) and continuation → lettered MCQ, and on these families native curation picks the same benchmarks as "
-        "an originally multilingual source, so those two rows coincide; 95 % bootstrap over the families. The quadrant "
+        "binary characteristic (options 2 → 5, no passage → passage) or a length; curation, source and task format are "
+        "binarised, translated → native (written in the language, English originals included, or generated from "
+        "treebanks or planning problems), translated from English → not, and continuation → lettered MCQ; a "
+        "characteristic no source settles (`FAMILY_META` None: BBH's curation method, option count and passage, "
+        "LAMBADA's option count) leaves that benchmark out of that row; 95 % bootstrap over the families. The quadrant "
         "figure reads every task above chance, so benchmarks fall on both sides of chance agreement; its "
-        f"`{FILTER}` twin, where every benchmark sits right of 0.5, stays as an analysis figure. Regenerate with `python analysis/rq09_benchmark_design/design_da.py --pool {pool}`.",
+        f"`{FILTER}` twin, where {n_fam - below} of the {n_fam} benchmarks sit right of 0.5, stays as an analysis figure. Regenerate with `python analysis/rq09_benchmark_design/design_da.py --pool {pool}`.",
         f"![Characteristics against DA-size]({stage}/{pool}/design_da_size_correlation_above_66_either_mono_axis.png)",
         f"![DA-size by characteristic level]({stage}/{pool}/design_da_size_by_level_above_66_either_mono_axis.png)",
         f"![DA-size against the coded characteristics, every task above chance]({stage}/{pool}/design_da_size_quadrant_mono_axis.png)",

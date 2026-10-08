@@ -391,23 +391,25 @@ def rq09_correlation_caption(d):
     crosses = lambda r: bool(((ok["reading"] == r) & (ok["ci_low"] <= 0) & (ok["ci_high"] >= 0)).sum()
                              == (ok["reading"] == r).sum())
     snr, rel, unf = (v.loc[(r, "n_options")] for r in ("snr", "above_66_either", "unfiltered"))
+    n = d.groupby("reading")["n_benchmarks"].max()          # a benchmark with no option count still counts
     return (
         "\\textbf{No characteristic orders the benchmarks by DA-size"
         + (": every 95\\% interval on DA-size contains zero" if crosses("above_66_either")
-           and crosses("unfiltered") else "")
+           and crosses("unfiltered") else " in both readings")
         + f".}} The answer options, which correlate with SNR at $\\rho = {snr['value']:.2f}$ "
         f"(${snr['ci_low']:.2f}$ to ${snr['ci_high']:.2f}$), reach ${rel['value']:.2f}$ on the reliable tasks and "
         f"${unf['value']:.2f}$ on every task above chance. A row is one characteristic of the benchmark families (Table "
         "\\ref{tab:app_rq09_benchmark_characteristics}). The value is a Spearman $\\rho$ over the benchmarks against the "
-        "characteristic's code: the options ranked 2 to 4, no passage to passage, translated from English to originally "
-        "multilingual, and the two lengths as they are. Curation and task format are split in two, translated to native "
-        "(written in the language or generated from its treebanks) and continuation to lettered options. On these "
-        "benchmarks native curation picks the same benchmarks as an originally multilingual source, so the two rows "
-        "agree. A split whose smaller side holds one benchmark has no value. "
+        "characteristic's code: the options ranked 2 to 5, no passage to passage, and the two lengths as they are. "
+        "Curation, source and task format are split in two: translated to native (written in the language, English "
+        "originals included, or generated from treebanks or planning problems), translated from English to not, and "
+        "continuation to lettered options. A split whose smaller side holds one benchmark has no value, so task format "
+        "has none on DA-size, where INCLUDE is the only benchmark with lettered options. A characteristic marked unknown "
+        "in the table leaves that benchmark out of its row. "
         f"DA-size is {RQ09_POP}. Left: that mean with a 95\\% bootstrap interval over the "
-        f"{int(rel['n_benchmarks'])} benchmarks whose tasks pass the reliability filter of Figure~\\ref{{fig:rq2}} "
-        f"(filled), over the {int(unf['n_benchmarks'])} benchmarks with any task above chance (hollow), and the same "
-        f"statistics on the median SNR at 1.7B of the {int(snr['n_benchmarks'])} benchmarks (diamonds). Right: one line per "
+        f"{n['above_66_either']} benchmarks whose tasks pass the reliability filter of Figure~\\ref{{fig:rq2}} "
+        f"(filled), over the {n['unfiltered']} benchmarks with any task above chance (hollow), and the same "
+        f"statistics on the median SNR at 1.7B of the {n['snr']} benchmarks (diamonds). Right: one line per "
         "proxy size, on the reliable tasks. The lengths exist for the original benchmarks with sampled items only.")
 
 
@@ -419,9 +421,10 @@ def rq09_levels_caption(d):
         f"\\textbf{{{top['name']} has the highest DA-size of the {n} benchmarks ({top['da_size']:.2f}), so the levels "
         f"it carries ({', '.join(d[d['family'] == top['family']]['level'])}) are lifted by one benchmark.}} "
         "Each row is one level of one characteristic, coloured by characteristic, with the number of benchmarks at that "
-        "level. A dot is one benchmark at its DA-size minus 0.5, so the dotted line is chance agreement and every "
-        f"benchmark sits to its right. The bar is the level's median. DA-size is {RQ09_POP}, on the tasks that pass "
-        f"the reliability filter of Figure~\\ref{{fig:rq2}}. {top['name']} is outlined.")
+        "level. A dot is one benchmark at its DA-size minus 0.5, so the dotted line is chance agreement, and "
+        f"{(d.drop_duplicates('family')['x'] > 0).sum()} of the {n} benchmarks sit to its right. The bar is the level's "
+        f"median. DA-size is {RQ09_POP}, on the tasks that pass the reliability filter of Figure~\\ref{{fig:rq2}}. "
+        f"{top['name']} is named on its dot once per characteristic.")
 
 
 def rq09_quadrant_caption(d):
@@ -436,25 +439,29 @@ def rq09_quadrant_caption(d):
     return (
         f"\\textbf{{On every task above chance, {len(below)} of the {dots['family'].nunique()} benchmarks decide below chance "
         f"agreement ({', '.join(below['name'])}), and {spread}.}} One panel per characteristic: x is the DA-size minus 0.5, so the vertical line is chance agreement, and y "
-        "the characteristic's code centred at 0 (the options ranked 2, 3, 4 as $-1$, 0, $+1$, every other characteristic "
-        "split in two as $-1$ and $+1$), jittered. The numbers count the benchmarks per quadrant. A benchmark on a zero "
-        "line, such as the three-option XNLI, is in no quadrant. The shaded quadrants are the ones a positive correlation "
+        "the characteristic's code centred at 0 (the options ranked 2 to 5 as $-1$, $-1/3$, $+1/3$, $+1$, every other "
+        "characteristic split in two as $-1$ and $+1$), jittered. The numbers count the benchmarks per quadrant. The "
+        "shaded quadrants are the ones a positive correlation "
         f"fills. {dots.loc[dots['da_size'].idxmax(), 'name']} is outlined. DA-size is {RQ09_POP}, on every task above "
-        "chance at the proxy and at 1.7B (on the tasks that pass the reliability filter of Figure~\\ref{fig:rq2} every "
-        "benchmark sits right of 0.5).")
+        "chance at the proxy and at 1.7B.")
 
 
 def rq09_table_caption(d):
     """The caption of app_rq09_benchmark_characteristics, its numbers read from the table's CSV `d`."""
     return (
         f"\\textbf{{The {len(d)} benchmark families of the benchmark design analysis and the characteristics it "
-        f"groups them by.}} {int((d['source_origin'] == 'english_translated').sum())} are translated from English and "
+        f"groups them by.}} {int((d['source_origin'] == 'english_translated').sum())} are translated from English, "
+        f"{int((d['source_origin'] == 'english_original').sum())} are English originals evaluated in English, and "
         f"{int((d['n_options'] == 4).sum())} have four answer options. Curation: how the items in each language were made "
-        "(native: written in the language, human transl.: translated by people, MT: machine translated, MT + post-edit: "
-        "machine translated and corrected, template: generated from treebank templates). Format: MCQ is a question with "
-        "lettered options, cloze (RF) scores each option as a continuation, statement (LLM-RF) is the LLM rewrite into a "
-        "statement with four continuations. Context and Option: the median characters of the context and of an option "
-        "over 100 sampled English items.")
+        "(native: written in the language, English: written in English, human transl.: translated by people, MT: machine "
+        "translated, MT + post-edit: machine translated and corrected, transl. (unknown): translated by a method the "
+        "dataset does not document, template: generated from treebank or planning templates). Source: whether the "
+        "benchmark was translated from English, written natively in several languages or written in English. Format "
+        "(as the evaluation prompts it): MCQ is a question with lettered options, cloze scores each option as a "
+        "continuation of the question, completion scores continuations of a context, statement (LLM-RF) is the LLM "
+        "rewrite into a statement with four continuations, last word scores the final word of a passage. Options gives "
+        "the range where subtasks differ. Unknown marks a characteristic no source settles, which the analysis leaves "
+        "out. Context and Option: the median characters of the context and of an option over 100 sampled English items.")
 
 
 # folder -> title, paper figure stem, setup, (README image the finding follows, which bullet)[, extras]
