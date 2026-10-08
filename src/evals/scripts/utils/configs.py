@@ -515,6 +515,15 @@ def metric_for(task: str,
     return load_tasks(path).get(task, {}).get("metric")
 
 
+def accuracy_metric(task: str) -> str | None:
+    """The task's per-item accuracy metric (`acc` unless tasks.json pins
+    `acc_norm`), or None when it scores something else (MELA's mcc,
+    EVALITA wic's f1): such a task has no chance level, so the gate leaves
+    it ungated, and no column in the per-item store."""
+    m = metric_for(task) or "acc"
+    return m if m in ("acc", "acc_norm") else None
+
+
 # Task `language` values are canonical iso2 codes plus a few legacy aliases
 # kept by manual annotation (see build_configs.py's LANG_MAP note).
 _TASK_LANG_ALIASES = {"jp": "ja", "cn": "zh"}

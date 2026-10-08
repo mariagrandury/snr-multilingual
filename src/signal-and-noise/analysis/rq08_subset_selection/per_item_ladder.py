@@ -49,7 +49,7 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import load_pools, metric_for  # noqa: E402
+from evals.scripts.utils.configs import accuracy_metric, load_pools  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, fmt, md_table, replace_block  # noqa: E402
@@ -199,7 +199,9 @@ def main(pool: str, store: str) -> None:
                           filters=[("model", "in", sorted(set(keys["model"]))), ("step", "in", sorted(set(keys["step"])))]).to_pandas()
         s = s.merge(keys, on=["model", "step", "task"])
         for (task, size), g in s.groupby(["task", "size"], sort=True):
-            metric = metric_for(task) or "acc"
+            metric = accuracy_metric(task)
+            if metric is None:                     # mcc / f1: no per-item column in the store
+                continue
             M = g.pivot_table(index="doc_id", columns=["model", "step"], values=metric).dropna()
             cols = pd.DataFrame(M.columns.tolist(), columns=["model", "step"]).merge(keys[keys["task"] == task], how="left")
             w = cols["is_win"].to_numpy(dtype=bool)

@@ -2,7 +2,7 @@
 benchmark-language task keeps only the items its 1.7B runs answer above chance?
 
 Selection. An item is above chance at the reference when the mean of its
-per-item metric (the task's own, acc or acc_norm, `metric_for`, as the subset
+per-item metric (the task's own, acc or acc_norm, `accuracy_metric`, as the subset
 selection's `reference_solved.py` reads it) over the pool's TARGET_SIZE final
 runs that train the task's language (the loader's frame, rule 2: in pool `predictivity` from 4 runs
 for a language only the widest mixtures train to 26 for English)
@@ -86,7 +86,7 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import load_pools, metric_for, size_bucket  # noqa: E402
+from evals.scripts.utils.configs import accuracy_metric, load_pools, size_bucket  # noqa: E402
 from snr.download.ladder import ladder_dir  # noqa: E402
 from snr.snr_variants import rel_std_snr  # noqa: E402
 from analysis import grids as G  # noqa: E402
@@ -151,10 +151,10 @@ def store_scores(store: Path, fin: pd.DataFrame, models: list) -> tuple[pd.DataF
                               filters=[("task", "in", [t for t, k in zip(tasks, batch) if k == b]),
                                        ("model", "in", models)]).to_pandas()
             for task, g in s.groupby("task", observed=True):
-                metric, chance = metric_for(task) or "acc", task_chance(task)
+                metric, chance = accuracy_metric(task), task_chance(task)
                 row = {"task": task, "metric": metric, "chance": chance, "n_items": g["doc_id"].nunique(),
                        "n_reference_runs": len(ref.get(task, []))}
-                if not np.isfinite(chance) or task not in ref or g[metric].isna().all():
+                if metric is None or not np.isfinite(chance) or task not in ref or g[metric].isna().all():
                     sel.append(row | {"n_kept": np.nan})          # no chance level or no reference run: nothing to select on
                     continue
                 keep, sc = select_and_score(g, metric, ref[task], chance)

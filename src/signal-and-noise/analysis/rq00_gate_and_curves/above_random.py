@@ -40,7 +40,8 @@ Each report writes:
 The mask is the gate: SNR and all downstream analyses drop the `(benchmark,
 size)` cells whose mask is 0 (`run_apertus_snr_variants.py` imports
 `scores_and_mask` and NaN-s those cells). A blank is not a drop — per-language
-BPB and the generative tasks have no chance level. This is a
+BPB, the generative tasks and the tasks not scored on an accuracy (MELA's
+mcc, EVALITA wic's f1) have no chance level. This is a
 *foundational* step — it depends ONLY on raw eval scores and the intrinsic
 per-family answer-option counts (`N_OPTIONS` below, `random_baseline =
 1 / n_options`); it never reads any RQ output, so every RQ depends on this
@@ -69,7 +70,7 @@ import pandas as pd  # noqa: E402
 from statsmodels.stats.proportion import proportion_confint  # noqa: E402
 
 from evals.scripts.utils.configs import (  # noqa: E402
-    bucket_order, load_pools, load_tasks, size_bucket)
+    accuracy_metric, bucket_order, load_pools, load_tasks, size_bucket)
 from analysis.utils import (  # noqa: E402
     assign_language, benchmark_family)
 from analysis.utils import _is_parent_task  # noqa: E402
@@ -93,7 +94,9 @@ MIN_SHARE = 0.5     # a cell is above random when at least this share of its run
 # 0.2253, the same items in every language; measured on the harness samples
 # of lm-1B-L50-deep-seed1904 on 2026-09-23). `task_chance` is the ONE reader
 # of both tables. A task with no option count anywhere (per-language BPB, the
-# loss, generative tasks) has no chance level and is never gated.
+# loss, generative tasks) has no chance level and is never gated; nor has a
+# task scored on something other than an accuracy (tasks.json `metric`: MELA's
+# mcc, EVALITA wic's f1), since neither 1/n nor the Wilson bound applies to it.
 # The chance level is UNIFORM guessing. With unbalanced gold labels a constant
 # answer scores the majority label's share, which can exceed 1/n (hellaswag_ta:
 # 2,175 of 8,413 golds are option 2, 0.2585 against 0.25); the gate does not
@@ -137,7 +140,10 @@ CHANCE = {"truthfulqa": 0.2253, "truthfulqa_mc1": 0.2253, "truthfulqa-multi_mc1"
 
 def task_chance(task: str) -> float:
     """The chance level of uniform guessing: CHANCE for a variable-option family,
-    else 1 / task_n_options, NaN when the task has no option count."""
+    else 1 / task_n_options, NaN when the task has no option count or is not
+    scored on an accuracy (`configs.accuracy_metric`)."""
+    if accuracy_metric(task) is None:
+        return float("nan")
     c = CHANCE.get(benchmark_family(task))
     return float(c) if c is not None else 1 / task_n_options(task)
 

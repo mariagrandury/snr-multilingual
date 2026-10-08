@@ -57,7 +57,7 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import metric_for  # noqa: E402
+from evals.scripts.utils.configs import accuracy_metric  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
@@ -224,9 +224,11 @@ def main(pool: str, store: str | None = None) -> None:
                           read_dictionary=["model", "task"]).to_pandas()
         s = s[s["step"].to_numpy() == s["model"].map(last).astype(float).to_numpy()]
         for task, g in s.groupby("task", observed=True):
+            if accuracy_metric(task) is None:      # mcc / f1: no per-item column in the store
+                continue
             cols = keys[keys["task"] == task].set_index("model")    # the (model, task) the pool keeps: rules 2 and 6
             g = g[g["model"].isin(cols.index)]
-            M = g.pivot_table(index="doc_id", columns="model", values=metric_for(task) or "acc", observed=True).dropna()
+            M = g.pivot_table(index="doc_id", columns="model", values=accuracy_metric(task), observed=True).dropna()
             cols = cols.loc[M.columns]
             if M.empty or not (cols["size"] == TARGET_SIZE).any():
                 continue
