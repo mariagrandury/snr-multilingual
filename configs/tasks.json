@@ -137,7 +137,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (ar)"
+      "source": "alexandrainst/m_arc (ar)",
+      "metric": "acc_norm"
     },
     "arc_challenge": {
       "language": "en",
@@ -157,7 +158,8 @@
         ],
         "gold": 2
       },
-      "source": "allenai/ai2_arc (ARC-Challenge)"
+      "source": "allenai/ai2_arc (ARC-Challenge)",
+      "metric": "acc_norm"
     },
     "arc_easy": {
       "language": "en",
@@ -177,7 +179,8 @@
         ],
         "gold": 0
       },
-      "source": "allenai/ai2_arc (ARC-Easy)"
+      "source": "allenai/ai2_arc (ARC-Easy)",
+      "metric": "acc_norm"
     },
     "arc_es": {
       "language": "es",
@@ -197,7 +200,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (es)"
+      "source": "alexandrainst/m_arc (es)",
+      "metric": "acc_norm"
     },
     "arc_eu": {
       "language": "eu",
@@ -217,7 +221,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (eu)"
+      "source": "alexandrainst/m_arc (eu)",
+      "metric": "acc_norm"
     },
     "arc_hi": {
       "language": "hi",
@@ -237,7 +242,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (hi)"
+      "source": "alexandrainst/m_arc (hi)",
+      "metric": "acc_norm"
     },
     "arc_ru": {
       "language": "ru",
@@ -257,7 +263,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (ru)"
+      "source": "alexandrainst/m_arc (ru)",
+      "metric": "acc_norm"
     },
     "arc_vi": {
       "language": "vi",
@@ -277,7 +284,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (vi)"
+      "source": "alexandrainst/m_arc (vi)",
+      "metric": "acc_norm"
     },
     "arc_zh": {
       "language": "zh",
@@ -297,7 +305,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (zh)"
+      "source": "alexandrainst/m_arc (zh)",
+      "metric": "acc_norm"
     },
     "aya_redteaming_arabic": {
       "language": "ar",
@@ -1818,7 +1827,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (arb_arab)"
+      "source": "mrlbenchmarks/global-piqa-parallel (arb_arab)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_cmn_hans": {
       "language": "zh",
@@ -1838,7 +1848,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (cmn_hans)"
+      "source": "mrlbenchmarks/global-piqa-parallel (cmn_hans)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_eng_latn": {
       "language": "en",
@@ -1858,7 +1869,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (eng_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (eng_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_hin_deva": {
       "language": "hi",
@@ -1878,7 +1890,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (hin_deva)"
+      "source": "mrlbenchmarks/global-piqa-parallel (hin_deva)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_jpn_jpan": {
       "language": "ja",
@@ -1898,7 +1911,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (jpn_jpan)"
+      "source": "mrlbenchmarks/global-piqa-parallel (jpn_jpan)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_rus_cyrl": {
       "language": "ru",
@@ -1918,7 +1932,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (rus_cyrl)"
+      "source": "mrlbenchmarks/global-piqa-parallel (rus_cyrl)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_spa_latn_spai": {
       "language": "es",
@@ -1938,7 +1953,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (spa_latn_spai)"
+      "source": "mrlbenchmarks/global-piqa-parallel (spa_latn_spai)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_swh_latn": {
       "language": "sw",
@@ -1958,7 +1974,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (swh_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (swh_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_tha_thai": {
       "language": "th",
@@ -1978,7 +1995,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (tha_thai)"
+      "source": "mrlbenchmarks/global-piqa-parallel (tha_thai)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_tur_latn": {
       "language": "tr",
@@ -1998,7 +2016,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (tur_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (tur_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_vie_latn": {
       "language": "vi",
@@ -2018,7 +2037,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (vie_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (vie_latn)",
+      "metric": "acc_norm"
     },
     "gsm8k": {
       "language": "en",
@@ -2060,7 +2080,8 @@
         ],
         "gold": 3
       },
-      "source": "Rowan/hellaswag"
+      "source": "Rowan/hellaswag",
+      "metric": "acc_norm"
     },
     "hellaswag_ar": {
       "language": "ar",
@@ -2081,7 +2102,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_hellaswag (ar)"
+      "source": "alexandrainst/m_hellaswag (ar)",
+      "metric": "acc_norm"
     },
     "hellaswag_es": {
       "language": "es",
@@ -2102,7 +2124,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_hellaswag (es)"
+      "source": "alexandrainst/m_hellaswag (es)",
+      "metric": "acc_norm"
     },
     "hellaswag_eu": {
       "language": "eu",
@@ -2123,7 +2146,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (eu)"
+      "source": "alexandrainst/m_hellaswag (eu)",
+      "metric": "acc_norm"
     },
     "hellaswag_hi": {
       "language": "hi",
@@ -2144,7 +2168,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (hi)"
+      "source": "alexandrainst/m_hellaswag (hi)",
+      "metric": "acc_norm"
     },
     "hellaswag_ru": {
       "language": "ru",
@@ -2165,7 +2190,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_hellaswag (ru)"
+      "source": "alexandrainst/m_hellaswag (ru)",
+      "metric": "acc_norm"
     },
     "hellaswag_vi": {
       "language": "vi",
@@ -2186,7 +2212,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_hellaswag (vi)"
+      "source": "alexandrainst/m_hellaswag (vi)",
+      "metric": "acc_norm"
     },
     "hendrycks_math": {
       "language": "en",
@@ -3084,7 +3111,8 @@
         ],
         "gold": 0
       },
-      "source": "regisss/math_qa"
+      "source": "regisss/math_qa",
+      "metric": "acc_norm"
     },
     "mbpp_instruct": {
       "language": "en",
@@ -3467,7 +3495,8 @@
         ],
         "gold": 1
       },
-      "source": "allenai/openbookqa (main)"
+      "source": "allenai/openbookqa (main)",
+      "metric": "acc_norm"
     },
     "paws_en": {
       "language": "en",
@@ -4517,7 +4546,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (da)"
+      "source": "alexandrainst/m_hellaswag (da)",
+      "metric": "acc_norm"
     },
     "hellaswag_sk": {
       "language": "sk",
@@ -4538,7 +4568,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (sk)"
+      "source": "alexandrainst/m_hellaswag (sk)",
+      "metric": "acc_norm"
     },
     "hellaswag_fr": {
       "language": "fr",
@@ -4559,7 +4590,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_hellaswag (fr)"
+      "source": "alexandrainst/m_hellaswag (fr)",
+      "metric": "acc_norm"
     },
     "hellaswag_kn": {
       "language": "kn",
@@ -4580,7 +4612,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (kn)"
+      "source": "alexandrainst/m_hellaswag (kn)",
+      "metric": "acc_norm"
     },
     "hellaswag_mr": {
       "language": "mr",
@@ -4601,7 +4634,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (mr)"
+      "source": "alexandrainst/m_hellaswag (mr)",
+      "metric": "acc_norm"
     },
     "hellaswag_ro": {
       "language": "ro",
@@ -4622,7 +4656,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_hellaswag (ro)"
+      "source": "alexandrainst/m_hellaswag (ro)",
+      "metric": "acc_norm"
     },
     "hellaswag_bn": {
       "language": "bn",
@@ -4643,7 +4678,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (bn)"
+      "source": "alexandrainst/m_hellaswag (bn)",
+      "metric": "acc_norm"
     },
     "hellaswag_sv": {
       "language": "sv",
@@ -4664,7 +4700,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_hellaswag (sv)"
+      "source": "alexandrainst/m_hellaswag (sv)",
+      "metric": "acc_norm"
     },
     "hellaswag_gu": {
       "language": "gu",
@@ -4685,7 +4722,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (gu)"
+      "source": "alexandrainst/m_hellaswag (gu)",
+      "metric": "acc_norm"
     },
     "hellaswag_uk": {
       "language": "uk",
@@ -4706,7 +4744,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (uk)"
+      "source": "alexandrainst/m_hellaswag (uk)",
+      "metric": "acc_norm"
     },
     "hellaswag_hy": {
       "language": "hy",
@@ -4727,7 +4766,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (hy)"
+      "source": "alexandrainst/m_hellaswag (hy)",
+      "metric": "acc_norm"
     },
     "hellaswag_pt": {
       "language": "pt",
@@ -4748,7 +4788,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_hellaswag (pt)"
+      "source": "alexandrainst/m_hellaswag (pt)",
+      "metric": "acc_norm"
     },
     "hellaswag_sr": {
       "language": "sr",
@@ -4769,7 +4810,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (sr)"
+      "source": "alexandrainst/m_hellaswag (sr)",
+      "metric": "acc_norm"
     },
     "hellaswag_hu": {
       "language": "hu",
@@ -4790,7 +4832,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_hellaswag (hu)"
+      "source": "alexandrainst/m_hellaswag (hu)",
+      "metric": "acc_norm"
     },
     "hellaswag_ca": {
       "language": "ca",
@@ -4811,7 +4854,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (ca)"
+      "source": "alexandrainst/m_hellaswag (ca)",
+      "metric": "acc_norm"
     },
     "hellaswag_ne": {
       "language": "ne",
@@ -4832,7 +4876,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (ne)"
+      "source": "alexandrainst/m_hellaswag (ne)",
+      "metric": "acc_norm"
     },
     "hellaswag_it": {
       "language": "it",
@@ -4853,7 +4898,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_hellaswag (it)"
+      "source": "alexandrainst/m_hellaswag (it)",
+      "metric": "acc_norm"
     },
     "hellaswag_ta": {
       "language": "ta",
@@ -4874,7 +4920,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (ta)"
+      "source": "alexandrainst/m_hellaswag (ta)",
+      "metric": "acc_norm"
     },
     "hellaswag_hr": {
       "language": "hr",
@@ -4895,7 +4942,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (hr)"
+      "source": "alexandrainst/m_hellaswag (hr)",
+      "metric": "acc_norm"
     },
     "hellaswag_de": {
       "language": "de",
@@ -4916,7 +4964,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_hellaswag (de)"
+      "source": "alexandrainst/m_hellaswag (de)",
+      "metric": "acc_norm"
     },
     "hellaswag_nl": {
       "language": "nl",
@@ -4937,7 +4986,8 @@
         ],
         "gold": 3
       },
-      "source": "alexandrainst/m_hellaswag (nl)"
+      "source": "alexandrainst/m_hellaswag (nl)",
+      "metric": "acc_norm"
     },
     "hellaswag_ml": {
       "language": "ml",
@@ -4958,7 +5008,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (ml)"
+      "source": "alexandrainst/m_hellaswag (ml)",
+      "metric": "acc_norm"
     },
     "hellaswag_id": {
       "language": "id",
@@ -4979,7 +5030,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_hellaswag (id)"
+      "source": "alexandrainst/m_hellaswag (id)",
+      "metric": "acc_norm"
     },
     "hellaswag_te": {
       "language": "te",
@@ -5000,7 +5052,8 @@
         ],
         "gold": 1
       },
-      "source": "alexandrainst/m_hellaswag (te)"
+      "source": "alexandrainst/m_hellaswag (te)",
+      "metric": "acc_norm"
     },
     "arc_nl": {
       "language": "nl",
@@ -5020,7 +5073,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (nl)"
+      "source": "alexandrainst/m_arc (nl)",
+      "metric": "acc_norm"
     },
     "arc_fr": {
       "language": "fr",
@@ -5040,7 +5094,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (fr)"
+      "source": "alexandrainst/m_arc (fr)",
+      "metric": "acc_norm"
     },
     "arc_hu": {
       "language": "hu",
@@ -5060,7 +5115,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (hu)"
+      "source": "alexandrainst/m_arc (hu)",
+      "metric": "acc_norm"
     },
     "arc_hr": {
       "language": "hr",
@@ -5080,7 +5136,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (hr)"
+      "source": "alexandrainst/m_arc (hr)",
+      "metric": "acc_norm"
     },
     "arc_it": {
       "language": "it",
@@ -5100,7 +5157,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (it)"
+      "source": "alexandrainst/m_arc (it)",
+      "metric": "acc_norm"
     },
     "arc_ca": {
       "language": "ca",
@@ -5120,7 +5178,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (ca)"
+      "source": "alexandrainst/m_arc (ca)",
+      "metric": "acc_norm"
     },
     "arc_de": {
       "language": "de",
@@ -5140,7 +5199,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (de)"
+      "source": "alexandrainst/m_arc (de)",
+      "metric": "acc_norm"
     },
     "arc_te": {
       "language": "te",
@@ -5160,7 +5220,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (te)"
+      "source": "alexandrainst/m_arc (te)",
+      "metric": "acc_norm"
     },
     "arc_gu": {
       "language": "gu",
@@ -5180,7 +5241,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (gu)"
+      "source": "alexandrainst/m_arc (gu)",
+      "metric": "acc_norm"
     },
     "arc_hy": {
       "language": "hy",
@@ -5200,7 +5262,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (hy)"
+      "source": "alexandrainst/m_arc (hy)",
+      "metric": "acc_norm"
     },
     "arc_ml": {
       "language": "ml",
@@ -5220,7 +5283,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (ml)"
+      "source": "alexandrainst/m_arc (ml)",
+      "metric": "acc_norm"
     },
     "arc_ne": {
       "language": "ne",
@@ -5240,7 +5304,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (ne)"
+      "source": "alexandrainst/m_arc (ne)",
+      "metric": "acc_norm"
     },
     "arc_ta": {
       "language": "ta",
@@ -5260,7 +5325,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (ta)"
+      "source": "alexandrainst/m_arc (ta)",
+      "metric": "acc_norm"
     },
     "arc_id": {
       "language": "id",
@@ -5280,7 +5346,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (id)"
+      "source": "alexandrainst/m_arc (id)",
+      "metric": "acc_norm"
     },
     "arc_sk": {
       "language": "sk",
@@ -5300,7 +5367,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (sk)"
+      "source": "alexandrainst/m_arc (sk)",
+      "metric": "acc_norm"
     },
     "arc_sr": {
       "language": "sr",
@@ -5320,7 +5388,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (sr)"
+      "source": "alexandrainst/m_arc (sr)",
+      "metric": "acc_norm"
     },
     "arc_bn": {
       "language": "bn",
@@ -5340,7 +5409,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (bn)"
+      "source": "alexandrainst/m_arc (bn)",
+      "metric": "acc_norm"
     },
     "arc_sv": {
       "language": "sv",
@@ -5360,7 +5430,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (sv)"
+      "source": "alexandrainst/m_arc (sv)",
+      "metric": "acc_norm"
     },
     "arc_uk": {
       "language": "uk",
@@ -5380,7 +5451,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (uk)"
+      "source": "alexandrainst/m_arc (uk)",
+      "metric": "acc_norm"
     },
     "arc_pt": {
       "language": "pt",
@@ -5400,7 +5472,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (pt)"
+      "source": "alexandrainst/m_arc (pt)",
+      "metric": "acc_norm"
     },
     "arc_da": {
       "language": "da",
@@ -5420,7 +5493,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (da)"
+      "source": "alexandrainst/m_arc (da)",
+      "metric": "acc_norm"
     },
     "arc_ro": {
       "language": "ro",
@@ -5440,7 +5514,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (ro)"
+      "source": "alexandrainst/m_arc (ro)",
+      "metric": "acc_norm"
     },
     "arc_mr": {
       "language": "mr",
@@ -5460,7 +5535,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (mr)"
+      "source": "alexandrainst/m_arc (mr)",
+      "metric": "acc_norm"
     },
     "arc_kn": {
       "language": "kn",
@@ -5480,7 +5556,8 @@
         ],
         "gold": 0
       },
-      "source": "alexandrainst/m_arc (kn)"
+      "source": "alexandrainst/m_arc (kn)",
+      "metric": "acc_norm"
     },
     "xnli_fr": {
       "language": "fr",
@@ -8616,7 +8693,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (hrv_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (hrv_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_bel_cyrl": {
       "language": "be",
@@ -8636,7 +8714,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (bel_cyrl)"
+      "source": "mrlbenchmarks/global-piqa-parallel (bel_cyrl)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_bul_cyrl": {
       "language": "bg",
@@ -8656,7 +8735,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (bul_cyrl)"
+      "source": "mrlbenchmarks/global-piqa-parallel (bul_cyrl)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_ell_grek": {
       "language": "el",
@@ -8676,7 +8756,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (ell_grek)"
+      "source": "mrlbenchmarks/global-piqa-parallel (ell_grek)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_amh_ethi": {
       "language": "am",
@@ -8696,7 +8777,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (amh_ethi)"
+      "source": "mrlbenchmarks/global-piqa-parallel (amh_ethi)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_hye_armn": {
       "language": "hy",
@@ -8716,7 +8798,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (hye_armn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (hye_armn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_zsm_latn": {
       "language": "ms",
@@ -8736,7 +8819,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (zsm_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (zsm_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_slv_latn": {
       "language": "sl",
@@ -8756,7 +8840,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (slv_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (slv_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_ron_latn": {
       "language": "ro",
@@ -8776,7 +8861,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (ron_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (ron_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_mal_mlym": {
       "language": "ml",
@@ -8796,7 +8882,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (mal_mlym)"
+      "source": "mrlbenchmarks/global-piqa-parallel (mal_mlym)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_mar_deva": {
       "language": "mr",
@@ -8816,7 +8903,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (mar_deva)"
+      "source": "mrlbenchmarks/global-piqa-parallel (mar_deva)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_srp_cyrl": {
       "language": "sr",
@@ -8836,7 +8924,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (srp_cyrl)"
+      "source": "mrlbenchmarks/global-piqa-parallel (srp_cyrl)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_glg_latn": {
       "language": "gl",
@@ -8856,7 +8945,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (glg_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (glg_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_swe_latn": {
       "language": "sv",
@@ -8876,7 +8966,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (swe_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (swe_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_ukr_cyrl": {
       "language": "uk",
@@ -8896,7 +8987,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (ukr_cyrl)"
+      "source": "mrlbenchmarks/global-piqa-parallel (ukr_cyrl)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_ekk_latn": {
       "language": "et",
@@ -8916,7 +9008,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (ekk_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (ekk_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_tam_taml": {
       "language": "ta",
@@ -8936,7 +9029,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (tam_taml)"
+      "source": "mrlbenchmarks/global-piqa-parallel (tam_taml)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_snd_deva": {
       "language": "sd",
@@ -8956,7 +9050,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (snd_deva)"
+      "source": "mrlbenchmarks/global-piqa-parallel (snd_deva)",
+      "metric": "acc_norm"
     },
     "global_piqa_nonparallel_cloze_bos_latn": {
       "language": "bs",
@@ -8974,7 +9069,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-nonparallel (bos_latn)"
+      "source": "mrlbenchmarks/global-piqa-nonparallel (bos_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_nld_latn": {
       "language": "nl",
@@ -8994,7 +9090,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (nld_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (nld_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_srp_latn": {
       "language": "sr",
@@ -9014,7 +9111,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (srp_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (srp_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_fin_latn": {
       "language": "fi",
@@ -9034,7 +9132,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (fin_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (fin_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_kat_geor": {
       "language": "ka",
@@ -9054,7 +9153,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (kat_geor)"
+      "source": "mrlbenchmarks/global-piqa-parallel (kat_geor)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_isl_latn": {
       "language": "is",
@@ -9074,7 +9174,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (isl_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (isl_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_guj_gujr": {
       "language": "gu",
@@ -9094,7 +9195,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (guj_gujr)"
+      "source": "mrlbenchmarks/global-piqa-parallel (guj_gujr)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_snd_arab": {
       "language": "sd",
@@ -9114,7 +9216,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (snd_arab)"
+      "source": "mrlbenchmarks/global-piqa-parallel (snd_arab)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_urd_arab": {
       "language": "ur",
@@ -9134,7 +9237,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (urd_arab)"
+      "source": "mrlbenchmarks/global-piqa-parallel (urd_arab)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_pan_guru": {
       "language": "pa",
@@ -9154,7 +9258,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (pan_guru)"
+      "source": "mrlbenchmarks/global-piqa-parallel (pan_guru)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_tel_telu": {
       "language": "te",
@@ -9174,7 +9279,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (tel_telu)"
+      "source": "mrlbenchmarks/global-piqa-parallel (tel_telu)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_hau_latn": {
       "language": "ha",
@@ -9194,7 +9300,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (hau_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (hau_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_ars_arab": {
       "language": "ar",
@@ -9214,7 +9321,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (ars_arab)"
+      "source": "mrlbenchmarks/global-piqa-parallel (ars_arab)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_npi_deva": {
       "language": "ne",
@@ -9234,7 +9342,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (npi_deva)"
+      "source": "mrlbenchmarks/global-piqa-parallel (npi_deva)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_sin_sinh": {
       "language": "si",
@@ -9254,7 +9363,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (sin_sinh)"
+      "source": "mrlbenchmarks/global-piqa-parallel (sin_sinh)",
+      "metric": "acc_norm"
     },
     "global_piqa_nonparallel_cloze_kaz_cyrl": {
       "language": "kk",
@@ -9272,7 +9382,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-nonparallel (kaz_cyrl)"
+      "source": "mrlbenchmarks/global-piqa-nonparallel (kaz_cyrl)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_ben_latn": {
       "language": "bn",
@@ -9292,7 +9403,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (ben_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (ben_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_arz_arab": {
       "language": "ar",
@@ -9312,7 +9424,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (arz_arab)"
+      "source": "mrlbenchmarks/global-piqa-parallel (arz_arab)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_ita_latn": {
       "language": "it",
@@ -9332,7 +9445,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (ita_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (ita_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_kor_hang": {
       "language": "ko",
@@ -9352,7 +9466,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (kor_hang)"
+      "source": "mrlbenchmarks/global-piqa-parallel (kor_hang)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_ind_latn": {
       "language": "id",
@@ -9372,7 +9487,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (ind_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (ind_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_mkd_cyrl": {
       "language": "mk",
@@ -9392,7 +9508,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (mkd_cyrl)"
+      "source": "mrlbenchmarks/global-piqa-parallel (mkd_cyrl)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_hun_latn": {
       "language": "hu",
@@ -9412,7 +9529,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (hun_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (hun_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_kan_knda": {
       "language": "kn",
@@ -9432,7 +9550,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (kan_knda)"
+      "source": "mrlbenchmarks/global-piqa-parallel (kan_knda)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_heb_hebr": {
       "language": "he",
@@ -9452,7 +9571,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (heb_hebr)"
+      "source": "mrlbenchmarks/global-piqa-parallel (heb_hebr)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_als_latn": {
       "language": "sq",
@@ -9472,7 +9592,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (als_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (als_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_nonparallel_cloze_ckb_arab": {
       "language": "ckb",
@@ -9490,7 +9611,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-nonparallel (ckb_arab)"
+      "source": "mrlbenchmarks/global-piqa-nonparallel (ckb_arab)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_lit_latn": {
       "language": "lt",
@@ -9510,7 +9632,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (lit_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (lit_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_nno_latn": {
       "language": "nn",
@@ -9530,7 +9653,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (nno_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (nno_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_urd_latn": {
       "language": "ur",
@@ -9550,7 +9674,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (urd_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (urd_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_cmn_hant": {
       "language": "zh",
@@ -9570,7 +9695,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (cmn_hant)"
+      "source": "mrlbenchmarks/global-piqa-parallel (cmn_hant)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_slk_latn": {
       "language": "sk",
@@ -9590,7 +9716,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (slk_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (slk_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_nonparallel_cloze_asm_beng": {
       "language": "as",
@@ -9608,7 +9735,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-nonparallel (asm_beng)"
+      "source": "mrlbenchmarks/global-piqa-nonparallel (asm_beng)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_uig_arab": {
       "language": "ug",
@@ -9628,7 +9756,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (uig_arab)"
+      "source": "mrlbenchmarks/global-piqa-parallel (uig_arab)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_ben_beng": {
       "language": "bn",
@@ -9648,7 +9777,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (ben_beng)"
+      "source": "mrlbenchmarks/global-piqa-parallel (ben_beng)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_ary_arab": {
       "language": "ar",
@@ -9668,7 +9798,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (ary_arab)"
+      "source": "mrlbenchmarks/global-piqa-parallel (ary_arab)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_pol_latn": {
       "language": "pl",
@@ -9688,7 +9819,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (pol_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (pol_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_azj_latn": {
       "language": "az",
@@ -9708,7 +9840,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (azj_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (azj_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_nob_latn": {
       "language": "no",
@@ -9728,7 +9861,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (nob_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (nob_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_cat_latn": {
       "language": "ca",
@@ -9748,7 +9882,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (cat_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (cat_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_deu_latn": {
       "language": "de",
@@ -9768,7 +9903,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (deu_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (deu_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_ces_latn": {
       "language": "cs",
@@ -9788,7 +9924,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (ces_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (ces_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_uzn_latn": {
       "language": "uz",
@@ -9808,7 +9945,8 @@
         ],
         "gold": 0
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (uzn_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (uzn_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_kir_cyrl": {
       "language": "ky",
@@ -9828,7 +9966,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (kir_cyrl)"
+      "source": "mrlbenchmarks/global-piqa-parallel (kir_cyrl)",
+      "metric": "acc_norm"
     },
     "belebele_apc_Arab": {
       "language": "ar",
@@ -10208,7 +10347,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (apc_arab_jord)"
+      "source": "mrlbenchmarks/global-piqa-parallel (apc_arab_jord)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_apc_arab_leba": {
       "language": "ar",
@@ -10228,7 +10368,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (apc_arab_leba)"
+      "source": "mrlbenchmarks/global-piqa-parallel (apc_arab_leba)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_apc_arab_pale": {
       "language": "ar",
@@ -10248,7 +10389,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (apc_arab_pale)"
+      "source": "mrlbenchmarks/global-piqa-parallel (apc_arab_pale)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_apc_arab_syri": {
       "language": "ar",
@@ -10268,7 +10410,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (apc_arab_syri)"
+      "source": "mrlbenchmarks/global-piqa-parallel (apc_arab_syri)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_fao_latn": {
       "language": "fo",
@@ -10288,7 +10431,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (fao_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (fao_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_fra_latn_cana": {
       "language": "fr",
@@ -10308,7 +10452,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (fra_latn_cana)"
+      "source": "mrlbenchmarks/global-piqa-parallel (fra_latn_cana)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_fra_latn_fran": {
       "language": "fr",
@@ -10328,7 +10473,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (fra_latn_fran)"
+      "source": "mrlbenchmarks/global-piqa-parallel (fra_latn_fran)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_haw_latn": {
       "language": "haw",
@@ -10348,7 +10494,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (haw_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (haw_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_ibo_latn": {
       "language": "ig",
@@ -10368,7 +10515,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (ibo_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (ibo_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_jav_latn": {
       "language": "jv",
@@ -10388,7 +10536,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (jav_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (jav_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_kin_latn": {
       "language": "rw",
@@ -10408,7 +10557,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (kin_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (kin_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_pes_arab": {
       "language": "fa",
@@ -10428,7 +10578,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (pes_arab)"
+      "source": "mrlbenchmarks/global-piqa-parallel (pes_arab)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_por_latn_braz": {
       "language": "pt",
@@ -10448,7 +10599,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (por_latn_braz)"
+      "source": "mrlbenchmarks/global-piqa-parallel (por_latn_braz)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_por_latn_port": {
       "language": "pt",
@@ -10468,7 +10620,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (por_latn_port)"
+      "source": "mrlbenchmarks/global-piqa-parallel (por_latn_port)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_slk_latn_sari": {
       "language": "sk",
@@ -10488,7 +10641,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (slk_latn_sari)"
+      "source": "mrlbenchmarks/global-piqa-parallel (slk_latn_sari)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_slv_latn_cerk": {
       "language": "sl",
@@ -10508,7 +10662,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (slv_latn_cerk)"
+      "source": "mrlbenchmarks/global-piqa-parallel (slv_latn_cerk)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_spa_latn_mexi": {
       "language": "es",
@@ -10528,7 +10683,8 @@
         ],
         "gold": 2
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (spa_latn_mexi)"
+      "source": "mrlbenchmarks/global-piqa-parallel (spa_latn_mexi)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_spa_latn_peru": {
       "language": "es",
@@ -10548,7 +10704,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (spa_latn_peru)"
+      "source": "mrlbenchmarks/global-piqa-parallel (spa_latn_peru)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_tgl_latn": {
       "language": "tl",
@@ -10568,7 +10725,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (tgl_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (tgl_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_yor_latn": {
       "language": "yo",
@@ -10588,7 +10746,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (yor_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (yor_latn)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_yue_hant": {
       "language": "yue",
@@ -10608,7 +10767,8 @@
         ],
         "gold": 3
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (yue_hant)"
+      "source": "mrlbenchmarks/global-piqa-parallel (yue_hant)",
+      "metric": "acc_norm"
     },
     "global_piqa_parallel_cloze_zul_latn": {
       "language": "zu",
@@ -10628,7 +10788,8 @@
         ],
         "gold": 1
       },
-      "source": "mrlbenchmarks/global-piqa-parallel (zul_latn)"
+      "source": "mrlbenchmarks/global-piqa-parallel (zul_latn)",
+      "metric": "acc_norm"
     },
     "multiblimp_est": {
       "language": "et",

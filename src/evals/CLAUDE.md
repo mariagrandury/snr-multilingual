@@ -976,6 +976,22 @@ when it has one; else prefer `acc`; fall back to `exact_match`
 does not emit drops the task silently, here and in `ladder_report`: until
 2026-10-08, 77 probe tasks (kmmlu, MELA, EVALITA, ...) carried `acc_norm`
 and never reached the gate. Set `metric` only where `acc` is wrong.
+**Cloze originals score `acc_norm`** (2026-10-08, as OLMES and DataDecide
+do): every task whose options are answer strings scored as continuations and
+that emits `acc_norm` carries `metric: acc_norm` — ARC (`arc_easy`,
+`arc_challenge`, the 31 okapi `arc_<lang>`), HellaSwag (`hellaswag`, the 30
+okapi `hellaswag_<lang>`), `openbookqa`, `mathqa` and the 95 Global-PIQA
+cloze tasks, besides the `rf_`/`rfgm_`/cloze-arm twins that always did.
+Letter-format MCQ (Belebele, Global-MMLU, INCLUDE, MMLU, CSQA, BLEnD,
+CulturalBench) keeps `acc`: its options are one-token letters, so the
+normalisation does nothing useful. So do the tasks that emit no `acc_norm`
+(XCOPA, XStoryCloze, XNLI, PAWS-X, TruthfulQA mc1/mc2, XWinograd — switching
+them needs a re-evaluation), the true/false and yes/no judgements (ToxiGen,
+CulturalBench-hard) and MultiBLiMP (minimal pairs, scored on the whole
+sentence's log-likelihood). The classification read the lm-eval samples
+(the scored continuations) of the 1B and 1.7B deep cells. The W&B series of
+a switched task changes name (`hellaswag/acc` → `hellaswag/acc_norm`) from
+the next push on.
 
 **Subtopic aggregation** — `aggregate_parents()`: a task `T` is collapsed
 into its parent `P` if `P` is an underscore-prefix of `T` and `P` is also

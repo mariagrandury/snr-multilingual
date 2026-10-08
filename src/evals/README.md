@@ -38,6 +38,14 @@ score in the project, in three forms:
 | HF dataset (`multilingual-snr/multilingual-snr-eval-results`) | three parquet splits: `pretraining_custom`, `pretraining_a06`, `reference_hf` | the SNR framework in [`../signal-and-noise/`](../signal-and-noise/) |
 | W&B per-model curves | [`mariagrandury-epflnlp/snr-experiments`](https://wandb.ai/mariagrandury-epflnlp/snr-experiments) | live dashboards, one line per benchmark per model |
 
+**Which metric a task is scored on.** `configs/tasks.json`'s per-task `metric`,
+else `acc` (else `exact_match` for generative tasks); `results_io.flatten` (W&B)
+and `ladder_report._primary` read the same rule. Cloze-format originals — ARC,
+HellaSwag (English and the okapi translations), OpenBookQA, MathQA, Global-PIQA
+cloze — pin `acc_norm` since 2026-10-08, as OLMES/DataDecide score them;
+letter-format MCQ and tasks that emit no `acc_norm` (XCOPA, XStoryCloze) keep
+`acc`. The list and the reasons are in `CLAUDE.md` ("Per-benchmark metric").
+
 The HF dataset is the canonical input to every analysis in
 [`../signal-and-noise/`](../signal-and-noise/): the SNR-variant CSV, the
 benchmark_creation per-family ranking, the AllenAI cross-corpus
