@@ -76,10 +76,10 @@ def decisions(fin: pd.DataFrame) -> pd.DataFrame:
     """Per task and line pair: the sign of the proxy difference against the reference's."""
     mask = pd.read_csv(EXTERNAL_MASK).set_index("task")
     score = fin.pivot_table(index="task", columns="model", values="primary_score")
+    # rule 1 at the proxy and at the reference; a task with no chance level (LAMBADA) has a mask of NA and passes
+    score = score[score.index.isin(mask.index) & passes_gate(mask, score.index, *PROXY_BUCKETS, REF_BUCKET).to_numpy()]
     rows = []
     for task, r in score.iterrows():
-        if task not in mask.index or not all(mask.loc[task, b] == 1 for b in PROXY_BUCKETS + (REF_BUCKET,)):
-            continue                                                       # rule 1 at the proxy and at the reference
         for (la, (pa, ra)), (lb, (pb, rb)) in combinations(LINES.items(), 2):
             if any(pd.isna(r.get(m)) for m in (pa, ra, pb, rb)):
                 continue

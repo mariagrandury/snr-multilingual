@@ -36,6 +36,10 @@ the first finding for the main figure, a fixed sentence for the extras.
 A FIGURE_PAGES entry writes sections/<stem>.tex, one more figure on a float page
 of its own, with a caption built from the figure's CSV on every run:
 app_rq02_bbpb, the main-text rq2 figure split into an accuracy and a bBPB row.
+FIXED writes sections/app_fixed_populations.tex, the fixed-task twins (one task
+set per line, rule 13) of the paper figures whose task set moves along x, each
+on a float page with a caption read from its CSV. A page whose main figure only
+the cluster run draws (make_rq_figures.PENDING) is skipped until it is drawn.
 
 The text is double-blind: links, file names and rule numbers are dropped.
 plain() gives every written sentence the appendix punctuation: no dash and no
@@ -57,6 +61,114 @@ from make_rq_figures import ANALYSIS, FIGURES, HERE
 SECTIONS = HERE.parent / "sections"
 # the appendix section the pages are subsections of, opened by the first page
 PARENT = ("Detailed Analyses", "app:analyses")
+# rq12 scores DA against both 1.7B truths once its per-item store run has written the full-truth columns
+_RQ12_CSV = ANALYSIS / "rq12_above_chance_items" / "pretraining" / "predictivity" / "above_chance_items_snr_paper.csv"
+RQ12_TWO_TRUTHS = _RQ12_CSV.is_file() and "rho_snr_da_size_full_truth" in _RQ12_CSV.read_text().split("\n", 1)[0].split(",")
+SIZES = ["90M", "175M", "350M", "600M", "1B", "1.7B", "3B"]
+
+
+def readings(d, solid, dashed, value="da", **where):
+    """A paper figure's CSV `d` with two readings of each line, one row per
+    point: the two values and their difference (solid - dashed)."""
+    for k, v in where.items():
+        d = d[d[k] == v]
+    keys = [c for c in ("panel", "population", "line", "x") if c in d and c not in where]
+    w = d.pivot_table(index=keys, columns="reading", values=value).dropna(subset=[solid, dashed])
+    return w.assign(diff=w[solid] - w[dashed]).reset_index()
+
+
+def rq02_crossfit_caption(d):
+    """The caption of app_rq02_rq2_crossfit, its numbers read from the figure's CSV `d`."""
+    rq2 = readings(d, "cross-fitted", "in-sample (half)", panel="DA-size", line="all pairs")
+    worst = rq2.loc[rq2["diff"].abs().idxmax()]
+    return (
+        f"\\textbf{{Chosen out of sample, the reliable tasks move DA-size over every single-axis pair by at most "
+        f"{abs(worst['diff']):.2f} (at {worst['x']}).}} Figure~\\ref{{fig:rq2}} with the reliable tasks chosen out of "
+        "sample. The verdict (DA above 0.66 on the size or the checkpoint axis) is decided on one half of the design "
+        "pairs and the panels are read on the other half, over 20 random splits stratified by the axes a pair moves, in "
+        "both directions (solid, with the 5--95\\% range over splits). The dashed lines choose and read the tasks on the "
+        "same half, so the gap between the two is the selection effect alone. Lines with too few pairs per half are "
+        "not drawn.")
+
+
+def rq02_da_crossfit_caption(d):
+    """The caption of app_rq02_decision_accuracy_crossfit, its numbers read from the figure's CSV `d`."""
+    twin = readings(d, "cross-fitted", "in-sample (half)", population="all benchmarks")
+    return (
+        f"\\textbf{{On the multi-axis pairs, the reliable benchmark tasks chosen out of sample and in sample give DA-size "
+        f"within {twin['diff'].abs().max():.2f} of each other.}} Figure~\\ref{{fig:app_rq02_decision_accuracy}} with the "
+        "reliable benchmark tasks, chosen out of sample (solid) and in sample (dashed) on the same half of the pairs, "
+        "over the splits of Figure~\\ref{fig:app_rq02_rq2_crossfit}.")
+
+
+def fixed_impact(d, line, what, fmt=".2f", value="value", unit="tasks", **where):
+    """What one task set per line does to a line of a paper figure, from the twin's
+    CSV `d`: (a bold lead with the largest shift (fixed - moving) along the line
+    and the verdict, a sentence with its fixed and moving values at the first and
+    last point and the task counts)."""
+    for k, v in dict(where, line=line).items():
+        d = d[d[k] == v]
+    w = d.pivot_table(index="x", columns="reading", values=[value, "n_tasks"])
+    w = w.loc[sorted(w.index, key=lambda x: SIZES.index(x) if x in SIZES else float(x))].dropna()
+    f, m, n = w[(value, "fixed")], w[(value, "moving")], w[("n_tasks", "moving")]
+    diff = f - m
+    x = diff.abs().idxmax()
+    first, last = w.index[0], w.index[-1]
+    num = lambda v, sign="": f"{v:{sign}{fmt}}".replace("-", "−")      # a minus sign, not a hyphen
+    verdict = ("so part of the line's movement comes from its changing tasks" if abs(diff[x]) > (m.max() - m.min()) / 4
+               else "small against the line's own range, so its shape is not a population effect")
+    return (f"Holding the tasks fixed moves {what} by at most {num(diff[x], '+')} (at {x}), {verdict}.",
+            f"The {int(w[('n_tasks', 'fixed')].iloc[0])} {unit} it has at every point read {num(f.iloc[0])} at {first} "
+            f"and {num(f.iloc[-1])} at {last}, against {num(m.iloc[0])} and {num(m.iloc[-1])} on the {unit} of each "
+            f"point ({int(n.min())}--{int(n.max())}).")
+
+
+# fixed-task twin stem -> (the label of the figure it is a twin of, what the twin changes, fixed_impact's arguments)
+FIXED = {
+    "app_rq02_fixed_rq2": ("fig:rq2", "the reliable tasks of each panel",
+                           dict(line="all pairs", what="the DA-size line over every single-axis pair", value="da",
+                                panel="DA-size")),
+    "app_rq02_fixed_decision_accuracy": ("fig:app_rq02_decision_accuracy", "the tasks above chance",
+                                         dict(line="all benchmarks", what="the benchmark line", value="da")),
+    "app_rq05_fixed_design_decisions": ("fig:app_rq05_design_decisions", "the (task, language setting) cells of each line",
+                                        dict(line="temperature / benchmark",
+                                             what="the benchmark line of the temperature decision", unit="cells",
+                                             panel="da_size")),
+    "app_rq10_fixed_size_generalisation": ("fig:app_rq10_size_generalisation",
+                                           "the tasks of each channel (the left panel is not redrawn)",
+                                           dict(line="benchmarks to 3B", what="the benchmark line against the 3B reference",
+                                                panel="3B")),
+    "app_rq11_fixed_evaluation_recipe": ("fig:app_rq11_evaluation_recipe", "the tasks of each variant",
+                                         dict(line="All variants", what="the pooled line")),
+    "app_rq12_fixed_above_chance_items": ("fig:app_rq12_above_chance_items", "the tasks of each ordering",
+                                          dict(line="items_then_gate", what="the median SNR of the items-then-gate ordering",
+                                               panel="snr_median")),
+    "app_rq13_fixed_english_only": ("fig:app_rq13_english_only", "the English tasks of each comparison",
+                                    dict(line="every L > 1",
+                                         what="the deep cells' mean gap in points to every other language setting",
+                                         fmt=".1f", panel="deep: mean gap")),
+}
+
+
+def fixed_caption(ref, tasks, kw):
+    """The caption of a fixed-task twin, a function of its CSV."""
+    def caption(d):
+        lead, rest = fixed_impact(d, **kw)
+        return (f"\\textbf{{{escape(lead)}}} Figure~\\ref{{{ref}}} on one task set per line, {tasks} that have a value "
+                f"at every point (solid), against the original (dashed). {escape(rest)}")
+    return caption
+
+
+def fixed_populations():
+    """The appendix of the fixed-task twins: one float page per paper figure whose task set moves along x."""
+    return "\n".join([
+        "\\clearpage", "\\section{Fixed task sets}", "\\label{app:fixed_populations}", "",
+        plain("A line of a mean over tasks against model size averages, at each size, the tasks that have a value "
+              "there. The above-chance gate keeps more tasks at larger sizes, so a line can rise or fall because "
+              "its tasks changed. Each figure below redraws a paper figure on one task set per line, the tasks "
+              "that have a value at every point of that line (solid), with the original line dashed behind it."),
+        "", *(float_page(stem, fixed_caption(ref, tasks, kw), f"fig:{stem}") for stem, (ref, tasks, kw) in FIXED.items()
+              if FIGURES[stem][0].with_suffix(".csv").is_file())])
 
 
 def rq11_benchmarks_caption(d):
@@ -366,7 +478,30 @@ PAGES = {
         None, 0,
         (("app_rq02_da_by_language", rq02_language_caption, "fig:app_rq02_da_by_language"),
          ("app_rq02_da_size_by_language_per_proxy", rq02_language_per_proxy_caption,
-          "fig:app_rq02_da_size_by_language_per_proxy"))),
+          "fig:app_rq02_da_size_by_language_per_proxy"),
+         ("app_rq02_rq2_crossfit", rq02_crossfit_caption, "fig:app_rq02_rq2_crossfit"),
+         ("app_rq02_decision_accuracy_crossfit", rq02_da_crossfit_caption, "fig:app_rq02_decision_accuracy_crossfit"))),
+    "rq02_permutation_null": (
+        "Decision accuracy against a no-signal null", "app_rq02_permutation_null",
+        "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B, on pairs that may differ on any "
+        "number of design axes. For every (task, proxy size) cell with at least three comparable pairs, we shuffle "
+        "the proxy's final scores across the design variants 1000 times and score each shuffle against the unchanged "
+        "1.7B ranking with the same sign rule, ties included. A cell's p-value is the share of shuffles that match at "
+        "least as many pairs, corrected over the cells with the Benjamini-Hochberg procedure. The lines pool the "
+        "matching pairs over the comparable pairs of the tasks above chance at the proxy and at 1.7B, and the band is "
+        "the 95\\% range of the pooled shuffles. The benchmark line includes the bBPB variants at the sizes where "
+        "they were computed (175M, 350M and 1B).",
+        None, 0),
+    "rq02_decisive_pairs": (
+        "Decision accuracy on decisive pairs", "app_rq02_decisive_pairs",
+        "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B, on pairs that may differ on any "
+        "number of design axes. A pair is decisive for a task when its gap at 1.7B exceeds $k \\sqrt{2}$ times the "
+        "task's seed standard deviation, for $k \\in \\{1, 2\\}$. The seed standard deviation is the median, over the "
+        "baseline cells trained with three seeds (175M, 600M and 1B), of the standard deviation of the final score. "
+        "There are no replicates at 1.7B, so we assume that seed noise does not grow with size. Every line reads "
+        "the same accuracy tasks: those with a seed standard deviation and at least three pairs above the larger "
+        "threshold, above chance at the proxy and at 1.7B.",
+        None, 0),
     "rq02_da_vs_train_tokens": (
         "Decision accuracy against the tokens of the language seen", "app_rq02_da_goal_multi_axes_bpb",
         "We use the bits per byte of 50 languages, one task each. Design pairs are formed among the variants that "
@@ -446,9 +581,11 @@ PAGES = {
     "rq11_evaluation_recipe": (
         "Evaluation recipe", "app_rq11_evaluation_recipe",
         "Seed-1904 runs of every cell. We report the DA-size of the proxies 90M--1B against the 1.7B final "
-        "checkpoint, on multi-axis pairs and on the tasks above chance at the proxy and at the reference. Each "
-        "benchmark is read in up to six ways. The items are used as published, as RF or as LLM-RF, and each "
-        "version is scored by accuracy or by the bits per byte of the gold answer (bBPB).",
+        "checkpoint, on multi-axis pairs. Each benchmark is read in up to six ways. The items are used as "
+        "published, as RF or as LLM-RF, and each version is scored by accuracy or by the bits per byte of the gold "
+        "answer (bBPB). The accuracy variants count on the tasks above chance at the proxy and at the reference. A "
+        "bBPB variant has no chance level and is read against its original's 1.7B accuracy, so it counts where that "
+        "accuracy is above chance at the reference. The pooled line holds both kinds.",
         None, 0,
         (("app_rq11_recipe_by_benchmark", rq11_benchmarks_caption, "fig:app_rq11_recipe_by_benchmark"),)),
     "rq12_above_chance_items": (
@@ -456,7 +593,9 @@ PAGES = {
         "Seed-1904 runs of every cell, 90M--1.7B, final checkpoints. Every benchmark-language task keeps only "
         "the items that its 1.7B runs answer above chance, after the above-chance gate. We compare it with the full "
         "task. The selection reads the reference by design, so the gains are an upper bound, not a held-out "
-        "estimate.",
+        "estimate." + (" Decision accuracy is scored against two truths, the 1.7B ranking on the full task and on "
+                       "the kept items, and the gap between them is the part of the gain that comes from re-scoring "
+                       "the reference." if RQ12_TWO_TRUTHS else ""),
         None, 0),
     "rq13_english_only": (
         "English-only models", "app_rq13_english_only",
@@ -465,6 +604,17 @@ PAGES = {
         "checkpoints and sizes 90M--1.7B, on the English accuracy tasks above chance at each size.",
         None, 0,
         (("app_rq13_english_scaling_regimes", rq13_regimes_caption, "fig:app_rq13_english_scaling_regimes"),)),
+    "rq14_proxy_item_selection": (
+        "Item selection from the proxies alone", "app_rq14_proxy_item_selection",
+        "Seed-1904 runs of every cell, final checkpoints, on pairs that may differ on any number of design axes. "
+        "For each benchmark-language task, we split the design families into two halves. On one half, we rank the "
+        "items by their discrimination at 600M and 1B: the correlation of an item's correctness with the run's task "
+        "score, both centred within each size. We keep the top half of the items and score the DA-size of the "
+        "proxies 90M--1B on the other half's pairs, against the 1.7B ranking on the full task. We then swap the "
+        "halves and average. Random subsets of the same size, drawn from the same items, are the baseline. The "
+        "selection never reads the 1.7B runs, so its DA is a held-out estimate that is available before the "
+        "reference is trained. Tasks are above chance at the proxy and at 1.7B.",
+        None, 0),
 }
 
 # what each main figure draws, after its bold takeaway (the README's alt text when a folder has none)
@@ -498,6 +648,17 @@ CAPTIONS = {
         "that the checkpoint had seen (log scale). There is one line per proxy size, a darker blue for a larger size, "
         "and one point per evaluated tenth of the run. The bars give the uncertainty over languages and the dotted "
         "line marks 0.75.",
+    "rq02_permutation_null":
+        "DA-size of the final checkpoint of each proxy size against the 1.7B final checkpoint, on multi-axis design "
+        "pairs, for the benchmark tasks (left) and the per-language bits per byte (middle). The black line is the "
+        "observed DA-size, the dashed grey line the mean of the shuffled null and the grey band its 95% range. The "
+        "dotted line marks 0.5. Right: the share of (task, proxy size) cells above their own null at q < 0.05.",
+    "rq02_decisive_pairs":
+        "DA-size of the final checkpoint of each proxy size against the 1.7B final checkpoint, on multi-axis design "
+        "pairs, for the benchmark tasks (left) and the per-language bits per byte (middle). One line per threshold: "
+        "every comparable pair (black) and the pairs whose 1.7B gap exceeds one or two seed standard deviations of a "
+        "difference (dark and light blue). The dotted line marks 0.5. Right: the share of the comparable pairs each threshold keeps, "
+        "solid for the bits per byte and dashed for the benchmarks.",
     "rq03_noise_and_snr":
         "Median absolute effect of each design decision over the noise, per model size, on the benchmarks, the "
         "per-language bits per byte, the macro average of the bits per byte and the training loss. Top row: over the "
@@ -543,6 +704,11 @@ CAPTIONS = {
         "gate (blue) and of the gate applied after the selection (orange), per model size. The numbers give the tasks "
         "behind each point. Middle: the median ratio of the selected items to the full benchmark for the SNR, the "
         "signal and the k-fold noise. Right: Spearman ρ between SNR and DA-size across tasks.",
+    "rq14_proxy_item_selection":
+        "Left: DA-size of the proxies against the 1.7B ranking on the full task, on multi-axis design pairs, for the "
+        "full task (black), for random items of the same count (orange) and for the top half of the items chosen on "
+        "the proxies (blue). "
+        "Right: the gain of the chosen items over the random ones, one line per share of the items kept.",
     "rq13_english_only":
         "(a) and (b): the English-only cells (K = 1) minus the cells with K > 1 of the same size, in accuracy points "
         "above chance averaged over the English tasks above chance, for the deep and the shallow ladder. There is one "
@@ -763,7 +929,9 @@ def float_page(stem, caption, label):
     0.8 of the text height, which leaves room for a caption of ten lines: a float
     taller than the page runs into the bottom margin, which ACL's format check
     rejects. The page block caps its figure at 0.36 for the same reason. A stem
-    copied as TeX is a generated table, set in a table* float instead."""
+    copied as TeX is a generated table, set in a table* float instead. A callable
+    `caption` is built from the figure's CSV, so its numbers follow each refresh."""
+    caption = plain(caption(pd.read_csv(FIGURES[stem][0].with_suffix(".csv"))) if callable(caption) else caption)
     if FIGURES[stem][1] == ("tex",):
         return "\n".join(["\\begin{table*}[p]", "\\centering", "\\small", f"\\caption{{{caption}}}",
                           f"\\label{{{label}}}", f"\\input{{figures/{stem}}}",
@@ -838,25 +1006,31 @@ def page(folder, title, stem, setup, kf_image, kf_bullet, extras=()):
         "}]",
         "",
     ] + ([float_page(stem, caption, label)] if tall(stem) else [])
-      + [float_page(e_stem, plain(e_caption(pd.read_csv(FIGURES[e_stem][0].with_suffix(".csv"))) if callable(e_caption)
-                                  else e_caption), e_label) for e_stem, e_caption, e_label in extras])
+      + [float_page(*e) for e in extras])
 
 
 def main():
     folders = sorted(p.name for p in ANALYSIS.glob("rq*") if (p / "README.md").is_file())
     missing = [f for f in folders if f not in PAGES]
     for folder in [f for f in PAGES if f in folders]:
+        if not (HERE / f"{PAGES[folder][1]}.png").is_file():      # a figure only the cluster run draws (PENDING)
+            print(f"  PENDING app_{folder}: its figure is not drawn yet")
+            continue
         tex = page(folder, *PAGES[folder])
         out = SECTIONS / f"app_{folder}.tex"
         if not out.is_file() or out.read_text() != tex:
             out.write_text(tex)
         print(f"\\input{{sections/app_{folder}}}")
     for stem, (caption, label) in FIGURE_PAGES.items():
-        tex = float_page(stem, plain(caption(pd.read_csv(FIGURES[stem][0].with_suffix(".csv")))), label)
+        tex = float_page(stem, caption, label)
         out = SECTIONS / f"{stem}.tex"
         if not out.is_file() or out.read_text() != tex:
             out.write_text(tex)
         print(f"\\input{{sections/{stem}}}")
+    tex, out = fixed_populations(), SECTIONS / "app_fixed_populations.tex"
+    if not out.is_file() or out.read_text() != tex:
+        out.write_text(tex)
+    print("\\input{sections/app_fixed_populations}")
     for f in missing:
         print(f"  NO PAGE for {f}: add it to PAGES")
     return 1 if missing else 0

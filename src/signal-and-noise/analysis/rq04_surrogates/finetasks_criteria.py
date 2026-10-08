@@ -520,6 +520,8 @@ if __name__ == "__main__":
     rank = pd.DataFrame([{"surrogate": c, "cells": int(st[[c, "da_size"]].replace([np.inf, -np.inf], np.nan).dropna().shape[0]),
                           "spearman": st[[c, "da_size"]].replace([np.inf, -np.inf], np.nan).dropna().corr(method="spearman").iloc[0, 1]}
                          for c in cand]).sort_values("spearman", ascending=False)
+    # rule 11: these read the reference (rq02's ranking against it, rq01's fits over sizes that include it)
+    rank["needs_reference"] = rank["surrogate"].isin(["rho_ranking", "tau_ranking", "rho_size", "r2_trajectory"])
     rank.to_csv(out_dir / "finetasks_surrogates_rank.csv", index=False)
     print(rank.round(3).to_string(index=False))
     figure_scatter(st, out_dir / "finetasks_surrogates_scatter.png", args.pool)

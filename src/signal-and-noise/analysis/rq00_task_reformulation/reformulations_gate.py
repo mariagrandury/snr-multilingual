@@ -83,17 +83,19 @@ def mcnemar(mask: pd.DataFrame, sizes: list) -> pd.DataFrame:
     for (fam, s), g in m.groupby(["base", "set"]):
         if s == "original":
             continue
-        orig = m[(m["base"] == fam) & (m["set"] == "original")].set_index("language")
-        tw = g.set_index("language")
-        langs = orig.index.intersection(tw.index)
+        # paired on the task a twin rewrites (`rf_<task>` -> `<task>`), not on its language:
+        # a family can hold several tasks per language (CulturalBench countries, belebele zh)
+        orig = m[(m["base"] == fam) & (m["set"] == "original")].set_index("task")
+        tw = g.assign(task=g["task"].str.removeprefix(f"{s}_")).set_index("task")
+        common = orig.index.intersection(tw.index)
         for size in sizes:
-            o, t = orig.loc[langs, size], tw.loc[langs, size]
+            o, t = orig.loc[common, size], tw.loc[common, size]
             ok = o.notna() & t.notna()
             o, t = o[ok].astype(int), t[ok].astype(int)
             b, c = int(((o == 1) & (t == 0)).sum()), int(((o == 0) & (t == 1)).sum())
             p = binomtest(min(b, c), b + c, 0.5).pvalue if b + c else np.nan
             rows.append({"family": fam, "set": s, "size": size, "languages": int(ok.sum()),   # paired tasks
-                         "n_languages": o.index.nunique(),     # CulturalBench: one task per country, 19 over 8 languages
+                         "n_languages": orig.loc[o.index, "language"].nunique(),   # CulturalBench: 19 countries over 8 languages
                          "share_original": o.mean() if len(o) else np.nan, "share_twin": t.mean() if len(t) else np.nan,
                          "twin_only": c, "original_only": b, "p_mcnemar": p})
     return pd.DataFrame(rows)
@@ -114,7 +116,8 @@ def headline(pool: str, mask: pd.DataFrame, sizes: list) -> pd.DataFrame:
     rel = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_all_reliable_tasks_both_axes.csv")
     rel = no_bbpb(rel[rel["axes"] == "multi-axis"] if "axes" in rel.columns else rel)
     rel["set"] = rel["task"].map(twin_set)
-    reg = no_bbpb(pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_seeds" / "scaling_regimes.csv"))
+    reg = pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_seeds" / "scaling_regimes.csv")
+    reg = reg[reg["task"].isin(bench["task"])].copy()        # benchmarks only: per-language BPB has no twin and would count as an original
     reg["set"] = reg["task"].map(twin_set)
     passes = mask.set_index("task")
     rows = []
@@ -132,7 +135,7 @@ def headline(pool: str, mask: pd.DataFrame, sizes: list) -> pd.DataFrame:
                          "gate_share": gate_col.mean() if len(gate_col) else np.nan,
                          "da_size_mean": d.loc[ok, col].mean() if col in d.columns else np.nan,
                          "da_size_n": int(d.loc[ok, col].notna().sum()) if col in d.columns else 0,
-                         "da_size_mean_ungated": d[col].mean() if col in d.columns else np.nan,
+                         "da_size_mean_ungated": d.loc[d["task"].isin(bench["task"]), col].mean() if col in d.columns else np.nan,
                          "reliable_share": (r["da_size_median"] >= 0.66).mean() if len(r) else np.nan,
                          "reliable_n": len(r), "r2_size_median": q["r2_size"].median() if len(q) else np.nan,
                          "regime_tasks": len(q)})

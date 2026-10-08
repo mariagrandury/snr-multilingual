@@ -159,7 +159,9 @@ pool, `bench_bpb_da.py`, `da_per_benchmark.py`, `early_small.py`,
 `paper_rq2.py`, the `--axes mono-axis` twins, then
 the extensions: `scale_convergence.py --by L --langs L8 [--common-tasks]`,
 `by_language.py`, `agreement.py`, `seed_uncertainty.py`, `language_tier.py`,
-`pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per pool, which reads
+`pair_axes.py`, `crossfit_reliable.py` (the reliable tasks chosen out of sample),
+`fixed_tasks.py`, then `rq02_permutation_null/permutation_null.py` and
+`rq02_decisive_pairs/decisive_pairs.py`) → rq03 (`run_apertus_snr_variants.py` per pool, which reads
 rq02's DA; `compare_seed_splits.py`; `panels.py`) → rq04 (the variant ranking,
 `analyze.py`, `finetasks_criteria.py`, then `catalogue.py` + `search.py`: ~210
 proxy-only surrogates from `literature.md` and the AllenAI signal × noise grid
@@ -167,14 +169,15 @@ against every DA) → rq05 (+ rq03's
 `effect_vs_noise.py`, which reads rq05's table) → rq06 → rq07 (reads rq04's
 ranking) → the English-only check (`english_only.py`) → rq08 (`smooth_subtasks.py`,
 `panels.py`, `per_item_ladder.py`, `reference_solved.py`) → the above-chance
-items (`above_chance_items.py`) → rq09 → rq10 (`above_reference.py`, the 3B rung as the
+items (`above_chance_items.py`) → the proxy item selection
+(`rq14_proxy_item_selection/proxy_item_selection.py`, store-only) → rq09 → rq10 (`above_reference.py`, the 3B rung as the
 reference, the only reader of `above_reference=True`; filled since the
 2026-09-30 report holds the four 3B L8/L15 cells' evaluations) → rq11
 (`recipe.py`: per benchmark, which format and scoring to evaluate, from rq02's
 per-task table) → `report_figures/make_figures.py` →
 `check_rules.py`.
 Themes: A predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C
-generalisation (rq05–rq07), D benchmark improvement (rq08–rq09, rq12), E past the
+generalisation (rq05–rq07), D benchmark improvement (rq08–rq09, rq12, rq14), E past the
 reference (rq10), F the recommendation (rq11), G checks on the ladder (rq13);
 `analysis/paths.py` is the one map from constant to folder. The canonical
 pool (`analysis/autodoc.CANONICAL_POOL = predictivity`) is the one whose README

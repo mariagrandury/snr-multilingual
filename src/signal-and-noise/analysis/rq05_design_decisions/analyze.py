@@ -217,7 +217,8 @@ def intervention_da(df: pd.DataFrame, fracs: list = FRACS, mask: pd.DataFrame | 
     """(the decision table, the per-item agreement behind it, the same for
     every language's BPB with its `group`). The second frame has one row per
     (intervention, L, proxy size, fraction, task) of CELL_POPULATIONS with
-    `agree` in {0, 1}: what the per-benchmark and per-language tables
+    its `population` and `agree` in {0, 1}: what the per-benchmark and
+    per-language tables and the decision table's DA of those populations
     aggregate; the third, filled only for `bpb_all` (rq06's call), is what
     rq06's transfer lines aggregate. A benchmark
     item counts at a proxy size only where the task is above chance there and
@@ -269,8 +270,8 @@ def intervention_da(df: pd.DataFrame, fracs: list = FRACS, mask: pd.DataFrame | 
                         agree = (np.sign(d_proxy) == ref_sign.loc[items]).to_numpy(float)
                         if pop in CELL_POPULATIONS:
                             items_rows.append(pd.DataFrame({
-                                "intervention": key, "label": label, "L": int(L), "proxy_size": s, "frac": f,
-                                "task": items, "agree": agree}))
+                                "intervention": key, "label": label, "population": pop, "L": int(L), "proxy_size": s,
+                                "frac": f, "task": items, "agree": agree}))
                         if pop == "bpb_all":            # every language, grouped by what the cell's lists train
                             group_rows.append(pd.DataFrame({
                                 "intervention": key, "label": label, "L": int(L), "proxy_size": s, "frac": f, "reference_size": ref,
@@ -309,10 +310,12 @@ def language_group(tasks, L: int, builds: list) -> list[str]:
             else LANGUAGE_GROUPS[2] if t.rsplit("_", 1)[-1] in scripts else LANGUAGE_GROUPS[3] for t in tasks]
 
 
-def effect_at_reference(fin: pd.DataFrame) -> pd.DataFrame:
+def effect_at_reference(fin: pd.DataFrame, mask: pd.DataFrame | None) -> pd.DataFrame:
     """Per (intervention, L, population): at the reference size, the median
     |Δ| in per-task seed standard deviations (the seed sd of the baseline
-    cells, median over the (size, L) cells with replicates)."""
+    cells, median over the (size, L) cells with replicates). Benchmarks count
+    where they are above chance at the reference (rule 1): a task at chance
+    there has no decision to read, and its |Δ| is noise."""
     sd = seed_sd(fin)
     grid = fin[fin["seed"] == GRID_SEED]
     rows = []
@@ -324,14 +327,16 @@ def effect_at_reference(fin: pd.DataFrame) -> pd.DataFrame:
                 continue
             tasks = piv.index.get_level_values("task")
             is_bpb = tasks.str.startswith("bpb_")
-            for pop, mask in (("bits per byte", is_bpb & (tasks != "bpb_macro")), ("benchmarks", ~is_bpb & (tasks != "train_loss"))):
-                pp = piv[mask]
+            for pop, sel in (("bits per byte", is_bpb & (tasks != "bpb_macro")), ("benchmarks", ~is_bpb & (tasks != "train_loss"))):
+                pp = piv[sel]
                 counts = pp.groupby(level="size").size()
                 sizes = size_order(counts[counts >= MIN_ITEMS].index)
                 if TARGET_SIZE not in sizes:       # rule 9, as above
                     continue
                 ref = TARGET_SIZE
                 p = pp.xs(ref, level="size")
+                if pop == "benchmarks":
+                    p = p[passes_gate(mask, p.index.get_level_values("task"), ref).to_numpy()]
                 ratio = ((p[levels[0]] - p[levels[1]]).abs() / p.index.map(sd)).replace(np.inf, np.nan).dropna()
                 if len(ratio) >= MIN_ITEMS:
                     rows.append({"intervention": key, "label": label, "L": int(L), "reference_size": ref,
@@ -508,7 +513,7 @@ def main(pool: str, out_dir: Path) -> None:
                     refs=("reference_size", lambda s: ",".join(sorted(set(s))))).reset_index())
         dag.to_csv(out_dir / "rq4_da_size_by_intervention_mono_axis.csv", index=False)
 
-    ev = effect_at_reference(fin)
+    ev = effect_at_reference(fin, gate_mask(pool))
     ev.to_csv(out_dir / "rq4_effect_vs_seed.csv", index=False)
     if not ev.empty or not dag.empty:
         plot_interventions(by_recipe(ev), dag, out_dir)

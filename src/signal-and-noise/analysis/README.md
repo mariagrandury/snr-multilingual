@@ -27,6 +27,8 @@ In this snapshot the bBPB twins are scored at the final checkpoint only, so no R
 | | [Scaling predictability](rq01_scaling_predictability/README.md) | Which tasks move with model size in a way a log-linear fit captures, and how well does a fit on the proxy rungs predict the reference? | [scaling_regimes_outliers_paper](rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_outliers_paper.png) |
 | | [Decision accuracy](rq02_decision_accuracy/README.md) | Does a benchmark rank the ladder's design variants at a smaller size, or at an earlier checkpoint, the way the 1.7B reference does? | [scale_convergence_da_size_multi_axes](rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_multi_axes.png) |
 | | [DA vs training tokens](rq02_da_vs_train_tokens/README.md) | Does a language's BPB rank the design variants like the reference once the proxy has seen enough of that language? | [da_goal_multi_axes_across_langs_bpb_paper](rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_goal_multi_axes_across_langs_bpb_paper.png) |
+| | [DA against its null](rq02_permutation_null/README.md) | How far above chance does a proxy rank the design decisions, once chance is measured cell by cell (proxy scores shuffled) rather than read off a flat 0.5? | [permutation_null_da_size_paper](rq02_permutation_null/pretraining/predictivity/permutation_null_da_size_paper.png) |
+| | [Decisive pairs](rq02_decisive_pairs/README.md) | Does a proxy rank the design decisions better once the pairs the 1.7B reference cannot separate from seed noise are left out? | [decisive_pairs_da_size_paper](rq02_decisive_pairs/pretraining/predictivity/decisive_pairs_da_size_paper.png) |
 | **B. Can it be measured cheaply?** | [Noise and SNR](rq03_noise_and_snr/README.md) | How much does a score move with the seed or the checkpoint alone, how large is a design effect against that noise, and what is each benchmark's SNR under 22 definitions? | [highlights](rq03_noise_and_snr/pretraining/predictivity/highlights.png) |
 | | [Surrogates](rq04_surrogates/README.md) | Which statistic computed on the proxy alone — an SNR definition, its signal or noise part, early-checkpoint agreement, a scaling fit, FineTasks' criteria — predicts decision accuracy? | [highlights](rq04_surrogates/pretraining/predictivity/highlights.png) |
 | **C. Does the framework generalise?** | [Design decisions](rq05_design_decisions/README.md) | For one design decision at a time (depth, data scheme A vs B and A vs C, temperature), which proxy sizes, and how early in their run, read the reference's preference at each language count? | [da_all_lines_mono_axis_paper](rq05_design_decisions/pretraining/predictivity_seeds/da_all_lines_mono_axis_paper.png) |
@@ -35,6 +37,7 @@ In this snapshot the bBPB twins are scored at the final checkpoint only, so no R
 | **D. Can the benchmarks be improved?** | [Subset selection](rq08_subset_selection/README.md) | Can a language, subject or item subset of a benchmark beat the full set's SNR by more than selection alone gives for free? | [gain_over_null_paper](rq08_subset_selection/pretraining/predictivity/gain_over_null_paper.png) |
 | | [Benchmark design](rq09_benchmark_design/README.md) | Which design features of a benchmark — curation, source, format, option count, item length — go with a high SNR? | [snr_per_family_ranked_paper](rq09_benchmark_design/pretraining/predictivity/snr_per_family_ranked_paper.png) |
 | | [Above-chance items](rq12_above_chance_items/README.md) | If every benchmark-language task keeps only the items its 1.7B runs answer above chance (chosen in sample, on purpose), how much do decision accuracy, SNR and the above-random gate rise, with the gate applied before or after the items are chosen? | [above_chance_items_snr](rq12_above_chance_items/pretraining/predictivity/above_chance_items_snr.png) |
+| | [Proxy item selection](rq14_proxy_item_selection/README.md) | Can a benchmark be shortened from the proxies alone (item discrimination at 600M–1B, chosen on half the families) and still rank the held-out designs like the 1.7B reference on the full task? Needs the cluster's per-item store. | [proxy_item_selection_da_size_multi_axes_paper](rq14_proxy_item_selection/pretraining/predictivity/proxy_item_selection_da_size_multi_axes_paper.png) |
 | **E. Past the reference** | [Size generalisation](rq10_size_generalisation/README.md) | Does a ranking that holds at the 1.7B reference still hold one rung above it, at 3B (the four deep 3B cells at L8/L15, schemes A and B; the only reader of `above_reference=True`)? | [above_reference_3B_paper](rq10_size_generalisation/pretraining/predictivity/above_reference_3B_paper.png) |
 | **F. The recommendation** | [Evaluation recipe](rq11_evaluation_recipe/README.md) | Which benchmark, posed how (original, RF, LLM-RF) and scored how (accuracy, bBPB), reads the 1.7B decision from the smallest proxy (DA-size ≥ τ = 0.75, `utils.RELIABLE_DA`)? | [recipe_da_size_variants_multi_axes_paper](rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_variants_multi_axes_paper.png) |
 | **G. Checks on the ladder itself** | [English only (L1)](rq13_english_only/README.md) | Do the monolingual-English cells score higher on the English benchmarks than the multilingual cells of their size, clear chance earlier, rank their design variants as reliably and with as high an SNR, and land where AllenAI DataDecide puts the same tasks? | [english_only_scores](rq13_english_only/pretraining/predictivity/english_only_scores.png) |
@@ -140,7 +143,8 @@ step reads; `run_apertus.py`, `curves.py`, `panels.py`; the twin comparison,
 `cross_task.py`, `scale_convergence.py`, `paper_rq2.py`, the `--axes mono-axis` twins, then `scale_convergence.py --by L
 --langs L8 [--common-tasks]`, `by_language.py`, `agreement.py`,
 `seed_uncertainty.py`, `scaling_vs_ranking.py`, `public_ladders.py`,
-`language_tier.py`, `pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per
+`language_tier.py`, `pair_axes.py`, `crossfit_reliable.py`, `fixed_tasks.py`, then the null and decisive-pair
+readings `rq02_permutation_null/permutation_null.py` and `rq02_decisive_pairs/decisive_pairs.py`) → rq03 (`run_apertus_snr_variants.py` per
 pool, `compare_seed_splits.py`) → rq04 (`analyze_snr_variants.py`,
 `snr_definition_postprocess.py`, `analyze.py`, `finetasks_criteria.py`,
 `panels.py`, `catalogue.py` + `search.py`) → rq05 (`analyze.py`, `early_decision.py`, `transformations.py`,
@@ -149,7 +153,8 @@ rq03's `panels.py`, which draws from it) →
 rq06 (`analyze.py`, `panels.py`, `language_panel.py`) → rq07 (reads rq04's
 ranking) → the English-only check (`english_only.py`, after the AllenAI table it reads) → rq08
 (`smooth_subtasks.py`, `panels.py`, `per_item_ladder.py`, `reference_solved.py`) → the
-above-chance items (`above_chance_items.py`, after the per-item store steps) → rq09 → rq10
+above-chance items (`above_chance_items.py`, after the per-item store steps) → the proxy item selection
+(`rq14_proxy_item_selection/proxy_item_selection.py`, also store-only) → rq09 → rq10
 (`above_reference.py`, the 3B rung; `gate_crossover.py`) → the evaluation recipe (`recipe.py`, which
 reads decision accuracy's per-task early-small table) →
 `report_figures/make_figures.py` → `check_rules.py`.

@@ -250,6 +250,14 @@ def generate_readme(pool: str, t: pd.DataFrame) -> None:
     da = {k: g["da"].iloc[0] for k, g in p.groupby("da_kind")}
     mono = {k: g["da_mono"].iloc[0] for k, g in p.groupby("da_kind")}
     above = [f"{k} {w} {v:.2f}" for k in da for w, v in (("multi-axis", da[k]), ("mono-axis", mono[k])) if v >= CUT]
+    # the ladder's numbers the definitions are illustrated with, read from the measured tables
+    out = DECISION_ACCURACY / rel
+    ag = pd.read_csv(out / "agreement_da_size_per_cell_multi_axes.csv")
+    ag = ag[~ag["gated"] & ~ag["task"].str.startswith(("bpb_", "bbpb_")) & (ag["task"] != "train_loss")]
+    tie = ag["tied_one"].sum() / ag["n_pairs"].sum()
+    tr = pd.read_csv(out / "da_all_by_transformation_per_task_mono_axis.csv")
+    span = tr[tr["frac"] == 1.0].groupby("axis")["n_pairs_ref"].agg(["min", "max"])
+    spans = ", ".join(f"{int(r['min'])}–{int(r['max'])} for {a}" for a, r in span.iterrows())
     body = "\n\n".join([
         "### Decision accuracy on a toy ladder",
         "**Toy, not measured.** Four labelled variants (Deep-A-T1, Deep-B-T1, Shallow-A-T1, Deep-A-T3) with hand-written scores; every DA in "
@@ -268,14 +276,14 @@ def generate_readme(pool: str, t: pd.DataFrame) -> None:
             "its lattice and the figures draw the pooled ratio over tasks (`scale_convergence.py`) or the mean over cells (`by_L.py`), never one cell. "
             f"The ringed cells ({', '.join(above)}) are the ones the `above_66_*` filters would keep (cut {CUT:g}).",
             "- 0.5 is a coin flip on every untied pair; since a one-sided tie is a miss, an uninformative proxy sits below it, at "
-            "0.5 × (1 − the share of pairs one side ties): ≈ 0.47 on the ladder (6 % one-sided ties, "
-            "`agreement_da_size_per_cell_multi_axes.csv`). The seed null of `seed_uncertainty.py` is a different baseline (two seeds of "
+            f"0.5 × (1 − the share of pairs one side ties): ≈ {0.5 * (1 - tie):.2f} on the ladder ({tie:.0%} one-sided ties over the "
+            "benchmark cells that pass the gate, `agreement_da_size_per_cell_multi_axes.csv`). The seed null of `seed_uncertainty.py` is a different baseline (two seeds of "
             "one design, read in its own section).",
             "- DA-goal at the final checkpoint is DA-size, and at the reference size DA-ckpt is DA-goal: the early-and-small grid's "
             "last column and last row are the other two figures' numbers.",
             "- `by transformation` is the mono-axis set split by the axis a pair moves; each group needs its own three pairs. On the ladder "
-            "a (task, size) cell holds 0–4 pairs for the temperature axis, 0–12 for the data scheme, 0–10 for depth and 0–39 for the language "
-            "count, so the temperature and depth groups often fall below the minimum and are NaN "
+            f"a (task, size) cell at the final checkpoint holds {spans} (`da_all_by_transformation_per_task_mono_axis.csv`), so the "
+            "smaller groups often fall below the minimum and are NaN "
             "(`early_small_da_*_by_transformation_*`, `scale_convergence_da_size_transformation_panels*`)."]),
         "Follow-ups:",
         "\n".join([

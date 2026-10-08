@@ -265,10 +265,23 @@ def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool
     return scores, mask, meta
 
 
-def load_mask(pool: str) -> pd.DataFrame | None:
-    """Read the committed mask (task × bucket, Int64 0/1), or None if absent."""
+def mask_pool(pool: str) -> str:
+    """The pool whose committed mask gates `pool`: its own, or for a ladder pool
+    without one the canonical pool's (analysis/RULES.md: every pool is gated
+    with `predictivity`'s mask), so no caller can read a missing mask as
+    "nothing is gated"."""
+    from analysis.autodoc import CANONICAL_POOL
+    from analysis.utils import _is_ladder_pool
     stage = load_pools()[pool].get("stage", "pretraining")
-    path = GATE_AND_CURVES / stage / pool / "above_random_mask.csv"
+    own = (GATE_AND_CURVES / stage / pool / "above_random_mask.csv").exists()
+    return CANONICAL_POOL if not own and _is_ladder_pool(pool) else pool
+
+
+def load_mask(pool: str) -> pd.DataFrame | None:
+    """Read the committed mask (task × bucket, Int64 0/1) that gates `pool`
+    (`mask_pool`), or None if absent."""
+    pool = mask_pool(pool)
+    path = GATE_AND_CURVES / load_pools()[pool].get("stage", "pretraining") / pool / "above_random_mask.csv"
     if not path.exists():
         return None
     m = pd.read_csv(path, index_col="task")

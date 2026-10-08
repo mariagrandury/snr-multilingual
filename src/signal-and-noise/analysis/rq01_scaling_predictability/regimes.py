@@ -66,7 +66,7 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.paths import SCALING_PREDICTABILITY  # noqa: E402
 from analysis.rq01_scaling_predictability.analyze import _grid  # noqa: E402
-from analysis.utils import assign_language, benchmark_family, ladder_frame, languages_only, lower_is_better  # noqa: E402
+from analysis.utils import assign_language, benchmark_family, ladder_frame, languages_only, lower_is_better, on_shared_grid  # noqa: E402
 
 OUT_ROOT = SCALING_PREDICTABILITY
 CANONICAL = "predictivity_seeds"
@@ -100,7 +100,7 @@ def trajectory_medians(df: pd.DataFrame, pool: str, cells=_grid) -> pd.DataFrame
     checkpoints, one fit per (L, size) grid cell where the task is above
     chance (rule 1, `grids.mark_gated`); `cells` as in `fit_table`."""
     g0 = G.mark_gated(cells(df), pool, "size", "primary_score")
-    g0 = g0[~g0["gated"] & (g0["tokens"] > 0)]
+    g0 = g0[~g0["gated"] & (g0["tokens"] > 0) & on_shared_grid(g0)]     # rule 3: BPB's twentieths are not a benchmark's
     rows = []
     for (task, L, size), g in g0.groupby(["task", "L", "size"]):
         if len(g) < MIN_POINTS:

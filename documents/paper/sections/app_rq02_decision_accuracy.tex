@@ -48,3 +48,19 @@
 \caption{\textbf{On the tasks that rank reliably, a larger proxy decides more like the 1.7B reference: 52\% of the cells have DA-size above 0.5 at 90M and 73\% at 1B, and HellaSwag (outlined) is above 0.5 at every proxy in 16 of its 23 languages.} The mean goes from 0.60 to 0.71. Without the filter it goes only from 0.53 to 0.58. DA-size of each proxy's final checkpoint against the 1.7B final, one map per proxy, the row means last. Only benchmarks with a DA-size at some proxy are drawn. A cell is the mean over a benchmark's original accuracy tasks (no RF, LLM-RF or bBPB twin) in a trained language, on the mono-axis pairs of Figure~\ref{fig:rq2}. Only the tasks whose median DA-size or median DA-ckpt is at least 0.66 are kept, as there. This filter selects on DA, so the maps are conditional on it. Grey cells are gated, white cells have no value, and the scale is centred at 0.5 (a coin flip). Languages follow resource rank, with lines where the lists of $K$ = 1, 2, 8, 15, 30 and 50 languages end. Not drawn: 3 single-language benchmarks, and Belebele, Global-MMLU, which have no value.}
 \label{fig:app_rq02_da_size_by_language_per_proxy}
 \end{figure*}
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq02_rq2_crossfit.png}
+% source: src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_crossfit_transformation_mono_axis.png
+\caption{\textbf{Chosen out of sample, the reliable tasks move DA-size over every single-axis pair by at most 0.03 (at 600M).} Figure~\ref{fig:rq2} with the reliable tasks chosen out of sample. The verdict (DA above 0.66 on the size or the checkpoint axis) is decided on one half of the design pairs and the panels are read on the other half, over 20 random splits stratified by the axes a pair moves, in both directions (solid, with the 5--95\% range over splits). The dashed lines choose and read the tasks on the same half, so the gap between the two is the selection effect alone. Lines with too few pairs per half are not drawn.}
+\label{fig:app_rq02_rq2_crossfit}
+\end{figure*}
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq02_decision_accuracy_crossfit.png}
+% source: src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_above_66_either_crossfit_multi_axes_paper.png
+\caption{\textbf{On the multi-axis pairs, the reliable benchmark tasks chosen out of sample and in sample give DA-size within 0.01 of each other.} Figure~\ref{fig:app_rq02_decision_accuracy} with the reliable benchmark tasks, chosen out of sample (solid) and in sample (dashed) on the same half of the pairs, over the splits of Figure~\ref{fig:app_rq02_rq2_crossfit}.}
+\label{fig:app_rq02_decision_accuracy_crossfit}
+\end{figure*}

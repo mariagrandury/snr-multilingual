@@ -97,7 +97,7 @@ def sweep(A: np.ndarray, runs: np.ndarray, rng) -> dict:
     best = int(np.nanargmax(curve))
     shuffled = rng.permutation(alive)
     out.update(snr_best=curve[best], best_n=best + 1,
-               snr_random_order=snr_cols(A[:, shuffled].cumsum(1) / k, runs)[best], subset=alive[:best + 1])
+               snr_random_order=snr_cols(A[:, shuffled].cumsum(1) / k, runs)[best], subset=alive[:best + 1], alive=alive)
     if 0 < best + 1 < alive.size:
         draws = np.stack([A[:, rng.choice(alive, best + 1, replace=False)].mean(1) for _ in range(NULL_DRAWS)], 1)
         out["null_p95"] = float(np.nanpercentile(snr_cols(draws, runs), 95))
@@ -127,7 +127,8 @@ def heldout_da(A: np.ndarray, runs: np.ndarray, P: dict, ref: dict, pairs: list,
         out["best_n_heldout"].append(sw["best_n"])
         out["da_random_subset"].append(np.mean([
             pair_agreement({f: P[f][idx].mean() for f in held}, r, hp)[0]
-            for idx in (rng.choice(A.shape[1], sw["best_n"], replace=False) for _ in range(RANDOM_DRAWS))]))
+            # the null draws from the pool the subset was chosen from: the items alive on the selecting half
+            for idx in (rng.choice(sw["alive"], sw["best_n"], replace=False) for _ in range(RANDOM_DRAWS))]))
     for k in ("da_full", "da_random_subset", "best_n_heldout"):
         out[k] = float(np.mean(out[k])) if out[k] else np.nan
     both = [v for v in (out["da_heldout_ab"], out["da_heldout_ba"]) if not np.isnan(v)]
@@ -242,11 +243,11 @@ def main(pool: str, store: str) -> None:
             f"Gain = best-prefix SNR minus the 95th percentile of {NULL_DRAWS} random subsets of the same size. Held-out DA: items "
             f"chosen on half of the families (stratified over L, arch, scheme, T), scored on the other half's multi-axis pairs "
             f"(>= {MIN_PAIRS}, proxy final vs the {TARGET_SIZE} final of the full task), both halves averaged; random = {RANDOM_DRAWS} "
-            f"draws. Grey = at chance at that size (rule 1); the task set differs across sizes (counts in the cells, rule 13).")
+            f"draws of the same size from the items alive on the selecting half (the subset's own pool). Grey = at chance at that size (rule 1); the task set differs across sizes (counts in the cells, rule 13).")
     figure(summary, out_dir, pool, note)
     if pool != CANONICAL_POOL:
         return
-    top = ok.dropna(subset=["gain_over_null"]).sort_values("gain_over_null", ascending=False).head(10)
+    top = ok[ok["size"] != TARGET_SIZE].dropna(subset=["gain_over_null"]).sort_values("gain_over_null", ascending=False).head(10)
     da = ok[ok["size"] != TARGET_SIZE].groupby("size")[["da_full", "da_subset_heldout", "da_random_subset"]].agg(["mean", "count"])
     body = "\n\n".join([
         "## Per item on the ladder",

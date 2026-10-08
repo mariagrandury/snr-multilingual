@@ -228,7 +228,8 @@ def check_png_csv(folder: Path) -> list[str]:
 
 
 # Paper sections written whole by a generator, which carry no marker line: glob -> generator.
-GENERATED_TEX = {"app_rq*.tex": "make_rq_appendix.py", "app_02_table_languages.tex": "make_appendix_tables.py"}
+GENERATED_TEX = {"app_rq*.tex": "make_rq_appendix.py", "app_fixed_populations.tex": "make_rq_appendix.py",
+                 "app_02_table_languages.tex": "make_appendix_tables.py"}
 
 
 def check_generators(root: Path, repo: Path) -> list[str]:
