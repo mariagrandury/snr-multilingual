@@ -25,14 +25,14 @@ We concatenate validation documents without end-of-document separators. We score
 \midrule
 \multicolumn{7}{l}{\textit{multilingual}} \\
 Belebele & reading comprehension & 4-way MC & HT (FLORES) & 94 & 49 & 59 \\
-Global PIQA & physical commonsense & 2-way completion & native & 77 & 48 & 65 \\
+Global PIQA & physical commonsense & 2-way completion, 4-way (parallel) & native, MT + post-edit (parallel) & 77 & 48 & 65 \\
 MultiBLiMP & grammatical acceptability & minimal pairs & auto (UD, UniMorph) & 57 & 34 & 34 \\
 INCLUDE & regional knowledge & 4-way MC & native exams & 43 & 36 & 36 \\
 INCLUDE v2 & regional knowledge & 4-way completion & native exams & 42 & 42 & 77 \\
 Global-MMLU & world knowledge & 4-way MC & HT + community & 37 & 29 & 29 \\
 HellaSwag (Okapi) & activity commonsense & 4-way completion & MT & 31 & 26 & 26 \\
-ARC (Okapi) & science QA & 4-way MC & MT & 32 & 27 & 28 \\
-ARC-Challenge MT & science QA & 4-way MC & MT & 11 & 11 & 11 \\
+ARC (Okapi) & science QA & 4-way completion & MT & 32 & 27 & 28 \\
+ARC-Challenge MT & science QA & 4-way completion & MT & 11 & 11 & 11 \\
 XNLI & natural language inference & 3-way & HT & 18 & 15 & 15 \\
 XStoryCloze & narrative commonsense & 2-way ending & HT & 13 & 8 & 8 \\
 XCOPA & causal commonsense & 2-way & HT & 11 & 8 & 8 \\
@@ -49,8 +49,8 @@ CulturalBench (easy) & cultural knowledge & 4-way MC & native (English) & 8 & 8 
 CulturalBench (hard) & cultural knowledge & 2-way (true/false) & native (English) & 8 & 8 & 19 \\
 MMLU & world knowledge & 4-way MC & native & 1 & 1 & 1 \\
 CommonsenseQA & commonsense & 5-way MC & native & 1 & 1 & 1 \\
-OpenBookQA & science QA & 4-way MC & native & 1 & 1 & 1 \\
-MathQA & math word problems & 5-way MC & native & 1 & 1 & 1 \\
+OpenBookQA & science QA & 4-way completion & native & 1 & 1 & 1 \\
+MathQA & math word problems & 5-way completion & native & 1 & 1 & 1 \\
 ToxiGen & toxicity detection & 2-way & auto (LLM-generated) & 1 & 1 & 1 \\
 BBH (letter subtasks) & reasoning & letter MC & native & 1 & 1 & 17 \\
 BBH (two-way subtasks) & reasoning & 2-way completion & native & 1 & 1 & 6 \\

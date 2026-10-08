@@ -12,13 +12,13 @@
 \begin{minipage}[t]{0.485\textwidth}
 \vspace{0pt}
 \begin{rqfinding}
-\textbf{1. With every benchmark in, the answer-option count orders the families by SNR, but no characteristic orders them by DA-size in both readings.} The six 2-option families have a median SNR of 1.91 against 0.75 for the eighteen 4-option ones (Kruskal-Wallis H = 11.32, p = 0.003, under 0.05 after a Bonferroni correction for the five axes, and Spearman $\rho$ = $-$0.65 with a 95 \% interval of $-$0.84 to $-$0.33). The five sharpest families are MultiBLiMP 2.39 (34 tasks), HellaSwag 2.29 (26), XStoryCloze 2.18 (8), Global PIQA non-parallel 2.06 (2) and XWinograd 1.77 (6), and the reformulated twins and the English-only benchmarks fill the lower half (0.56 to 1.09). (Figure~\ref{fig:app_rq09_benchmark_design}.)
+\textbf{1. MultiBLiMP, HellaSwag and XStoryCloze separate the designs most sharply at 1.7B, but no characteristic orders the families by DA-size in both readings.} The five sharpest families are MultiBLiMP 2.39 (34 tasks), HellaSwag 2.29 (26), XStoryCloze 2.18 (8), Global PIQA non-parallel 2.06 (2) and XWinograd 1.77 (6), and the reformulated twins and the English-only benchmarks fill the lower half (0.56 to 1.09). (Figure~\ref{fig:app_rq09_benchmark_design}.)
 \\
 \\
 \textbf{2. The benchmark whose proxies decide most like 1.7B is also an SNR leader.} HellaSwag has the highest DA-size on every task above chance (0.75 mean over 90M--1B, LAMBADA second at 0.64) and sits second by SNR (2.29).
 \\
 \\
-\textbf{3. The 2-option families sit above the 4-option ones, with HellaSwag the one exception.} All six 2-option families read 1.32 to 2.39, and the 4-option ones read 0.51 to 1.26 except HellaSwag (2.29), with the 5-option CommonsenseQA RF and MathQA (0.95, 0.56) among them.
+\textbf{3. The reformulated twins do not lift their families into the top band.} Belebele 0.51 (3 tasks) vs Belebele RF 0.61 (57) and LLM-RF 0.83 (59).
 \end{rqfinding}
 \end{minipage}
 \vspace{\baselineskip}
@@ -28,7 +28,7 @@
 \centering
 \includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq09_benchmark_design.png}
 % source: src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_per_family_ranked_paper.png
-\caption{\textbf{With every benchmark in, the answer-option count orders the families by SNR, but no characteristic orders them by DA-size in both readings.} Median SNR at 1.7B over the languages of each benchmark family that clears the above-chance gate, ranked. The colour gives the number of answer options.}
+\caption{\textbf{MultiBLiMP, HellaSwag and XStoryCloze separate the designs most sharply at 1.7B, but no characteristic orders the families by DA-size in both readings.} Median SNR at 1.7B over the languages of each benchmark family that clears the above-chance gate, ranked. The colour gives the number of answer options.}
 \label{fig:app_rq09_benchmark_design}
 \end{figure*}
 
