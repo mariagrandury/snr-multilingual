@@ -1,7 +1,7 @@
 """rq08 as one grid: where does the best subset beat the random-subset null?
 
     gain_over_null.png   best-subset SNR minus the null's 95th percentile, task x size, one subplot per case
-    gain_over_null_paper.png/.svg/.csv   its language-subset case (one subset of each benchmark's languages) alone, for the paper
+    gain_over_null_paper.png/.csv   its language-subset case (one subset of each benchmark's languages) alone, for the paper
 
 Reads `summary.csv`. The per-benchmark and per-language sweeps themselves are
 `per_benchmark_plots/` and `global_mmlu_full_per_language_plots/`.

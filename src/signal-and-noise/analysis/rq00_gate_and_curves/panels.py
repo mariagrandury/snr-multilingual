@@ -6,10 +6,10 @@ curves of every language.
     gate_margin_by_benchmark.png            score minus chance, language x size, one subplot per benchmark
     gate_margin_by_language.png             score minus chance, benchmark x size, one subplot per language
     first_size_above_random.png / .csv      language x benchmark: smallest size from which the score stays above chance
-    first_size_above_random_paper.png/.svg/.csv  the same for the paper: languages down the side in the scheme-A resource
+    first_size_above_random_paper.png/.csv  the same for the paper: languages down the side in the scheme-A resource
                                             order, benchmarks across it from the most to the fewest languages above the
                                             gate, the trained languages of the L50 list only (rule 2), no header
-    first_size_share_paper.png/.svg/.csv    the paper map condensed: per benchmark the share of its languages at each
+    first_size_share_paper.png/.csv    the paper map condensed: per benchmark the share of its languages at each
                                             smallest size (highlights' right panel, in the same order and population)
     score_curves.csv                        the curves below
     score_curves/<language>.png             score vs training tokens (Chinchilla multiples, 5C = the full run),
@@ -106,7 +106,7 @@ def paper_figures(out_dir: Path) -> None:
     order = list((level >= 0).sum(axis=1).sort_values(ascending=False, kind="stable").index)
     G.level_heatmap(level.T, out_dir / "first_size_above_random_paper.png", levels=sizes, title="",
                     cbar="Smallest size above chance", xlabel="", ylabel="", rows=langs, cols=order,
-                    names=("language", "benchmark"), also=(".svg",), name=G.paper_name, cell_text=False, cell_w=0.18)
+                    names=("language", "benchmark"), name=G.paper_name, cell_text=False, cell_w=0.18)
     height = 0.17 * len(order) + 0.9
     fig, ax = plt.subplots(figsize=(5.4, height))
     tab = G.stack_ax(ax, level, "", levels=sizes, rows=order, name=G.paper_name,

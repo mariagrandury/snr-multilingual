@@ -15,7 +15,7 @@ Writes (this dir):
   - snr_by_curation_per_task.png   per-task strip plot (catches the xnli_eu
                                    heterogeneity that family-level smears)
   - group_stats.csv                per-group n, mean, median, kruskal H, p
-  - snr_per_family_ranked_paper.png/.svg/.csv
+  - snr_per_family_ranked_paper.png/.csv
                                    the family ranking for the paper, one
                                    colour per answer-option count
                                    (`--paper`: alone, from per_family_snr.csv)

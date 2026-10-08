@@ -7,8 +7,8 @@ progress report's figures, on the same cells.
     loss_curves.png        training loss vs fraction of run, per L: full run and last 10 %
     benchmark_curves.png   benchmark accuracy vs the run in Chinchilla multiples per family, chance line;
                            a family's `rf_` / `rfgm_` twin sits next to it, titled "<name> (rf)"
-    benchmark_curves_paper.png/.svg   the same without the header, a legend instead (rule 18)
-    benchmark_size_curves_paper.png/.svg/.csv   its size twin: each design's final accuracy against
+    benchmark_curves_paper.png   the same without the header, a legend instead (rule 18)
+    benchmark_size_curves_paper.png/.csv   its size twin: each design's final accuracy against
                            non-embedding parameters per family, colour = L (the rq01 appendix figure)
 
     python analysis/rq00_gate_and_curves/curves.py --pool predictivity_seeds

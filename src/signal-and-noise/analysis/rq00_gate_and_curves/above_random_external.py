@@ -40,13 +40,13 @@ English-only cells among them; panel (d) carries the count per task.
                           a model reads against its parameters, public lines vs the ladder;
                           (d) the ladder-gated tasks: best ladder run at the reference vs the
                           best public model ≤ 1.7B, a near-miss view
-    above_random_external_paper.png/.svg/.csv   panel (b) for the paper, on the PUBLIC BASE releases alone
+    above_random_external_paper.png/.csv   panel (b) for the paper, on the PUBLIC BASE releases alone
                           (the full figure's external mask pools every external model, post-trained
                           releases and our own a06 / distilled runs included): per family, the
                           ladder-gated tasks by the smallest public base bucket that reads them
-    above_random_external_paper_b.png/.svg/.csv   the same, one cell per task tagged with its language and
+    above_random_external_paper_b.png/.csv   the same, one cell per task tagged with its language and
                           the line of the public base model that reads it first
-    above_random_external_paper_c.png/.svg/.csv   the same as a family x bucket grid, the languages in the cell
+    above_random_external_paper_c.png/.csv   the same as a family x bucket grid, the languages in the cell
     above_random_external_models.tex / .csv   the public base models per line and size bucket (LaTeX table)
     python analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity
 """

@@ -24,7 +24,7 @@ this runs in seconds after them.
                                      twins, stars where McNemar p < P_SIG; (b)–(d) the
                                      headline readings with and without the twins
     reformulations_gate_mcnemar.csv  per (family, twin set, size): shares, discordant counts, p
-    reformulations_gate_paper.png / .svg / .csv   panel (a) alone, no header, for the paper
+    reformulations_gate_paper.png / .csv   panel (a) alone, no header, for the paper
     python analysis/rq00_task_reformulation/reformulations_gate.py --pool predictivity
     python analysis/rq00_task_reformulation/reformulations_gate.py --paper   # the paper panel alone, from the CSV
 """

@@ -1700,7 +1700,7 @@ built on them are in the surrogates write-up's extensions.
 - `…/scale_convergence_da_size*.csv/.png` — `scale_convergence.py` (figures 1, 4;
   `_L8`, `_L8common`, `_L`, `_transformation`, `_mono_axis`, `_above_*`,
   `_flops`); `scale_convergence_da_size_lang_*` — `by_language.py` (figure 5).
-- `…/rq2_da_all*.csv/.png/.svg` — `paper_rq2.py` (figure 2; the paper embeds
+- `…/rq2_da_all*.csv/.png` — `paper_rq2.py` (figure 2; the paper embeds
   `rq2_da_all_above_66_either_transformation_mono_axis`), `rq2_da_all_above_66_both_mono_vs_multi_axes.*` —
   `pair_axes.py` (figure 9).
 - `…/reliability_da_size_{by_language_tier,vs_language_share}_multi_axes.*` —

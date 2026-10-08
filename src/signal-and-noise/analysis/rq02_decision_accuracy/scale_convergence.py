@@ -93,7 +93,7 @@ default they are not (an L50 line pools 52 tasks, an L8 line 7):
                                  reaches_tau, n_min_size (and n_min_compute on the
                                  compute axis). n_min_* is NA when no real proxy
                                  clears tau.
-    scale_convergence_da_size_multi_axes_paper.png/.svg/.csv   the plain figure for the
+    scale_convergence_da_size_multi_axes_paper.png/.csv   the plain figure for the
                                  paper's appendix: bare (rule 18, style.save_paper), same table.
 
 Every name above carries the pair set's AXES_SUFFIX (rule 15): `_multi_axes`, or

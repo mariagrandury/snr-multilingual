@@ -14,7 +14,7 @@ the ladder health check's power law on the seed-1904 cell of every (L, ladder,
 data build); `scaling_law_error.py` next to this script asks how well such a fit
 on the proxy rungs predicts the reference rung's per-language BPB.
 
-    rq1_scaling.png/.pdf/.csv  above-chance curves at L=30 (ungated, so a task at chance is visible at 0),
+    rq1_scaling.png/.csv  above-chance curves at L=30 (ungated, so a task at chance is visible at 0),
                                R²/ρ per family over the gated fits; the CSV holds both panels' plotted values
     rq1_fits.csv           one row per (task, L): n_rungs (fitted), gated_rungs, gated, the fit;  rq1_families.csv  the family medians
     scaling_fit.png/.csv   final loss vs N per L, one power-law fit per (ladder, data build), the rung count in the legend

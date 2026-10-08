@@ -72,7 +72,7 @@ chance).
     recipe_da_size_ladder{...}.png/.csv                         the cheapest reliable proxy per variant, a panel per bBPB reading
     recipe_da_size_profiles{...}.png/.csv                       share of languages reliable per proxy, per benchmark
     recipe_da_size_variants{...}.png/.csv                       combined vs per variant and reading
-    recipe_da_size_variants_multi_axes_paper.png/.svg/.csv      its first panel for the paper, every line against the 1.7B accuracy
+    recipe_da_size_variants_multi_axes_paper.png/.csv      its first panel for the paper, every line against the 1.7B accuracy
 
     python analysis/rq11_evaluation_recipe/recipe.py --pool predictivity
     python analysis/rq11_evaluation_recipe/recipe.py --paper    # the paper figure alone, from the overview table on disk

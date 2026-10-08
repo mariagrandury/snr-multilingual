@@ -10,7 +10,7 @@ curves of every cell (the progress report's BPB figure on the analysis' cells).
 
     rq5_transfer.csv          one row per (L, language, k)
     rq5_transfer_summary.csv  median |relative error| per (trained, k) and method
-    rq5_transfer.png/.pdf     the paper figure
+    rq5_transfer.png     the paper figure
     bpb_curves.png            per cell: per-language BPB vs fraction of run
     transfer_da_all_by_group_mono_axis.csv
                               rq05's interventions read on every language's BPB at every

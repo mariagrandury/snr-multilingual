@@ -985,7 +985,7 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
   `best_variant_family_per_language.png`, `top_benchmarks_per_language.png`,
   `variant_correlation_matrix.png`, `da_size_vs_da_ckpt_multi_axes.png`,
   `{da_size,da_ckpt}/…` — supporting figures.
-- `…/rq3_surrogates.csv`, `rq3_surrogates.png/.pdf`, `facts.json` — the
+- `…/rq3_surrogates.csv`, `rq3_surrogates.png`, `facts.json` — the
   statistics beyond SNR (`analyze.py`; the paper's surrogate figure).
 - `…/surrogate_values.csv`, `surrogate_targets.csv`, `surrogate_definitions.csv` — the
   surrogates per (task, proxy, pair set) and the truths, long (`catalogue.py`; sources in

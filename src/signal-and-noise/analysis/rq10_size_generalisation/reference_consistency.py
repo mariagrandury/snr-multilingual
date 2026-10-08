@@ -29,7 +29,7 @@ Rule 10: the 3B rung is read here only, through `above_reference=True`.
     reference_consistency_da_size_<pair set>.png / .csv   (a)–(c) per pair set
     reference_consistency_da_size_per_task_both_axes.csv  every (task, pair set, proxy) cell
     reference_consistency_snr.png / .csv                  SNR at 1.7B against 3B, per task and per benchmark
-    gate_share_and_da_size_mono_axis_paper.png / .svg / .csv
+    gate_share_and_da_size_mono_axis_paper.png / .csv
         the paper figure: the share of each benchmark above chance at 1.7B and 3B
         (from gate_crossover_by_benchmark.csv) beside panel (a), mono-axis
 

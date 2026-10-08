@@ -259,7 +259,7 @@ def benchmark_and_language_panels(cells: pd.DataFrame, out_dir: Path, name: str,
 def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "", cbar: str = "",
                   level_label=str, never: str = "—", xlabel: str = "language", ylabel: str = "benchmark",
                   rows: list | None = None, cols: list | None = None, separators: list = (),
-                  names: tuple = ("family", "language"), also: tuple = (), name=display,
+                  names: tuple = ("family", "language"), name=display,
                   cell_text: bool = True, cell_w: float = 0.30) -> None:
     """Language x benchmark maps whose cell is a *level* (the smallest size,
     Chinchilla multiple or compute at which something holds). `mats` is one
@@ -269,11 +269,11 @@ def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "",
     NaN where there is no value (white). Rows follow the panel order, bits
     per byte first; every subplot keeps the same rows and columns. Writes
     `<name>.csv` next to the figure, its row and column keys under `names`;
-    `also` adds formats (".svg") beside the PNG; `name` labels the ticks,
-    `cell_text` writes the level into every cell, `cell_w` is a column's
-    width in inches; an empty `xlabel` / `ylabel` is not drawn. A path whose
-    stem ends in `_paper` is a paper figure (rule 18): capitalized legend
-    entries, no dash glyph, written through `S.save_paper`, which lints it."""
+    `name` labels the ticks, `cell_text` writes the level into every cell,
+    `cell_w` is a column's width in inches; an empty `xlabel` / `ylabel` is
+    not drawn. A path whose stem ends in `_paper` is a paper figure (rule
+    18): capitalized legend entries, no dash glyph, written through
+    `S.save_paper`, which lints it."""
     paper = path.stem.endswith("_paper")
     if isinstance(mats, pd.DataFrame):
         mats = {"": mats}
@@ -324,9 +324,9 @@ def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "",
     path.parent.mkdir(parents=True, exist_ok=True)
     pd.concat(long)[["panel", *names, "level_index", "level"]].to_csv(path.with_suffix(".csv"), index=False)
     if paper:
-        S.save_paper(fig, path.with_suffix(""), exts=("png", *(e.lstrip(".") for e in also)), dpi=130)
+        S.save_paper(fig, path.with_suffix(""), dpi=130)
     else:
-        S.save(fig, path, dpi=130, also=also)
+        S.save(fig, path, dpi=130)
     print(f"Wrote {path.name} ({len(mats)} panel(s), {len(rows)} benchmarks x {len(cols)} languages)")
 
 

@@ -326,7 +326,7 @@ ladder's in any case (a different harness, task set and reference size).
 ## Files
 
 - `pretraining/<pool>/rq5_transfer.csv`, `rq5_transfer_summary.csv`,
-  `rq5_transfer.png/.pdf` — the paper's language-transfer table and figure.
+  `rq5_transfer.png` — the paper's language-transfer table and figure.
 - `…/bpb_curves.png` — per-cell per-language BPB curves.
 - `…/facts.json` — the numbers the paper quotes.
 - `pretraining/predictivity/language_panel.{png,csv}` — the minimal language

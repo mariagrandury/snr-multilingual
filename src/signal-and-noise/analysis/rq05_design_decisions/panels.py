@@ -11,7 +11,7 @@ early-decision read, without pooling the benchmarks.
                                        Read on the ten evaluated checkpoints of every run (`intervention_da_all_ckpt10_mono_axis.csv`,
                                        the decision table of analyze.py recomputed at every k/10 checkpoint; the rest of the folder
                                        stays on 20-100 %)
-    da_all_lines_mono_axis_paper.png/.svg/.csv       da_all_lines_mono_axis for the paper: BPB and benchmarks (no training loss), no title
+    da_all_lines_mono_axis_paper.png/.csv       da_all_lines_mono_axis for the paper: BPB and benchmarks (no training loss), no title
     da_all_lines_decided_mono_axis.png               da_all_lines_mono_axis on the items whose reference |Δ| is >= DECIDED seed sds (analyze.py)
     depth_crossover.png                deep − shallow final BPB per size x L in seed sds: which depth wins, and by more than noise?
     da_all_lines_flops_mono_axis.png                 the same with every (proxy size, checkpoint) cell at its training compute
@@ -93,7 +93,7 @@ def da_lines(da: pd.DataFrame, out_dir: Path, *, name: str = "da_all_lines_mono_
     (x = the reference's own checkpoints), one line per value of `series`
     (mean over the L's that share the line's reference size; marker from
     `markers`, a circle by default), one line style per population. `paper`:
-    no title, note or panel titles, the legend under the panels, PNG and SVG."""
+    no title, note or panel titles, the legend under the panels."""
     da, refs = one_reference(da[da[series].notna()], series)
     note = note + ". Each line keeps the L's that share one reference size: " + refs
     size = (da[da["frac"] == 1.0].groupby([series, "population", "proxy_size"])["decision_acc"].mean().reset_index())
@@ -140,7 +140,7 @@ def da_lines(da: pd.DataFrame, out_dir: Path, *, name: str = "da_all_lines_mono_
     if paper:
         S.save_paper(fig, out_dir / name)            # rule 18: linted, refused if it breaks the rule
     else:
-        S.save(fig, out_dir / f"{name}.png", also=(".svg",))
+        S.save(fig, out_dir / f"{name}.png")
 
 
 def paper_figure(da: pd.DataFrame, out_dir: Path) -> None:

@@ -7,7 +7,7 @@
                               neither trains even the script (mean over L); the last two are the transfer test
     transfer_da_all_by_L_mono_axis.png      the same agreement per language count, one panel per intervention, one line per group
                               (DA-size, mean over the proxy sizes)
-    transfer_da_all_lines_mono_axis_paper.png/.svg/.csv   transfer_da_all_lines_mono_axis for the paper, no title
+    transfer_da_all_lines_mono_axis_paper.png/.csv   transfer_da_all_lines_mono_axis for the paper, no title
 
 Reads `rq5_transfer.csv`. There is no per-benchmark view: the transfer test
 is on per-language bits per byte only.

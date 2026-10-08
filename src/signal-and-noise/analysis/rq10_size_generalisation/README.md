@@ -454,4 +454,4 @@ ladder's.
   `reference_consistency_da_size_{multi_axes,mono_axis}.{png,csv}`,
   `reference_consistency_da_size_per_task_both_axes.csv`,
   `reference_consistency_snr.{png,csv}`, `reference_consistency_snr_per_task.csv`,
-  `gate_share_and_da_size_mono_axis_paper.{png,svg,csv}`.
+  `gate_share_and_da_size_mono_axis_paper.{png,csv}`.

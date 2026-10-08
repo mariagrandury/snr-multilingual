@@ -82,7 +82,7 @@ tasks).
 Outputs, `pretraining/<pool>/`:
 
     english_only_scores.png/.csv                 mean gap and win share per size, L1 against every other L
-    english_only_scores_paper.png/.svg/.csv      the same for the paper: bare (rule 18); `--paper` redraws it
+    english_only_scores_paper.png/.csv      the same for the paper: bare (rule 18); `--paper` redraws it
                                                  alone from english_only_scores_summary.csv
     english_only_scores_by_benchmark.png/.csv    the same per benchmark (deep, every other L pooled)
     english_only_scores_per_task.csv             one row per (task, size, arch, comparator L)

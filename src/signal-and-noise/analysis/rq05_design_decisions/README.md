@@ -476,9 +476,9 @@ any case (a different harness, task set and reference size).
 - `pretraining/<pool>/intervention_da_all_mono_axis.csv` — one row per (intervention,
   population, L, proxy size): `decision_acc`, `n_items`, mean |Δ| at proxy and
   reference, the level the reference prefers.
-- `…/rq4_da_size_by_intervention_mono_axis.csv`, `rq4_effect_vs_seed.csv`, `rq4_interventions.png/.pdf`,
+- `…/rq4_da_size_by_intervention_mono_axis.csv`, `rq4_effect_vs_seed.csv`, `rq4_interventions.png`,
   `facts.json` — the paper's design-decision figure and the numbers it quotes.
-- `…/rq2_da_all_decisions_mono_axis.csv`, `rq2_da_goal_early_small_mono_axis.csv`, `rq2_da_goal_early_small_mono_axis.png/.pdf`,
+- `…/rq2_da_all_decisions_mono_axis.csv`, `rq2_da_goal_early_small_mono_axis.csv`, `rq2_da_goal_early_small_mono_axis.png`,
   `early_decision_facts.json` — the paper's how-small-and-how-early figure (`early_decision.py`).
 - `pretraining/<pool>/transformation_da_size_mono_axis.csv`, `transformation_da_size_mono_axis.png` — the five
   transformations (language count, temperature, depth, data scheme A vs B and A vs C) on one

@@ -81,7 +81,9 @@ step "analysis pipeline"
   || FAILED+=("run_all_predictivity.sh")
 
 # 2b. The paper's figures: every one is written by an rqNN script above and
-#     only copied here, so the paper can never be newer than the tables.
+#     only its PNG is copied here (the scripts write the SVG and PDF straight
+#     into figures_svg/ and figures_pdf/), so the paper can never be newer
+#     than the tables.
 step "paper figures"
 ( cd documents/paper/figures && $PY make_rq_figures.py ) || FAILED+=("make_rq_figures.py")
 # The appendix's one page per analysis folder: question and key finding read
@@ -173,7 +175,7 @@ for r in $RETIRED_POOLS; do
   done
 done
 if [ "${FORCE:-0}" = 1 ]; then
-  ORPHANS=$(find src/signal-and-noise/analysis/rq*/ documents/paper/figures -type f \
+  ORPHANS=$(find src/signal-and-noise/analysis/rq*/ documents/paper/figures documents/paper/figures_svg documents/paper/figures_pdf -type f \
       \( -name '*.png' -o -name '*.csv' -o -name '*.svg' -o -name '*.pdf' -o -name '*.json' \) ! -newer "$STARTED" \
     | grep -vE '/(all|custom_swissai_hf|external|seeds_[0-9_]+(__vs__seeds_[0-9_]+)?|per_sample|per_item_store)/' \
     | grep -vE "/($RETIRED_RE)/" \

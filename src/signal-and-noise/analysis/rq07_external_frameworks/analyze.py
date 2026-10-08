@@ -9,7 +9,7 @@ Outputs (all in this directory):
   pearson_r_per_variant.csv
   snr_apertus_vs_snr_allenai_<best_variant>.png
   snr_apertus_vs_snr_allenai_grid.png
-  snr_apertus_vs_snr_allenai_paper.png/.svg/.csv   the headline scatter for the paper, one named point per shared task
+  snr_apertus_vs_snr_allenai_paper.png/.csv   the headline scatter for the paper, one named point per shared task
   top_apertus.csv  top_allenai.csv  agreement.md
 
     python analysis/rq07_external_frameworks/analyze.py --pool predictivity

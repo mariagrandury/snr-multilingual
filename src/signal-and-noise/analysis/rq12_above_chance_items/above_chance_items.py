@@ -55,7 +55,7 @@ Outputs under pretraining/<pool>/, each name prefixed `above_chance_items_`:
                                  per benchmark and proxy: mean DA-size per ordering and the paired gain
   snr_per_task.csv               per ordering, task, size: signal, noise and SNR (final; checkpoint if stored)
   snr.png/.csv                   per ordering and size: median SNR, paired ratio over full, ρ(SNR, DA-size)
-  snr_paper.png/.svg/.csv        the same for the paper: bare (rule 18); `--paper` redraws it alone from snr.csv
+  snr_paper.png/.csv        the same for the paper: bare (rule 18); `--paper` redraws it alone from snr.csv
   snr_by_benchmark.png/.csv      per benchmark and size: median SNR per ordering and the median paired
                                  log2(SNR kept / SNR full)
   scaling_fits.csv               per ordering, task, L: the log-N fit of the final scores

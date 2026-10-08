@@ -22,7 +22,7 @@ only (the loader, rules 6 and 2).
 
     effect_vs_noise.csv   per (size, L, task): |Δ| per intervention, seed noise, raw and detrended checkpoint noise, ratios
     effect_vs_noise.png
-    effect_vs_noise_paper.png/.svg/.csv   the same medians for the paper: bare (rule 18), a row per noise
+    effect_vs_noise_paper.png/.csv   the same medians for the paper: bare (rule 18), a row per noise
 
     python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_seeds
     python analysis/rq03_noise_and_snr/effect_vs_noise.py --paper    # the _paper figure alone, from the CSV
