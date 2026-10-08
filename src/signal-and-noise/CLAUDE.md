@@ -126,7 +126,11 @@ so a script never decides by model name.
   so a run whose two new evals have not landed contributes three points, not
   five. `noise_checkpoints` keeps ONE row per grid point: a SIGUSR2 exit
   leaves an off-grid save (lm-1.7B-L1-shallow-seed1904 at 89.7 %) that BPB
-  scores and that otherwise counts the 90 % point twice. rq03 and rq05
+  scores and that otherwise counts the 90 % point twice. The noise itself is
+  `utils.checkpoint_noise`: since 2026-10-08 the residual SD around a line
+  through the window (the WSD decay still rises, and the raw SD counted the
+  rise as noise, 1.5–4× on the tasks with signal); the raw SD is kept,
+  labelled `raw`. rq03 and rq05
   read the seed replicates for the noise that does not depend on the window.
 - **The analysis-wide rules** — `analysis/RULES.md`: the gate, trained
   languages only, ten checkpoints, one noise window, three pairs, parent tasks

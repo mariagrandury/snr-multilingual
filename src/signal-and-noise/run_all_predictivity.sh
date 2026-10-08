@@ -313,9 +313,10 @@ run $PY analysis/rq06_language_transfer/cross_task_transfer.py --pool predictivi
 run $PY analysis/rq06_language_transfer/family_transfer.py --pool predictivity
 
 pass "rq07 — external frameworks"
-# rq07 needs the AllenAI-side SNR table (built once from the DataDecide `core`
-# split on HF; a git-lfs pointer here means `git lfs pull` first) and rq04's
-# variant ranking per pool.
+# rq07 needs the AllenAI-side SNR table (built from the DataDecide
+# `datadecide_intermediate` split on HF, on our noise window, noise and metric:
+# rebuild it after a change to any of the three; a git-lfs pointer here means
+# `git lfs pull` first) and rq04's variant ranking per pool.
 lane rq07 rq04snr da
 ALLENAI_CSV=analysis/rq07_external_frameworks/allenai_snr_variants_per_task.csv
 if [ ! -f "$ALLENAI_CSV" ]; then

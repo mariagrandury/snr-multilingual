@@ -92,8 +92,9 @@ GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/
   English (DA-size) and English and Russian (DA-ckpt) have a best
   definition on both splits.
 - **Signal, noise, DA.** The signal at a size is the spread over every design
-  variant trained there; the noise is the late-checkpoint std over the noise
-  window, 80/85/90/95/100 % of the run (rule 4). DA-size is proxy final →
+  variant trained there; the noise is the late-checkpoint noise over the noise
+  window, 80/85/90/95/100 % of the run: the residual std around a line through
+  it since 2026-10-08 (rule 4). DA-size is proxy final →
   1.7B final (rule 9); DA-ckpt is a proxy's early checkpoints → its final,
   the proxy sizes pooled and never the 1.7B run's own checkpoints (rule 11).
 - **Tasks.** Benchmarks, their `rf_` twins and the per-language BPB

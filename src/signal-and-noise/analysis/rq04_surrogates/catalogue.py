@@ -81,7 +81,7 @@ from analysis.rq03_noise_and_snr.run_apertus_snr_variants import (  # noqa: E402
     DISCREPANCY_UNIT_INTERVAL, per_model_inputs, variant_key, variant_signal_noise_snr)
 from analysis.utils import (  # noqa: E402
     CKPT_DA_EARLY_FRACS, MIN_PAIRS, NOISE_GRID, NON_EMB, PAIR_AXES, SMALL_SIZES, TARGET_SIZE, agreement_measures,
-    assign_language, benchmark_family, design_axes, ladder_frame, languages_only, lower_is_better, noise_checkpoints,
+    assign_language, benchmark_family, checkpoint_noise, design_axes, ladder_frame, languages_only, lower_is_better, noise_checkpoints,
     on_shared_grid, pair_agreement, pair_sets, passes_gate)
 
 OUT_ROOT = SURROGATES
@@ -100,7 +100,7 @@ _DF: pd.DataFrame | None = None        # the pool, shared with the workers by fo
 # name -> (family, expected sign, formula, source). Sign: +1 = higher should mean higher DA.
 SURROGATES = {
     # separation against the checkpoint noise (signal detection / discriminative power)
-    "gap_over_noise": ("separation", +1, "median over pairs of |x_a - x_b| / sqrt(s_a^2 + s_b^2), s = window std",
+    "gap_over_noise": ("separation", +1, "median over pairs of |x_a - x_b| / sqrt(s_a^2 + s_b^2), s = window checkpoint noise (rule 4, `utils.checkpoint_noise`)",
                        "Heineman 2025 (pairwise form); Sakai 2006"),
     "resolved_pairs_noise": ("separation", +1, "share of pairs with |x_a - x_b| > 1.96 sqrt(s_a^2 + s_b^2)",
                              "Sakai 2006 discriminative power; Madaan 2024"),
@@ -113,7 +113,7 @@ SURROGATES = {
     "resolved_pairs_binomial": ("separation", +1, "share of pairs a two-proportion z-test over n_items separates at 5 %",
                                 "Card 2020; Dror 2018"),
     "tie_rate_items": ("separation", -1, "share of pairs closer than one item (1/n_items)", "Card 2020"),
-    "noise_to_binomial": ("separation", -1, "pooled window std / binomial se sqrt(p(1-p)/n_items)",
+    "noise_to_binomial": ("separation", -1, "pooled window checkpoint noise / binomial se sqrt(p(1-p)/n_items)",
                           "Madaan 2024; Wang 2025 (all the noises)"),
     "mde_resolved": ("separation", +1, "share of pairs above the minimum detectable effect (1.96 + 0.84) sqrt(2) s at 80 % power",
                      "Card 2020"),
@@ -153,7 +153,7 @@ SURROGATES = {
     "monotonicity_steps": ("curve shape", +1, "mean over variants of (#up - #down)/(#steps)", "Heineman 2025 (snr/stats.py)"),
     "total_variation": ("curve shape", -1, "mean over variants of mean|diff| / range of the curve",
                         "Heineman 2025 (snr/stats.py)"),
-    "gain_over_noise": ("curve shape", +1, "mean over variants of (x(100 %) - x(10 %)) / pooled window std",
+    "gain_over_noise": ("curve shape", +1, "mean over variants of (x(100 %) - x(10 %)) / pooled window checkpoint noise",
                         "Madaan 2024 (monotonic improvement)"),
     "autocorr": ("curve shape", +1, "mean over variants and lags 1-2 of |autocorrelation| of the curve",
                  "E2LM (2025) signal quality"),
@@ -178,7 +178,7 @@ SURROGATES = {
                       "(reads the largest rung below the reference, not the proxy alone)", "Liu 2024; Magnusson 2025"),
     "size_monotonicity": ("small ladder", +1, "mean over variants of the (#up - #down)/#steps across rungs up to the proxy",
                           "Bhagia 2024; Schaeffer 2024"),
-    "scale_gain_over_noise": ("small ladder", +1, "mean over variants of (x(proxy) - x(previous rung)) / pooled window std",
+    "scale_gain_over_noise": ("small ladder", +1, "mean over variants of (x(proxy) - x(previous rung)) / pooled window checkpoint noise",
                               "Bhagia 2024"),
     # agreement with the loss and with other benchmarks
     "bpb_rank_agreement": ("agreement", +1, "DA of the task's final ranking against the language's BPB ranking",
@@ -268,7 +268,8 @@ def _curve_stats(task: str, fams: list, C: np.ndarray, W: np.ndarray, pairs: lis
     out = {"n_pairs": len(i)}
     if len(i) < MIN_PAIRS:                                        # rule 5
         return out
-    sd = np.nanstd(W, axis=1, ddof=1)
+    xw = np.arange(NOISE_GRID - W.shape[1] + 1, NOISE_GRID + 1) / NOISE_GRID     # the window's fractions
+    sd = np.array([checkpoint_noise(xw[k], w[k]) for w in W for k in [np.isfinite(w)]])   # rule 4
     pooled = np.sqrt(np.nanmean(sd ** 2))
     d, s = np.abs(x[i] - x[j]), np.sqrt(sd[i] ** 2 + sd[j] ** 2)
     z = np.where(s > TINY_SD, d / np.where(s > TINY_SD, s, 1), Z_CAP)   # a noiseless pair is perfectly separated

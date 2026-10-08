@@ -14,7 +14,7 @@
 - **Pools** (`pretraining/<pool>/`, [RULES.md](../RULES.md), Definitions). `predictivity` is the headline: seed 1904, every cell, every data build and every ladder (deep, shallow, swiglu), sizes 90M–1.7B.
 - **Seed pools.** `predictivity_seeds` adds every replicate seed as a separate model of the signal pool. The holdout trains on the replicate seeds (`predictivity_seeds_train`: 64/313 at 175M/600M, 28/1797 at 1B) and tests on seed 1904 of the same 10 cells (`predictivity_seeds_test`).
 - **Seed cells.** The ×3 cells are the deep data-A runs at 175M and 600M for L ∈ {1, 2, 50} and at 1B for L ∈ {1, 2, 30}, plus the 1B L30 data-B run. A non-English harness task is trained only at L30/L50 (Russian also at L2), so the seed analyses are English-heavy by construction.
-- **Signal and noise.** The signal population at a size is every design variant trained there (language setting × ladder × data build), with one data-scheme axis: scheme A/B/C × temperature T (AT3 = A at T 3; ZH, DCLMP = B; ES, FWEB = C). The noise is the checkpoint std over the noise window of rule 4 (`utils.noise_checkpoints`: 80/85/90/95/100 % of the run, the same for BPB and benchmarks); `effect_vs_noise.py` adds the seed-replicate noise.
+- **Signal and noise.** The signal population at a size is every design variant trained there (language setting × ladder × data build), with one data-scheme axis: scheme A/B/C × temperature T (AT3 = A at T 3; ZH, DCLMP = B; ES, FWEB = C). The noise is the checkpoint noise over the noise window of rule 4 (`utils.noise_checkpoints`: 80/85/90/95/100 % of the run, the same for BPB and benchmarks): since 2026-10-08 the residual std around a line through the window (`utils.checkpoint_noise`), with the raw std kept beside it as `ckpt_noise_raw_<size>`; `effect_vs_noise.py` adds the seed-replicate noise.
 - **Decision accuracy and variants.** DA-size ranks small → 1.7B (plus every other bucket pair) and DA-ckpt ranks 10 … 90 % → final within a size. The 22 SNR variants fall into five families (dispersion, relative spread, discrepancy, robust, depth), and the per-language BPB tasks (`bpb_<subset>`) take part like any benchmark except under the discrepancy family.
 - **bBPB twins.** The bBPB twins (`bbpb_*`) are scored at every checkpoint of every seed-1904 cell, so they have a checkpoint noise and an SNR at every size; the seed replicates have no twin, so the seed-noise rows and the seed holdout hold none.
 
@@ -63,10 +63,10 @@ GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/
 - **Effect vs noise.**
   - For every (size, L, task) the intervention's |Δ| is put against the seed
     noise (sample std, n−1, over the seed replicates, where ≥ 2 seeds exist)
-    and the checkpoint noise (std over the same 80/85/90/95/100 % window of the
-    baseline cell, raw with n−1 and detrended with n−2). Under WSD the final
-    window is still descending, so the raw std carries trend; every std divides
-    by its residual degrees of freedom.
+    and the checkpoint noise over the same 80/85/90/95/100 % window of the
+    baseline cell (`utils.checkpoint_noise`: detrended, the residual std with
+    n−2, the rule-4 default; and raw, ddof 0). Under WSD the final window is
+    still descending, so the raw std carries trend.
   - A ratio near 1 means the two levels are the same model as far as a ranking
     is concerned (the "read this against the seed row" rule of
     `ladder_report.md`). A decision on such a cell is a coin flip whatever its
@@ -158,7 +158,7 @@ The highlighted SNR divides by checkpoint noise; this figure asks whether that i
 <!-- BEGIN auto:panels (panels.py --pool predictivity) -->
 ## Per benchmark and per language
 
-Regenerate with `python analysis/rq03_noise_and_snr/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate" (at chance at that size, rule 1); each figure's table sits next to it under the same name; sizes are 175M–1.7B (rule 10). SNR noise is the std over the 80/85/90/95/100 % checkpoints (rule 4).
+Regenerate with `python analysis/rq03_noise_and_snr/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate" (at chance at that size, rule 1); each figure's table sits next to it under the same name; sizes are 175M–1.7B (rule 10). SNR noise is the residual std around a line through the 80/85/90/95/100 % checkpoints (rule 4).
 
 ![rq03 in one figure](pretraining/predictivity/highlights.png)
 

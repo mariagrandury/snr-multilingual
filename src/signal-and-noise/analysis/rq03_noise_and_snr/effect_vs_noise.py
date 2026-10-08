@@ -6,9 +6,11 @@ where ≥ 2 seeds exist) and the checkpoint noise of the baseline cell over
 the noise window of RULES.md rule 4 (`utils.noise_checkpoints`: the shared
 tenths in the last NOISE_WINDOW = 20 % of the run, 80 / 90 / 100 %, the same
 for BPB and benchmarks) — raw, and detrended because under WSD the final
-window is still descending. One ddof convention: every std divides by its
-residual degrees of freedom, n−1 for the seed std and the raw checkpoint std,
-n−2 for the detrended one (a line takes two). A ratio near 1 means the two
+window is still descending. Both checkpoint noises are `utils.checkpoint_noise`
+(rule 4): the detrended one, the residual SD around a line with n−2 degrees
+of freedom, is the default every SNR reads; the raw one is the population
+std (ddof 0), kept as the labelled alternative. The seed std is the sample
+std (n−1). A ratio near 1 means the two
 levels are the same model as far as a ranking is concerned (the "read this
 against the seed row" rule of `ladder_report.md`): a decision on such a cell
 is a coin flip whatever its decision accuracy (rq05) says. The seed-over-
@@ -53,25 +55,11 @@ from analysis.grids import mark_gated  # noqa: E402
 from analysis.paths import NOISE_AND_SNR  # noqa: E402
 from analysis.rq05_design_decisions.analyze import INTERVENTIONS, at_baseline  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    GRID_SEED, NOISE_WINDOW, benchmark_family, finals, ladder_frame, noise_checkpoints, size_order)
+    GRID_SEED, NOISE_WINDOW, benchmark_family, checkpoint_noise, finals, ladder_frame, noise_checkpoints, size_order)
 
 OUT_ROOT = NOISE_AND_SNR
 CANONICAL = "predictivity_seeds"      # every seed: the seed-noise column needs the replicates
 mpl.rcParams.update(S.RC)
-
-
-def _late_std(scores: np.ndarray, detrend: bool) -> float:
-    """Std over the noise-window checkpoints, divided by the residual degrees
-    of freedom: n−1 raw, n−2 after removing a linear trend (the residuals of
-    a fitted line have mean zero, so `ddof=2` is exactly that)."""
-    s = np.asarray(scores, dtype=float)
-    ddof = 2 if detrend else 1
-    if len(s) <= ddof:
-        return float("nan")
-    if detrend:
-        x = np.arange(len(s))
-        s = s - np.polyval(np.polyfit(x, s, 1), x)
-    return float(np.std(s, ddof=ddof))
 
 
 def effect_vs_noise(df: pd.DataFrame, fin: pd.DataFrame, pool: str) -> pd.DataFrame:
@@ -95,9 +83,9 @@ def effect_vs_noise(df: pd.DataFrame, fin: pd.DataFrame, pool: str) -> pd.DataFr
     out["n_seeds"] = seed["count"]
     # checkpoint noise: the grid seed's baseline cell over the noise window (rule 4)
     curve = noise_checkpoints(df[(df["seed"] == GRID_SEED) & (df["ladder"] == "deep") & (df["data"] == "A")])
-    curve = curve.sort_values("step").groupby(key)["primary_score"].apply(np.asarray)
-    out["ckpt_noise"] = curve.map(lambda s: _late_std(s, detrend=False))
-    out["ckpt_noise_detrended"] = curve.map(lambda s: _late_std(s, detrend=True))
+    curve = curve.sort_values("step").groupby(key)
+    out["ckpt_noise"] = curve.apply(lambda g: checkpoint_noise(g["frac"], g["primary_score"], detrend=False))
+    out["ckpt_noise_detrended"] = curve.apply(lambda g: checkpoint_noise(g["frac"], g["primary_score"], detrend=True))
     out = out.reset_index()
     # rule 1: an at-chance (task, size) cell keeps its row and no number
     out = mark_gated(out, pool, "size", "seed_noise")
@@ -176,8 +164,8 @@ def generate_readme(pool: str, out_dir: Path, evn: pd.DataFrame) -> None:
     bullets.append(f"- **Noise definitions.** Seed noise = sample std (n−1) of the final score across the replicate seeds "
                    f"of the deep data-A cell; checkpoint noise = std of the grid seed's run over the noise window, "
                    f"the k/20 points in the last {NOISE_WINDOW:.0%} of the run (80/85/90/95/100 %, the same for BPB and "
-                   f"benchmarks), raw (n−1) and detrended by a line (n−2). Every std divides by its residual degrees "
-                   f"of freedom. The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter "
+                   f"benchmarks), `utils.checkpoint_noise`: detrended by a line (residual SD, n−2, the rule-4 default) "
+                   f"and raw (ddof 0, the labelled alternative). The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter "
                    f"of one run: above 1 a re-roll of the seed moves the score more than the late checkpoints do.")
     bullets.append(f"- **Gate.** {int(evn['gated'].sum())} of {len(evn)} (size, L, task) cells are at chance at their "
                    f"size (rule 1); they keep their row, carry no number and enter no median below.")

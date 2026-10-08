@@ -53,6 +53,7 @@ TARGET_SIZE = _SNR["target_size"]
 CKPT_DA_EARLY_FRACS = _SNR["da_early_fracs"]   # the nine evaluated checkpoints before the final (analysis/RULES.md, rule 3)
 NOISE_WINDOW = _SNR["noise_window"]            # noise = std over the shared checkpoints in this last share of a run (rule 4)
 NOISE_GRID = _SNR["noise_grid"]                # the k/NOISE_GRID points the window is read on: 5 of them at 20 (rule 4)
+NOISE_DETREND = True                           # rule 4: the noise is the residual SD around a line through the window, not the raw SD
 MIN_PAIRS = _SNR["min_pairs"]                  # a decision-accuracy cell needs this many design-variant pairs (rule 5)
 MIN_LANG_TASKS = _SNR["min_lang_tasks"]        # a per-language correlation needs this many distinct tasks (rule 8)
 SHARED_FRACS = [k / 10 for k in range(1, 11)]  # the checkpoint grid every size was evaluated on
@@ -694,6 +695,28 @@ def noise_checkpoints(df: pd.DataFrame) -> pd.DataFrame:
     keys = [sub[c] for c in ("model", "task") if c in sub.columns] + [point]
     nearest = (sub["frac"] - point / NOISE_GRID).abs().groupby(keys).idxmin()
     return sub.loc[sorted(nearest)]
+
+
+def checkpoint_noise(frac, scores, detrend: bool = NOISE_DETREND) -> float:
+    """The checkpoint noise of one run from its `noise_checkpoints` rows (rule 4).
+
+    Detrended (the default): the residual standard deviation after a
+    least-squares line through (frac, score), with n - 2 degrees of freedom,
+    so a run that still improves over the window (the WSD decay) does not
+    count its improvement as noise; NaN below three points. Raw
+    (`detrend=False`, the alternative, labelled `raw` wherever it is written):
+    the population std (ddof 0) of the scores, the definition until
+    2026-10-08; NaN below two points. Under white noise the two agree on
+    average; on a pure ramp the raw SD is the ramp's spread and the detrended
+    one is 0."""
+    y = np.asarray(scores, dtype=float)
+    if not detrend:
+        return float(np.std(y)) if len(y) >= 2 else float("nan")
+    if len(y) < 3:
+        return float("nan")
+    x = np.asarray(frac, dtype=float)
+    res = y - np.polyval(np.polyfit(x, y, 1), x)
+    return float(np.sqrt((res ** 2).sum() / (len(y) - 2)))
 
 
 def passes_gate(mask: pd.DataFrame | None, tasks, *sizes) -> pd.Series:

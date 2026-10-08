@@ -82,24 +82,34 @@ GitHub: [snr_apertus_vs_snr_allenai_paper.png](https://github.com/mariagrandury/
   and SNR analysis ([`../rq03_noise_and_snr/`](../rq03_noise_and_snr/)). Each pool
   writes its own cross-corpus output (`pretraining/predictivity/`,
   `pretraining/predictivity_seeds/`).
-- **AllenAI side** (DataDecide ladder, 25 mixes × 5 ckpts at sizes
-  150M / 300M / 750M / 1B): pulled once at build time and run through
+- **AllenAI side** (DataDecide ladder, 25 mixes at seed 6198, sizes
+  150M / 300M / 750M / 1B, every 2,500-step checkpoint of the
+  `datadecide_intermediate` split): run through
   [build_allenai_variants.py](build_allenai_variants.py), which reuses every
   primitive from
   [run_apertus_snr_variants.py](../rq03_noise_and_snr/run_apertus_snr_variants.py)
-  (`per_model_inputs`, `variant_signal_noise_snr`) plus
+  (`per_model_inputs`, `ckpt_noise_columns`, `variant_signal_noise_snr`) plus
   `compute_size_decision_accuracy` from
   [compute_da.py](../rq02_decision_accuracy/compute_da.py) and the 22-aggregator
-  `AGGREGATION_FUNCTIONS` list. The shared driver groups by `model` for the
-  signal pool and by `model_family` (model name minus the size token) for DA — so
-  neither corpus needs a `seed` column to contribute.
-- **Task-name reconciliation.** Apertus ran only the multilingual
-  `global_mmlu_full_en_<subject>` view of MMLU on the full ckpt-series; AllenAI
-  uses the vanilla `mmlu_<subject>` names. We alias
-  `global_mmlu_full_en[_<subj>] → mmlu[_<subj>]` and the parent-task filter
-  collapses the subjects into `mmlu`, so the shared set on the ladder is **6
-  standalone English tasks** (`arc_challenge`, `arc_easy`, `csqa`, `hellaswag`,
-  `mmlu`, `openbookqa`; the 36-sweep also shared `piqa`).
+  `AGGREGATION_FUNCTIONS` list.
+- **Like for like (2026-10-08).** Both sides read the same noise window (the
+  k/20 points in the last 20 % of each run, 5 points at 1B), the same checkpoint
+  noise (the residual SD around a line through the window, RULES.md rule 4; the
+  raw SD sits beside it as `ckpt_noise_raw_<size>`) and the same metric: each
+  DataDecide task is read on the column matching our task's metric, `acc_norm` →
+  `acc_per_char`, `acc` → `acc_raw`, not on DataDecide's own primary metric
+  (`acc_uncond` for ARC-C, OBQA and CSQA). The table until then read the `core`
+  split's last five checkpoints (86.5–100 % of the 1B run) with the raw SD on
+  DataDecide's primary metric. The signal populations still differ: 25
+  pretraining corpora against our design variants, whose English spread is 4–7×
+  smaller (`plan/signal-audit-2026-10-08.md`, F1).
+- **Task-name reconciliation.** DataDecide's RC (cloze) MMLU and CSQA are matched
+  to our cloze twins `rf_mmlu` and `rf_commonsense_qa`; our letter-format `mmlu` and
+  `commonsense_qa` are named `mmlu:mc` / `csqa:mc`, DataDecide's MC format, which
+  its checkpoint series does not carry, so they are not shared. The
+  `global_mmlu_full_en → mmlu` alias of the 36-sweep is gone. The shared set on the
+  ladder is the English tasks both evaluate (`arc_challenge`, `arc_easy`, `csqa`,
+  `hellaswag`, `mmlu`, `openbookqa`).
 - **Correlation axis.** `log10(snr_<V>_<size>)` on each corpus, Pearson r (values)
   and Spearman ρ (rank) over the shared tasks that clear the above-random gate on
   our side (3 at 600M, 1B and 1.7B; 2 at 175M and 350M, too few for a correlation).
