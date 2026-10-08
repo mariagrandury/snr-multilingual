@@ -570,7 +570,7 @@ and at 1.7B; populations per figure as stated in the generated block)
 `pseudo_ref_da`, which reads the 1B rung below the reference (labelled so): the literature catalogue
 ([`literature.md`](literature.md); every definition, its source and how our port
 differs from it are in the paper's appendix,
-`documents/paper/sections/app_snr_new.tex`), every AllenAI signal over every
+`documents/paper/sections/app_snr.tex`), every AllenAI signal over every
 noise (22 × 6, the k-fold benchmark noise included), and each signal and noise
 alone.
 
