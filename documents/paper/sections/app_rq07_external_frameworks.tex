@@ -12,13 +12,13 @@
 \begin{minipage}[t]{0.485\textwidth}
 \vspace{0pt}
 \begin{rqfinding}
-\textbf{1. Both corpora rank the three gated shared tasks the same way (ARC Easy $>$ HellaSwag $>$ ARC Challenge, Spearman $\rho$ 1.00, Pearson r of log$_{10}$ SNR 0.87, p = 0.33).} But three points are too few for the agreement to be evidence. (Figure~\ref{fig:app_rq07_external_frameworks}.)
+\textbf{1. Both corpora rank the six gated shared tasks alike (Spearman $\rho$ 0.83, Pearson r of log$_{10}$ SNR 0.81, p = 0.049).} Six points make this indicative, not robust. (Figure~\ref{fig:app_rq07_external_frameworks}.)
 \\
 \\
-\textbf{2. Same order, n = 3.} \texttt{aad} SNR is 1.03 / 0.82 / 0.50 on our ladder and 9.76 / 5.04 / 4.16 on DataDecide for ARC Easy / HellaSwag / ARC Challenge.
+\textbf{2. Similar order, n = 6.} \texttt{rel\_std} SNR is 4.09 / 8.18 / 2.97 / 4.94 / 2.64 / 1.78 on our ladder and 15.67 / 15.34 / 12.61 / 13.30 / 9.29 / 4.09 on DataDecide for ARC Easy / HellaSwag / ARC Challenge / MMLU / CSQA / OpenBookQA. Both put CSQA and OpenBookQA last, and the top task differs (HellaSwag on ours, ARC Easy on DataDecide).
 \\
 \\
-\textbf{3. Our SNR is 6.1--9.4$\times$ smaller.} DataDecide's \texttt{aad} SNR exceeds ours by 9.4$\times$ on ARC Easy, 6.1$\times$ on HellaSwag and 8.2$\times$ on ARC Challenge. The log-scale correlation ignores this offset, so compare orders across corpora, never SNR levels.
+\textbf{3. Our SNR is 1.9--4.2$\times$ smaller.} DataDecide's \texttt{rel\_std} SNR exceeds ours by 3.8$\times$ on ARC Easy, 1.9$\times$ on HellaSwag, 4.2$\times$ on ARC Challenge, 2.7$\times$ on MMLU, 3.5$\times$ on CSQA and 2.3$\times$ on OpenBookQA. The log-scale correlation ignores this offset, so compare orders across corpora, never SNR levels.
 \end{rqfinding}
 \end{minipage}
 
@@ -27,7 +27,7 @@
 \centering
 \includegraphics[width=\textwidth,height=0.36\textheight,keepaspectratio]{figures/app_rq07_external_frameworks.png}
 % source: src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/snr_apertus_vs_snr_allenai_paper.png
-\captionof{figure}{\textbf{Both corpora rank the three gated shared tasks the same way (ARC Easy $>$ HellaSwag $>$ ARC Challenge, Spearman $\rho$ 1.00, Pearson r of log$_{10}$ SNR 0.87, p = 0.33).} Each point is one English task that both our ladder and DataDecide evaluate and that clears the above-chance gate on our side. The x axis gives the SNR of our 1B rung and the y axis the SNR of the DataDecide 1B rung, both on a log10 scale.}
+\captionof{figure}{\textbf{Both corpora rank the six gated shared tasks alike (Spearman $\rho$ 0.83, Pearson r of log$_{10}$ SNR 0.81, p = 0.049).} Each point is one English task that both our ladder and DataDecide evaluate and that clears the above-chance gate on our side. The x axis gives the SNR of our 1B rung and the y axis the SNR of the DataDecide 1B rung, both on a log10 scale.}
 \label{fig:app_rq07_external_frameworks}
 \end{minipage}
 \vspace{\baselineskip}

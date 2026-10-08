@@ -12,13 +12,13 @@
 \begin{minipage}[t]{0.485\textwidth}
 \vspace{0pt}
 \begin{rqfinding}
-\textbf{1. The English-only cells are better at English, by a small margin.} Deep K1 wins more than half of the English accuracy tasks against every other K at every drawn size (25 of 25 (size, K) cells, win share 0.60--0.79 per size, every K pooled), but the mean gap at 1.7B is 1.2 points (33 tasks, every K pooled). Shallow K1 wins 29 of 30 cells, 0.6 points at 1.7B. (Figure~\ref{fig:app_rq13_english_only}.)
+\textbf{1. The English-only cells are better at English, by a small margin.} Deep K1 wins more than half of the English accuracy tasks against every other K at every drawn size (25 of 25 (size, K) cells, win share 0.63--0.80 per size, every K pooled), but the mean gap at 1.7B is 1.3 points (34 tasks, every K pooled). Shallow K1 wins 30 of 30 cells, 0.9 points at 1.7B. (Figure~\ref{fig:app_rq13_english_only}.)
 \\
 \\
 \textbf{2. English BPB is the cleanest separation.} K1 has the lower \texttt{bpb\_dclm} in all 30 (size, K) comparisons at both depths. The deep gap is 0.049 bits per byte at 90M and shrinks to 0.028 at 1.7B (0.782 against 0.810).
 \\
 \\
-\textbf{3. Part of the lead is beyond seed noise.} Deep K1 is ahead by more than 2 seed sd in 0.55 (175M), 0.45 (600M) and 0.45 (1B) of the (task, K) comparisons and behind by as much in 0.03--0.07.
+\textbf{3. Part of the lead is beyond seed noise.} Deep K1 is ahead by more than 2 seed sd in 0.55 (175M), 0.45 (600M) and 0.45 (1B) of the (task, K) comparisons and behind by as much in 0.02--0.07.
 \end{rqfinding}
 \end{minipage}
 
@@ -37,6 +37,6 @@
 \centering
 \includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq13_english_scaling_regimes.png}
 % source: src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_scaling_regimes_paper.png
-\caption{\textbf{At $K$ = 1 the FineWeb cell puts 72\% of the English tasks in the regime predictable across both size and training, against 41\%--42\% for the two DCLM corpora.} The scaling regimes of Figure~\ref{fig:rq1} drawn for the monolingual English cells, one column per English corpus: DCLM-Edu (the English of every other cell), DCLM without the educational filter, and FineWeb. Each is one deep cell at seed 1904, 90M--1.7B, on the same 130 English tasks (originals, RF, LLM-RF, bBPB twins and the English bits per byte). The lead is in the bBPB twins: on the 31 accuracy tasks alone the three corpora reach 55\% (DCLM-Edu), 45\% (DCLM), 55\% (FineWeb). The fits and the above-chance gate are those of Figure~\ref{fig:rq1}. With one $K$, a task has one model-size fit instead of a median over the six $K$, and the trajectory $R^2$ is the median over at least two sizes. Top: the $R^2$ of the model-size fit against its Spearman $\rho$. Bottom: the same $R^2$ against the median $R^2$ of the training-trajectory fits, shaded by regime at 0.5. A black edge marks a task whose score declines with size. The grey points are the 952 tasks of Figure~\ref{fig:rq1} (medians over $K$, 79\% predictable across both), so they sit higher than a single fit would.}
+\caption{\textbf{At $K$ = 1 the FineWeb cell puts 70\% of the English tasks in the regime predictable across both size and training, against 40\%--42\% for the two DCLM corpora.} The scaling regimes of Figure~\ref{fig:rq1} drawn for the monolingual English cells, one column per English corpus: DCLM-Edu (the English of every other cell), DCLM without the educational filter, and FineWeb. Each is one deep cell at seed 1904, 90M--1.7B, on the same 132 English tasks (originals, RF, LLM-RF, bBPB twins and the English bits per byte). The lead is in the bBPB twins: on the 33 accuracy tasks alone the three corpora reach 48\% (DCLM-Edu), 48\% (DCLM), 48\% (FineWeb). The fits and the above-chance gate are those of Figure~\ref{fig:rq1}. With one $K$, a task has one model-size fit instead of a median over the six $K$, and the trajectory $R^2$ is the median over at least two sizes. Top: the $R^2$ of the model-size fit against its Spearman $\rho$. Bottom: the same $R^2$ against the median $R^2$ of the training-trajectory fits, shaded by regime at 0.5. A black edge marks a task whose score declines with size. The grey points are the 961 tasks of Figure~\ref{fig:rq1} (medians over $K$, 80\% predictable across both), so they sit higher than a single fit would.}
 \label{fig:app_rq13_english_scaling_regimes}
 \end{figure*}

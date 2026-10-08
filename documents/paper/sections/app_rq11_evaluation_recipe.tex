@@ -12,13 +12,13 @@
 \begin{minipage}[t]{0.485\textwidth}
 \vspace{0pt}
 \begin{rqfinding}
-\textbf{1. No way of evaluating a benchmark reads the reference's accuracy decision at $\tau$ = 0.75 on average at any proxy up to 1B.} The best mean is 0.63 (LLM-RF bBPB at 90M, only the easier bBPB $\rightarrow$ 1.7B bBPB target, LLM-RF at 0.71--0.80, clears it). Against the same truth, bBPB matches or edges the original accuracy at all five proxies (every task: 0.59--0.61 against 0.55--0.60, paired: 0.60--0.64), and the rewrites help only when scored by bBPB (RF and LLM-RF accuracy 0.48--0.56 across the five proxies, their bBPB 0.57--0.63). (Figure~\ref{fig:app_rq11_evaluation_recipe}.)
+\textbf{1. No way of evaluating a benchmark reads the reference's accuracy decision at $\tau$ = 0.75 on average at any proxy up to 1B.} The best mean is 0.63 (LLM-RF bBPB at 90M). Only the easier bBPB $\rightarrow$ 1.7B bBPB target clears it (LLM-RF at 0.76--0.88 on 35 tasks). Against the same truth, bBPB matches or edges the original accuracy at all five proxies (every task: 0.57--0.60 against 0.55--0.59, paired: 0.59--0.64), and the rewrites help only when scored by bBPB (RF and LLM-RF accuracy 0.47--0.55 across the five proxies, their bBPB 0.57--0.63). (Figure~\ref{fig:app_rq11_evaluation_recipe}.)
 \\
 \\
-\textbf{2. Against the same truth (bBPB $\rightarrow$ 1.7B accuracy), bBPB is the pick for 17 of the 23 benchmarks with a value and accuracy for 6.} (8 of 31 have none).
+\textbf{2. Against the same truth (bBPB $\rightarrow$ 1.7B accuracy), bBPB is the pick for 20 of the 24 benchmarks with a value and accuracy for 4.} Seven of the 31 have none.
 \\
 \\
-\textbf{3. The pick is now like for like.} A bBPB task is ranked on the same five proxies as an accuracy task.
+\textbf{3. The pick is like for like.} A bBPB task is ranked on the same five proxies as an accuracy task, so a twin that dips below $\tau$ at 600M ranks later: HellaSwag's original bBPB ties its accuracy at 3.12 under bBPB $\rightarrow$ 1.7B accuracy (reliable share 0.35 at 600M) and wins on the tie-break, and Belebele LLM-RF sits at 3.29 under bBPB $\rightarrow$ 1.7B bBPB.
 \end{rqfinding}
 \end{minipage}
 
@@ -37,6 +37,6 @@
 \centering
 \includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq11_recipe_by_benchmark.png}
 % source: src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_all_by_benchmark_multi_axes_paper.png
-\caption{\textbf{At the 90M proxy, a benchmark's bBPB read against the 1.7B accuracy ranks the design pairs more like the reference than its best accuracy format on 4 of the 5 top benchmarks where both have a value.} Overall, DA-size on accuracy goes from 0.52 at 90M to 0.57 at 1B, against 0.63--0.67 for the bBPB twins (read against the 1.7B bBPB) and 0.74--0.96 for BPB. The other rows are the 8 benchmarks with the highest mean DA-size over 90M--1B in their original or RF format (at least five tasks), ranked, with that format and value after the name. Columns: DA-size against the 1.7B final checkpoint, DA-ckpt against the proxy's own final checkpoint and DA-goal against the 1.7B final checkpoint, the last two averaged over the proxies 90M--1B. All use the multi-axis pairs of the seed-1904 runs, and accuracy is gated above chance. bBPB uses the twins of the ranking format, read against the 1.7B accuracy of the same items or against the 1.7B bBPB. The reading against accuracy has no DA-ckpt, as its reference would be another score. LAMBADA has no twin. The bands are 95\% bootstrap intervals over tasks. A point on fewer than five tasks is not drawn. A hollow point is 1.0 by self comparison.}
+\caption{\textbf{At the 90M proxy, a benchmark's bBPB read against the 1.7B accuracy ranks the design pairs more like the reference than its best accuracy format on 4 of the 4 top benchmarks where both have a value.} Overall, DA-size on accuracy goes from 0.51 at 90M to 0.57 at 1B, against 0.67--0.71 for the bBPB twins (read against the 1.7B bBPB) and 0.74--0.96 for BPB. The other rows are the 8 benchmarks with the highest mean DA-size over 90M--1B in their original or RF format (at least five tasks), ranked, with that format and value after the name. Columns: DA-size against the 1.7B final checkpoint, DA-ckpt against the proxy's own final checkpoint and DA-goal against the 1.7B final checkpoint, the last two averaged over the proxies 90M--1B. All use the multi-axis pairs of the seed-1904 runs, and accuracy is gated above chance. bBPB uses the twins of the ranking format, read against the 1.7B accuracy of the same items or against the 1.7B bBPB. The reading against accuracy has no DA-ckpt, as its reference would be another score. LAMBADA has no twin. The bands are 95\% bootstrap intervals over tasks. A point on fewer than five tasks is not drawn. A hollow point is 1.0 by self comparison.}
 \label{fig:app_rq11_recipe_by_benchmark}
 \end{figure*}

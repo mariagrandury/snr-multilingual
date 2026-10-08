@@ -12,13 +12,13 @@
 \begin{minipage}[t]{0.485\textwidth}
 \vspace{0pt}
 \begin{rqfinding}
-\textbf{1. The dispersion SNR definitions track decision accuracy best, as a block.} The top eight (\texttt{aad}, \texttt{dist\_std}, \texttt{quartile\_deviation}, \texttt{rms\_deviation}, \texttt{mpd}, \texttt{range}, \texttt{dispersion}, \texttt{mad}) read mean r 0.27--0.30 with DA-size and 0.40--0.42 with DA-ckpt (0.34--0.36 overall). (Figure~\ref{fig:app_rq04_surrogates}.)
+\textbf{1. The relative-spread SNR definitions track decision accuracy best, as a block.} \texttt{rel\_std}, \texttt{rel\_mpd} and \texttt{rel\_dispersion} read mean r 0.54--0.56 with DA-size and 0.57--0.58 with DA-ckpt (0.56--0.57 overall), ahead of \texttt{iqr} (0.53) and the eight dispersion and robust definitions (\texttt{aad}, \texttt{rms\_deviation}, \texttt{dist\_std}, \texttt{mpd}, \texttt{range}, \texttt{dispersion}, \texttt{quartile\_deviation}, \texttt{mad}: 0.49--0.51 overall). The figure's all-task panels read 0.50--0.62 and 0.59--0.64 for their top six, both led by \texttt{rel\_mpd}. The leader \texttt{rel\_std} (0.56 / 0.58) wins by less than 0.01, and the depth definitions are null or anti-signals (\texttt{tukey} $-$0.01 / $-$0.11, \texttt{projection} $-$0.06 / $-$0.14). (Figure~\ref{fig:app_rq04_surrogates}.)
 \\
 \\
-\textbf{2. No exact definition is best everywhere.} Per language the winner is one of 12 definitions under DA-size and one of 11 under DA-ckpt.
+\textbf{2. No exact definition is best everywhere.} Per language the winner is one of 11 definitions under DA-size and one of 12 under DA-ckpt.
 \\
 \\
-\textbf{3. The seed holdout now agrees under both DA kinds, on one or two languages.} The global ranking of the 22 definitions correlates across the seed split at Spearman $\rho$ 0.84 under DA-ckpt and 0.81 under DA-size.
+\textbf{3. The seed holdout agrees under both DA kinds, on one or two languages.} The global ranking of the 22 definitions correlates across the seed split at Spearman $\rho$ 0.70 under DA-ckpt and 0.55 under DA-size.
 \end{rqfinding}
 \end{minipage}
 
@@ -27,7 +27,7 @@
 \centering
 \includegraphics[width=\textwidth,height=0.36\textheight,keepaspectratio]{figures/app_rq04_surrogates.png}
 % source: src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/top_variants_overall_paper.png
-\captionof{figure}{\textbf{The dispersion SNR definitions track decision accuracy best, as a block.} For each of the 22 SNR definitions, the mean over languages of the Pearson r between log$_{10}$ SNR and decision accuracy across the tasks of one language, for DA-size (blue) and DA-ckpt (orange). The definitions are ordered by their DA-size correlation.}
+\captionof{figure}{\textbf{The relative-spread SNR definitions track decision accuracy best, as a block.} For each of the 22 SNR definitions, the mean over languages of the Pearson r between log$_{10}$ SNR and decision accuracy across the tasks of one language, for DA-size (blue) and DA-ckpt (orange). The definitions are ordered by their DA-size correlation.}
 \label{fig:app_rq04_surrogates}
 \end{minipage}
 \vspace{\baselineskip}

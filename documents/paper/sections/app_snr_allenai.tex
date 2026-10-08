@@ -60,12 +60,13 @@ Calculating the above sources of noise{} are either too expensive to estimate at
 \begin{equation}
 \text{Checkpoint-to-checkpoint noise{}} = \textstyle\sigma\left(\{U(t_j)\}_{j=T-k+1}^{T}\right)
 \end{equation}
+On our ladder, we take the residual standard deviation around a least-squares line through the five checkpoints of the last 20\% of training (three degrees of freedom), since scores still rise over the learning-rate decay, and keep this raw standard deviation as a variant.
 
 \textbf{Benchmark noise.} We propose to measure noise as the relative standard deviation of scores across $k = 5$ disjoint folds of the evaluation set, averaged across models:
 
 $$\text{Noise}(M) = \frac{1}{|M|} \sum_{m \in M} \frac{\sqrt{\frac{1}{k}\sum_{i=1}^{k}(m_i - \bar{m})^2}}{\bar{m}}$$
 
-where $m_1, \dots, m_k$ are the per-fold scores of model $m$. We adopt the benchmark noise over the original checkpoint-to-checkpoint noise for two reasons. First, it is computable from a single evaluation run, since fold scores are derived by partitioning stored per-question outputs without rerunning inference. This makes the framework applicable to any public model, including those without released intermediate checkpoints. Second, it correlates more strongly with decision accuracy than checkpoint noise ($R = 0.808$ vs. $R = 0.760$).
+where $m_1, \dots, m_k$ are the per-fold scores of model $m$. We consider the benchmark noise beside the original checkpoint-to-checkpoint noise for two reasons. First, it is computable from a single evaluation run, since fold scores are derived by partitioning stored per-question outputs without rerunning inference. This makes the framework applicable to any public model, including those without released intermediate checkpoints. Second, on its own it correlates slightly more strongly with decision accuracy than checkpoint noise ($\rho = -0.46$ vs.\ $\rho = -0.44$ with DA-size). As the denominator of the SNR, however, the detrended checkpoint noise does better for 16 of the 22 signals.
 
 
 
@@ -127,7 +128,7 @@ In Table \ref{tab:snr_variants}, we calculate the correlation between \snr{} and
 
 \subsection{Performance Metrics}
 
-\textbf{Accuracy.} For downstream tasks formulated as multiple-choice or classification problems, we score each model with accuracy, computed via the LM Evaluation Harness \cite{eval-harness}.
+\textbf{Accuracy.} For downstream tasks formulated as multiple-choice or classification problems, we score each model with accuracy, computed via the LM Evaluation Harness \cite{eval-harness}. The cloze-format originals (ARC, HellaSwag, OpenBookQA, MathQA and Global PIQA) and the reformulated variants are scored with length-normalised accuracy.
 
 \textbf{Bits-per-byte.} For raw text corpora, we use rolling bits-per-byte (BPB), defined as the average number of bits the model needs to encode each byte of UTF-8 text:
 
