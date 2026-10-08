@@ -1,5 +1,5 @@
 {
-  "_note": "hello, thank_you and speakers (total L1+L2 speakers, rounded) were drafted for the website's data-mixture view (2026-10-07) from general reference knowledge (Ethnologue / Wikipedia-level figures) and are NOT yet checked by a native speaker or against a cited source; entries without `resource` were added for the 50 trained languages (groups.trained) at the same time.",
+  "_note": "hello, thank_you and speakers (total L1+L2 speakers, rounded) were drafted for the website's data-mixture view (2026-10-07) from general reference knowledge (Ethnologue / Wikipedia-level figures) and are NOT yet checked by a native speaker or against a cited source; entries without `resource` were added for the 50 trained languages (groups.trained) at the same time. The 60 entries with only language, family and script (af ... zu, 2026-10-08) are the evaluated languages outside the training lists, added so the language-transfer analysis can group every evaluated language by family; their families follow a Glottolog / Ethnologue-style classification in the same 'Family, Subfamily' format, also unchecked.",
   "languages": {
     "ar": {
       "language": "Modern Std. Arabic",
@@ -548,6 +548,306 @@
       "hello": "Përshëndetje",
       "thank_you": "Faleminderit",
       "speakers": 7500000
+    },
+    "af": {
+      "language": "Afrikaans",
+      "family": "Indo-European, Germanic",
+      "script": "Latin"
+    },
+    "am": {
+      "language": "Amharic",
+      "family": "Afro-Asiatic, Semitic",
+      "script": "Ethiopic"
+    },
+    "as": {
+      "language": "Assamese",
+      "family": "Indo-European, Indo-Aryan",
+      "script": "Bengali"
+    },
+    "be": {
+      "language": "Belarusian",
+      "family": "Indo-European, Slavic",
+      "script": "Cyrillic"
+    },
+    "bo": {
+      "language": "Tibetan",
+      "family": "Sino-Tibetan, Tibetic",
+      "script": "Tibetan"
+    },
+    "ceb": {
+      "language": "Cebuano",
+      "family": "Austronesian, Malayo-Polynesian",
+      "script": "Latin"
+    },
+    "ckb": {
+      "language": "Central Kurdish",
+      "family": "Indo-European, Iranian",
+      "script": "Arabic"
+    },
+    "cy": {
+      "language": "Welsh",
+      "family": "Indo-European, Celtic",
+      "script": "Latin"
+    },
+    "fo": {
+      "language": "Faroese",
+      "family": "Indo-European, Germanic",
+      "script": "Latin"
+    },
+    "ga": {
+      "language": "Irish",
+      "family": "Indo-European, Celtic",
+      "script": "Latin"
+    },
+    "gd": {
+      "language": "Scottish Gaelic",
+      "family": "Indo-European, Celtic",
+      "script": "Latin"
+    },
+    "gl": {
+      "language": "Galician",
+      "family": "Indo-European, Romance",
+      "script": "Latin"
+    },
+    "grc": {
+      "language": "Ancient Greek",
+      "family": "Indo-European, Hellenic",
+      "script": "Greek"
+    },
+    "gu": {
+      "language": "Gujarati",
+      "family": "Indo-European, Indo-Aryan",
+      "script": "Gujarati"
+    },
+    "ha": {
+      "language": "Hausa",
+      "family": "Afro-Asiatic, Chadic",
+      "script": "Latin"
+    },
+    "haw": {
+      "language": "Hawaiian",
+      "family": "Austronesian, Malayo-Polynesian",
+      "script": "Latin"
+    },
+    "hbo": {
+      "language": "Ancient Hebrew",
+      "family": "Afro-Asiatic, Semitic",
+      "script": "Hebrew"
+    },
+    "ht": {
+      "language": "Haitian Creole",
+      "family": "Creole, French-based",
+      "script": "Latin"
+    },
+    "hy": {
+      "language": "Armenian",
+      "family": "Indo-European, Armenian",
+      "script": "Armenian"
+    },
+    "hyw": {
+      "language": "Western Armenian",
+      "family": "Indo-European, Armenian",
+      "script": "Armenian"
+    },
+    "ig": {
+      "language": "Igbo",
+      "family": "Niger-Congo, Volta-Niger",
+      "script": "Latin"
+    },
+    "is": {
+      "language": "Icelandic",
+      "family": "Indo-European, Germanic",
+      "script": "Latin"
+    },
+    "jv": {
+      "language": "Javanese",
+      "family": "Austronesian, Malayo-Polynesian",
+      "script": "Latin"
+    },
+    "km": {
+      "language": "Khmer",
+      "family": "Austroasiatic, Khmeric",
+      "script": "Khmer"
+    },
+    "kmr": {
+      "language": "Northern Kurdish",
+      "family": "Indo-European, Iranian",
+      "script": "Latin"
+    },
+    "kn": {
+      "language": "Kannada",
+      "family": "Dravidian",
+      "script": "Kannada"
+    },
+    "ky": {
+      "language": "Kyrgyz",
+      "family": "Turkic",
+      "script": "Cyrillic"
+    },
+    "la": {
+      "language": "Latin",
+      "family": "Indo-European, Italic",
+      "script": "Latin"
+    },
+    "lo": {
+      "language": "Lao",
+      "family": "Tai-Kadai",
+      "script": "Lao"
+    },
+    "mg": {
+      "language": "Malagasy",
+      "family": "Austronesian, Malayo-Polynesian",
+      "script": "Latin"
+    },
+    "mi": {
+      "language": "Maori",
+      "family": "Austronesian, Malayo-Polynesian",
+      "script": "Latin"
+    },
+    "mk": {
+      "language": "Macedonian",
+      "family": "Indo-European, Slavic",
+      "script": "Cyrillic"
+    },
+    "mn": {
+      "language": "Mongolian",
+      "family": "Mongolic",
+      "script": "Cyrillic"
+    },
+    "mt": {
+      "language": "Maltese",
+      "family": "Afro-Asiatic, Semitic",
+      "script": "Latin"
+    },
+    "my": {
+      "language": "Burmese",
+      "family": "Sino-Tibetan, Lolo-Burmese",
+      "script": "Myanmar"
+    },
+    "nds": {
+      "language": "Low German",
+      "family": "Indo-European, Germanic",
+      "script": "Latin"
+    },
+    "nn": {
+      "language": "Norwegian Nynorsk",
+      "family": "Indo-European, Germanic",
+      "script": "Latin"
+    },
+    "ny": {
+      "language": "Chichewa",
+      "family": "Niger-Congo, Bantu",
+      "script": "Latin"
+    },
+    "or": {
+      "language": "Odia",
+      "family": "Indo-European, Indo-Aryan",
+      "script": "Odia"
+    },
+    "pa": {
+      "language": "Punjabi",
+      "family": "Indo-European, Indo-Aryan",
+      "script": "Gurmukhi"
+    },
+    "ps": {
+      "language": "Pashto",
+      "family": "Indo-European, Iranian",
+      "script": "Arabic"
+    },
+    "rw": {
+      "language": "Kinyarwanda",
+      "family": "Niger-Congo, Bantu",
+      "script": "Latin"
+    },
+    "sa": {
+      "language": "Sanskrit",
+      "family": "Indo-European, Indo-Aryan",
+      "script": "Devanagari"
+    },
+    "sah": {
+      "language": "Yakut",
+      "family": "Turkic",
+      "script": "Cyrillic"
+    },
+    "sd": {
+      "language": "Sindhi",
+      "family": "Indo-European, Indo-Aryan",
+      "script": "Arabic"
+    },
+    "se": {
+      "language": "Northern Sami",
+      "family": "Uralic, Sami",
+      "script": "Latin"
+    },
+    "si": {
+      "language": "Sinhala",
+      "family": "Indo-European, Indo-Aryan",
+      "script": "Sinhala"
+    },
+    "sn": {
+      "language": "Shona",
+      "family": "Niger-Congo, Bantu",
+      "script": "Latin"
+    },
+    "so": {
+      "language": "Somali",
+      "family": "Afro-Asiatic, Cushitic",
+      "script": "Latin"
+    },
+    "st": {
+      "language": "Sesotho",
+      "family": "Niger-Congo, Bantu",
+      "script": "Latin"
+    },
+    "su": {
+      "language": "Sundanese",
+      "family": "Austronesian, Malayo-Polynesian",
+      "script": "Latin"
+    },
+    "tg": {
+      "language": "Tajik",
+      "family": "Indo-European, Iranian",
+      "script": "Cyrillic"
+    },
+    "ti": {
+      "language": "Tigrinya",
+      "family": "Afro-Asiatic, Semitic",
+      "script": "Ethiopic"
+    },
+    "tl": {
+      "language": "Tagalog",
+      "family": "Austronesian, Malayo-Polynesian",
+      "script": "Latin"
+    },
+    "ug": {
+      "language": "Uyghur",
+      "family": "Turkic",
+      "script": "Arabic"
+    },
+    "uz": {
+      "language": "Uzbek",
+      "family": "Turkic",
+      "script": "Latin"
+    },
+    "xh": {
+      "language": "Xhosa",
+      "family": "Niger-Congo, Bantu",
+      "script": "Latin"
+    },
+    "yo": {
+      "language": "Yoruba",
+      "family": "Niger-Congo, Volta-Niger",
+      "script": "Latin"
+    },
+    "yue": {
+      "language": "Cantonese",
+      "family": "Sino-Tibetan",
+      "script": "Han (Traditional)"
+    },
+    "zu": {
+      "language": "Zulu",
+      "family": "Niger-Congo, Bantu",
+      "script": "Latin"
     }
   },
   "groups": {

@@ -20,7 +20,7 @@ A language is in the trained languages' family when `configs/languages.json`
 gives it the family of a trained NON-English language of the cell, at two
 levels: the top level (the part before the comma, "Indo-European") and the
 subfamily (the full string, "Indo-European, Slavic"; a family without a comma is
-its own subfamily). "Isolate" never matches. L1 trains English alone, so every
+its own subfamily). An isolate (Basque) is a family of its own and never matches. L1 trains English alone, so every
 untrained language is "other family" there: it is the baseline. Languages
 without a family in languages.json are left out (and counted).
 
@@ -33,7 +33,8 @@ that line is what training the family's language adds.
                                                   a column per family level
     above_chance_untrained_lift_by_subfamily.png / .csv (+ _paper) per subfamily and cell, the share above
                                                   chance minus the L1 A cell's on the same (task, size), over the
-                                                  sizes both have; filled = a trained language of the cell is in it
+                                                  sizes both have; filled = a trained language of the cell is in it;
+                                                  drawn on >= MIN_VERDICTS verdicts
     above_chance_untrained_by_family_per_task.csv every (cell, size, task) verdict with its groups
 
     python analysis/rq06_language_transfer/family_transfer.py --pool predictivity
@@ -70,14 +71,17 @@ HERE = Path(__file__).resolve().parent
 SETTINGS = (1, 2, 8)
 BASELINE = (1, "A")                 # English only, evaluated on every language
 LEVELS = {"top": "Top-level family", "sub": "Subfamily"}
+MIN_VERDICTS = 20                   # a (cell, subfamily) lift on fewer verdicts stays in the CSV, not in the figure
 LANGS = json.loads((_SRC.parent / "configs" / "languages.json").read_text())["languages"]
 mpl.rcParams.update(S.RC)
 
 
 def family(lang: str, level: str) -> str | None:
     f = LANGS.get(lang, {}).get("family")
-    if f is None or f == "Isolate":
+    if f is None:
         return None
+    if f == "Isolate":                   # a family of its own: never the family of another language
+        return f"Isolate ({lang})"
     return f.split(",")[0].strip() if level == "top" else f
 
 
@@ -193,7 +197,9 @@ def lift_by_subfamily(v: pd.DataFrame) -> pd.DataFrame:
 
 
 def figure_lift(t: pd.DataFrame, path: Path, paper: bool) -> None:
-    """Rows = subfamilies (ordered by their mean lift), x = lift over L1 A; colour = cell, filled = trained."""
+    """Rows = subfamilies (ordered by their mean lift), x = lift over L1 A; colour = cell, filled = trained;
+    only the (cell, subfamily) lifts on at least MIN_VERDICTS verdicts."""
+    t = t[t["n_verdicts"] >= MIN_VERDICTS]
     order = t.groupby("family_sub")["lift"].mean().sort_values().index.tolist()
     cells = sorted(t["cell"].unique(), key=lambda c: (int(c.split()[0][1:]), c))
     colours = dict(zip(cells, S.SERIES))
@@ -220,7 +226,8 @@ def figure_lift(t: pd.DataFrame, path: Path, paper: bool) -> None:
     top = G._header(fig, "What training a language adds on the untrained languages of its subfamily",
                     "per (cell, subfamily): the cell's share of untrained-language accuracy tasks above chance (rule 1) "
                     "minus the English-only L1 A cell's on the same (size, task) verdicts, pooled over the sizes both "
-                    "have; filled = the cell trains a non-English language of that subfamily")
+                    f"have; filled = the cell trains a non-English language of that subfamily; drawn where >= {MIN_VERDICTS} "
+                    "verdicts")
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path)
 

@@ -116,7 +116,7 @@ Follow-ups:
 <!-- BEGIN auto:family-transfer (family_transfer.py --pool predictivity) -->
 ## Above chance on untrained languages, by language family
 
-Pool `predictivity`, the gate's run-level verdicts (rule 1) at the final checkpoint, deep seed-1904 cells at L1, L2 and L8, accuracy-scored parent tasks in languages the cell does not train; same family = the language shares the top-level family or the subfamily (`configs/languages.json` `family`) of a trained non-English language. Untrained-language results exist for the scheme-A cells (every size but L1 350M) and the L8 scheme-B cell (350M–1B) only: none for L2 ZH, L2 ES, L1 DCLMP, L1 FWEB. Left out: 61 languages without a family in languages.json. Regenerate with `python analysis/rq06_language_transfer/family_transfer.py --pool predictivity`.
+Pool `predictivity`, the gate's run-level verdicts (rule 1) at the final checkpoint, deep seed-1904 cells at L1, L2 and L8, accuracy-scored parent tasks in languages the cell does not train; same family = the language shares the top-level family or the subfamily (`configs/languages.json` `family`) of a trained non-English language. Untrained-language results exist for the scheme-A cells (every size but L1 350M) and the L8 scheme-B cell (350M–1B) only: none for L2 ZH, L2 ES, L1 DCLMP, L1 FWEB. Left out: 0 languages without a family in languages.json. Regenerate with `python analysis/rq06_language_transfer/family_transfer.py --pool predictivity`.
 
 ![Above chance on untrained languages by family](pretraining/predictivity/above_chance_untrained_by_family.png)
 
@@ -124,42 +124,28 @@ Pool `predictivity`, the gate's run-level verdicts (rule 1) at the final checkpo
 
 Numbers (generated):
 
-- **L2 A, subfamily**: share above chance, same family 90M 0.38, 175M 0.40, 350M 0.42, 600M 0.38, 1B 0.47, 1.7B 0.49; other family 90M 0.37, 175M 0.38, 350M 0.39, 600M 0.41, 1B 0.44, 1.7B 0.49. Lift over L1 A on the same tasks: same family +0.00, +0.07, +nan, -0.01, +0.08, +0.04, other family -0.01, -0.00, +nan, -0.01, -0.01, -0.03.
-- **L2 A, top-level family**: share above chance, same family 90M 0.37, 175M 0.40, 350M 0.40, 600M 0.40, 1B 0.45, 1.7B 0.49; other family 90M 0.36, 175M 0.37, 350M 0.38, 600M 0.42, 1B 0.44, 1.7B 0.48. Lift over L1 A on the same tasks: same family -0.00, +0.02, +nan, -0.01, +0.00, -0.05, other family -0.02, -0.02, +nan, -0.00, -0.01, +0.00.
-- **L8 A, subfamily**: share above chance, same family 90M 0.42, 175M 0.48, 350M 0.42, 600M 0.45, 1B 0.52, 1.7B 0.53; other family 90M 0.30, 175M 0.36, 350M 0.37, 600M 0.34, 1B 0.38, 1.7B 0.42. Lift over L1 A on the same tasks: same family +0.00, +0.08, +nan, +0.03, +0.05, +0.01, other family -0.04, +0.00, +nan, -0.02, +0.00, -0.01.
-- **L8 A, top-level family**: share above chance, same family 90M 0.38, 175M 0.43, 350M 0.39, 600M 0.40, 1B 0.46, 1.7B 0.50; other family 90M 0.30, 175M 0.37, 350M 0.38, 600M 0.36, 1B 0.39, 1.7B 0.42. Lift over L1 A on the same tasks: same family -0.00, +0.05, +nan, +0.01, +0.03, -0.01, other family -0.05, +0.00, +nan, -0.02, +0.00, +0.00.
-- **L8 B, subfamily**: share above chance, same family 350M 0.27, 600M 0.29, 1B 0.31; other family 350M 0.20, 600M 0.22, 1B 0.27. Lift over L1 A on the same tasks: same family +nan, +0.02, +0.02, other family +nan, -0.01, +0.02.
-- **L8 B, top-level family**: share above chance, same family 350M 0.24, 600M 0.29, 1B 0.30; other family 350M 0.19, 600M 0.16, 1B 0.25. Lift over L1 A on the same tasks: same family +nan, +0.02, +0.01, other family +nan, -0.04, +0.05.
+- **L2 A, subfamily**: share above chance, same family 90M 0.36, 175M 0.39, 350M 0.39, 600M 0.36, 1B 0.45, 1.7B 0.47; other family 90M 0.35, 175M 0.37, 350M 0.38, 600M 0.39, 1B 0.42, 1.7B 0.46. Lift over L1 A on the same tasks: same family +0.00, +0.06, +nan, -0.02, +0.07, +0.05, other family -0.02, -0.01, +nan, -0.01, -0.01, -0.03.
+- **L2 A, top-level family**: share above chance, same family 90M 0.36, 175M 0.39, 350M 0.39, 600M 0.39, 1B 0.44, 1.7B 0.48; other family 90M 0.34, 175M 0.35, 350M 0.36, 600M 0.39, 1B 0.41, 1.7B 0.45. Lift over L1 A on the same tasks: same family -0.00, +0.02, +nan, -0.01, -0.00, -0.04, other family -0.02, -0.02, +nan, -0.00, -0.01, -0.01.
+- **L8 A, subfamily**: share above chance, same family 90M 0.41, 175M 0.46, 350M 0.41, 600M 0.44, 1B 0.50, 1.7B 0.52; other family 90M 0.30, 175M 0.35, 350M 0.35, 600M 0.32, 1B 0.38, 1.7B 0.40. Lift over L1 A on the same tasks: same family +0.01, +0.07, +nan, +0.02, +0.05, +0.00, other family -0.03, +0.01, +nan, -0.02, +0.01, -0.01.
+- **L8 A, top-level family**: share above chance, same family 90M 0.37, 175M 0.41, 350M 0.38, 600M 0.38, 1B 0.44, 1.7B 0.48; other family 90M 0.29, 175M 0.35, 350M 0.36, 600M 0.33, 1B 0.40, 1.7B 0.40. Lift over L1 A on the same tasks: same family +0.00, +0.05, +nan, +0.01, +0.03, -0.01, other family -0.05, +0.00, +nan, -0.02, +0.02, +0.00.
+- **L8 B, subfamily**: share above chance, same family 350M 0.28, 600M 0.28, 1B 0.33; other family 350M 0.21, 600M 0.21, 1B 0.28. Lift over L1 A on the same tasks: same family +nan, +0.01, +0.05, other family +nan, -0.01, +0.03.
+- **L8 B, top-level family**: share above chance, same family 350M 0.25, 600M 0.28, 1B 0.31; other family 350M 0.18, 600M 0.16, 1B 0.26. Lift over L1 A on the same tasks: same family +nan, +0.01, +0.01, other family +nan, -0.02, +0.07.
 
 GitHub: [above_chance_untrained_by_family.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/above_chance_untrained_by_family.png) · [above_chance_untrained_by_family.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/above_chance_untrained_by_family.csv) · [above_chance_untrained_lift_by_subfamily.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/above_chance_untrained_lift_by_subfamily.png) · [above_chance_untrained_lift_by_subfamily.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/above_chance_untrained_lift_by_subfamily.csv) · [above_chance_untrained_by_family_per_task.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/above_chance_untrained_by_family_per_task.csv)
 <!-- END auto:family-transfer -->
 
-Key findings (`above_chance_untrained_by_family.csv`, `above_chance_untrained_lift_by_subfamily.csv`):
+Key findings (`above_chance_untrained_by_family.csv`, `above_chance_untrained_lift_by_subfamily.csv`; every evaluated language has a family in `languages.json` since 2026-10-08, lifts drawn on ≥ 20 verdicts):
 
-- **Training a Romance language helps the untrained Romance languages clear
-  chance.** L8 A (Spanish, French, Italian) puts 0.57 of the Portuguese, Romanian
-  and Catalan tasks above chance against 0.49 for English only on the same
-  verdicts (+0.08, the largest lift of a trained subfamily). L8 B, whose list
-  has no Romance language, reads them at +0.01 (600M and 1B only).
-- **Slavic is lifted by Russian at every L.** +0.04 for L2 A (Russian alone),
-  +0.04 for L8 A and +0.02 for L8 B (600M and 1B only), over the nine untrained
-  Slavic languages.
-- **The effect is small and mid-size.** On the subfamily split, L8 A's lift on
-  its own subfamilies is 0.00 at 90M, +0.08 at 175M, +0.03 at 600M, +0.05 at 1B
-  and +0.01 at 1.7B (no 350M: the L1 cell's evaluation is incomplete there); on the other subfamilies it is −0.04 to 0.00. The raw same-family share
-  sits above the other-family one in every panel, but English only shows most of
-  that gap too, so the gap is mostly which languages and benchmarks are in each
-  group.
-- **Most untrained-language cells have no results.** DCLMP, FWEB, ZH and ES are
-  evaluated on their own languages only, L8 B on the untrained ones at
-  350M–1B only, and 60 evaluated languages have no family in `languages.json`.
+- **Every subfamily a cell trains is lifted, the others are not.** All six (cell, trained subfamily) lifts over English only are positive, +0.01 to +0.06 (+0.03 weighted by verdicts), while the 54 (cell, other subfamily) lifts centre on zero (median 0.00, 41 % positive, −0.01 weighted; range −0.12 to +0.11).
+- **Romance is the largest.** L8 A (Spanish, French, Italian) puts 0.56 of the Catalan, Galician, Portuguese and Romanian tasks above chance against 0.50 for English only (+0.06). L8 B, whose list has no Romance language, reads them at 0.00. As large a lift appears on Bantu for L8 A (+0.06), which it does not train, so one subfamily alone is within the scatter.
+- **Slavic is lifted by Russian at every L.** +0.03 for L2 A (Russian alone), +0.04 for L8 A and +0.03 for L8 B (600M and 1B only), over the eleven untrained Slavic languages.
+- **The effect is small and mid-size.** L8 A's lift on its own subfamilies is +0.01 at 90M, +0.07 at 175M, +0.02 at 600M, +0.05 at 1B and 0.00 at 1.7B (no 350M: the L1 cell's evaluation is incomplete there); on the other subfamilies it is −0.03 to +0.01. The raw same-family share sits above the other-family one in most panels, but English only shows most of that gap too, so the gap is mostly which languages and benchmarks are in each group.
+- **Most untrained-language cells have no results.** DCLMP, FWEB, ZH and ES are evaluated on their own languages only, and L8 B on the untrained ones at 350M–1B only.
 
 Follow-ups:
 
 - Evaluate the ZH and ES L2 cells on the untrained languages (Sino-Tibetan has
   no untrained language here, Romance would test Spanish alone against L8 A).
-- Family entries for the 60 languages without one, to bring the whole Belebele
-  and Global-PIQA set into the split.
 
 ## Methodology
 
