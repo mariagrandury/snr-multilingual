@@ -268,6 +268,9 @@ done
 # seed holdout — needs the train/test pool CSVs above
 run $PY analysis/rq03_noise_and_snr/compare_seed_splits.py \
     --train-pool predictivity_seeds_train --test-pool predictivity_seeds_test
+# which proxy-vs-1.7B sign flips clear the proxy's seed sd, per design axis (rq02's score cube, the gate
+# and rq05's seed sd from predictivity_seeds, all read as functions: no table above it)
+run $PY analysis/rq03_noise_and_snr/flip_attribution.py --pool predictivity
 # effect_vs_noise reads rq05's decision table and rq03's panels read effect_vs_noise:
 # both run in the rq05 block below.
 

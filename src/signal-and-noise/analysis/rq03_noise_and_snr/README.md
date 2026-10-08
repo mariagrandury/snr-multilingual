@@ -156,6 +156,74 @@ The highlighted SNR divides by checkpoint noise; this figure asks whether that i
 - An SNR variant with the seed std as its noise, ranked against decision accuracy next to the checkpoint-noise variants, because the seed is the noise a design decision has to beat.
 - The ratio table split by size, to see whether the seed-over-checkpoint gap closes towards 1B as the runs get longer.
 
+<!-- BEGIN auto:flip-attribution (flip_attribution.py --pool predictivity) -->
+## Attribution of the proxy-reference disagreements
+
+Pool `predictivity` (pairs and scores, seed 1904, final checkpoint), seed sd from `predictivity_seeds` (rq05's `seed_sd`). (a) = |proxy difference| > 1 x the seed sd of the proxy's final score; (b) = the proxy difference has the other sign than the 1.7B one (a DA-size miss, so (b) = 1 - DA-size pooled over comparisons). Regenerate with `python analysis/rq03_noise_and_snr/flip_attribution.py --pool predictivity`; the sqrt(2) x sd threshold, the pooled sd and the benchmark-accuracy population are in the CSV.
+
+**600M, per-language BPB** (sd: 600M x3 cells (L1, L2, L50); a comparison is one (design pair, trained language); shares in % of the comparisons; last column = comparisons in (a) and (b) whose 1.7B difference also clears the threshold):
+
+| pairs | size-matched | design pairs | comparisons | (a) | (b) | (a)(b) | (a) not (b) | not (a) (b) | not (a) not (b) | (a)(b), 1.7B clear |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Depth (deep vs shallow) | **no** | 10 | 209 | 42 | 95 | 41 | 1 | 54 | 4 | 64 |
+| Language count | yes | 39 | 316 | 75 | 16 | 3 | 71 | 13 | 13 | 1 |
+| Data scheme (A vs B vs C) | yes | 12 | 80 | 39 | 2 | 1 | 38 | 1 | 60 | 0 |
+| Temperature (T=1 vs T=3) | yes | 4 | 145 | 92 | 1 | 0 | 92 | 1 | 7 | 0 |
+| All mono-axis pairs | **no** | 65 | 750 | 65 | 34 | 13 | 52 | 21 | 14 | 65 |
+| Multi-axis pairs | **no** | 325 | 2624 | 80 | 21 | 10 | 70 | 12 | 9 | 119 |
+| Multi-axis, depth moved | **no** | 160 | 1400 | 78 | 34 | 17 | 60 | 17 | 5 | 117 |
+| Multi-axis, depth held | yes | 165 | 1224 | 82 | 7 | 2 | 80 | 5 | 13 | 2 |
+
+**Every proxy, per-language BPB** (cell = (b) / (a) / share of (a) that is also (b), in %; sd of the proxy's own x3 cells at 175M, 600M and 1B, the pooled sd at 90M and 350M):
+
+| pairs | 90M | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|
+| Depth (deep vs shallow) | 4 / 91 / 1 | 4 / 93 / 1 | 27 / 31 / 14 | 95 / 42 / 98 | 6 / 34 / 2 |
+| Language count | 14 / 82 / 7 | 14 / 94 / 11 | 17 / 80 / 10 | 16 / 75 / 5 | 19 / 81 / 11 |
+| Data scheme (A vs B vs C) | 5 / 50 / 0 | 0 / 96 / 0 | 0 / 39 / 0 | 2 / 39 / 3 | 22 / 52 / 2 |
+| Temperature (T=1 vs T=3) | 1 / 97 / 0 | 1 / 98 / 0 | 3 / 93 / 1 | 1 / 92 / 0 | 3 / 89 / 0 |
+| All mono-axis pairs | 8 / 84 / 3 | 7 / 95 / 5 | 16 / 64 / 7 | 34 / 65 / 20 | 13 / 67 / 7 |
+| Multi-axis pairs | 5 / 92 / 3 | 6 / 97 / 4 | 11 / 81 / 6 | 21 / 80 / 13 | 9 / 82 / 4 |
+| Multi-axis, depth moved | 4 / 95 / 2 | 5 / 98 / 4 | 13 / 78 / 7 | 34 / 78 / 22 | 7 / 80 / 3 |
+| Multi-axis, depth held | 7 / 88 / 4 | 7 / 97 / 5 | 9 / 85 / 5 | 7 / 82 / 2 | 11 / 85 / 5 |
+
+**The depth decision with the deep side's seed re-drawn** (per-language BPB, deep data A at each of its three seeds against shallow data A at seed 1904; cell = comparisons whose sign differs from the 1.7B pair / comparisons; shallow has no replicate, so only the deep side moves):
+
+| proxy | deep seed | per L | pooled (b) | median deep − shallow BPB |
+|---|---|---|---|---|
+| 175M | 64 | L1 0/1, L2 1/2, L50 0/50 | 2 | -0.0064 / -0.0055 / -0.0086 |
+| 175M | 313 | L1 0/1, L2 1/2, L50 1/50 | 4 | -0.0054 / -0.0037 / -0.0079 |
+| 175M | 1904 | L1 0/1, L2 1/2, L50 3/50 | 8 | -0.0058 / -0.0045 / -0.0074 |
+| 600M | 64 | L1 0/1, L2 1/2, L50 15/50 | 30 | -0.0020 / -0.0009 / -0.0011 |
+| 600M | 313 | L1 0/1, L2 1/2, L50 43/50 | 83 | -0.0015 / +0.0010 / +0.0011 |
+| 600M | 1904 | L1 0/1, L2 1/2, L50 50/50 | 96 | -0.0025 / +0.0031 / +0.0094 |
+| 1B | 28 | L1 0/1, L2 1/2, L30 0/30 | 3 | -0.0024 / -0.0018 / -0.0028 |
+| 1B | 1797 | L1 0/1, L2 1/2, L30 30/30 | 94 | -0.0027 / -0.0021 / +0.0022 |
+| 1B | 1904 | L1 0/1, L2 1/2, L30 0/30 | 3 | -0.0037 / -0.0022 / -0.0059 |
+
+Tables: `pretraining/predictivity/flip_attribution_da_size_by_axis_both_axes.csv`, `pretraining/predictivity/flip_attribution_da_size_depth_by_seed_mono_axis.csv`; LaTeX: `pretraining/predictivity/flip_attribution_da_size_by_axis_both_axes.tex`.
+<!-- END auto:flip-attribution -->
+
+GitHub: [flip_attribution_da_size_by_axis_both_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/flip_attribution_da_size_by_axis_both_axes.csv) · [flip_attribution_da_size_by_axis_both_axes.tex](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/flip_attribution_da_size_by_axis_both_axes.tex) · [flip_attribution_da_size_depth_by_seed_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/flip_attribution_da_size_depth_by_seed_mono_axis.csv)
+
+The effect-vs-noise medians above say how often a design effect clears the seed noise; they do not say whether the proxy's misses against the reference are those noisy comparisons. Per-language BPB ranks the design variants like 1.7B from every proxy (DA-size 0.92–0.96) except 600M (0.74, [rq02](../rq02_decision_accuracy/README.md#key-finding)), and this table splits each 600M comparison into (a) "the 600M difference exceeds the 600M seed sd" and (b) "its sign differs from 1.7B's". (b) without (a) is a miss the proxy could not have avoided (the variants are indistinguishable at 600M); (a) with (b) is a design choice whose measured effect reverses between the sizes.
+
+Population: pool `predictivity` (seed 1904, every ladder and data build, final checkpoint), pairs and scores of rq02's score cube, DA-size against 1.7B; a comparison is one (design pair, trained language) on the 50 per-language BPB tasks (rule 2: both variants train the language), mono-axis pairs per design axis (rule 15) plus the multi-axis pairs pooled and split by whether they move the depth. Seed sd: rq05's `seed_sd` on `predictivity_seeds`, the per-task median over the deep data-A ×3 cells of the proxy's own size (600M: L1, L2 and L50, so a non-English language's sd is the L50 cell's alone; 175M and 1B their own cells; 90M and 350M the pooled 175M–1B sd). The 600M depth pairs are not size-matched (size_matched = no; [RULES.md](../RULES.md#size-matching-the-600m-depth-pairs-are-flagged-not-dropped)). Activation (no per-language BPB at 1.7B swiglu yet) and optimizer (no muon cell at 600M or 1.7B) have no comparison. (b) is pooled over comparisons, so the multi-axis row's 21 % is 1 − 0.785, rq02's pooled 600M figure (the 0.74 is the mean over tasks).
+
+**Key findings**
+
+- **The 600M BPB misses sit on the depth axis.** Of the 564 multi-axis comparisons whose sign differs from 1.7B (21 % of 2624), 478 are on pairs that move the depth: 34 % of the 1400 depth-moving comparisons miss against 7 % of the 1224 with depth held, which is the 7–11 % every proxy shows with depth held. Mono-axis, depth misses in 95 % (199 of 209) at 600M against 4 %, 4 %, 27 % and 6 % at 90M, 175M, 350M and 1B, while language count (16 %), data scheme (2.5 %) and temperature (1.4 %) sit where the other proxies do.
+- **On depth, 600M mostly cannot separate the variants, but its misses are not coin flips.** With 1 × the 600M seed sd, 41 % of the depth comparisons are (a) with (b), 54 % (b) without (a), 1 % (a) without (b) and 4 % neither; with √2 × sd (the sd of a difference) the split is 31 % / 65 %, with the pooled 175M–1B sd 53 % / 43 %. Yet 93 % of the comparisons below the sd still flip: the 600M depth difference is small (median 0.87 sd) and consistently in shallow's favour, a systematic reversal rather than noise around zero.
+- **The other axes are distinguishable at 600M and agree with 1.7B.** The 600M difference clears 1 sd on 92 % of the temperature, 75 % of the language-count and 39 % of the data-scheme comparisons, and of those only 0 %, 5 % and 3 % flip; the language-count misses (51 of 316) are mostly below the sd (40 of 51).
+- **The depth reversal is a draw of the deep run's seed, not a property of 600M.** With shallow fixed at seed 1904 and the deep side at each of its three seeds, the 600M L50 depth pair flips on 15, 43 and 50 of 50 languages (deep seeds 64, 313, 1904; median deep − shallow BPB −0.0011, +0.0011, +0.0094 against 1.7B's −0.0056), and at 1B deep seed 1797 flips all 30 L30 languages where seeds 28 and 1904 flip none. So the grid seed's 600M L50 deep run is the worst of its three (its median deep − shallow sits 0.008–0.011 BPB above the other two seeds'), and a 1B re-roll produces the same reversal; the size mismatch (+3.7 % parameters, about +15 % compute for shallow) can tilt the comparison, but deep seed 64 recovers the reference's sign on 35 of 50 languages with the same shallow run.
+- **The reference barely separates depth either.** The 1.7B depth difference is a median 1.10 600M seed sds (5.10 for temperature, 1.85 for language count), and 64 of the 86 (a)-with-(b) depth comparisons also clear 1 sd at 1.7B; with no 1.7B replicate, whether those are opposite effects or two seed draws cannot be told.
+
+**Follow-ups**
+
+- Two replicate seeds of shallow 600M at L50 (and 1B at L30), so both sides of the depth pair carry seed noise; today only the deep side moves, and the reading above is one-sided.
+- A size-matched 600M shallow cell, to separate the +3.7 % parameters from the seed draw.
+- The same split on benchmark accuracy in the README (it is in the CSV, population `accuracy`): there every axis misses on 43–56 % of comparisons at 600M and clearing the sd barely changes it (P(b | a) 0.39–0.55 against 0.50–0.57 below the sd), so the attribution question is a BPB one.
+
 <!-- BEGIN auto:panels (panels.py --pool predictivity) -->
 ## Per benchmark and per language
 
@@ -289,6 +357,13 @@ Population: train = the replicate seeds 28/64/313/1797, test = seed 1904, the sa
 - `…/effect_vs_noise.csv`, `effect_vs_noise.png` — per (size, L, task): |Δ|
   per intervention, seed noise, raw and detrended checkpoint noise, and their
   ratios (`effect_vs_noise.py`).
+- `pretraining/predictivity/flip_attribution_da_size_by_axis_both_axes.csv`
+  / `.tex` — per (population, sd scope, threshold, proxy size, pair group):
+  the comparisons against 1.7B split by (a) |proxy Δ| > K × seed sd and (b)
+  a sign flip, with the cross tab and `size_matched`; the `.tex` is the 600M
+  per-language BPB rows; `flip_attribution_da_size_depth_by_seed_mono_axis.csv`
+  — the depth pair with the deep side at each replicate seed
+  (`flip_attribution.py`).
 - `pretraining/predictivity_seeds_train__vs__predictivity_seeds_test/` — the
   seed-holdout report (`compare_seed_splits.py`: `headline_metrics.csv`, the
   per-language agreement and the variant r train vs test).
