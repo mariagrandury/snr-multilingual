@@ -365,6 +365,24 @@ Easier items track size more smoothly once the gate is fixed; admitting the
 tasks the recomputed gate adds brings the median back to about the full
 benchmark's.
 
+### The key figure on one task set per line
+
+Each line of the key figure takes the median over the tasks with a value at that size, and the gate keeps more tasks at larger sizes (309 → 486 on the full benchmark), so a line can move because its tasks changed (rule 13). The twin keeps, per ordering, the tasks with a value at every size (solid), the committed line dashed behind. It is rebuilt from the per-task CSVs, and its moving reading reproduces `above_chance_items_snr.csv` exactly.
+
+![SNR panels on one task set per line](pretraining/predictivity/above_chance_items_snr_fixed_tasks_paper.png)
+
+Pool `predictivity`, seed 1904, finals; ρ against DA-size multi-axis (each ordering's own truth). GitHub: [PNG](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq12_above_chance_items/pretraining/predictivity/above_chance_items_snr_fixed_tasks_paper.png) · [CSV](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq12_above_chance_items/pretraining/predictivity/above_chance_items_snr_fixed_tasks_paper.csv)
+
+Key findings:
+
+- **Part of the items-then-gate SNR rise is its population.** On its 617 tasks at every size the median SNR reads 0.37 → 0.50 from 90M to 1.7B, against 0.38 → 0.54 on 672–773 tasks; the full and gate-then-items lines move by 0.01 at most.
+- **The paired gain still grows with size, less steeply.** Gate then items reads x1.32 → x1.55 on its 284 tasks, against x1.26 → x1.52.
+- **ρ(SNR, DA-size) stays positive and a little higher.** It reads 0.29–0.48 on fixed tasks, against 0.27–0.47; items then gate gains most (up to +0.07 at 90M).
+
+Follow-ups:
+
+- **The fixed twin against the full-task truth.** Once the store run writes the full-truth columns, the dashed ρ lines get a fixed version too.
+
 ## Outputs
 
 Under `pretraining/<pool>/`, every name prefixed `above_chance_items_`:

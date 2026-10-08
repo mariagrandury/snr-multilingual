@@ -21,6 +21,8 @@ CHANCE_VS_TRAIN_TOKENS = _ANALYSIS / "rq00_chance_vs_train_tokens"   # the share
 SCALING_PREDICTABILITY = _ANALYSIS / "rq01_scaling_predictability"  # what moves with size; power-law prediction of the reference
 DECISION_ACCURACY = _ANALYSIS / "rq02_decision_accuracy"        # does a small size / early checkpoint rank like the reference
 DA_VS_TRAIN_TOKENS = _ANALYSIS / "rq02_da_vs_train_tokens"      # DA of a language's BPB against the tokens of the language seen
+PERMUTATION_NULL = _ANALYSIS / "rq02_permutation_null"          # each DA-size cell against its own no-signal null (proxy scores shuffled)
+DECISIVE_PAIRS = _ANALYSIS / "rq02_decisive_pairs"              # DA-size on the pairs the reference separates by more than seed noise
 # B. cheap measurements
 NOISE_AND_SNR = _ANALYSIS / "rq03_noise_and_snr"                # seed vs checkpoint noise; the 22 SNR definitions; the seed holdout
 SURROGATES = _ANALYSIS / "rq04_surrogates"                      # which cheap statistic predicts decision accuracy
@@ -32,6 +34,7 @@ EXTERNAL_FRAMEWORKS = _ANALYSIS / "rq07_external_frameworks"    # agreement with
 SUBSET_SELECTION = _ANALYSIS / "rq08_subset_selection"          # can a subset beat the full set
 BENCHMARK_DESIGN = _ANALYSIS / "rq09_benchmark_design"          # which design features predict reliability
 ABOVE_CHANCE_ITEMS = _ANALYSIS / "rq12_above_chance_items"      # how much DA and SNR rise on the items the reference answers above chance
+PROXY_ITEM_SELECTION = _ANALYSIS / "rq14_proxy_item_selection"  # items chosen from the proxies alone, scored against the full-task reference
 # E. past the reference
 SIZE_GENERALISATION = _ANALYSIS / "rq10_size_generalisation"    # the 3B rung as the reference: the only reader of above_reference=True
 # F. the recommendation

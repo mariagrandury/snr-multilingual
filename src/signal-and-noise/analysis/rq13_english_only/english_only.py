@@ -84,6 +84,8 @@ Outputs, `pretraining/<pool>/`:
     english_only_scores.png/.csv                 mean gap and win share per size, L1 against every other L
     english_only_scores_paper.png/.svg/.csv      the same for the paper: bare (rule 18); `--paper` redraws it
                                                  alone from english_only_scores_summary.csv
+    english_only_scores_fixed_tasks_paper.png/.svg/.csv   the same on one population per line (rule 13), the
+                                                 moving line dashed behind it; `--paper` redraws it too
     english_only_scores_by_benchmark.png/.csv    the same per benchmark (deep, every other L pooled)
     english_only_scores_per_task.csv             one row per (task, size, arch, comparator L)
     english_only_scores_summary.csv              per (scoring, arch, size, comparator), with `thin`
@@ -132,7 +134,7 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import ENGLISH_ONLY  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import above_chance, load_mask  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import above_chance, load_mask, mask_pool  # noqa: E402
 from analysis.rq01_scaling_predictability.analyze import fit_table  # noqa: E402
 from analysis.rq01_scaling_predictability.scaling_law_error import scaling_law_error  # noqa: E402
 from analysis.rq02_decision_accuracy.scale_convergence import (  # noqa: E402
@@ -144,7 +146,7 @@ from analysis.rq03_noise_and_snr.run_apertus_snr_variants import (  # noqa: E402
 from analysis.rq07_external_frameworks.analyze import ALLENAI_CSV, SIZE_PAIRS  # noqa: E402
 from analysis.utils import (  # noqa: E402
     AXES_SUFFIX, GRID_SEED, MIN_PAIRS, RELIABLE_DA, SMALL_SIZES, TARGET_SIZE, assign_language,
-    benchmark_family, design_axes, finals, ladder_frame, lower_is_better, pair_sets, passes_gate,
+    benchmark_family, design_axes, finals, fixed_population, ladder_frame, lower_is_better, pair_sets, passes_gate,
     size_order, variant)
 
 EN = "en"
@@ -616,6 +618,73 @@ def fig_scores(summ: pd.DataFrame, out_dir: Path, sizes: list, where: str, paper
                       + _thin_note(p.assign(where=p["arch"] + " " + p["size"]), "count of the line")
                       + " Seed sd = sample std of the deep L1 cell over its replicate seeds, where they exist.",
                       tabs, name="english_only_scores")
+
+
+def fig_scores_fixed(g: pd.DataFrame, out_dir: Path) -> None:
+    """english_only_scores_paper on one population per line (rule 13): solid,
+    the (task, L) comparisons with a value at every size the line is drawn at
+    (`utils.fixed_population`); dashed behind it, the paper figure's moving
+    population. Panel (c)'s shares are over the same moving comparisons, so they
+    get the twin too; the pooled median line is left out."""
+    acc = g[g["scoring"] == "acc"].dropna(subset=["gap"]).assign(unit=lambda d: d["task"] + "|" + d["L"].astype(str))
+    seed = acc.dropna(subset=["gap_over_seed"])
+    pooled = "every L > 1"
+    cells = []
+    for arch in ARCHS:
+        d = acc[acc["arch"] == arch]
+        cells += [c.assign(panel=f"{arch}: mean gap", line=comp, comparator=comp, value=100 * c["gap"])
+                  for comp, c in [(label(L), d[d["L"] == L]) for L in sorted(d["L"].unique())] + [(pooled, d)]]
+        cells.append(d.assign(panel="shares", line=f"{arch}: L1 ahead", comparator=pooled, value=(d["gap"] > 0) * 1.0))
+    s = seed[seed["arch"] == "deep"]
+    cells += [s.assign(panel="shares", line=f"{w} by > {BEYOND:g} seed sd", comparator=pooled, value=v * 1.0)
+              for w, v in (("ahead", s["gap_over_seed"] > BEYOND), ("behind", s["gap_over_seed"] < -BEYOND))]
+    summ = score_summary(g)
+    drawn = summ.loc[(summ["scoring"] == "acc") & ~summ["thin"], ["arch", "comparator", "size"]]      # fig_scores' points
+    sizes = size_order(g["size"].unique())
+    cells = pd.concat(cells).merge(drawn, on=["arch", "comparator", "size"])
+    cells["size"] = pd.Categorical(cells["size"], sizes, ordered=True)
+    tab = pd.concat([d.groupby(["panel", "line", "size"], observed=True).agg(value=("value", "mean"), n_tasks=("task", "nunique"))
+                     .reset_index().assign(reading=rd)
+                     for rd, d in (("moving", cells), ("fixed", fixed_population(cells, ["panel", "line"], "size", "value",
+                                                                                 task="unit")))]).rename(columns={"size": "x"})
+    fig, axes = plt.subplots(1, 3, figsize=(12, 3.4))
+
+    def draw(ax, panel, line, colour, fixed_kw):
+        for rd in ("moving", "fixed"):
+            t = tab[(tab["panel"] == panel) & (tab["line"] == line) & (tab["reading"] == rd)].set_index("x").reindex(sizes)
+            kw = fixed_kw if rd == "fixed" else dict(ls=(0, (3, 2)) if fixed_kw.get("ls") != "" else "", lw=.9, alpha=.6,
+                                                     marker=".", ms=3, zorder=1.8)
+            ax.plot(range(len(sizes)), t["value"], color=colour, **({"marker": "o", "ms": 3.5} | kw))
+        return t
+    for ax, arch in zip(axes[:2], ARCHS):
+        panel = f"{arch}: mean gap"
+        for comp in group_order(tab.loc[tab["panel"] == panel, "line"].unique()):
+            t = draw(ax, panel, comp, S.INK if comp == pooled else colour(comp),
+                     dict(lw=2.2 if comp == pooled else 1.1, label=comp))
+            if comp == pooled and t["value"].notna().any():
+                last = t["value"].last_valid_index()
+                ax.annotate(f"{int(t.loc[last, 'n_tasks'])} tasks", (sizes.index(last), t.loc[last, "value"]),
+                            textcoords="offset points", xytext=(0, 5), fontsize=6, ha="center")
+        ax.axhline(0, color=S.MUTED, lw=.8)
+        ax.set_title(f"({'ab'[ARCHS.index(arch)]}) {arch.capitalize()}: L1 minus L, accuracy points", loc="left", fontsize=8.5)
+        ax.set_ylabel("Mean over the English tasks above chance"); _x(ax, sizes)
+    axes[0].plot([], [], color=S.MUTED, ls=(0, (3, 2)), lw=.9, label="Tasks above chance at each size")
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, fontsize=7, frameon=False, ncol=len(handles), loc="upper center", bbox_to_anchor=(0.5, 0.0))
+    ax = axes[2]
+    for arch, c in zip(ARCHS, (S.INK, S.MUTED)):
+        draw(ax, "shares", f"{arch}: L1 ahead", c, dict(label=f"{arch}: L1 ahead"))
+    for w, c in (("ahead", S.SERIES[0]), ("behind", S.SERIES[1])):
+        draw(ax, "shares", f"{w} by > {BEYOND:g} seed sd", c, dict(ls="", label=f"deep: {w} by > {BEYOND:g} seed sd"))
+    ax.axhline(0.5, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(-0.02, 1.02)
+    ax.set_title("(c) Share of (task, L) comparisons, every L > 1 pooled", loc="left", fontsize=8.5)
+    ax.legend(fontsize=6.5, frameon=False); _x(ax, sizes); ax.set_ylabel("Share of comparisons")
+    for a in axes:
+        a.set_xlabel("Model size")
+    fig.tight_layout()
+    tab[["reading", "panel", "line", "x", "value", "n_tasks"]].to_csv(out_dir / "english_only_scores_fixed_tasks_paper.csv",
+                                                                       index=False)
+    S.save_paper(fig, out_dir / "english_only_scores_fixed_tasks_paper")
 
 
 def fig_scores_by_benchmark(g: pd.DataFrame, out_dir: Path, sizes: list, where: str) -> None:
@@ -1276,7 +1345,7 @@ def readme(pool: str, gate_pool: str, rel: str, r: dict) -> None:
 # --- driver ------------------------------------------------------------------------
 
 def main(pool: str, seeds_pool: str, write_readme: bool) -> None:
-    gate_pool = pool if load_mask(pool) is not None else CANONICAL_POOL
+    gate_pool = mask_pool(pool)
     mask = load_mask(gate_pool)
     if mask is None:
         print(f"no above-random mask for `{pool}` or `{CANONICAL_POOL}` (above_random.py): nothing written")
@@ -1320,6 +1389,7 @@ def main(pool: str, seeds_pool: str, write_readme: bool) -> None:
     where = f"pool `{pool}`, gate `{gate_pool}`"
     fig_scores(summ, out_dir, sizes, where)
     fig_scores(summ, out_dir, sizes, where, paper=True)
+    fig_scores_fixed(g, out_dir)
     summ.to_csv(out_dir / "english_only_scores_summary.csv", index=False)
     fig_scores_by_benchmark(g, out_dir, sizes, where)
 
@@ -1388,11 +1458,12 @@ if __name__ == "__main__":
                    help=f"write the README blocks from this pool (by default only `{CANONICAL_POOL}` writes them, and "
                         "only when L1 has three families there)")
     p.add_argument("--paper", action="store_true",
-                   help="only english_only_scores_paper, the paper's bare figure, from english_only_scores_summary.csv on disk")
+                   help="only the paper's bare figures (english_only_scores_paper and its fixed-tasks twin), from the tables on disk")
     a = p.parse_args()
     if a.paper:
         d = ENGLISH_ONLY / load_pools()[a.pool].get("stage", "pretraining") / a.pool
         summ = pd.read_csv(d / "english_only_scores_summary.csv")
         fig_scores(summ, d, size_order(summ["size"].unique()), "", paper=True)
+        fig_scores_fixed(pd.read_csv(d / "english_only_scores_per_task.csv"), d)
     else:
         main(a.pool, a.seeds_pool, a.readme)

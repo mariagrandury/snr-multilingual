@@ -18,6 +18,10 @@ E[1/n] (TruthfulQA mc1) or mean true-option share (mc2), not to its own.
 Rule 11 is waived by request: the 1.7B runs of the pool select and DA is
 still scored against the 1.7B reference, so the selection reads the reference
 and the numbers measure how much that inflates DA and SNR. No held-out half.
+DA is scored against two truths: the 1.7B ranking on the kept items (`truth =
+kept`: the reference is re-scored on the items its own runs selected) and on
+the full task (`truth = full`, rq08 reference_solved's truth); the gap between
+the two is the part of the gain the re-scored reference supplies.
 
 Three orderings, same pool, same families, same sizes:
 
@@ -56,13 +60,16 @@ Outputs under pretraining/<pool>/, each name prefixed `above_chance_items_`:
   snr_per_task.csv               per ordering, task, size: signal, noise and SNR (final; checkpoint if stored)
   snr.png/.csv                   per ordering and size: median SNR, paired ratio over full, ρ(SNR, DA-size)
   snr_paper.png/.svg/.csv        the same for the paper: bare (rule 18); `--paper` redraws it alone from snr.csv
+  snr_fixed_tasks_paper.png/.svg/.csv
+                                 its twin over one task set per line (`utils.fixed_population`, rule 13), the
+                                 moving line dashed behind; `reading` = moving | fixed; from the per-task CSVs
   snr_by_benchmark.png/.csv      per benchmark and size: median SNR per ordering and the median paired
                                  log2(SNR kept / SNR full)
   scaling_fits.csv               per ordering, task, L: the log-N fit of the final scores
   da_ckpt_per_task_both_axes.csv, da_ckpt_both_axes.csv   only when the store holds checkpoints
 
     python analysis/rq12_above_chance_items/above_chance_items.py --pool predictivity [--store-pool predictivity]
-    python analysis/rq12_above_chance_items/above_chance_items.py --paper    # the _paper figure alone, from the CSV
+    python analysis/rq12_above_chance_items/above_chance_items.py --paper    # the _paper figures alone, from the CSVs
 """
 
 from __future__ import annotations
@@ -102,7 +109,7 @@ from analysis.rq08_subset_selection.build_per_item_store import BBPB_POOL, STORE
 from analysis.utils import (  # noqa: E402
     ANALYSIS_SIZES, AXES_SUFFIX, BBPB, CKPT_DA_EARLY_FRACS, FRAC_TOL, MIN_PAIRS, PAIR_AXES, SMALL_SIZES, TARGET_SIZE,
     assign_language, benchmark_family, design_axes, finals, jackknife_ratio, ladder_frame, languages_only,
-    on_shared_grid, pair_sets)
+    fixed_population, on_shared_grid, pair_sets)
 
 NAME = "above_chance_items"
 ORDERINGS = {"full": "full benchmark", "gate_then_items": "gate, then items", "items_then_gate": "items, then gate"}
@@ -251,6 +258,15 @@ def lines(ax, t: pd.DataFrame, y: str, sizes: list, lo: str | None = None, hi: s
     ax.grid(color=S.GRID, lw=.6); S.clean(ax)
 
 
+def full_truth(ax, t: pd.DataFrame, y: str, sizes: list, label: str = "{}, full-task truth") -> None:
+    """The sub-benchmark orderings again, dashed, with DA scored against the
+    reference's ranking on the full task instead of on the kept items."""
+    for o in ("gate_then_items", "items_then_gate"):
+        g = t[t["ordering"] == o].set_index("size").reindex(sizes)
+        if y in g and g[y].notna().any():
+            ax.plot(range(len(sizes)), g[y], "--", lw=1.1, color=COLOUR[o], label=label.format(ORDERINGS[o]))
+
+
 def snr_figure(snr_summary: pd.DataFrame, sizes: list, paper_dir: Path | None = None):
     """The three SNR panels: median SNR, the paired gain over the full benchmark,
     ρ(SNR, DA-size). With `paper_dir`, the bare rule-18 twin `<NAME>_snr_paper`
@@ -268,6 +284,10 @@ def snr_figure(snr_summary: pd.DataFrame, sizes: list, paper_dir: Path | None = 
     axes[1].axhline(1, color=S.MUTED, lw=.8); axes[1].set_ylabel(cap("median ratio, kept / full (paired cells)"))
     axes[1].set_ylim(0.3, None); axes[1].legend(fontsize=6.5, frameon=False, loc="lower left")
     lines(axes[2], snr_summary[snr_summary["size"].isin(SMALL_SIZES)], "rho_snr_da_size", SMALL_SIZES, count="n_tasks_rho")
+    full_truth(axes[2], snr_summary[snr_summary["size"].isin(SMALL_SIZES)], "rho_snr_da_size_full_truth", SMALL_SIZES,
+               "{}: full task truth" if paper else "{}, full-task truth")
+    if snr_summary.get("rho_snr_da_size_full_truth", pd.Series(dtype=float)).notna().any():
+        axes[2].legend(fontsize=6, frameon=False, loc="lower right")
     axes[2].axhline(0, color=S.MUTED, lw=.8); axes[2].set_ylim(-1, 1); axes[2].set_ylabel("Spearman ρ(SNR, DA-size multi-axis)")
     for ax, lab in zip(axes, ("SNR", "gain over the full benchmark", "does SNR track DA-size?")):
         ax.set_title(cap(lab), loc="left", fontsize=8.5)
@@ -277,6 +297,67 @@ def snr_figure(snr_summary: pd.DataFrame, sizes: list, paper_dir: Path | None = 
     fig.tight_layout()
     snr_summary.to_csv(paper_dir / f"{NAME}_snr_paper.csv", index=False)
     S.save_paper(fig, paper_dir / f"{NAME}_snr_paper")
+
+
+# panel (the snr.csv column it reads) -> y label, panel title, the orderings drawn
+PANELS = {"snr_median": ("Median SNR over the tasks", "SNR", tuple(ORDERINGS)),
+          "snr_ratio_median": ("Median SNR ratio, kept / full (paired cells)", "Gain over the full benchmark", ("gate_then_items",)),
+          "rho_snr_da_size": ("Spearman ρ(SNR, DA-size multi-axis)", "Does SNR track DA-size?", tuple(ORDERINGS))}
+
+
+def fixed_tasks(snr_pt: pd.DataFrame, da_pt: pd.DataFrame) -> pd.DataFrame:
+    """The three SNR panels from the per-task tables, one row per (reading,
+    panel, line, size): `moving` over the tasks with a value at the size (the
+    snr_paper figure's population), `fixed` over `fixed_population`'s tasks, the
+    ones with a value at EVERY size of the line (rule 13). ρ reads each
+    ordering's own truth (the kept items for a sub-benchmark)."""
+    if "truth" in da_pt:
+        da_pt = da_pt[(da_pt["truth"] == "kept") | (da_pt["ordering"] == "full")]
+    cells = {"snr_median": (snr_pt, "snr"),
+             "snr_ratio_median": (gain(dict(tuple(snr_pt.groupby("ordering"))), "snr", ["task", "size"], ratio=True), "delta"),
+             "rho_snr_da_size": (snr_pt.merge(da_pt[da_pt["axes"] == AXES[0]], on=["ordering", "task", "size"])
+                                 .dropna(subset=["snr", "da"]), "da")}
+    rows = []
+    for panel, (c, v) in cells.items():
+        for reading, cut in (("moving", c.dropna(subset=[v])), ("fixed", fixed_population(c, ["ordering"], "size", v))):
+            for (o, s), g in cut.groupby(["ordering", "size"]):
+                y = (spearmanr(g["snr"], g["da"]).statistic if len(g) >= 3 else np.nan) if v == "da" else g[v].median()
+                rows.append({"reading": reading, "panel": panel, "line": o, "x": s, "value": y, "n_tasks": len(g)})
+    return pd.DataFrame(rows)
+
+
+def fixed_tasks_figure(out_dir: Path) -> None:
+    """`<NAME>_snr_fixed_tasks_paper`: the snr_paper panels over one task set per
+    line (solid), the moving-population line dashed behind, from the per-task
+    tables on disk; prints how far the moving reading is from `<NAME>_snr.csv`."""
+    t = fixed_tasks(pd.read_csv(out_dir / f"{NAME}_snr_per_task.csv"),
+                    pd.read_csv(out_dir / f"{NAME}_da_size_per_task_both_axes.csv"))
+    ref = pd.read_csv(out_dir / f"{NAME}_snr.csv").melt(["ordering", "size"], list(PANELS), "panel", "committed")
+    d = t[t["reading"] == "moving"].merge(ref, left_on=["panel", "line", "x"], right_on=["panel", "ordering", "size"])
+    print(f"moving reading against {NAME}_snr.csv, max |Δ| per panel: "
+          f"{(d['value'] - d['committed']).abs().groupby(d['panel']).max().round(6).to_dict()}")
+    sizes = [s for s in ANALYSIS_SIZES if s in set(t["x"])]
+    fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.2))
+    for ax, (panel, (ylab, title, orders)) in zip(axes, PANELS.items()):
+        p = t[t["panel"] == panel]
+        xs = [s for s in sizes if s in set(p["x"])]
+        for o in orders:
+            for reading, ls, lw, alpha in (("moving", (0, (3, 2)), 1.1, .45), ("fixed", "-", 1.4, 1)):
+                g = p[(p["line"] == o) & (p["reading"] == reading)].set_index("x").reindex(xs)
+                ax.plot(range(len(xs)), g["value"], ls=ls, lw=lw, alpha=alpha, color=COLOUR[o],
+                        marker="o" if reading == "fixed" else None, ms=3.5,
+                        label=f"{ORDERINGS[o]} ({g['n_tasks'].max():.0f} tasks)" if reading == "fixed" else None)
+        ax.axhline({"snr_ratio_median": 1, "rho_snr_da_size": 0}.get(panel, np.nan), color=S.MUTED, lw=.8)
+        ax.set_xticks(range(len(xs))); ax.set_xticklabels(xs); ax.set_xlabel("Model size"); ax.set_ylabel(ylab)
+        ax.set_title(title, loc="left", fontsize=8.5); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    for ls, lab in (("-", "same tasks at every size"), ((0, (3, 2)), "tasks above chance at each size")):
+        axes[1].plot([], [], color=S.MUTED, ls=ls, lw=1.2, label=lab)
+    for ax in axes:
+        ax.legend(fontsize=6, frameon=False)
+    axes[2].set_ylim(-1, 1)
+    fig.tight_layout()
+    t.to_csv(out_dir / f"{NAME}_snr_fixed_tasks_paper.csv", index=False)
+    S.save_paper(fig, out_dir / f"{NAME}_snr_fixed_tasks_paper")
 
 
 GAIN = "gate, then items − full (paired)"
@@ -322,7 +403,7 @@ def main(pool: str, store_pool: str, out_dir: Path, readme: bool) -> None:
     if not any(store.glob("*.parquet")):
         print(f"no per-item store at {store}: nothing written (build_per_item_store.sbatch builds it)")
         return
-    mask0 = load_mask(pool) if load_mask(pool) is not None else load_mask(CANONICAL_POOL)
+    mask0 = load_mask(pool)
     if mask0 is None:
         print("no committed above-random mask: nothing written (the gate's pass writes it first)")
         return
@@ -378,6 +459,11 @@ def main(pool: str, store_pool: str, out_dir: Path, readme: bool) -> None:
     groups = {a: psets[a] for a in AXES if psets[a]}
     sizes = [s for s in ANALYSIS_SIZES if s in set(fin["size"])]
     da, da_pool, snr, fits, ck, ck_pool, share = {}, [], {}, {}, {}, [], []
+    # Two truths for a sub-benchmark: its kept items' 1.7B finals (the selection reads those same runs) and the
+    # full task's 1.7B finals (what rq08's reference_solved keeps); the gap is what re-scoring the reference adds
+    f_full = fin.merge(orders["full"][0][KEYS + ["primary_score"]].rename(columns={"primary_score": "score"}), on=KEYS)
+    f_full = f_full.assign(primary_score=f_full["score"]).drop(columns="score")
+    da_ft, ft_pool = {}, []
     for o, (frame, mask, n_items) in orders.items():
         f_o = fin.merge(frame[KEYS + ["primary_score"]].rename(columns={"primary_score": "score"}), on=KEYS)
         f_o = f_o.assign(primary_score=f_o["score"]).drop(columns="score")
@@ -394,6 +480,11 @@ def main(pool: str, store_pool: str, out_dir: Path, readme: bool) -> None:
         cells["tied"] = [(t, s) in flat or (t, TARGET_SIZE) in flat for t, s in zip(cells["task"], cells["size"])]
         da[o] = cells.drop(columns="frac").assign(ordering=o)
         da_pool.append(pooled.assign(ordering=o))
+        if o != "full":
+            c2, p2 = da_cells(decisions(f_o.assign(frac=1.0), groups, SMALL_SIZES, f_full), mask, pool, TARGET_SIZE,
+                              ["axes", "size"])
+            da_ft[o] = c2.drop(columns="frac").assign(ordering=o)
+            ft_pool.append(p2.assign(ordering=o))
         rows = []
         for (t, s), g in f_o.groupby(["task", "size"]):
             if g["primary_score"].notna().sum() >= 2:
@@ -427,8 +518,10 @@ def main(pool: str, store_pool: str, out_dir: Path, readme: bool) -> None:
     share = pd.DataFrame(share).assign(share=lambda x: x["n_pass"] / x["n_tasks"],
                                        share_with_reference=lambda x: x["n_pass_with_reference"] / x["n_tasks"])
     cells = meta(pd.concat(da.values(), ignore_index=True))
-    cells[["ordering", "task", "benchmark", "language", "axes", "size", "da", "n_pairs", "n_matching", "gated", "tied"]].to_csv(
-        out_dir / f"{NAME}_da_size_per_task_both_axes.csv", index=False)
+    cells_ft = meta(pd.concat(da_ft.values(), ignore_index=True))
+    cols = ["truth", "ordering", "task", "benchmark", "language", "axes", "size", "da", "n_pairs", "n_matching", "gated"]
+    pd.concat([cells.assign(truth=np.where(cells["ordering"] == "full", "full", "kept")), cells_ft.assign(truth="full")],
+              ignore_index=True)[cols + ["tied"]].to_csv(out_dir / f"{NAME}_da_size_per_task_both_axes.csv", index=False)
     r5 = rule5(cells, "DA-size")
     adm = admitted(da, ["task", "axes", "size"], "da")
     adm_bins = (adm.merge(sel[["task", "n_kept"]], on="task")
@@ -439,7 +532,13 @@ def main(pool: str, store_pool: str, out_dir: Path, readme: bool) -> None:
             .reset_index())
     g_da = gain(da, "da", ["task", "axes", "size"])
     paired = g_da.groupby(["ordering", "axes", "size"]).agg(gain_paired=("delta", "mean"), n_paired=("delta", "count")).reset_index()
+    g_ft = gain({"full": da["full"], **da_ft}, "da", ["task", "axes", "size"])
+    paired_ft = (g_ft.groupby(["ordering", "axes", "size"]).agg(gain_paired_full_truth=("delta", "mean")).reset_index()
+                 .merge(pd.concat(ft_pool, ignore_index=True)[["ordering", "axes", "size", "reliability", "lo", "hi"]]
+                        .rename(columns={"reliability": "reliability_full_truth", "lo": "lo_full_truth", "hi": "hi_full_truth"}),
+                        on=["ordering", "axes", "size"], how="outer"))
     da_pool = (pd.concat(da_pool, ignore_index=True).merge(paired, on=["ordering", "axes", "size"], how="left")
+               .merge(paired_ft, on=["ordering", "axes", "size"], how="left")
                .merge(adm.groupby(["axes", "size"]).agg(da_macro_admitted=("da", "mean"), n_admitted=("task", "nunique"))
                       .reset_index().assign(ordering="items_then_gate"), on=["ordering", "axes", "size"], how="left"))
     snr_all = meta(pd.concat(snr.values(), ignore_index=True))
@@ -447,18 +546,23 @@ def main(pool: str, store_pool: str, out_dir: Path, readme: bool) -> None:
     g_snr = gain(snr, "snr", ["task", "size"], ratio=True)
     g_sig = gain(snr, "signal", ["task", "size"], ratio=True)
     g_noi = gain(snr, "noise_kfold", ["task", "size"], ratio=True)
-    rho = []
+    rho, rho_ft = [], []
     for o in ORDERINGS:
         m = snr[o].merge(da[o][da[o]["axes"] == AXES[0]], on=["task", "size"]).dropna(subset=["snr", "da"])
         for s, g in m.groupby("size"):
             r = spearmanr(g["snr"], g["da"]) if len(g) >= 3 else None
             rho.append({"ordering": o, "size": s, "rho_snr_da_size": r.statistic if r else np.nan,
                         "p": r.pvalue if r else np.nan, "n_tasks_rho": len(g)})
+        m = snr[o].merge(da_ft.get(o, da[o])[lambda x: x["axes"] == AXES[0]], on=["task", "size"]).dropna(subset=["snr", "da"])
+        rho_ft += [{"ordering": o, "size": s, "rho_snr_da_size_full_truth": spearmanr(g["snr"], g["da"]).statistic
+                    if len(g) >= 3 else np.nan} for s, g in m.groupby("size")]
     snr_summary = (snr_all.groupby(["ordering", "size"]).agg(snr_median=("snr", "median"), n_tasks=("snr", "count")).reset_index()
                    .merge(pd.concat([g.groupby(["ordering", "size"])["delta"].median().rename(n) for g, n in
                                      ((g_snr, "snr_ratio_median"), (g_sig, "signal_ratio_median"), (g_noi, "noise_ratio_median"))],
                                     axis=1).reset_index(), on=["ordering", "size"], how="left")
                    .merge(pd.DataFrame(rho), on=["ordering", "size"], how="left")
+                   .merge(pd.DataFrame(rho_ft, columns=["ordering", "size", "rho_snr_da_size_full_truth"]),
+                          on=["ordering", "size"], how="left")
                    .merge(admitted(snr, ["task", "size"], "snr").groupby("size").agg(
                        snr_median_admitted=("snr", "median"), n_admitted=("snr", "count")).reset_index()
                        .assign(ordering="items_then_gate"), on=["ordering", "size"], how="left"))
@@ -497,13 +601,15 @@ def main(pool: str, store_pool: str, out_dir: Path, readme: bool) -> None:
     fig, axes = plt.subplots(1, len(groups), figsize=(4.8 * len(groups), 3.8), sharey=True, squeeze=False)
     for ax, a in zip(axes[0], groups):
         lines(ax, da_pool[da_pool["axes"] == a], "reliability", SMALL_SIZES, "lo", "hi", "n_tasks")
+        full_truth(ax, da_pool[da_pool["axes"] == a], "reliability_full_truth", SMALL_SIZES)
         ax.axhline(.5, color=S.MUTED, lw=.8, ls=":")
         ax.set_title(f"{a} pairs ({len(groups[a])})", loc="left", fontsize=8.5); ax.set_xlabel("proxy size")
     axes[0][0].set_ylabel(f"DA-size against the {TARGET_SIZE} final (pooled)"); axes[0][0].legend(fontsize=7, frameon=False)
     save(fig, out_dir, f"{NAME}_da_size_both_axes", "Above-chance items: decision accuracy",
          f"DA-size = share of the design-variant pairs a proxy's final orders like the {TARGET_SIZE} final, pooled over the "
          f"tasks (count next to the point) with >= {MIN_PAIRS} pairs and above chance at the proxy and at {TARGET_SIZE}; "
-         f"band = leave-one-family-out jackknife, 90 %; {gate_note}. " + cells_note, da_pool)
+         f"band = leave-one-family-out jackknife, 90 %; dashed = the same sub-benchmark against the {TARGET_SIZE} "
+         f"ranking on the FULL task (solid: on its kept items, which the selection read); {gate_note}. " + cells_note, da_pool)
     t = per_benchmark(da, g_da, "da", "mean", ["axes", "size"])
     styles = {ORDERINGS[o]: (S.DIV, 0.0, 1.0, 0.5, "{:.2f}") for o in ORDERINGS} | {GAIN: (S.DIV, -0.3, 0.3, 0.0, "{:+.2f}")}
     for a in groups:
@@ -519,6 +625,7 @@ def main(pool: str, store_pool: str, out_dir: Path, readme: bool) -> None:
          "point); ratios over the cells both readings have (items, then gate reads the same sub-scores there, so its "
          f"ratio is in the CSV only); ρ over the tasks with a DA-size value at the proxy; {gate_note}. "
          + cells_note, snr_summary)
+    fixed_tasks_figure(out_dir)                           # the paper twin over one task set per line
     t = per_benchmark(snr, g_snr.assign(delta=np.log2(g_snr["delta"])), "snr", "median", ["size"])
     hi = float(np.nanpercentile(t.loc[t["panel"] != GAIN, "value"], 95))
     heat(t, sizes, {ORDERINGS[o]: (S.SEQ, 0.0, hi, None, "{:.2f}") for o in ORDERINGS} | {GAIN: (S.DIV, -2.0, 2.0, 0.0, "{:+.2f}")},
@@ -572,6 +679,11 @@ def write_readme(pool: str, store_pool: str, ckpts: bool, checks: str, sel: pd.D
                        *[sign(v) for v in g["reliability"] - f["reliability"]]],
                       [a, "items, then gate: mean DA on the admitted cells (cells)",
                        *[with_n(v, n) for v, n in zip(i["da_macro_admitted"], i["n_admitted"].fillna(0))]]]
+        if "reliability_full_truth" in g:
+            gain_rows += [[a, f"gate, then items, against the full task's {TARGET_SIZE} ranking − against its kept items' (pooled)",
+                           *[sign(v) for v in g["reliability_full_truth"] - g["reliability"]]],
+                          [a, "gate, then items − full, full-task truth: mean paired Δ (the gain the re-scored reference does not supply)",
+                           *[sign(v) for v in g["gain_paired_full_truth"]]]]
     tab_da = md_table(["pairs", "ordering", *SMALL_SIZES], da_rows)
     tab_gain = md_table(["pairs", "reading", *SMALL_SIZES], gain_rows)
     k = ["task", "axes", "size"]
@@ -651,12 +763,13 @@ if __name__ == "__main__":
                     help="the per-item store folder to read (rows filtered to the pool's models and checkpoints)")
     ap.add_argument("--out-dir", type=Path, default=None, help="write here instead of pretraining/<pool>/ (no README)")
     ap.add_argument("--paper", action="store_true",
-                    help=f"only {NAME}_snr_paper, the paper's bare figure, from {NAME}_snr.csv on disk")
+                    help=f"only {NAME}_snr_paper and its fixed-task twin, the paper's bare figures, from the CSVs on disk")
     a = ap.parse_args()
     default = ABOVE_CHANCE_ITEMS / load_pools()[a.pool].get("stage", "pretraining") / a.pool
     if a.paper:
         d = a.out_dir or default
         t = pd.read_csv(d / f"{NAME}_snr.csv")
         snr_figure(t, [s for s in ANALYSIS_SIZES if s in set(t["size"])], d)
+        fixed_tasks_figure(d)
     else:
         main(a.pool, a.store_pool, a.out_dir or default, readme=a.out_dir is None and a.pool == CANONICAL_POOL)

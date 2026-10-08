@@ -13,7 +13,7 @@
 
 \paragraph{Question.} The rest of the analysis asks whether a cheap measurement reproduces the 1.7B reference's design decision. This analysis turns that into advice for a reader who has to choose what to evaluate: for each benchmark, which \textbf{variant} (the items as published, their \texttt{rf\_} cloze rewrite (RF) or their \texttt{rfgm\_} LLM rewrite (LLM-RF), scored by \textbf{accuracy} or by the gold answer's \textbf{bits per byte} (bBPB)) reads the reference's decision from the smallest proxy?
 
-\paragraph{Setup.} Seed-1904 runs of every cell. We report the DA-size of the proxies 90M--1B against the 1.7B final checkpoint, on multi-axis pairs and on the tasks above chance at the proxy and at the reference. Each benchmark is read in up to six ways. The items are used as published, as RF or as LLM-RF, and each version is scored by accuracy or by the bits per byte of the gold answer (bBPB).
+\paragraph{Setup.} Seed-1904 runs of every cell. We report the DA-size of the proxies 90M--1B against the 1.7B final checkpoint, on multi-axis pairs. Each benchmark is read in up to six ways. The items are used as published, as RF or as LLM-RF, and each version is scored by accuracy or by the bits per byte of the gold answer (bBPB). The accuracy variants count on the tasks above chance at the proxy and at the reference. A bBPB variant has no chance level and is read against its original's 1.7B accuracy, so it counts where that accuracy is above chance at the reference. The pooled line holds both kinds.
 
 \begin{figure}[h]
 \centering

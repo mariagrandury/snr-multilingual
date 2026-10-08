@@ -724,7 +724,8 @@ def trained_tasks(L: int, data: str) -> frozenset[str]:
 
 
 def is_trained(task: str, L: int, data: str) -> bool:
-    return task in trained_tasks(int(L), data)
+    """A `bbpb_` twin is trained where its original is."""
+    return task.removeprefix(BBPB) in trained_tasks(int(L), data)
 
 
 def trained_only(df: pd.DataFrame) -> pd.DataFrame:
@@ -765,6 +766,17 @@ def with_variant_columns(df: pd.DataFrame) -> pd.DataFrame:
     v = {t: variant(t) for t in df.loc[df["kind"] == "benchmark", "task"].unique()}
     return df.assign(format=df["task"].map(lambda t: v.get(t, (None, None))[0]),
                      scoring=df["task"].map(lambda t: v.get(t, (None, None))[1]))
+
+
+def fixed_population(cells: pd.DataFrame, line: list, x: str, value: str, task: str = "task") -> pd.DataFrame:
+    """`cells` cut, per line (the `line` columns), to the tasks with a `value`
+    at EVERY `x` that line has: one task set along the whole line, so a change
+    along x is not a change of population (rule 13 by construction). It is the
+    twin a moving-population line is read beside, never a replacement for it."""
+    c = cells.dropna(subset=[value])
+    keys = list(line)
+    n_x = c.groupby(keys)[x].transform("nunique") if keys else c[x].nunique()
+    return c[c.groupby(keys + [task])[x].transform("nunique") == n_x]
 
 
 def finals(df: pd.DataFrame) -> pd.DataFrame:

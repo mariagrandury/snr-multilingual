@@ -223,6 +223,7 @@ def pairs_by_group(attrs: pd.DataFrame, by: str, axes: str = "multi-axis") -> di
     if by == "overall":                       # the pooled line is the whole figure
         return groups
     allowed = set(sets[axes])                 # an L regime keeps the pair set it is named for
+    mono = set(sets["mono-axis"])
     for i, a in enumerate(fams):
         for b in fams[i + 1:]:
             ra, rb = attrs.loc[a], attrs.loc[b]
@@ -234,6 +235,8 @@ def pairs_by_group(attrs: pd.DataFrame, by: str, axes: str = "multi-axis") -> di
             if len(differ) != 1:              # two axes at once decides neither
                 continue
             axis = differ[0]
+            if axis != "seed" and (a, b) not in mono:   # a design decision holds the grid seed (two replicates are no decision)
+                continue
             groups.setdefault(AXIS_LABEL[axis], []).append((a, b))
     return groups
 

@@ -43,14 +43,24 @@ comment next to the \\includegraphics.
     app_surrogates        <- rq04_surrogates/snr_definition_postprocess.py --pool predictivity --paper  top_variants_overall_paper
     app_above_chance_items <- rq12_above_chance_items/above_chance_items.py --paper  above_chance_items_snr_paper
     app_english_only      <- rq13_english_only/english_only.py --paper      english_only_scores_paper
-                             (these five: the main figure of an appendix page of make_rq_appendix.py)
+    app_permutation_null  <- rq02_permutation_null/permutation_null.py                permutation_null_da_size_paper
+    app_decisive_pairs    <- rq02_decisive_pairs/decisive_pairs.py                    decisive_pairs_da_size_paper
+    app_proxy_item_selection <- rq14_proxy_item_selection/proxy_item_selection.py      proxy_item_selection_da_size_multi_axes_paper
+                             (these eight: the main figure of an appendix page of make_rq_appendix.py; the last
+                             needs the cluster-only per-item store and is PENDING, not MISSING, until it is drawn)
+    app_rq2_crossfit      <- rq02_decision_accuracy/crossfit_reliable.py  rq2_da_all_above_66_either_crossfit_transformation_mono_axis
+    app_decision_accuracy_crossfit <- the same    scale_convergence_da_size_above_66_either_crossfit_multi_axes_paper
+                             (these two: extra figures of the decision-accuracy appendix page)
+    app_fixed_<name>      <- the `_fixed_tasks_paper` twin of the paper figure <name> (rq2 and the app_* figures
+                             whose task set moves along x), written by the script that writes <name>
+                             (rq02's by fixed_tasks.py); make_rq_appendix.py puts them in app_fixed_populations.tex
 
-The rq1, rq2 and rq3 copies and the last five are PNG, the table TeX; the others PNG and SVG. Every
+The rq1, rq2 and rq3 copies and the appendix-page figures are PNG, the table TeX; the others PNG and SVG. Every
 figure is a bare paper figure written through `style.save_paper` (RULES.md rule 18): a `_paper`
-stem, or rq2, whose writer paper_rq2.py draws only paper figures.
+stem, or an rq2 stem, whose writers (paper_rq2.py, crossfit_reliable.py) draw only paper figures.
 
-A file whose bytes did not change is not rewritten, so an unchanged figure
-keeps its mtime.
+A file whose bytes did not change is not rewritten; its mtime is set to its
+source's, as a copy would, so the refresh's orphan scan does not list it.
 
     python make_rq_figures.py
 """
@@ -103,7 +113,33 @@ FIGURES = {
     "app_above_chance_items": (ANALYSIS.joinpath("rq12_above_chance_items", *PRED, "above_chance_items_snr_paper"),
                                ("png",)),
     "app_english_only": (ANALYSIS.joinpath("rq13_english_only", *PRED, "english_only_scores_paper"), ("png",)),
+    "app_permutation_null": (ANALYSIS.joinpath("rq02_permutation_null", *PRED, "permutation_null_da_size_paper"), ("png",)),
+    "app_decisive_pairs": (ANALYSIS.joinpath("rq02_decisive_pairs", *PRED, "decisive_pairs_da_size_paper"), ("png",)),
+    "app_proxy_item_selection": (ANALYSIS.joinpath("rq14_proxy_item_selection", *PRED, "proxy_item_selection_da_size_multi_axes_paper"),
+                                 ("png",)),
+    # extra figures of an appendix page
+    "app_rq2_crossfit": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED,
+                                           "rq2_da_all_above_66_either_crossfit_transformation_mono_axis"), ("png",)),
+    "app_decision_accuracy_crossfit": (ANALYSIS.joinpath(
+        "rq02_decision_accuracy", *PRED, "scale_convergence_da_size_above_66_either_crossfit_multi_axes_paper"), ("png",)),
+    # the fixed-task twins (one task set per line, rule 13) of the appendix "Fixed task sets"
+    "app_fixed_rq2": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED,
+                                        "rq2_da_all_above_66_either_transformation_mono_axis_fixed_tasks_paper"), ("png",)),
+    "app_fixed_decision_accuracy": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED,
+                                                      "scale_convergence_da_size_multi_axes_fixed_tasks_paper"), ("png",)),
+    "app_fixed_design_decisions": (ANALYSIS.joinpath("rq05_design_decisions", *SEEDS,
+                                                     "da_all_lines_mono_axis_fixed_tasks_paper"), ("png",)),
+    "app_fixed_size_generalisation": (ANALYSIS.joinpath("rq10_size_generalisation", *PRED,
+                                                        "gate_share_and_da_size_mono_axis_fixed_tasks_paper"), ("png",)),
+    "app_fixed_evaluation_recipe": (ANALYSIS.joinpath("rq11_evaluation_recipe", *PRED,
+                                                      "recipe_da_size_variants_multi_axes_fixed_tasks_paper"), ("png",)),
+    "app_fixed_above_chance_items": (ANALYSIS.joinpath("rq12_above_chance_items", *PRED,
+                                                       "above_chance_items_snr_fixed_tasks_paper"), ("png",)),
+    "app_fixed_english_only": (ANALYSIS.joinpath("rq13_english_only", *PRED, "english_only_scores_fixed_tasks_paper"),
+                               ("png",)),
 }
+# drawn only from the cluster-only per-item store: absent until that run, not an error
+PENDING = {"app_proxy_item_selection"}
 
 
 def main() -> int:
@@ -112,11 +148,15 @@ def main() -> int:
         for ext in exts:
             path = src.with_suffix(f".{ext}")
             if not path.is_file():
-                missing.append(str(path.relative_to(REPO)))
+                if stem in PENDING:
+                    print(f"  PENDING {path.relative_to(REPO)} (needs the per-item store)")
+                else:
+                    missing.append(str(path.relative_to(REPO)))
                 continue
             dst = HERE / f"{stem}.{ext}"
             if dst.is_file() and dst.read_bytes() == path.read_bytes():
-                continue                          # unchanged bytes: leave mtime alone
+                shutil.copystat(path, dst)        # unchanged bytes: not rewritten, but its mtime follows the source's
+                continue                          # (as copy2 sets it), so the refresh's orphan scan sees it as written
             shutil.copy2(path, dst)
             copied += 1
     print(f"copied {copied} changed files into {HERE.relative_to(REPO)}")

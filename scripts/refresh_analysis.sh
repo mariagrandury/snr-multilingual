@@ -162,10 +162,12 @@ for r in $RETIRED_POOLS; do
   done
 done
 if [ "${FORCE:-0}" = 1 ]; then
+  # bench_bpb.csv keeps its mtime when its content did not change (the driver's fresh() reads it), so it is no orphan
   ORPHANS=$(find src/signal-and-noise/analysis/rq*/ documents/paper/figures -type f \
       \( -name '*.png' -o -name '*.csv' -o -name '*.svg' -o -name '*.pdf' -o -name '*.json' \) ! -newer "$STARTED" \
     | grep -vE '/(all|custom_swissai_hf|external|seeds_[0-9_]+(__vs__seeds_[0-9_]+)?|per_sample|per_item_store)/' \
     | grep -vE "/($RETIRED_RE)/" \
+    | grep -v 'rq08_subset_selection/bench_bpb.csv$' \
     | { [ "$CURVES" = 1 ] && cat || grep -vE '/(score_curves|per_benchmark|per_language)/'; } | sort)
   n=$(printf '%s' "$ORPHANS" | grep -c . || true)
   echo "orphans: $n artifacts no generator wrote in this refresh"

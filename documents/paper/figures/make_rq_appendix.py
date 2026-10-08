@@ -36,9 +36,122 @@ import re
 import sys
 from pathlib import Path
 
+import pandas as pd
+
 from make_rq_figures import ANALYSIS, FIGURES, HERE
 
 SECTIONS = HERE.parent / "sections"
+# rq12 scores DA against both 1.7B truths once its per-item store run has written the full-truth columns
+_RQ12_CSV = ANALYSIS / "rq12_above_chance_items" / "pretraining" / "predictivity" / "above_chance_items_snr_paper.csv"
+RQ12_TWO_TRUTHS = _RQ12_CSV.is_file() and "rho_snr_da_size_full_truth" in _RQ12_CSV.read_text().split("\n", 1)[0].split(",")
+
+
+
+def readings(stem, solid, dashed, value="da", **where):
+    """The plotted CSV of a paper figure with two readings of each line, one
+    row per point: the two values and their difference (solid - dashed)."""
+    t = pd.read_csv(FIGURES[stem][0].with_suffix(".csv"))
+    for k, v in where.items():
+        t = t[t[k] == v]
+    keys = [c for c in ("panel", "population", "line", "x") if c in t and c not in where]
+    w = t.pivot_table(index=keys, columns="reading", values=value).dropna(subset=[solid, dashed])
+    return w.assign(diff=w[solid] - w[dashed]).reset_index()
+
+
+SIZES = ["90M", "175M", "350M", "600M", "1B", "1.7B", "3B"]
+
+
+def fixed_impact(stem, line, what, fmt=".2f", value="value", unit="tasks", **where):
+    """One sentence on what one task set per line does to a line of a paper
+    figure: its fixed and moving values at the first and last point, the task
+    counts, and the largest shift (fixed - moving) along it."""
+    t = pd.read_csv(FIGURES[stem][0].with_suffix(".csv"))
+    for k, v in dict(where, line=line).items():
+        t = t[t[k] == v]
+    w = t.pivot_table(index="x", columns="reading", values=[value, "n_tasks"])
+    w = w.loc[sorted(w.index, key=lambda x: SIZES.index(x) if x in SIZES else float(x))].dropna()
+    f, m, n = w[(value, "fixed")], w[(value, "moving")], w[("n_tasks", "moving")]
+    d = f - m
+    x = d.abs().idxmax()
+    first, last = w.index[0], w.index[-1]
+    num = lambda v, sign="": f"{v:{sign}{fmt}}".replace("-", "−")      # a minus sign, not a hyphen
+    verdict = ("so part of the line's movement comes from its changing tasks" if abs(d[x]) > (m.max() - m.min()) / 4
+               else "small against the line's own range, so its shape is not a population effect")
+    return (f"On {what}, the {int(w[('n_tasks', 'fixed')].iloc[0])} {unit} it has at every point read "
+            f"{num(f.iloc[0])} at {first} and {num(f.iloc[-1])} at {last}, against {num(m.iloc[0])} and "
+            f"{num(m.iloc[-1])} on the {unit} of each point ({int(n.min())}--{int(n.max())}). The largest "
+            f"shift is {num(d[x], '+')} at {x}, {verdict}.")
+
+
+# paper figure -> (its fixed-task twin's stem, the label of the figure it is a twin of, what the twin
+# changes, the impact sentence's arguments)
+FIXED = {
+    "rq2": ("app_fixed_rq2", "fig:rq2", "the reliable tasks of each panel",
+            dict(line="all pairs", what="the DA-size line over every single-axis pair", value="da", panel="DA-size")),
+    "app_decision_accuracy": ("app_fixed_decision_accuracy", "fig:app_rq02_decision_accuracy", "the tasks above chance",
+                              dict(line="all benchmarks", what="the benchmark line", value="da")),
+    "app_design_decisions": ("app_fixed_design_decisions", "fig:app_rq05_design_decisions",
+                             "the (task, language setting) cells of each line",
+                             dict(line="temperature / benchmark", what="the benchmark line of the temperature decision",
+                                  unit="cells", panel="da_size")),
+    "app_size_generalisation": ("app_fixed_size_generalisation", "fig:app_rq10_size_generalisation",
+                                "the tasks of each channel (the left panel is not redrawn)",
+                                dict(line="benchmarks to 3B", what="the benchmark line against the 3B reference",
+                                     panel="3B")),
+    "app_evaluation_recipe": ("app_fixed_evaluation_recipe", "fig:app_rq11_evaluation_recipe",
+                              "the tasks of each variant", dict(line="All variants", what="the pooled line")),
+    "app_above_chance_items": ("app_fixed_above_chance_items", "fig:app_rq12_above_chance_items",
+                               "the tasks of each ordering",
+                               dict(line="items_then_gate", what="the median SNR of the items-then-gate ordering",
+                                    panel="snr_median")),
+    "app_english_only": ("app_fixed_english_only", "fig:app_rq13_english_only", "the English tasks of each comparison",
+                         dict(line="every L > 1", what="the deep cells' mean gap in points to every other language setting",
+                              fmt=".1f", panel="deep: mean gap")),
+}
+
+
+def fixed_populations():
+    """The appendix of the fixed-task twins: one figure per paper figure whose task set moves along x."""
+    out = ["% Generated by documents/paper/figures/make_rq_appendix.py from the fixed-task CSVs; do not edit.",
+           "\\clearpage", "\\section{Fixed task sets}", "\\label{app:fixed_populations}", "",
+           plain("A line of a mean over tasks against model size averages, at each size, the tasks that have a value "
+                 "there. The above-chance gate keeps more tasks at larger sizes, so a line can rise or fall because "
+                 "its tasks changed. Each figure below redraws a paper figure on one task set per line, the tasks "
+                 "that have a value at every point of that line (solid), with the original line dashed behind it."),
+           ""]
+    for orig, (stem, ref, tasks, kw) in FIXED.items():
+        if not FIGURES[stem][0].with_suffix(".csv").is_file():
+            continue
+        caption = (f"Figure~\\ref{{{ref}}} on one task set per line, {tasks} that have a value at every point (solid), "
+                   "against the original (dashed). " + escape(fixed_impact(stem, **kw)))
+        out += ["\\begin{figure}[p]", "\\centering",
+                f"\\includegraphics[width=\\textwidth,height=0.9\\textheight,keepaspectratio]{{figures/{stem}.png}}",
+                f"% source: {FIGURES[stem][0].relative_to(ANALYSIS.parents[2])}.png",
+                f"\\caption{{{plain(caption)}}}",
+                f"\\label{{fig:{stem}}}", "\\end{figure}", ""]
+    return "\n".join(out)
+
+
+def crossfit_captions():
+    rq2 = readings("app_rq2_crossfit", "cross-fitted", "in-sample (half)", panel="DA-size", line="all pairs")
+    twin = readings("app_decision_accuracy_crossfit", "cross-fitted", "in-sample (half)", population="all benchmarks")
+    worst = rq2.loc[rq2["diff"].abs().idxmax()]
+    shift = f"{worst['diff']:+.2f}".replace("-", "$-$")
+    return (
+        ("app_rq2_crossfit",
+         "Figure~\\ref{fig:rq2} with the reliable tasks chosen out of sample. The verdict (DA above 0.66 on the size "
+         "or the checkpoint axis) is decided on one half of the design pairs and the panels are read on the other half, "
+         "over 20 random splits stratified by the axes a pair moves, in both directions (solid, with the 5--95\\% range "
+         "over splits). The dashed lines choose and read the tasks on the same half, so the gap between the two is "
+         "the selection effect alone. Out of sample, DA-size over every single-axis pair changes by up to "
+         f"{shift} (at {worst['x']}). Lines with too few pairs per half are not drawn.",
+         "fig:app_rq2_crossfit"),
+        ("app_decision_accuracy_crossfit",
+         "Figure~\\ref{fig:app_rq02_decision_accuracy} with the reliable benchmark tasks, chosen out of sample and in "
+         "sample on the same half of the pairs (the same splits). The two readings differ by at most "
+         f"{twin['diff'].abs().max():.2f} on the multi-axis pairs.",
+         "fig:app_decision_accuracy_crossfit"))
+
 
 # folder -> title, paper figure stem, setup, (README image the finding follows, which bullet)[, extras]
 PAGES = {
@@ -93,6 +206,27 @@ PAGES = {
         "design pairs that the final checkpoint of a proxy orders in the same way as the final checkpoint of the "
         "1.7B reference. Every task is above chance at the proxy and at 1.7B. A pair may differ on any number of "
         "design axes.",
+        None, 0, crossfit_captions()),
+    "rq02_permutation_null": (
+        "Decision accuracy against a no-signal null", "app_permutation_null",
+        "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B, on pairs that may differ on any "
+        "number of design axes. For every (task, proxy size) cell with at least three comparable pairs, we shuffle "
+        "the proxy's final scores across the design variants 1000 times and score each shuffle against the unchanged "
+        "1.7B ranking with the same sign rule, ties included. A cell's p-value is the share of shuffles that match at "
+        "least as many pairs, corrected over the cells with the Benjamini--Hochberg procedure. The lines pool the "
+        "matching pairs over the comparable pairs of the tasks above chance at the proxy and at 1.7B, and the band is "
+        "the 95\\% range of the pooled shuffles. The benchmark line includes the bBPB variants at the sizes where "
+        "they were computed (175M, 350M and 1B).",
+        None, 0),
+    "rq02_decisive_pairs": (
+        "Decision accuracy on decisive pairs", "app_decisive_pairs",
+        "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B, on pairs that may differ on any "
+        "number of design axes. A pair is decisive for a task when its gap at 1.7B exceeds $k \\sqrt{2}$ times the "
+        "task's seed standard deviation, for $k \\in \\{1, 2\\}$. The seed standard deviation is the median, over the "
+        "baseline cells trained with three seeds (175M, 600M and 1B), of the standard deviation of the final score. "
+        "There are no replicates at 1.7B, so we assume that seed noise does not grow with size. Every line reads "
+        "the same accuracy tasks: those with a seed standard deviation and at least three pairs above the larger "
+        "threshold, above chance at the proxy and at 1.7B.",
         None, 0),
     "rq02_da_vs_train_tokens": (
         "Decision accuracy against the tokens of the language seen", "app_da_goal_multi_axes_bpb",
@@ -166,16 +300,31 @@ PAGES = {
     "rq11_evaluation_recipe": (
         "Evaluation recipe", "app_evaluation_recipe",
         "Seed-1904 runs of every cell. We report the DA-size of the proxies 90M--1B against the 1.7B final "
-        "checkpoint, on multi-axis pairs and on the tasks above chance at the proxy and at the reference. Each "
-        "benchmark is read in up to six ways. The items are used as published, as RF or as LLM-RF, and each "
-        "version is scored by accuracy or by the bits per byte of the gold answer (bBPB).",
+        "checkpoint, on multi-axis pairs. Each benchmark is read in up to six ways. The items are used as "
+        "published, as RF or as LLM-RF, and each version is scored by accuracy or by the bits per byte of the gold "
+        "answer (bBPB). The accuracy variants count on the tasks above chance at the proxy and at the reference. A "
+        "bBPB variant has no chance level and is read against its original's 1.7B accuracy, so it counts where that "
+        "accuracy is above chance at the reference. The pooled line holds both kinds.",
         None, 0),
     "rq12_above_chance_items": (
         "Above-chance items", "app_above_chance_items",
         "Seed-1904 runs of every cell, 90M--1.7B, final checkpoints. Every benchmark-language task keeps only "
         "the items that its 1.7B runs answer above chance, after the above-chance gate. We compare it with the full "
         "task. The selection reads the reference by design, so the gains are an upper bound, not a held-out "
-        "estimate.",
+        "estimate." + (" Decision accuracy is scored against two truths, the 1.7B ranking on the full task and on "
+                       "the kept items, and the gap between them is the part of the gain that comes from re-scoring "
+                       "the reference." if RQ12_TWO_TRUTHS else ""),
+        None, 0),
+    "rq14_proxy_item_selection": (
+        "Item selection from the proxies alone", "app_proxy_item_selection",
+        "Seed-1904 runs of every cell, final checkpoints, on pairs that may differ on any number of design axes. "
+        "For each benchmark-language task, we split the design families into two halves. On one half, we rank the "
+        "items by their discrimination at 600M and 1B: the correlation of an item's correctness with the run's task "
+        "score, both centred within each size. We keep the top half of the items and score the DA-size of the "
+        "proxies 90M--1B on the other half's pairs, against the 1.7B ranking on the full task. We then swap the "
+        "halves and average. Random subsets of the same size, drawn from the same items, are the baseline. The "
+        "selection never reads the 1.7B runs, so its DA is a held-out estimate that is available before the "
+        "reference is trained. Tasks are above chance at the proxy and at 1.7B.",
         None, 0),
     "rq13_english_only": (
         "English-only models", "app_english_only",
@@ -394,11 +543,18 @@ def main():
     folders = sorted(p.name for p in ANALYSIS.glob("rq*") if (p / "README.md").is_file())
     missing = [f for f in folders if f not in PAGES]
     for folder in [f for f in PAGES if f in folders]:
+        if not (HERE / f"{PAGES[folder][1]}.png").is_file():      # a figure only the cluster run draws (PENDING)
+            print(f"  PENDING app_{folder}: its figure is not drawn yet")
+            continue
         tex = page(folder, *PAGES[folder])
         out = SECTIONS / f"app_{folder}.tex"
         if not out.is_file() or out.read_text() != tex:
             out.write_text(tex)
         print(f"\\input{{sections/app_{folder}}}")
+    tex, out = fixed_populations(), SECTIONS / "app_fixed_populations.tex"
+    if not out.is_file() or out.read_text() != tex:
+        out.write_text(tex)
+    print("\\input{sections/app_fixed_populations}")
     for f in missing:
         print(f"  NO PAGE for {f}: add it to PAGES")
     return 1 if missing else 0

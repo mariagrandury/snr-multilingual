@@ -98,7 +98,11 @@ from analysis.utils import FRAC_TOL, MIN_LANG_TASKS, NOISE_WINDOW, PAIR_AXES  # 
 OUT_ROOT = SURROGATES
 KEYS = ["task", "language", "benchmark", "kind", "tier", "proxy_size", "axes"]
 TRUTH = ["t_kind", "metric", "axes", "L"]
-CIRCULAR = {"da_ckpt_mean", "da_ckpt_half", "sign_persistence", "settling_time"}   # early-vs-final agreements
+# Early-vs-final agreements, and statistics that contain one: `crossings` counts
+# the sign changes up to and including the final checkpoint (none = DA-ckpt 1 at
+# every fraction) and `consecutive_kendall*` include the 90 % -> final step.
+CIRCULAR = {"da_ckpt_mean", "da_ckpt_half", "sign_persistence", "settling_time",
+            "crossings", "consecutive_kendall", "consecutive_kendall_late"}
 RELIABLE_CUTS = (0.66, 0.75)
 RELIABLE_RED = "median"                 # the reduction of rq02's above_66_* filters
 MIN_UNITS = MIN_LANG_TASKS              # main analysis: rule 8's floor, three clusters
@@ -281,7 +285,8 @@ def subsets(g: pd.DataFrame):
             yield typ, str(k), (b & (g[col] == k)).to_numpy()
     if (g["frac"] < 1).any():
         yield "stage", "early (<= 50 %)", (b & (g["frac"] <= .5)).to_numpy()
-        yield "stage", "late (60-90 %)", (b & (g["frac"] > .5)).to_numpy()
+        # DA-goal's last tenth is its 100 % cell (= DA-size), DA-ckpt's is 90 %
+        yield "stage", f"late (60-{g.loc[b, 'frac'].max():.0%})", (b & (g["frac"] > .5)).to_numpy()
     for col in [c for c in g.columns if c.startswith("reliable_")]:
         yield "reliable (on the truth)", col.removeprefix("reliable_"), (b & g[col].fillna(False).astype(bool)).to_numpy()
 

@@ -363,8 +363,8 @@ SNR (`rel_std`) at 1.7B against 3B, tasks above chance at both:
 
 | channel | ρ tasks | tasks | ρ benchmarks | benchmarks | median log10 SNR 1.7B | median log10 SNR 3B | share higher at 3B |
 |---|---|---|---|---|---|---|---|
-| benchmarks | 0.35 | 300 | 0.45 | 24 | -0.02 | -0.16 | 0.33 |
-| bpb | 0.94 | 12 | — | 1 | -0.58 | -0.82 | 0.00 |
+| benchmarks | 0.32 | 300 | 0.39 | 24 | -0.03 | -0.16 | 0.35 |
+| bpb | 0.94 | 12 | — | 1 | -0.51 | -0.76 | 0.00 |
 
 Files: [`reference_consistency_da_size_multi_axes.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_multi_axes.png) / [`.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_multi_axes.csv), [`reference_consistency_da_size_mono_axis.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_mono_axis.png) / [`.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_mono_axis.csv), [`reference_consistency_da_size_per_task_both_axes.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_per_task_both_axes.csv), [`reference_consistency_snr.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_snr.png) / [`.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_snr.csv), [`reference_consistency_snr_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_snr_per_task.csv).
 <!-- END auto:reference-consistency -->
@@ -383,6 +383,23 @@ Follow-ups:
 - With few families at 3B the per-task DA sits on a coarse lattice and many
   cells fall under `MIN_PAIRS`; read the pooled lines and the benchmark-level
   ρ before the per-task scatter.
+
+## The DA panel on one task set per line
+
+The DA lines pool, at each proxy size, the tasks above chance at the proxy and at both references, so they can move because their tasks changed (rule 13). The twin redraws the DA panel only (the gate panel is a share, not a mean over tasks), one panel per reference: per channel, the tasks with a value at every proxy size (solid), the committed line dashed behind. A cell is kept for both references at once, so one task set serves both.
+
+![DA to 1.7B and to 3B on one task set per line](pretraining/predictivity/gate_share_and_da_size_mono_axis_fixed_tasks_paper.png)
+
+DA-size (no filter, mono-axis pairs, gate `predictivity` at the proxy, the references' own gate at 1.7B and 3B), pooled matching over comparable pairs. GitHub: [PNG](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_share_and_da_size_mono_axis_fixed_tasks_paper.png) · [CSV](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_share_and_da_size_mono_axis_fixed_tasks_paper.csv)
+
+Key findings:
+
+- **The fixed task set changes nothing that matters.** The benchmark lines keep 100 of 101–154 tasks and move by 0.03 at most (to 1.7B, at 600M); against 3B they read 0.47–0.52 on both task sets.
+- **BPB does not move.** The same 6 languages at every size.
+
+Follow-ups:
+
+- **The jackknife band on the fixed set.** The per-task table has no family pairs, so the twin draws no band.
 
 ## Extensions from other sweeps
 

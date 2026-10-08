@@ -458,6 +458,25 @@ benchmark tasks shared by every transformation)
 - Have `transformations.py` write the trained-language BPB rows, so the BPB
   side of this comparison exists on one language set.
 
+## The key figure on one task set per line
+
+A line averages, at each proxy size, the (task, L) items above chance there, so it can move because its items changed (rule 13). The twin keeps, per (intervention, L, population), the items with a value at every point (solid), then averages over L as the key figure does; the committed line is dashed behind. Rows are the populations, columns DA-size and DA-ckpt.
+
+![Design decisions on one task set per line](pretraining/predictivity_seeds/da_all_lines_mono_axis_fixed_tasks_paper.png)
+
+DA-size and DA-ckpt against the 1.7B final, mono-axis pairs, every seed (pool `predictivity_seeds`), gate `predictivity`, no reliability filter. GitHub: [PNG](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/da_all_lines_mono_axis_fixed_tasks_paper.png) · [CSV](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/da_all_lines_mono_axis_fixed_tasks_paper.csv)
+
+Key findings:
+
+- **The BPB lines and the checkpoint panel do not move.** BPB is never gated, and on the checkpoint axis the gate is read at the reference only, so the populations are already fixed there.
+- **The temperature benchmark line loses its jump at 175M.** On its 645 items at every size it reads 0.51 → 0.56 from 90M to 1B, against 0.51 → 0.62 on 649–2,841 items; the counts jump where the bBPB twins exist (175M, 350M and 1B), and the items that join there lift the line.
+- **The depth and scheme-B lines barely move.** They shift by 0.04 and 0.06 at most, so their shape is not a population effect.
+- **The single-build lines rest on very few items.** DCLMP and FWEB keep 6 items, ZH and ES 22–23; their fixed lines move by up to 0.23 and are not readable.
+
+Follow-ups:
+
+- **The per-benchmark grids on fixed tasks.** The per-benchmark and per-language figures have the same moving populations.
+
 ## Extensions from other sweeps
 
 None. The design-decision analysis exists on the ladder only (`predictivity_seeds`):

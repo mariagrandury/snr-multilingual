@@ -32,6 +32,10 @@ Rule 10: the 3B rung is read here only, through `above_reference=True`.
     gate_share_and_da_size_mono_axis_paper.png / .svg / .csv
         the paper figure: the share of each benchmark above chance at 1.7B and 3B
         (from gate_crossover_by_benchmark.csv) beside panel (a), mono-axis
+    gate_share_and_da_size_mono_axis_fixed_tasks_paper.png / .svg / .csv
+        its DA panel over one task set per line (rule 13): the tasks kept at
+        every proxy size, solid, over the paper's reading, dashed; a panel per
+        reference, no band (from the per-task table)
 
     python analysis/rq10_size_generalisation/reference_consistency.py --pool predictivity
     python analysis/rq10_size_generalisation/reference_consistency.py --paper   # the paper figure from the CSVs on disk
@@ -67,8 +71,8 @@ from analysis.rq03_noise_and_snr.run_apertus_snr_variants import per_model_input
 from analysis.rq10_size_generalisation.above_reference import GITHUB, REFERENCE, gate_mask  # noqa: E402
 from analysis.rq10_size_generalisation.gate_crossover import dumbbell  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    AXES_SUFFIX, MIN_PAIRS, NON_EMB, PAIR_AXES, TARGET_SIZE, benchmark_family, design_axes, finals,
-    jackknife_ratio, ladder_frame, on_shared_grid, pair_sets, passes_gate, size_order)
+    AXES_SUFFIX, MIN_PAIRS, NON_EMB, PAIR_AXES, TARGET_SIZE, benchmark_family, design_axes, finals, fixed_population,
+    jackknife_ratio, ladder_frame, on_noise_grid, on_shared_grid, pair_sets, passes_gate, size_order)
 
 OUT_ROOT = SIZE_GENERALISATION
 KEY = "reference-consistency"
@@ -78,6 +82,7 @@ REFS = (TARGET_SIZE, REFERENCE)
 STYLE = {REFERENCE: dict(ls="-", lw=1.6), TARGET_SIZE: dict(ls=(0, (3, 2)), lw=1.2)}
 CHANNEL_COLOR = {"benchmarks": S.INK, "bpb": S.SERIES[1]}
 PAPER_STEM = f"gate_share_and_da_size{AXES_SUFFIX['mono-axis']}_paper"   # no size in the stem: "1.7B" reads as a suffix to Path
+FIXED_STEM = PAPER_STEM.removesuffix("_paper") + "_fixed_tasks_paper"
 mpl.rcParams.update(S.RC)
 
 
@@ -90,7 +95,7 @@ def load(pool: str) -> tuple[pd.DataFrame, list]:
     """The pool with the rung above the reference, on the families scored at
     both 1.7B and 3B (a family with only its training loss at 3B is not one)."""
     df = ladder_frame(pool, above_reference=True)
-    df = df[on_shared_grid(df)]
+    df = df[on_shared_grid(df) | on_noise_grid(df)]       # the tenths, and the five k/20 points of the noise window (rule 4)
     fin = finals(df)
     scored = fin[fin["kind"] != "loss"]
     fams = sorted(set(scored.loc[scored["size"] == REFERENCE, "family"]) & set(fin.loc[fin["size"] == TARGET_SIZE, "family"]))
@@ -319,6 +324,43 @@ def figure_paper(by_bench: pd.DataFrame, pool_: pd.DataFrame, path: Path, min_ta
     S.save_paper(fig, path)
 
 
+def figure_paper_fixed(cells: pd.DataFrame, path: Path) -> None:
+    """The paper figure's DA panel over one task set per line (rule 13): per
+    channel, the tasks with a kept mono-axis cell at EVERY proxy size
+    (`utils.fixed_population`; a cell is kept for both references at once, so
+    one set serves both), solid; dashed and muted behind it, the same pooled
+    ratio over every kept cell, which is the paper panel's reading. One panel
+    per reference; the per-task table carries no pairs, so no band."""
+    kept = cells[(cells["axes"] == "mono-axis") & (cells["channel"] != "loss")].dropna(subset=[f"da_{REFERENCE}"])
+    rows = []
+    for reading, c in (("moving", kept), ("fixed", fixed_population(kept, ["channel"], "size", f"da_{REFERENCE}"))):
+        g = c.groupby(["channel", "size"]).agg(n_tasks=("task", "nunique"), n_pairs=("n_pairs", "sum"),
+                                               **{r: (f"n_matching_{r}", "sum") for r in REFS}).reset_index()
+        rows += [g.assign(reading=reading, panel=r, value=g[r] / g["n_pairs"]) for r in REFS]
+    t = pd.concat(rows, ignore_index=True).rename(columns={"size": "x"})
+    t["line"] = t["channel"] + " to " + t["panel"]
+    sizes = size_order(t["x"].unique())
+    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.0), sharey=True)
+    for ax, ref in zip(axes, REFS):
+        for (ch, reading), g in t[t["panel"] == ref].groupby(["channel", "reading"]):
+            g = g.set_index("x").reindex(sizes)
+            kw = dict(ls="-", lw=1.6, marker="o" if ch == "benchmarks" else "s", ms=4) if reading == "fixed" else dict(ls="--", lw=1.0, alpha=.45)
+            ax.plot([NON_EMB[s] for s in sizes], g["value"], color=CHANNEL_COLOR[ch], **kw)
+        ax.axhline(.5, color=S.MUTED, lw=.8, ls=":")
+        ax.set_xscale("log"); ax.set_xticks([NON_EMB[s] for s in sizes]); ax.set_xticklabels(sizes); ax.minorticks_off()
+        ax.set_ylim(0, 1); ax.set_xlabel("Proxy size"); ax.set_title(f"Reference {ref}", loc="left", fontsize=8.5)
+        ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    axes[0].set_ylabel("Decision accuracy")
+    handles = [plt.Line2D([], [], color=CHANNEL_COLOR["benchmarks"], marker="o", lw=1.6, label="Benchmark accuracy"),
+               plt.Line2D([], [], color=CHANNEL_COLOR["bpb"], marker="s", lw=1.6, label="BPB"),
+               plt.Line2D([], [], color=S.INK, lw=1.6, label="Same tasks at every size"),
+               plt.Line2D([], [], color=S.INK, lw=1.0, ls="--", alpha=.45, label="Tasks above chance at each size")]
+    fig.legend(handles=handles, fontsize=6.5, frameon=False, ncol=4, loc="upper center", bbox_to_anchor=(.5, 0.0))
+    fig.tight_layout()
+    t[["reading", "panel", "line", "x", "value", "n_tasks"]].to_csv(path.parent / f"{path.name}.csv", index=False)
+    S.save_paper(fig, path)
+
+
 # --- README ----------------------------------------------------------------------------------------------
 
 def generate_readme(pool: str, fams: list, n_pairs: dict, pool_: pd.DataFrame, cells: pd.DataFrame, ranks: pd.DataFrame,
@@ -400,6 +442,8 @@ if __name__ == "__main__":
         pool_ = pd.concat([pd.read_csv(out / f"reference_consistency_da_size{AXES_SUFFIX[a]}.csv") for a in AXES])
         # panel (a)'s rows and columns only, so the paper CSV matches the one a full run writes
         pool_ = pool_[pool_["panel"] == "a"].drop(columns=["panel", "rho_tasks", "rho_benchmarks", "n_benchmarks"])
+        cells = pd.read_csv(out / "reference_consistency_da_size_per_task_both_axes.csv")
+    figure_paper_fixed(cells, out / FIXED_STEM)
     by_bench = out / "gate_crossover_by_benchmark.csv"
     if by_bench.exists():
         figure_paper(pd.read_csv(by_bench), pool_, out / PAPER_STEM)

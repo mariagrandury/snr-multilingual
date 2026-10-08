@@ -12,6 +12,10 @@ early-decision read, without pooling the benchmarks.
                                        the decision table of analyze.py recomputed at every k/10 checkpoint; the rest of the folder
                                        stays on 20-100 %)
     da_all_lines_mono_axis_paper.png/.svg/.csv       da_all_lines_mono_axis for the paper: BPB and benchmarks (no training loss), no title
+    da_all_lines_mono_axis_fixed_tasks_paper.png/.svg/.csv   its twin over one task set per line (rule 13): per (recipe, L,
+                                       population), the items with a value at every point of the line, solid, over the
+                                       paper's reading (the items counted at each point), dashed; a row per population.
+                                       Reads `intervention_da_all_ckpt10_per_task_mono_axis.csv`, the items behind the points
     da_all_lines_decided_mono_axis.png               da_all_lines_mono_axis on the items whose reference |Δ| is >= DECIDED seed sds (analyze.py)
     depth_crossover.png                deep − shallow final BPB per size x L in seed sds: which depth wins, and by more than noise?
     da_all_lines_flops_mono_axis.png                 the same with every (proxy size, checkpoint) cell at its training compute
@@ -26,7 +30,7 @@ remain, so a benchmark row here is not a slice of the pooled number. The
 per-language table averages a language's BPB item with its benchmark items.
 
     python analysis/rq05_design_decisions/panels.py --pool predictivity_seeds
-    python analysis/rq05_design_decisions/panels.py --paper    # the paper figure alone, from intervention_da_all_ckpt10_mono_axis.csv
+    python analysis/rq05_design_decisions/panels.py --paper    # the paper figures alone, from intervention_da_all_ckpt10_[per_task_]mono_axis.csv
 """
 
 from __future__ import annotations
@@ -55,10 +59,12 @@ from analysis.paths import DESIGN_DECISIONS  # noqa: E402
 from analysis.rq05_design_decisions.analyze import (  # noqa: E402
     CANONICAL, COLOUR, DECIDED, INTERVENTIONS, MIN_ITEMS, RECIPES, by_recipe, gate_mask, intervention_da, seed_sd)
 from analysis.rq05_design_decisions.early_decision import DECISIONS  # noqa: E402
-from analysis.utils import CKPT_DA_EARLY_FRACS, GRID_SEED, LADDER_SIZES, RELIABLE_DA, TARGET_SIZE, finals, ladder_frame, trained_bpb_tasks  # noqa: E402
+from analysis.utils import (CKPT_DA_EARLY_FRACS, GRID_SEED, LADDER_SIZES, RELIABLE_DA, TARGET_SIZE, finals,  # noqa: E402
+    fixed_population, ladder_frame, trained_bpb_tasks)
 
 OUT_ROOT = DESIGN_DECISIONS
 FRACS10 = list(CKPT_DA_EARLY_FRACS) + [1.0]   # every evaluated checkpoint (rule 3)
+ITEMS_CSV = "intervention_da_all_ckpt10_per_task_mono_axis.csv"   # the items behind the paper lines' points
 LINE_POPULATIONS = (("bpb_trained", "-", "per-language BPB (trained languages)"), ("benchmark", "--", "benchmark tasks"),
                     ("loss", ":", "training loss"))
 # the paper's version: no training loss (one item per L, a 0/0.5/1 step), no dashes in the labels
@@ -143,10 +149,64 @@ def da_lines(da: pd.DataFrame, out_dir: Path, *, name: str = "da_all_lines_mono_
         S.save(fig, out_dir / f"{name}.png", also=(".svg",))
 
 
-def paper_figure(da: pd.DataFrame, out_dir: Path) -> None:
-    """da_all_lines_mono_axis for the paper, from the ten-checkpoint decision table (keyed by recipe)."""
+def paper_figure(da: pd.DataFrame, items: pd.DataFrame, out_dir: Path) -> None:
+    """da_all_lines_mono_axis for the paper, from the ten-checkpoint decision table (keyed by recipe), and its fixed-task twin."""
     da_lines(da, out_dir, name="da_all_lines_mono_axis_paper", **RECIPE_KW, populations=PAPER_POPULATIONS,
              title="", note="", paper=True)
+    fixed_tasks_lines(by_recipe(items), out_dir)
+
+
+def fixed_tasks_lines(items: pd.DataFrame, out_dir: Path, name: str = "da_all_lines_mono_axis_fixed_tasks_paper") -> None:
+    """da_all_lines_mono_axis_paper over one task set per line (rule 13): per
+    (recipe, population, L) line, the items with a value at EVERY point of it
+    (`utils.fixed_population`; x = the proxy sizes left, the reference's
+    checkpoints right), then the mean over L as there; solid. Dashed and muted
+    behind it: the same code on every item, which is the paper figure's
+    reading. One row of panels per population; `n_tasks` in the CSV is the
+    (task, L) items behind a point."""
+    line = ["intervention", "population", "L"]
+    rows = []
+    for panel, x, cells in (("da_size", "proxy_size", items[items["frac"] == 1.0]),
+                            ("da_ckpt", "frac", items[(items["proxy_size"] == TARGET_SIZE) & (items["frac"] < 1.0)])):
+        for reading, c in (("moving", cells), ("fixed", fixed_population(cells, line, x, "agree"))):
+            per_L = c.groupby(line + [x])["agree"].agg(["mean", "size"])
+            per_L = per_L[per_L["size"] >= MIN_ITEMS]          # a DA cell's floor, as in intervention_da
+            rows.append(per_L.groupby(line[:2] + [x]).agg(value=("mean", "mean"), n_tasks=("size", "sum")).reset_index()
+                        .rename(columns={x: "x"}).assign(panel=panel, reading=reading))
+    t = pd.concat(rows, ignore_index=True)
+    xs = {"da_size": [s for s in LADDER_SIZES if s in set(t.loc[t["panel"] == "da_size", "x"])],
+          "da_ckpt": sorted(t.loc[t["panel"] == "da_ckpt", "x"].unique())}
+    fig, axes = plt.subplots(2, 2, figsize=(7.2, 5.4), sharey=True, sharex="col")
+    for r, (pop, _, pop_label) in enumerate(PAPER_POPULATIONS):
+        for c_, (panel, xlab) in enumerate((("da_size", "Proxy size (final checkpoint)"),
+                                            ("da_ckpt", "Reference's training tokens (× Chinchilla)"))):
+            ax = axes[r, c_]
+            for key in RECIPES:
+                for reading, kw in (("moving", dict(ls="--", lw=.9, alpha=.45, zorder=1)),
+                                    ("fixed", dict(ls="-", lw=1.3, marker=RECIPES[key][2], ms=3.5, zorder=2))):
+                    g = t[(t["panel"] == panel) & (t["intervention"] == key) & (t["population"] == pop)
+                          & (t["reading"] == reading)].set_index("x").reindex(xs[panel])
+                    if g["value"].notna().any():
+                        ax.plot(range(len(xs[panel])), g["value"], color=RECIPES[key][1], **kw)
+            ax.set_xticks(range(len(xs[panel])))
+            ax.set_xticklabels([str(v) if panel == "da_size" else G.chinchilla(v) for v in xs[panel]])
+            ax.axhline(RELIABLE_DA, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(0.0, 1.02)
+            ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+            if r == 1:
+                ax.set_xlabel(xlab)
+        axes[r, 0].set_ylabel("Decision accuracy (mean over L)")
+        axes[r, 0].set_title(pop_label, loc="left", fontsize=8.5)
+    cap = lambda lab: lab[0].upper() + lab[1:].replace("–", " to ")      # the paper's words, as in da_lines
+    handles = ([plt.Line2D([], [], color=RECIPES[k][1], lw=2, marker=RECIPES[k][2], label=cap(RECIPES[k][0]))
+                for k in RECIPES if k in set(t["intervention"])]
+               + [plt.Line2D([], [], color=S.INK, lw=1.3, label="Same tasks at every point"),
+                  plt.Line2D([], [], color=S.INK, lw=.9, ls="--", alpha=.45, label="Tasks above chance at each point")])
+    ncol = next((c for c in (3, 4, 5, 2) if len(handles) % c == 0), (len(handles) + 1) // 2)
+    fig.legend(handles=handles, fontsize=6.5, frameon=False, ncol=ncol, loc="upper center", bbox_to_anchor=(0.5, 0.0))
+    fig.tight_layout()
+    t.assign(line=t["intervention"] + " / " + t["population"])[["reading", "panel", "line", "x", "value", "n_tasks"]] \
+        .to_csv(out_dir / f"{name}.csv", index=False)
+    S.save_paper(fig, out_dir / name)            # rule 18
 
 
 def da_lines_flops(da: pd.DataFrame, full_compute: pd.Series, out_dir: Path, *, name: str = "da_all_lines_flops_mono_axis",
@@ -271,15 +331,17 @@ def main(pool: str) -> None:
         if by == "family":
             highlights(out_dir, fin)
     frame = ladder_frame(pool)
-    da, _, _ = intervention_da(frame, fracs=FRACS10, mask=gate_mask(pool))
+    da, items, _ = intervention_da(frame, fracs=FRACS10, mask=gate_mask(pool))
     da.to_csv(out_dir / "intervention_da_all_ckpt10_mono_axis.csv", index=False)
+    items = items[(items["frac"] == 1.0) | (items["proxy_size"] == TARGET_SIZE)].drop(columns="label")   # the paper lines' points
+    items.to_csv(out_dir / ITEMS_CSV, index=False)
     # the lines average over L, so a scheme decision is drawn per recipe (colour = the decision, marker = the build)
     da = by_recipe(da)
     da_lines(da, out_dir, **RECIPE_KW,
              title="How small and how early each design decision can be read",
              note="DA = share of items on which the proxy prefers the level of the intervention the reference prefers at its final "
                   f"checkpoint, mean over the language settings; dotted line = {RELIABLE_DA:g}")
-    paper_figure(da, out_dir)
+    paper_figure(da, items, out_dir)
     # a proxy cell's compute: the mean full-run compute of the size's families (deep and shallow differ by up to 13 %)
     depth_crossover(frame, out_dir)
     decided = da.assign(decision_acc=da["decision_acc_decided"])
@@ -319,10 +381,10 @@ def main(pool: str) -> None:
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL)
-    p.add_argument("--paper", action="store_true", help="only the paper figure, from intervention_da_all_ckpt10_mono_axis.csv on disk")
+    p.add_argument("--paper", action="store_true", help=f"only the paper figures, from intervention_da_all_ckpt10_mono_axis.csv and {ITEMS_CSV} on disk")
     args = p.parse_args()
     if args.paper:
         d = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
-        paper_figure(by_recipe(pd.read_csv(d / "intervention_da_all_ckpt10_mono_axis.csv")), d)
+        paper_figure(by_recipe(pd.read_csv(d / "intervention_da_all_ckpt10_mono_axis.csv")), pd.read_csv(d / ITEMS_CSV), d)
     else:
         main(args.pool)

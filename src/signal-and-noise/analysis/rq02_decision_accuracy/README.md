@@ -314,9 +314,9 @@ Key findings (definitions, so nothing to measure):
 
 - On the toy, DA-size 0.50, DA-ckpt 0.17 and DA-goal 0.67 over the six multi-axis pairs; over the three mono-axis pairs 0.33 / 0.00 / 0.67. The tied pair (Deep-A-T1 = Deep-A-T3 at the proxy's final) is a miss wherever the other side decides it, an agreement only if both sides tie — `decision_acc_fast`'s convention, order-invariant.
 - A cell of n pairs takes the values k/n: at the minimum of 3 pairs that is 0, ⅓, ⅔, 1, so a per-cell DA is read on its lattice and the figures draw the pooled ratio over tasks (`scale_convergence.py`) or the mean over cells (`by_L.py`), never one cell. The ringed cells (DA-goal multi-axis 0.67, DA-goal mono-axis 0.67) are the ones the `above_66_*` filters would keep (cut 0.66).
-- 0.5 is a coin flip on every untied pair; since a one-sided tie is a miss, an uninformative proxy sits below it, at 0.5 × (1 − the share of pairs one side ties): ≈ 0.47 on the ladder (6 % one-sided ties, `agreement_da_size_per_cell_multi_axes.csv`). The seed null of `seed_uncertainty.py` is a different baseline (two seeds of one design, read in its own section).
+- 0.5 is a coin flip on every untied pair; since a one-sided tie is a miss, an uninformative proxy sits below it, at 0.5 × (1 − the share of pairs one side ties): ≈ 0.47 on the ladder (7% one-sided ties over the benchmark cells that pass the gate, `agreement_da_size_per_cell_multi_axes.csv`). The seed null of `seed_uncertainty.py` is a different baseline (two seeds of one design, read in its own section).
 - DA-goal at the final checkpoint is DA-size, and at the reference size DA-ckpt is DA-goal: the early-and-small grid's last column and last row are the other two figures' numbers.
-- `by transformation` is the mono-axis set split by the axis a pair moves; each group needs its own three pairs. On the ladder a (task, size) cell holds 0–4 pairs for the temperature axis, 0–12 for the data scheme, 0–10 for depth and 0–39 for the language count, so the temperature and depth groups often fall below the minimum and are NaN (`early_small_da_*_by_transformation_*`, `scale_convergence_da_size_transformation_panels*`).
+- `by transformation` is the mono-axis set split by the axis a pair moves; each group needs its own three pairs. On the ladder a (task, size) cell at the final checkpoint holds 3–12 for data scheme (A vs B vs C), 3–10 for depth (deep vs shallow), 3–39 for language count, 3–4 for temperature (T=1 vs T=3) (`da_all_by_transformation_per_task_mono_axis.csv`), so the smaller groups often fall below the minimum and are NaN (`early_small_da_*_by_transformation_*`, `scale_convergence_da_size_transformation_panels*`).
 
 Follow-ups:
 
@@ -1701,3 +1701,62 @@ built on them are in the surrogates write-up's extensions.
 - `pretraining/predictivity/README.md` — removed 2026-09-23: its write-up of
   rq00–rq02 was folded into the three RQ READMEs (README rule 1: no README
   under a pool folder).
+
+<!-- BEGIN auto:crossfit-reliable (crossfit_reliable.py --pool predictivity) -->
+### The reliable tasks chosen out of sample
+
+`above_66_either` decided on one half of the pairs and read on the other (20 random splits stratified by the design axes a pair moves, both directions; the value is the mean over the 40 readings, the band its 5-95 % range). `in-sample` is the same code with the verdict and the figure on every pair, i.e. the committed figures' numbers; `in-sample (half)` decides and reads on the same half, so it differs from the cross-fitted reading by the selection alone (the figures draw it dashed). Regenerate with `python analysis/rq02_decision_accuracy/crossfit_reliable.py --pool predictivity`.
+
+![rq2 cross-fitted](pretraining/predictivity/rq2_da_all_above_66_either_crossfit_transformation_mono_axis.png)
+
+DA-size over every mono-axis pair, mean over the reliable tasks (mean number of tasks):
+
+| reading | 90M | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|
+| in-sample | 0.579 (90) | 0.604 (716) | 0.590 (411) | 0.639 (113) | 0.641 (743) |
+| in-sample (half) | 0.574 (92) | 0.590 (628) | 0.584 (357) | 0.618 (121) | 0.612 (658) |
+| cross-fitted | 0.564 (77) | 0.579 (562) | 0.573 (339) | 0.591 (101) | 0.593 (587) |
+
+![DA-size, reliable twin](pretraining/predictivity/scale_convergence_da_size_above_66_either_crossfit_multi_axes_paper.png)
+
+Pooled DA-size over the multi-axis pairs, benchmarks (tasks):
+
+| reading | 90M | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|
+| every task | 0.543 (298) | 0.580 (1154) | 0.564 (915) | 0.553 (413) | 0.587 (1267) |
+| in-sample | 0.644 (112) | 0.630 (815) | 0.645 (569) | 0.688 (148) | 0.643 (854) |
+| in-sample (half) | 0.644 (106) | 0.631 (750) | 0.643 (472) | 0.685 (138) | 0.643 (785) |
+| cross-fitted | 0.642 (95) | 0.629 (689) | 0.640 (457) | 0.678 (122) | 0.639 (719) |
+<!-- END auto:crossfit-reliable -->
+
+DA-size (filter `above_66_either` chosen on the other half of the pairs, mono-axis pairs for the rq2 figure and multi-axis for the twin, gate `predictivity`). GitHub: [rq2 cross-fitted PNG](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_crossfit_transformation_mono_axis.png) · [CSV](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_crossfit_transformation_mono_axis.csv) · [twin PNG](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_above_66_either_crossfit_multi_axes_paper.png) · [CSV](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_above_66_either_crossfit_multi_axes_paper.csv)
+
+Key findings:
+
+- **A small part of the rq2 lift is the cut.** On the mono-axis pairs, the reliable tasks chosen out of sample read 0.56–0.59, against 0.57–0.62 when chosen and read on the same half; the selection effect is 0.01–0.03, largest at 600M and 1B. The rest of the gap to the committed in-sample line (0.58–0.64) comes from reading half the pairs.
+- **The multi-axis lift survives.** On the multi-axis twin, cross-fitted and same-half in-sample differ by at most 0.01 (0.63–0.68), both well above the 0.54–0.59 of every task.
+- **The cut keeps fewer tasks out of sample.** 83–95 % of the same-half in-sample count, because a verdict read on the other half is noisier.
+
+Follow-ups:
+
+- **Cross-fitting over families.** Splitting the families instead of the pairs is cleaner but leaves too few pairs per half today (30 families, 75 mono-axis pairs); worth it once more cells land.
+
+### The rq02 paper figures on one task set per line
+
+The lines above average, at each size, the tasks that pass the gate (and the reliable-task cut) there, so a line can move because its tasks changed (rule 13). `fixed_tasks.py` redraws the two rq02 paper figures on `utils.fixed_population`'s tasks: per line, the tasks with a value at every point, solid, with the committed line dashed behind it.
+
+![rq2 on one task set per line](pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis_fixed_tasks_paper.png)
+
+![DA-size on one task set per line](pretraining/predictivity/scale_convergence_da_size_multi_axes_fixed_tasks_paper.png)
+
+DA-size (rq2: filter `above_66_either`, mono-axis pairs; twin: no filter, multi-axis pairs; gate `predictivity`). GitHub: [rq2 PNG](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis_fixed_tasks_paper.png) · [CSV](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis_fixed_tasks_paper.csv) · [twin PNG](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_multi_axes_fixed_tasks_paper.png) · [CSV](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_multi_axes_fixed_tasks_paper.csv)
+
+Key findings:
+
+- **On one task set, the rq2 lines rise more steadily.** Over every mono-axis pair, the 90 reliable tasks the line has at every size read 0.58 → 0.68 from 90M to 1B, against 0.58 → 0.64 on 90–743 tasks per size; the 350M dip is the population, not the size.
+- **The per-axis lines rest on few tasks.** Fixed, they keep 18 (data scheme) to 57 (depth) tasks, so their wiggles are within task-sampling noise.
+- **The unfiltered benchmark line becomes smooth.** The 296 tasks it has at every size read 0.544, 0.552, 0.551, 0.565, 0.587; the 175M bump of the committed line (0.580) is the bBPB twins that exist only at 175M, 350M and 1B. BPB does not move (the same 50 tasks at every size).
+
+Follow-ups:
+
+- **A fixed population per panel of the full figures.** The `by_L` and per-axis figures have the same moving task sets.

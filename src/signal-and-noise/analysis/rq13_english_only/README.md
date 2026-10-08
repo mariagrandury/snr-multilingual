@@ -145,6 +145,24 @@ Follow-ups:
 - Next: whether higher scores also mean clearing chance sooner,
   [Above random](#above-random).
 
+### The scores on one task set per line
+
+The gap lines average, at each size, the English tasks above chance there (26–33 per size), so they can move because the tasks changed (rule 13). The twin keeps, per line, the (task, L) comparisons with a value at every size (solid), the committed line dashed behind; panel (c)'s shares are over the same comparisons, so they get it too.
+
+![English scores on one task set per line](pretraining/predictivity/english_only_scores_fixed_tasks_paper.png)
+
+Pool `predictivity`, seed 1904, finals, accuracy-scored English tasks above chance. GitHub: [PNG](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_scores_fixed_tasks_paper.png) · [CSV](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_scores_fixed_tasks_paper.csv)
+
+Key findings:
+
+- **The negative L1 gap at 90M is a population effect.** On the 23 tasks every size has, deep L1 leads every other language setting by 2.5 points at 90M, against −7.3 on the 31 tasks above chance there; shallow L1 goes from −4.2 to +1.3.
+- **On one task set L1 is ahead at every size.** The deep gap reads 2.5, 2.7, 1.7, 1.1, 1.5 points at 90M, 175M, 600M, 1B and 1.7B (no 350M point); elsewhere the two readings differ by about one point at most.
+- **The share of tasks L1 leads rises at 90M.** It goes from 0.56 to 0.76 for deep (+0.15 for shallow).
+
+Follow-ups:
+
+- **The other rq13 figures on fixed tasks.** The gate and DA figures read the same moving English populations.
+
 ## Above random
 
 Higher scores should show up as English benchmarks clearing chance from a

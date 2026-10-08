@@ -339,6 +339,24 @@ reliable at each proxy, the quantity the safe rank summarises.
 
 GitHub: [recipe_da_size_profiles_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_profiles_multi_axes.png) · [recipe_da_size_profiles_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_profiles_multi_axes.csv)
 
+## The key figure on one task set per line
+
+A line averages, at each proxy size, the tasks that pass the gate there, so it can move because its tasks changed (rule 13). The twin keeps, per line, the tasks with a value at every size (solid), the committed line dashed behind.
+
+![Mean DA-size per variant, one task set per line](pretraining/predictivity/recipe_da_size_variants_multi_axes_fixed_tasks_paper.png)
+
+DA-size against 1.7B, multi-axis pairs, gate `predictivity`, no reliability filter. GitHub: [PNG](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_variants_multi_axes_fixed_tasks_paper.png) · [CSV](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_variants_multi_axes_fixed_tasks_paper.csv)
+
+Key findings:
+
+- **The pooled line loses its zigzag.** On the 296 tasks it has at every size it reads 0.52, 0.55, 0.54, 0.56, 0.59; the committed 0.57 at 175M is the bBPB variants entering at 175M and 1B only.
+- **Original accuracy rises a little more on one task set.** Its 152 tasks read 0.55 → 0.62 from 90M to 1B, against 0.55 → 0.59 on 153–237 tasks; the tasks that join at larger sizes rank worse.
+- **The verdict does not change.** No line reaches τ = 0.75 on either task set, and the bBPB lines (the same tasks at 175M and 1B) do not move.
+
+Follow-ups:
+
+- **The recommendation table on fixed tasks.** The per-benchmark pick reads the same moving populations.
+
 ## Files
 
 - `pretraining/<pool>/recipe_da_all_per_task{_multi_axes,_mono_axis}.csv` —

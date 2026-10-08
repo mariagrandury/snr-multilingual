@@ -22,3 +22,19 @@
 \caption{Scale convergence, overall.}
 \label{fig:app_rq02_decision_accuracy}
 \end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.9\textheight,keepaspectratio]{figures/app_rq2_crossfit.png}
+% source: src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_crossfit_transformation_mono_axis.png
+\caption{Figure~\ref{fig:rq2} with the reliable tasks chosen out of sample. The verdict (DA above 0.66 on the size or the checkpoint axis) is decided on one half of the design pairs and the panels are read on the other half, over 20 random splits stratified by the axes a pair moves, in both directions (solid, with the 5--95\% range over splits). The dashed lines choose and read the tasks on the same half, so the gap between the two is the selection effect alone. Out of sample, DA-size over every single-axis pair changes by up to $-$0.03 (at 600M). Lines with too few pairs per half are not drawn.}
+\label{fig:app_rq2_crossfit}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.9\textheight,keepaspectratio]{figures/app_decision_accuracy_crossfit.png}
+% source: src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_above_66_either_crossfit_multi_axes_paper.png
+\caption{Figure~\ref{fig:app_rq02_decision_accuracy} with the reliable benchmark tasks, chosen out of sample and in sample on the same half of the pairs (the same splits). The two readings differ by at most 0.01 on the multi-axis pairs.}
+\label{fig:app_decision_accuracy_crossfit}
+\end{figure}

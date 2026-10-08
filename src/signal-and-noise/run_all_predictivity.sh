@@ -68,6 +68,8 @@ stage_of() { $PY -c "import sys,json; print(json.load(open('../../configs/models
 # Reusing it lets a whole run finish on last night's numbers while every log
 # line claims success.
 LADDER_CSV=$($PY -c "from snr.download.ladder import ladder_dir; print(ladder_dir() / 'ladder_report.csv')")
+# an empty path would make every cached table look fresh ([ ! "" -nt f ] is true)
+[ -f "$LADDER_CSV" ] || { echo "no ladder report at '$LADDER_CSV': stopping before any cached table is trusted" >&2; exit 1; }
 BENCH_BPB_CSV=analysis/rq08_subset_selection/bench_bpb.csv
 # FORCE=1 recomputes the cached tables even when neither input is newer — after
 # a change to the kernel, the gate or the loader, which the mtime cannot see.
@@ -144,8 +146,6 @@ run $PY analysis/rq02_decision_accuracy/reliable_tasks.py --pool predictivity
 run $PY analysis/rq00_gate_and_curves/above_random_example.py --pool predictivity --task include_v2_og_hungarian_hungary
 # the twins' effect on the gate (McNemar) and on every headline reading with / without them
 run $PY analysis/rq00_task_reformulation/reformulations_gate.py --pool predictivity
-# the toy explainer of the three DA kinds, the pair sets and the value lattice (no measured number; README block)
-run $PY analysis/rq02_decision_accuracy/da_explainer.py --pool predictivity
 # per language count: pairs of design variants sharing the L (the grid seed of predictivity_seeds); rq04's panels read it
 run $PY analysis/rq02_decision_accuracy/by_L.py --pool predictivity
 # per design axis: the mono-axis pairs split by the one axis they move, one panel per axis (DA-ckpt and DA-goal)
@@ -174,6 +174,9 @@ run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity
 run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity --by L --langs L8 --common-tasks
 run $PY analysis/rq02_decision_accuracy/by_language.py --pool predictivity
 run $PY analysis/rq02_decision_accuracy/agreement.py --pool predictivity
+# the toy explainer of the three DA kinds, the pair sets and the value lattice (README block); it quotes
+# agreement.py's tie share and by_L's per-axis pair counts, so it follows both
+run $PY analysis/rq02_decision_accuracy/da_explainer.py --pool predictivity
 # rq01's scaling statistics against rq02's ranking statistics, per task
 run $PY analysis/rq02_decision_accuracy/scaling_vs_ranking.py --pool predictivity
 # DA one rung above the ladder: the public model lines at 1B-1.7B against their 12-14B siblings (external gate)
@@ -183,6 +186,14 @@ run $PY analysis/rq02_decision_accuracy/seed_uncertainty.py --pool predictivity
 run $PY analysis/rq02_decision_accuracy/language_tier.py --pool predictivity
 # the three definitions on multi-axis against mono-axis pairs, same cells (exploratory)
 run $PY analysis/rq02_decision_accuracy/pair_axes.py --pool predictivity
+# the reliable tasks chosen out of sample (rq2 and the scale-convergence twin), and the rq02 paper
+# figures on one task set per line (rule 13); both rebuild the score cube, so they need no table above
+run $PY analysis/rq02_decision_accuracy/crossfit_reliable.py --pool predictivity
+run $PY analysis/rq02_decision_accuracy/fixed_tasks.py --pool predictivity
+# DA-size against its own no-signal null (proxy scores shuffled per cell), and on the pairs whose 1.7B
+# gap exceeds seed noise (the seed sd is rq05's, read from predictivity_seeds as a function)
+run $PY analysis/rq02_permutation_null/permutation_null.py --pool predictivity
+run $PY analysis/rq02_decisive_pairs/decisive_pairs.py --pool predictivity
 
 pass "rq03 — noise and the SNR variants"
 # The 22 SNR variants per pool (they read rq02's DA), cached like the DA tables.
@@ -270,6 +281,9 @@ pass "the above-chance items"
 # Reads the per-item store and the gate's mask (nothing without the store); DA-ckpt and the checkpoint SNR
 # are computed where the store holds checkpoints and skipped (said so) on a finals-only store
 run $PY analysis/rq12_above_chance_items/above_chance_items.py --pool predictivity --store-pool predictivity
+# rq14: the items chosen from the proxies alone (discrimination at 600M-1B on half the families), DA-size
+# read on the other half against the full-task 1.7B ranking (nothing without the store)
+run $PY analysis/rq14_proxy_item_selection/proxy_item_selection.py --pool predictivity --store-pool predictivity
 
 pass "rq09 — benchmark design"
 for t in "${DOC_POOLS[@]}"; do

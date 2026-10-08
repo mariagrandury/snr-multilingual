@@ -65,9 +65,15 @@ def gate_panels(out_dir: Path) -> None:
     long["margin"] = long["score"] - long["random_baseline"]
     mask = pd.read_csv(out_dir / "above_random_mask.csv").melt(id_vars=["task"], value_vars=sizes, var_name="size", value_name="above")
     long = long.merge(mask, on=["task", "size"], how="left")
+    # rule 2: a cell no run of the size trains is gated on untrained runs (a transfer reading)
+    pop = pd.read_csv(out_dir / "above_random_share.csv").melt(
+        id_vars=["task"], value_vars=[f"{s}__population" for s in sizes], var_name="size", value_name="population")
+    pop["size"] = pop["size"].str.removesuffix("__population")
+    long = long.merge(pop, on=["task", "size"], how="left")
+    long = long[long["population"] == "trained"].drop(columns="population")
     gate = (f"the gate keeps a cell when at least {MIN_SHARE:.0%} of the size's runs are confidently above chance "
             f"(one-sided {1 - ALPHA / 2:.0%} Wilson lower bound over the task's items > chance)")
-    note = ("cell = mean final-checkpoint score of the size's models that trained the language (every model of the size where none did), minus chance (1 / number of "
+    note = ("cell = mean final-checkpoint score of the size's models that trained the language (cells no model of the size trains are left out, rule 2), minus chance (1 / number of "
             f"options); {gate}")
     kw = dict(value="margin", vmin=-0.1, vmax=0.3, center=0.0, cmap=S.DIV, fmt="{:+.2f}", note=note,
               cbar="score − chance (neutral colour = chance)")
@@ -94,9 +100,8 @@ def paper_figures(out_dir: Path) -> None:
     level map with languages down the side in the scheme-A resource order
     (English first) and benchmarks across it from the most to the fewest
     languages above the gate at some size, and the same map condensed to one
-    bar per benchmark. Both cover the trained languages of the L50 list alone
-    (rule 2; the map on disk also carries the transfer-only languages) and
-    carry no header."""
+    bar per benchmark. Both cover the trained languages of the L50 list (rule 2;
+    the map on disk is cut to trained cells too) and carry no header."""
     t = pd.read_csv(out_dir / "first_size_above_random.csv")
     sizes = [b for b in bucket_order() if b in pd.read_csv(out_dir / "above_random_mask.csv", nrows=0).columns]
     level = t.pivot(index="family", columns="language", values="level_index")

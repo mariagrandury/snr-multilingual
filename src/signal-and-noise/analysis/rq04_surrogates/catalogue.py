@@ -24,8 +24,9 @@ Truths, one long row per (task, proxy, fraction, kind, metric, pair set, L),
 gated (rule 1: DA-size / DA-goal at the proxy and the reference, DA-ckpt at
 the proxy, `reliable_tasks.GATE_REF`) and at >= MIN_PAIRS pairs (rule 5):
 
-  kind    size (proxy final vs reference final), goal (proxy at 10-90 % vs
-          reference final), ckpt (proxy at 10-90 % vs its own final)
+  kind    size (proxy final vs reference final), goal (proxy at 10-100 % vs
+          reference final: its 100 % cell is DA-size, kept so the early-and-small
+          grid is whole, as rq02 writes it), ckpt (proxy at 10-90 % vs its own final)
   metric  da: rq02's own table (`reliable_tasks.long_da`), both pair sets;
           tau_b, rho: `utils.agreement_measures` on rq02's checkpoint choice
           (`compute_da._scores_at`), every pair (multi-axis) only — Spearman is
@@ -510,7 +511,7 @@ def _agreement_task(t: str) -> list[dict]:
         own, own_rt = _scores_at(dft, b, 1.0), _scores_at(dft, b, RETEST_FRAC)
         for f in FRACS:
             got = _scores_at(dft, b, f)
-            refs = [("size" if f == 1.0 else "goal", ref, ref_rt)]
+            refs = [("goal", ref, ref_rt)] + ([("size", ref, ref_rt)] if f == 1.0 else [])
             if f < 1.0:
                 refs.append(("ckpt", own, own_rt if f < RETEST_FRAC else {}))
             for kind, y, y_rt in refs:
@@ -536,7 +537,7 @@ def _by_L_job(job: tuple) -> pd.DataFrame:
         return d
     return pd.concat([
         d[d["frac"] == 1.0].assign(kind="size", value=d["da_ref"], n_pairs=d["n_pairs_ref"]),
-        d[d["frac"] < 1.0].assign(kind="goal", value=d["da_ref"], n_pairs=d["n_pairs_ref"]),
+        d.assign(kind="goal", value=d["da_ref"], n_pairs=d["n_pairs_ref"]),
         d[d["frac"] < 1.0].assign(kind="ckpt", value=d["da_own"], n_pairs=d["n_pairs_own"])])[
         ["task", "proxy_size", "frac", "kind", "value", "n_pairs"]].assign(metric="da", axes=axes, L=str(L))
 
