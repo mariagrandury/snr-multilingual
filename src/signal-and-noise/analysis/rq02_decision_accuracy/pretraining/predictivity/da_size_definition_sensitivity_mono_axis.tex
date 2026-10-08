@@ -1,0 +1,32 @@
+\begin{tabular}{lrrrrrr}
+\toprule
+Definition & Pairs kept & 90M & 175M & 350M & 600M & 1B \\
+\midrule
+\multicolumn{7}{l}{\textit{Benchmark accuracy}} \\
+Current rule (a pair tied on one side misses) & 100\% & 0.50 & 0.52 & 0.50 & 0.52 & 0.53 \\
+A tied pair counts one half & 100\% & 0.52 & 0.55 & 0.53 & 0.55 & 0.56 \\
+Pairs the reference ties dropped & 96\% & 0.51 & 0.53 & 0.51 & 0.53 & 0.54 \\
+Reference gap $>$ 1 reference checkpoint SD & 70\% & 0.52 & 0.53 & 0.52 & 0.55 & 0.55 \\
+Reference gap $>$ 2 reference checkpoint SD & 43\% & 0.52 & 0.55 & 0.54 & 0.58 & 0.58 \\
+Reference gap $>$ 1 seed SD of a difference & 47\% & 0.52 & 0.55 & 0.53 & 0.57 & 0.58 \\
+Reference gap $>$ 2 seed SD of a difference & 18\% & 0.57 & 0.60 & 0.58 & 0.61 & 0.59 \\
+\midrule
+\multicolumn{7}{l}{\textit{Benchmark accuracy and bBPB twins}} \\
+Current rule (a pair tied on one side misses) & 100\% & 0.59 & 0.56 & 0.57 & 0.56 & 0.57 \\
+A tied pair counts one half & 100\% & 0.60 & 0.57 & 0.58 & 0.57 & 0.59 \\
+Pairs the reference ties dropped & 99\% & 0.60 & 0.56 & 0.58 & 0.56 & 0.58 \\
+Reference gap $>$ 1 reference checkpoint SD & 71\% & 0.62 & 0.58 & 0.60 & 0.58 & 0.60 \\
+Reference gap $>$ 2 reference checkpoint SD & 46\% & 0.64 & 0.59 & 0.62 & 0.60 & 0.61 \\
+Reference gap $>$ 1 seed SD of a difference & 45\% & 0.64 & 0.59 & 0.62 & 0.60 & 0.61 \\
+Reference gap $>$ 2 seed SD of a difference & 18\% & 0.67 & 0.62 & 0.66 & 0.65 & 0.65 \\
+\midrule
+\multicolumn{7}{l}{\textit{Per-language BPB}} \\
+Current rule (a pair tied on one side misses) & 100\% & 0.94 & 0.94 & 0.88 & 0.60 & 0.89 \\
+A tied pair counts one half & 100\% & 0.94 & 0.94 & 0.88 & 0.60 & 0.89 \\
+Pairs the reference ties dropped & 100\% & 0.94 & 0.94 & 0.88 & 0.60 & 0.89 \\
+Reference gap $>$ 1 reference checkpoint SD & 81\% & 0.98 & 0.99 & 0.92 & 0.60 & 0.95 \\
+Reference gap $>$ 2 reference checkpoint SD & 54\% & 1.00 & 1.00 & 0.98 & 0.82 & 1.00 \\
+Reference gap $>$ 1 seed SD of a difference & 61\% & 0.98 & 0.99 & 0.96 & 0.77 & 0.96 \\
+Reference gap $>$ 2 seed SD of a difference & 36\% & 1.00 & 1.00 & 0.99 & 0.98 & 1.00 \\
+\bottomrule
+\end{tabular}

@@ -612,7 +612,7 @@ with by_L's `_summary`, which reproduces the paper figure's CSV to 1e-12.
 **Key findings**
 
 - **Accuracy alone does improve with the proxy's size.** DA-size over all
-  pairs goes from 0.57 at 90M to 0.70 at 1B, over 78–111 tasks (the gate
+  pairs goes from 0.57 at 90M to 0.69 at 1B, over 78–111 tasks (the gate
   keeps more tasks at larger sizes, so the population moves along the line).
 - **The bBPB twins stay flat.** They read 0.60–0.65 over the same 612 tasks at
   every size: the paper figure's flat line is mostly theirs.
@@ -1371,6 +1371,34 @@ What the replicate seeds say about decision accuracy — English at three proxy 
 
 GitHub: [seed_uncertainty_da_all_seed_null.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/seed_uncertainty_da_all_seed_null.png) · [seed_uncertainty_da_all_seed_null.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/seed_uncertainty_da_all_seed_null.csv)
 
+#### The paper version
+
+**Same three views, same population (proxy-seed DA-size and test-retest on
+the replicated deep cells, English at 175M, 600M and 1B and Russian at 1B;
+DA-ckpt seed null against the multi-axis pairs) · no filter · pool
+`predictivity_seeds` · gate `predictivity`.** Drawn bare for the paper
+(rule 18, `style.save_paper`): no title, capitalized axis labels, legends
+"English" / "Russian" and "<size> seed null" / "<size> design pairs".
+
+![Seed uncertainty, paper](pretraining/predictivity/seed_uncertainty_da_all_seed_null_paper.png)
+
+**Key findings**
+
+- **The seed-replicate level is the middle panel.** Two seeds of the same
+  designs agree with each other at 0.60–0.67 (175M), 0.61–0.62 (600M) and
+  0.53–0.60 (1B) on English, so a proxy's 0.55–0.64 against the 1.7B final
+  is already at the level a redrawn run reaches.
+- **The numbers are the ones of the figure above.** The paper CSV is the same
+  long table (`seed_uncertainty_da_all_seed_null_paper.csv`).
+
+**Follow-ups**
+
+- If the paper draws the test-retest band as a reference level on another
+  figure, its population (cross-L deep designs, English) has to be stated
+  in that caption, as it is not the pooled line's.
+
+GitHub: [seed_uncertainty_da_all_seed_null_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/seed_uncertainty_da_all_seed_null_paper.png) · [seed_uncertainty_da_all_seed_null_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/seed_uncertainty_da_all_seed_null_paper.csv)
+
 ### 8. Decision accuracy is Kendall's τ under another tie convention
 
 **DA-size's population · no filter · multi-axis pairs · pairs from
@@ -1427,6 +1455,168 @@ GitHub: [agreement_da_size_correlation_multi_axes.png](https://github.com/mariag
 GitHub: [agreement_da_size_identity_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_da_size_identity_multi_axes.png) · [agreement_da_size_identity_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_da_size_identity_multi_axes.csv) ·
 GitHub: [agreement_da_size_cut_sensitivity_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_da_size_cut_sensitivity_multi_axes.png) · [agreement_da_size_cut_sensitivity_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_da_size_cut_sensitivity_multi_axes.csv) ·
 [agreement_da_size_per_cell_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_da_size_per_cell_multi_axes.csv)
+
+#### DA-size under other definitions (paper appendix table)
+
+**DA-size · no reliability filter · multi-axis and mono-axis pairs of
+`predictivity` (grid-seed finals, every build) · gate `predictivity` at the
+proxy and at 1.7B · ≥ 3 comparable and ≥ 3 kept pairs per cell (rule 5) ·
+task means per population: benchmark accuracy, the bBPB twins, both, and
+per-language BPB.** The tie convention above moves verdicts at the margin;
+this table asks how far it, and a filter on the pairs the reference can
+separate, move the DA level itself. The pair filters keep the pairs whose
+1.7B gap exceeds K × the task's reference checkpoint noise (rule 4,
+`utils.checkpoint_noise`, mean over the 1.7B runs), or K × √2 × its seed sd as in
+[decisive pairs](../rq02_decisive_pairs/README.md), K ∈ {1, 2}. Each variant
+reads its own cells (`own`, the table the `.tex` prints) and, beside it, the
+cells every variant defines (`common`); the populations differ across rows of
+`own` (rule 13), since a filter that keeps fewer than three pairs empties a cell.
+
+<!-- BEGIN auto:da-definition-sensitivity (agreement.py --pool predictivity) -->
+## DA-size under other definitions
+
+Task-mean DA-size (proxy final against the 1.7B final, grid-seed variants) over the cells above chance at the proxy and at 1.7B (rule 1) with ≥ 3 comparable and ≥ 3 kept pairs (rule 5), per definition. Checkpoint SD = the reference's checkpoint noise (rule 4: residual SD around a line through the 80–100 % window, mean over the 1.7B runs); seed SD of a difference = √2 × rq05's seed sd (the threshold of rq02_decisive_pairs). Each cell: DA (tasks); pairs kept = share of the comparable pairs, pooled over the proxy sizes. `own` = each variant's own cells; `common` = the cells every variant defines. Regenerate with `python analysis/rq02_decision_accuracy/agreement.py --pool predictivity`.
+
+**multi-axis, own cells** (`da_size_definition_sensitivity_multi_axes.csv`)
+
+| population | definition | pairs kept | 90M | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|---|---|
+| Benchmark accuracy | current | 100% | 0.514 (302) | 0.535 (342) | 0.528 (377) | 0.542 (429) | 0.568 (470) |
+| Benchmark accuracy | ties_half | 100% | 0.542 (302) | 0.562 (342) | 0.557 (377) | 0.572 (429) | 0.598 (470) |
+| Benchmark accuracy | ref_ties_dropped | 96% | 0.526 (302) | 0.546 (342) | 0.537 (377) | 0.554 (429) | 0.580 (470) |
+| Benchmark accuracy | ckpt_noise_1x | 72% | 0.544 (299) | 0.563 (339) | 0.550 (373) | 0.573 (425) | 0.601 (464) |
+| Benchmark accuracy | ckpt_noise_2x | 47% | 0.557 (282) | 0.572 (322) | 0.572 (354) | 0.605 (401) | 0.631 (438) |
+| Benchmark accuracy | seed_sd_1x | 51% | 0.555 (278) | 0.569 (316) | 0.569 (345) | 0.601 (394) | 0.632 (432) |
+| Benchmark accuracy | seed_sd_2x | 22% | 0.611 (216) | 0.612 (240) | 0.631 (260) | 0.646 (291) | 0.690 (329) |
+| Benchmark accuracy and bBPB twins | current | 100% | 0.627 (1118) | 0.600 (1158) | 0.608 (1193) | 0.604 (1245) | 0.620 (1286) |
+| Benchmark accuracy and bBPB twins | ties_half | 100% | 0.635 (1118) | 0.608 (1158) | 0.617 (1193) | 0.614 (1245) | 0.631 (1286) |
+| Benchmark accuracy and bBPB twins | ref_ties_dropped | 99% | 0.631 (1118) | 0.603 (1158) | 0.611 (1193) | 0.608 (1245) | 0.624 (1286) |
+| Benchmark accuracy and bBPB twins | ckpt_noise_1x | 73% | 0.664 (1112) | 0.626 (1152) | 0.634 (1186) | 0.633 (1238) | 0.654 (1277) |
+| Benchmark accuracy and bBPB twins | ckpt_noise_2x | 50% | 0.696 (1068) | 0.651 (1108) | 0.666 (1140) | 0.669 (1187) | 0.685 (1224) |
+| Benchmark accuracy and bBPB twins | seed_sd_1x | 49% | 0.698 (1048) | 0.652 (1086) | 0.671 (1115) | 0.671 (1164) | 0.688 (1202) |
+| Benchmark accuracy and bBPB twins | seed_sd_2x | 22% | 0.751 (849) | 0.713 (873) | 0.735 (892) | 0.733 (924) | 0.750 (962) |
+| Per-language BPB | current | 100% | 0.958 (50) | 0.959 (50) | 0.920 (50) | 0.742 (50) | 0.925 (50) |
+| Per-language BPB | ties_half | 100% | 0.958 (50) | 0.959 (50) | 0.920 (50) | 0.742 (50) | 0.925 (50) |
+| Per-language BPB | ref_ties_dropped | 100% | 0.958 (50) | 0.959 (50) | 0.920 (50) | 0.742 (50) | 0.925 (50) |
+| Per-language BPB | ckpt_noise_1x | 86% | 0.986 (50) | 0.989 (50) | 0.952 (50) | 0.763 (50) | 0.959 (50) |
+| Per-language BPB | ckpt_noise_2x | 69% | 0.997 (50) | 0.998 (50) | 0.985 (50) | 0.884 (50) | 0.989 (50) |
+| Per-language BPB | seed_sd_1x | 75% | 0.989 (50) | 0.992 (50) | 0.970 (50) | 0.847 (50) | 0.974 (50) |
+| Per-language BPB | seed_sd_2x | 56% | 0.999 (50) | 0.999 (50) | 0.996 (50) | 0.987 (50) | 0.999 (50) |
+
+**multi-axis, common cells** (`da_size_definition_sensitivity_multi_axes.csv`)
+
+| population | definition | pairs kept | 90M | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|---|---|
+| Benchmark accuracy | current | 100% | 0.535 (214) | 0.548 (238) | 0.538 (259) | 0.560 (289) | 0.590 (326) |
+| Benchmark accuracy | ties_half | 100% | 0.560 (214) | 0.573 (238) | 0.563 (259) | 0.587 (289) | 0.616 (326) |
+| Benchmark accuracy | ref_ties_dropped | 97% | 0.546 (214) | 0.559 (238) | 0.547 (259) | 0.572 (289) | 0.603 (326) |
+| Benchmark accuracy | ckpt_noise_1x | 73% | 0.564 (214) | 0.573 (238) | 0.565 (259) | 0.592 (289) | 0.623 (326) |
+| Benchmark accuracy | ckpt_noise_2x | 49% | 0.580 (214) | 0.589 (238) | 0.586 (259) | 0.612 (289) | 0.649 (326) |
+| Benchmark accuracy | seed_sd_1x | 55% | 0.573 (214) | 0.584 (238) | 0.579 (259) | 0.606 (289) | 0.644 (326) |
+| Benchmark accuracy | seed_sd_2x | 26% | 0.611 (214) | 0.613 (238) | 0.630 (259) | 0.647 (289) | 0.692 (326) |
+| Benchmark accuracy and bBPB twins | current | 100% | 0.640 (842) | 0.624 (866) | 0.625 (886) | 0.623 (917) | 0.640 (954) |
+| Benchmark accuracy and bBPB twins | ties_half | 100% | 0.647 (842) | 0.631 (866) | 0.633 (886) | 0.632 (917) | 0.648 (954) |
+| Benchmark accuracy and bBPB twins | ref_ties_dropped | 99% | 0.643 (842) | 0.627 (866) | 0.628 (886) | 0.627 (917) | 0.644 (954) |
+| Benchmark accuracy and bBPB twins | ckpt_noise_1x | 74% | 0.674 (842) | 0.653 (866) | 0.656 (886) | 0.654 (917) | 0.673 (954) |
+| Benchmark accuracy and bBPB twins | ckpt_noise_2x | 52% | 0.705 (842) | 0.677 (866) | 0.686 (886) | 0.686 (917) | 0.704 (954) |
+| Benchmark accuracy and bBPB twins | seed_sd_1x | 52% | 0.702 (842) | 0.675 (866) | 0.683 (886) | 0.683 (917) | 0.703 (954) |
+| Benchmark accuracy and bBPB twins | seed_sd_2x | 25% | 0.752 (842) | 0.716 (866) | 0.736 (886) | 0.735 (917) | 0.754 (954) |
+| Per-language BPB | current | 100% | 0.958 (50) | 0.959 (50) | 0.920 (50) | 0.742 (50) | 0.925 (50) |
+| Per-language BPB | ties_half | 100% | 0.958 (50) | 0.959 (50) | 0.920 (50) | 0.742 (50) | 0.925 (50) |
+| Per-language BPB | ref_ties_dropped | 100% | 0.958 (50) | 0.959 (50) | 0.920 (50) | 0.742 (50) | 0.925 (50) |
+| Per-language BPB | ckpt_noise_1x | 86% | 0.986 (50) | 0.989 (50) | 0.952 (50) | 0.763 (50) | 0.959 (50) |
+| Per-language BPB | ckpt_noise_2x | 69% | 0.997 (50) | 0.998 (50) | 0.985 (50) | 0.884 (50) | 0.989 (50) |
+| Per-language BPB | seed_sd_1x | 75% | 0.989 (50) | 0.992 (50) | 0.970 (50) | 0.847 (50) | 0.974 (50) |
+| Per-language BPB | seed_sd_2x | 56% | 0.999 (50) | 0.999 (50) | 0.996 (50) | 0.987 (50) | 0.999 (50) |
+
+**mono-axis, own cells** (`da_size_definition_sensitivity_mono_axis.csv`)
+
+| population | definition | pairs kept | 90M | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|---|---|
+| Benchmark accuracy | current | 100% | 0.496 (302) | 0.516 (342) | 0.501 (377) | 0.516 (429) | 0.530 (470) |
+| Benchmark accuracy | ties_half | 100% | 0.524 (302) | 0.545 (342) | 0.531 (377) | 0.548 (429) | 0.561 (470) |
+| Benchmark accuracy | ref_ties_dropped | 96% | 0.508 (301) | 0.529 (341) | 0.511 (376) | 0.529 (428) | 0.541 (469) |
+| Benchmark accuracy | ckpt_noise_1x | 70% | 0.515 (284) | 0.528 (322) | 0.518 (355) | 0.550 (405) | 0.553 (441) |
+| Benchmark accuracy | ckpt_noise_2x | 43% | 0.523 (242) | 0.549 (278) | 0.540 (306) | 0.581 (346) | 0.576 (381) |
+| Benchmark accuracy | seed_sd_1x | 47% | 0.523 (245) | 0.554 (277) | 0.529 (302) | 0.570 (342) | 0.578 (377) |
+| Benchmark accuracy | seed_sd_2x | 18% | 0.571 (143) | 0.595 (160) | 0.582 (171) | 0.605 (198) | 0.593 (222) |
+| Benchmark accuracy and bBPB twins | current | 100% | 0.592 (1118) | 0.558 (1158) | 0.574 (1193) | 0.555 (1245) | 0.575 (1286) |
+| Benchmark accuracy and bBPB twins | ties_half | 100% | 0.600 (1118) | 0.566 (1158) | 0.583 (1193) | 0.566 (1245) | 0.586 (1286) |
+| Benchmark accuracy and bBPB twins | ref_ties_dropped | 99% | 0.596 (1117) | 0.561 (1157) | 0.577 (1192) | 0.560 (1244) | 0.579 (1285) |
+| Benchmark accuracy and bBPB twins | ckpt_noise_1x | 71% | 0.619 (1052) | 0.575 (1090) | 0.597 (1123) | 0.576 (1173) | 0.595 (1209) |
+| Benchmark accuracy and bBPB twins | ckpt_noise_2x | 46% | 0.636 (930) | 0.589 (966) | 0.622 (994) | 0.604 (1034) | 0.613 (1069) |
+| Benchmark accuracy and bBPB twins | seed_sd_1x | 45% | 0.638 (909) | 0.589 (941) | 0.617 (966) | 0.601 (1006) | 0.614 (1041) |
+| Benchmark accuracy and bBPB twins | seed_sd_2x | 18% | 0.670 (544) | 0.624 (561) | 0.658 (569) | 0.653 (599) | 0.648 (623) |
+| Per-language BPB | current | 100% | 0.935 (50) | 0.940 (50) | 0.878 (50) | 0.597 (50) | 0.888 (50) |
+| Per-language BPB | ties_half | 100% | 0.935 (50) | 0.940 (50) | 0.878 (50) | 0.597 (50) | 0.888 (50) |
+| Per-language BPB | ref_ties_dropped | 100% | 0.935 (50) | 0.940 (50) | 0.878 (50) | 0.597 (50) | 0.888 (50) |
+| Per-language BPB | ckpt_noise_1x | 81% | 0.981 (50) | 0.986 (50) | 0.919 (50) | 0.599 (50) | 0.946 (50) |
+| Per-language BPB | ckpt_noise_2x | 54% | 0.996 (45) | 1.000 (45) | 0.981 (45) | 0.816 (45) | 0.996 (45) |
+| Per-language BPB | seed_sd_1x | 61% | 0.982 (48) | 0.987 (48) | 0.958 (48) | 0.767 (48) | 0.965 (48) |
+| Per-language BPB | seed_sd_2x | 36% | 0.999 (32) | 0.999 (32) | 0.993 (32) | 0.979 (32) | 0.999 (32) |
+
+**mono-axis, common cells** (`da_size_definition_sensitivity_mono_axis.csv`)
+
+| population | definition | pairs kept | 90M | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|---|---|
+| Benchmark accuracy | current | 100% | 0.524 (139) | 0.535 (156) | 0.525 (168) | 0.536 (194) | 0.538 (217) |
+| Benchmark accuracy | ties_half | 100% | 0.548 (139) | 0.558 (156) | 0.548 (168) | 0.560 (194) | 0.565 (217) |
+| Benchmark accuracy | ref_ties_dropped | 97% | 0.535 (139) | 0.545 (156) | 0.535 (168) | 0.545 (194) | 0.549 (217) |
+| Benchmark accuracy | ckpt_noise_1x | 72% | 0.546 (139) | 0.552 (156) | 0.547 (168) | 0.567 (194) | 0.563 (217) |
+| Benchmark accuracy | ckpt_noise_2x | 46% | 0.552 (139) | 0.571 (156) | 0.568 (168) | 0.586 (194) | 0.578 (217) |
+| Benchmark accuracy | seed_sd_1x | 56% | 0.549 (139) | 0.567 (156) | 0.556 (168) | 0.579 (194) | 0.572 (217) |
+| Benchmark accuracy | seed_sd_2x | 26% | 0.573 (139) | 0.600 (156) | 0.586 (168) | 0.607 (194) | 0.591 (217) |
+| Benchmark accuracy and bBPB twins | current | 100% | 0.587 (534) | 0.564 (551) | 0.572 (560) | 0.565 (589) | 0.570 (612) |
+| Benchmark accuracy and bBPB twins | ties_half | 100% | 0.593 (534) | 0.571 (551) | 0.579 (560) | 0.573 (589) | 0.579 (612) |
+| Benchmark accuracy and bBPB twins | ref_ties_dropped | 99% | 0.590 (534) | 0.567 (551) | 0.575 (560) | 0.568 (589) | 0.573 (612) |
+| Benchmark accuracy and bBPB twins | ckpt_noise_1x | 73% | 0.613 (534) | 0.583 (551) | 0.595 (560) | 0.588 (589) | 0.590 (612) |
+| Benchmark accuracy and bBPB twins | ckpt_noise_2x | 50% | 0.631 (534) | 0.598 (551) | 0.623 (560) | 0.616 (589) | 0.613 (612) |
+| Benchmark accuracy and bBPB twins | seed_sd_1x | 54% | 0.629 (534) | 0.594 (551) | 0.615 (560) | 0.612 (589) | 0.606 (612) |
+| Benchmark accuracy and bBPB twins | seed_sd_2x | 25% | 0.671 (534) | 0.623 (551) | 0.658 (560) | 0.656 (589) | 0.648 (612) |
+| Per-language BPB | current | 100% | 0.918 (32) | 0.916 (32) | 0.844 (32) | 0.635 (32) | 0.865 (32) |
+| Per-language BPB | ties_half | 100% | 0.918 (32) | 0.916 (32) | 0.844 (32) | 0.635 (32) | 0.865 (32) |
+| Per-language BPB | ref_ties_dropped | 100% | 0.918 (32) | 0.916 (32) | 0.844 (32) | 0.635 (32) | 0.865 (32) |
+| Per-language BPB | ckpt_noise_1x | 79% | 0.987 (32) | 0.987 (32) | 0.904 (32) | 0.648 (32) | 0.944 (32) |
+| Per-language BPB | ckpt_noise_2x | 54% | 0.995 (32) | 1.000 (32) | 0.973 (32) | 0.884 (32) | 0.994 (32) |
+| Per-language BPB | seed_sd_1x | 60% | 0.988 (32) | 0.988 (32) | 0.961 (32) | 0.848 (32) | 0.970 (32) |
+| Per-language BPB | seed_sd_2x | 37% | 0.999 (32) | 0.999 (32) | 0.993 (32) | 0.979 (32) | 0.999 (32) |
+
+Paper tabulars: `pretraining/predictivity/da_size_definition_sensitivity_multi_axes.tex`, `pretraining/predictivity/da_size_definition_sensitivity_mono_axis.tex`.
+<!-- END auto:da-definition-sensitivity -->
+
+**Key findings**
+
+- **No definition lifts accuracy DA far from a coin flip.** On accuracy alone
+  (multi-axis, own cells) the current rule reads 0.51–0.57 from 90M to 1B,
+  ties as one half 0.54–0.60, the reference's ties dropped 0.53–0.58
+  (96 % of the pairs kept), and the strictest filter (gap > 2 seed SD of a
+  difference, 22 % of the pairs) 0.61–0.69.
+- **Ties as one half is exactly (1 + τ_a)/2 and adds +0.03.** It moves the
+  accuracy cells only (the bBPB twins and BPB never tie), so the pooled
+  accuracy and bBPB line moves by +0.01 (0.60–0.63 to 0.61–0.64).
+- **The reference's checkpoint noise is a looser threshold than its seed
+  noise.** One checkpoint SD keeps 72 % of the accuracy pairs and reads
+  0.54–0.60, two keep 47 % and read 0.56–0.63; one seed SD of a difference
+  keeps 51 % and reads 0.55–0.63, close to two checkpoint SDs.
+- **On one task set the ordering holds.** On the cells every variant defines
+  (214–326 accuracy tasks) accuracy DA goes 0.54–0.59 (current), 0.56–0.62
+  (one checkpoint SD), 0.58–0.65 (two) and 0.61–0.69 (two seed SDs).
+- **BPB stays far above every accuracy variant.** Per-language BPB reads
+  0.74–0.96 under the current rule and 0.88–1.00 above two checkpoint SDs
+  (69 % of its pairs), and its 600M dip shrinks from 0.74 to 0.88.
+- **Mono-axis decisions move less.** Accuracy reads 0.50–0.53 (current),
+  0.52–0.56 (ties as one half), 0.52–0.58 (two checkpoint SDs, 43 % of the
+  pairs) and 0.57–0.61 (two seed SDs, 18 %).
+
+**Follow-ups**
+
+- A pooled (matching over pairs) version beside the task means, to set this
+  table against the decisive-pairs figure, which pools.
+- The reliable-task verdict (`above_66_*`) under the checkpoint-noise filter,
+  to see which tasks only fail on pairs the reference cannot separate.
+
+GitHub: [da_size_definition_sensitivity_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_definition_sensitivity_multi_axes.csv) · [da_size_definition_sensitivity_multi_axes.tex](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_definition_sensitivity_multi_axes.tex) ·
+GitHub: [da_size_definition_sensitivity_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_definition_sensitivity_mono_axis.csv) · [da_size_definition_sensitivity_mono_axis.tex](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_definition_sensitivity_mono_axis.tex)
 
 ### 9. Multi-axis against mono-axis pairs
 
@@ -1719,6 +1909,88 @@ every number below is in [`bench_bpb_da_size_summary_multi_axes.csv`](pretrainin
     continuation is a letter.
   - bBPB → acc there is 0.42–0.53, i.e. a coin flip. The `rf_` twins are the
     way to read those items continuously.
+
+<!-- BEGIN auto:bench-bpb-acc-gate (bench_bpb_da.py --pool predictivity) -->
+## bBPB where accuracy is at chance
+
+The same task × size DAs (multi-axis pairs of `predictivity`, finals), split by the ACCURACY gate (rule 1, `predictivity`): mean DA-size of the bBPB twin over the tasks whose accuracy is at chance (or above it) at the proxy, at 1.7B or at every size. bBPB → acc needs the 1.7B accuracy above chance (blank where the population is at chance there); bBPB → bBPB has no chance level and is read on every task; acc → acc is the ungated accuracy DA, for contrast. Cells: mean (tasks). Table: `bench_bpb_da_size_by_acc_gate_multi_axes.csv`.
+
+| group | accuracy gate | proxy | bBPB → 1.7B acc | bBPB → 1.7B bBPB | acc → acc (ungated) | FineWeb2 val BPB |
+|---|---|---|---|---|---|---|
+| all benchmarks | acc above chance at the proxy | 90M | 0.63 (294) | 0.71 (308) | 0.51 | 0.95 |
+| all benchmarks | acc above chance at the proxy | 175M | 0.59 (332) | 0.66 (335) | 0.53 | 0.97 |
+| all benchmarks | acc above chance at the proxy | 350M | 0.59 (367) | 0.68 (373) | 0.52 | 0.98 |
+| all benchmarks | acc above chance at the proxy | 600M | 0.59 (418) | 0.66 (418) | 0.54 | 0.95 |
+| all benchmarks | acc above chance at the proxy | 1B | 0.60 (459) | 0.67 (462) | 0.57 | 0.97 |
+| all benchmarks | acc at chance at the proxy | 90M | 0.57 (207) | 0.64 (508) | 0.46 | 0.95 |
+| all benchmarks | acc at chance at the proxy | 175M | 0.56 (169) | 0.61 (481) | 0.47 | 0.97 |
+| all benchmarks | acc at chance at the proxy | 350M | 0.57 (134) | 0.62 (443) | 0.47 | 0.98 |
+| all benchmarks | acc at chance at the proxy | 600M | 0.57 (83) | 0.61 (398) | 0.48 | 0.95 |
+| all benchmarks | acc at chance at the proxy | 1B | 0.55 (42) | 0.62 (354) | 0.50 | 0.97 |
+| all benchmarks | acc at chance at 1.7B | 90M |  | 0.62 (315) | 0.45 | 0.95 |
+| all benchmarks | acc at chance at 1.7B | 175M |  | 0.60 (315) | 0.47 | 0.97 |
+| all benchmarks | acc at chance at 1.7B | 350M |  | 0.60 (315) | 0.45 | 0.98 |
+| all benchmarks | acc at chance at 1.7B | 600M |  | 0.60 (315) | 0.47 | 0.95 |
+| all benchmarks | acc at chance at 1.7B | 1B |  | 0.61 (315) | 0.49 | 0.97 |
+| all benchmarks | acc at chance at every size | 90M |  | 0.63 (294) | 0.45 | 0.95 |
+| all benchmarks | acc at chance at every size | 175M |  | 0.61 (294) | 0.47 | 0.97 |
+| all benchmarks | acc at chance at every size | 350M |  | 0.60 (294) | 0.46 | 0.98 |
+| all benchmarks | acc at chance at every size | 600M |  | 0.61 (294) | 0.47 | 0.95 |
+| all benchmarks | acc at chance at every size | 1B |  | 0.62 (294) | 0.49 | 0.97 |
+| all cloze | acc above chance at the proxy | 90M | 0.63 (294) | 0.72 (296) | 0.51 | 0.95 |
+| all cloze | acc above chance at the proxy | 175M | 0.59 (332) | 0.66 (334) | 0.53 | 0.97 |
+| all cloze | acc above chance at the proxy | 350M | 0.59 (367) | 0.68 (368) | 0.53 | 0.98 |
+| all cloze | acc above chance at the proxy | 600M | 0.59 (416) | 0.66 (416) | 0.54 | 0.95 |
+| all cloze | acc above chance at the proxy | 1B | 0.60 (458) | 0.67 (460) | 0.57 | 0.97 |
+| all cloze | acc at chance at the proxy | 90M | 0.58 (200) | 0.66 (363) | 0.45 | 0.95 |
+| all cloze | acc at chance at the proxy | 175M | 0.57 (162) | 0.63 (325) | 0.47 | 0.97 |
+| all cloze | acc at chance at the proxy | 350M | 0.57 (127) | 0.65 (291) | 0.47 | 0.98 |
+| all cloze | acc at chance at the proxy | 600M | 0.58 (78) | 0.63 (243) | 0.47 | 0.95 |
+| all cloze | acc at chance at the proxy | 1B | 0.57 (36) | 0.65 (199) | 0.47 | 0.97 |
+| all cloze | acc at chance at 1.7B | 90M |  | 0.64 (165) | 0.44 | 0.95 |
+| all cloze | acc at chance at 1.7B | 175M |  | 0.64 (165) | 0.45 | 0.97 |
+| all cloze | acc at chance at 1.7B | 350M |  | 0.64 (165) | 0.45 | 0.98 |
+| all cloze | acc at chance at 1.7B | 600M |  | 0.62 (165) | 0.45 | 0.95 |
+| all cloze | acc at chance at 1.7B | 1B |  | 0.64 (165) | 0.46 | 0.97 |
+| all cloze | acc at chance at every size | 90M |  | 0.64 (161) | 0.44 | 0.95 |
+| all cloze | acc at chance at every size | 175M |  | 0.64 (161) | 0.45 | 0.97 |
+| all cloze | acc at chance at every size | 350M |  | 0.64 (161) | 0.45 | 0.98 |
+| all cloze | acc at chance at every size | 600M |  | 0.62 (161) | 0.45 | 0.95 |
+| all cloze | acc at chance at every size | 1B |  | 0.64 (161) | 0.46 | 0.97 |
+<!-- END auto:bench-bpb-acc-gate -->
+
+**bBPB where accuracy is at chance: DA-size · no filter · multi-axis pairs
+of `predictivity` (the 406 pairs above) · finals · gate `predictivity` on the
+accuracy side, used here to split the tasks, not to drop them.** Does the
+twin rank near the per-language BPB level (0.74–0.96, FineWeb2 macro
+0.95–0.98) where accuracy is a coin flip?
+
+**Key findings**
+
+- **No: on the accuracy-gated cells bBPB reads 0.55–0.64, not ~0.9.** Where
+  accuracy is at chance at the proxy but above it at 1.7B, bBPB → 1.7B
+  accuracy is 0.57 at 90M (207 tasks) and 0.55 at 1B (42); bBPB → 1.7B bBPB on
+  every proxy-gated task is 0.61–0.64 (354–508 tasks).
+- **Still clearly better than accuracy there.** On the same proxy-gated
+  tasks the ungated accuracy DA is 0.46–0.50, so bBPB → bBPB lifts the cell
+  by +0.13 to +0.19 without reaching the BPB level.
+- **The tasks at chance at every size rank themselves at 0.60–0.63.** On
+  those 294 tasks (161 cloze, 0.62–0.65) bBPB → bBPB is the only reading; the
+  same items' accuracy reads 0.45–0.49.
+- **Accuracy at chance costs bBPB little.** bBPB → acc reads 0.59–0.63 on
+  the tasks above chance at the proxy against 0.55–0.57 below it, and bBPB →
+  bBPB 0.66–0.71 against 0.61–0.64. The recommendation to score by
+  log-likelihood where accuracy is at chance therefore buys a ranking above
+  chance, not a BPB-grade one.
+
+**Follow-ups**
+
+- The same split on DA-ckpt (the twins have every checkpoint), where
+  accuracy is at chance for most of a small run.
+- Per benchmark: which families carry the 0.6 (include_v2_en sits near 0.5
+  on every reading, 0.48 / 0.49 / 0.52 in the per-benchmark table).
+
+GitHub: [bench_bpb_da_size_by_acc_gate_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/bench_bpb_da_size_by_acc_gate_multi_axes.csv)
 
 **Follow-ups**
 

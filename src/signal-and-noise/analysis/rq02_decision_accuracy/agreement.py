@@ -30,6 +30,20 @@ another (DA ≥ 0.66 maps to tau ≥ 0.32 through the identity).
     agreement_da_size_cut_sensitivity_multi_axes.png / .csv   per size, the share of cells whose reliability verdict
                                     depends on the statistic
 
+DA-size under other definitions, on the same finals and gate, multi-axis and
+mono-axis pairs (rule 15): the current rule; a tied pair counting one half
+(= (1 + tau_a) / 2); the pairs the reference ties dropped; and the pairs whose
+reference gap exceeds K x the task's reference checkpoint noise (rule 4,
+`utils.checkpoint_noise` on the 80-100 % window, mean over the 1.7B runs) or
+K x sqrt(2) x its seed sd (rq05's `seed_sd`, rq02_decisive_pairs' threshold),
+K in (1, 2). A cell needs MIN_PAIRS kept pairs (rule 5). Means over tasks,
+per population (accuracy, the bBPB twins, both, per-language BPB), on each
+variant's own cells and on the cells every variant defines (rule 13):
+
+    da_size_definition_sensitivity_<pair set>.csv / .tex   per (variant, population, size): task-mean DA-size,
+                                    tasks, share of the comparable pairs kept; the .tex is the
+                                    booktabs tabular of the paper's appendix (no caption)
+
     python analysis/rq02_decision_accuracy/agreement.py --pool predictivity
 """
 
@@ -56,9 +70,12 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, md_table, replace_block  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.rq02_decision_accuracy.reliable_tasks import FILTERS  # noqa: E402
+from analysis.rq05_design_decisions.analyze import seed_sd  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    GRID_SEED, MIN_PAIRS, TARGET_SIZE, agreement_measures, design_axes, finals, ladder_frame, size_order)
+    AXES_SUFFIX, GRID_SEED, MIN_PAIRS, SMALL_SIZES, TARGET_SIZE, agreement_measures, checkpoint_noise, design_axes,
+    finals, ladder_frame, noise_checkpoints, pair_sets, passes_gate, size_order)
 
 OUT_ROOT = DECISION_ACCURACY
 POOL = "predictivity_seeds"          # every data build at the grid seed, as by_L and scale_convergence pair over
@@ -220,6 +237,144 @@ def figure_cuts(sens: pd.DataFrame, d: pd.DataFrame, path: Path) -> None:
     S.save(fig, path, dpi=150)
 
 
+# DA-size's definition, varied: variant -> the paper table's row label (paper punctuation: no dash, no ';')
+VARIANTS = {"current": "Current rule (a pair tied on one side misses)",
+            "ties_half": "A tied pair counts one half",
+            "ref_ties_dropped": "Pairs the reference ties dropped",
+            "ckpt_noise_1x": "Reference gap $>$ 1 reference checkpoint SD",
+            "ckpt_noise_2x": "Reference gap $>$ 2 reference checkpoint SD",
+            "seed_sd_1x": "Reference gap $>$ 1 seed SD of a difference",
+            "seed_sd_2x": "Reference gap $>$ 2 seed SD of a difference"}
+DEF_POPULATIONS = {"accuracy": "Benchmark accuracy", "accuracy+bbpb": "Benchmark accuracy and bBPB twins",
+                   "bpb": "Per-language BPB"}
+DEF_NAME = "da_size_definition_sensitivity"
+
+
+def ref_ckpt_noise(frame: pd.DataFrame, fams) -> pd.Series:
+    """Per task, the reference's checkpoint noise (rule 4): `checkpoint_noise`
+    (the residual SD around a line through the 80-100 % window) of each 1.7B
+    run of `fams`, mean over the runs."""
+    w = noise_checkpoints(frame[(frame["size"] == TARGET_SIZE) & frame["family"].isin(fams)])
+    per_run = {k: checkpoint_noise(g["frac"], g["primary_score"]) for k, g in w.groupby(["task", "model"])}
+    return pd.Series(per_run, dtype=float).groupby(level=0).mean()
+
+
+def definition_sensitivity(frame: pd.DataFrame, pool: str) -> pd.DataFrame:
+    """Per (axes, variant, population, task set, size): the task-mean DA-size,
+    its task count and the share of the comparable pairs the variant keeps.
+    Rule 1 at the proxy and the reference; a cell needs MIN_PAIRS comparable
+    pairs and MIN_PAIRS kept ones (rule 5). Task set `own` = the cells each
+    variant defines, `common` = the cells every variant defines (rule 13);
+    the share kept is over the `current` cells for `own`."""
+    fin = finals(frame)
+    attrs = design_axes(fin)
+    fams = sorted(attrs.query("seed == @GRID_SEED").index)
+    W = fin[fin["family"].isin(fams)].pivot_table(index="task", columns=["size", "family"], values="primary_score")
+    meta = G.add_meta(pd.DataFrame({"task": W.index}))                 # drops the aggregates (rule 7)
+    meta = meta[meta["family"] != "loss"]
+    W = W.loc[meta["task"]]
+    tasks = W.index
+    pop = np.where(meta["family"] == "bpb", "bpb", np.where(meta["family"].str.startswith("bbpb_"), "bbpb", "accuracy"))
+    noise = ref_ckpt_noise(frame, fams).reindex(tasks).to_numpy()
+    sd = np.sqrt(2) * seed_sd(fin).reindex(tasks).to_numpy()          # the sd of a difference of two runs
+    noise, sd = (np.where(np.isfinite(x) & (x > 0), x, np.nan)[:, None] for x in (noise, sd))
+    print(f"definition sensitivity: {np.isfinite(noise).sum()} of {len(tasks)} tasks with a reference checkpoint "
+          f"noise, {np.isfinite(sd).sum()} with a seed sd")
+    mask = load_mask(pool)
+    ref = W[TARGET_SIZE].reindex(columns=fams).to_numpy()
+    fi = {f: i for i, f in enumerate(fams)}
+    psets = pair_sets(attrs)
+    cells = []
+    for axes in ("multi-axis", "mono-axis"):
+        I, J = (np.array([fi[p[k]] for p in psets[axes]]) for k in (0, 1))
+        dt, gap = np.sign(ref[:, I] - ref[:, J]), np.abs(ref[:, I] - ref[:, J])
+        for size in SMALL_SIZES:
+            prx = W[size].reindex(columns=fams).to_numpy()
+            ds = np.sign(prx[:, I] - prx[:, J])
+            V = np.isfinite(ds) & np.isfinite(dt)
+            agree, tie = V & (ds == dt), V & ((ds == 0) | (dt == 0))    # agree: a both-tied pair too; tie: any tie
+            with np.errstate(invalid="ignore"):
+                keep = {"current": V, "ties_half": V, "ref_ties_dropped": V & (dt != 0),
+                        "ckpt_noise_1x": V & (gap > noise), "ckpt_noise_2x": V & (gap > 2 * noise),
+                        "seed_sd_1x": V & (gap > sd), "seed_sd_2x": V & (gap > 2 * sd)}
+            ok = passes_gate(mask, tasks, size, TARGET_SIZE).to_numpy() & (V.sum(1) >= MIN_PAIRS)   # rules 1, 5
+            for v, k in keep.items():
+                n = k.sum(1)
+                # ties_half: (C + T/2) / n = (1 + tau_a) / 2, a tied pair (on either side or both) counts one half
+                m = (agree & ~tie & k).sum(1) + .5 * (tie & k).sum(1) if v == "ties_half" else (agree & k).sum(1)
+                cells.append(pd.DataFrame({"axes": axes, "variant": v, "size": size, "task": tasks, "population": pop,
+                                           "da": np.where(ok & (n >= MIN_PAIRS), m / np.maximum(n, 1), np.nan),
+                                           "kept": n, "comparable": V.sum(1), "ok": ok}))
+    c = pd.concat(cells, ignore_index=True)
+    c = c[c["ok"]]
+    defined = c.dropna(subset=["da"]).groupby(["axes", "size", "task"])["variant"].nunique()
+    common = set(defined[defined == len(VARIANTS)].index)
+    c["common"] = [k in common for k in zip(c["axes"], c["size"], c["task"])]
+    cur = set(c.loc[(c["variant"] == "current") & c["da"].notna(), ["axes", "size", "task"]].itertuples(index=False, name=None))
+    c["own_share"] = [k in cur for k in zip(c["axes"], c["size"], c["task"])]
+    rows = []
+    groups = {"accuracy": ["accuracy"], "bbpb": ["bbpb"], "accuracy+bbpb": ["accuracy", "bbpb"], "bpb": ["bpb"]}
+    for (axes, v, size), g in c.groupby(["axes", "variant", "size"], sort=False):
+        for p, members in groups.items():
+            g_p = g[g["population"].isin(members)]
+            for task_set, vals, share in (("own", g_p.dropna(subset=["da"]), g_p[g_p["own_share"]]),
+                                          ("common", g_p[g_p["common"]], g_p[g_p["common"]])):
+                rows.append({"axes": axes, "variant": v, "population": p, "task_set": task_set, "size": size,
+                             "da": vals["da"].mean(), "n_tasks": len(vals),
+                             "kept": int(share["kept"].sum()), "comparable": int(share["comparable"].sum())})
+    t = pd.DataFrame(rows)
+    t["share_kept"] = t["kept"] / t["comparable"]
+    return t
+
+
+def definition_tex(t: pd.DataFrame, path: Path) -> None:
+    """The appendix tabular: one block per population, one row per variant,
+    task-mean DA-size per proxy size (each variant's own cells) and the share
+    of the comparable pairs kept, pooled over the proxy sizes. No caption."""
+    t = t[t["task_set"] == "own"]
+    lines = ["\\begin{tabular}{l" + "r" * (len(SMALL_SIZES) + 1) + "}", "\\toprule",
+             " & ".join(["Definition", "Pairs kept", *SMALL_SIZES]) + " \\\\"]
+    for p, head in DEF_POPULATIONS.items():
+        lines += ["\\midrule", f"\\multicolumn{{{len(SMALL_SIZES) + 2}}}{{l}}{{\\textit{{{head}}}}} \\\\"]
+        for v, lab in VARIANTS.items():
+            g = t[(t["population"] == p) & (t["variant"] == v)].set_index("size").reindex(SMALL_SIZES)
+            kept = g["kept"].sum() / g["comparable"].sum() if g["comparable"].sum() else np.nan
+            cells = [f"{x:.2f}" if np.isfinite(x) else "--" for x in g["da"]]
+            lines.append(" & ".join([lab, f"{kept:.0%}".replace("%", "\\%") if np.isfinite(kept) else "--", *cells]) + " \\\\")
+    lines += ["\\bottomrule", "\\end{tabular}", ""]
+    path.write_text("\n".join(lines))
+    print(f"wrote {path}")
+
+
+def generate_definition_readme(pool: str, t: pd.DataFrame) -> None:
+    if pool != CANONICAL_POOL:
+        return
+    stage = load_pools()[pool].get("stage", "pretraining")
+    blocks = [
+        "## DA-size under other definitions",
+        f"Task-mean DA-size (proxy final against the {TARGET_SIZE} final, grid-seed variants) over the cells above chance "
+        f"at the proxy and at {TARGET_SIZE} (rule 1) with ≥ {MIN_PAIRS} comparable and ≥ {MIN_PAIRS} kept pairs (rule 5), "
+        "per definition. Checkpoint SD = the reference's checkpoint noise (rule 4: residual SD around a line through the "
+        f"80–100 % window, mean over the {TARGET_SIZE} runs); seed SD of a difference = √2 × rq05's seed sd (the "
+        "threshold of rq02_decisive_pairs). Each cell: DA (tasks); pairs kept = share of the comparable pairs, pooled over "
+        "the proxy sizes. `own` = each variant's own cells; `common` = the cells every variant defines. Regenerate with "
+        f"`python analysis/rq02_decision_accuracy/agreement.py --pool {pool}`."]
+    for axes in ("multi-axis", "mono-axis"):
+        for task_set in ("own", "common"):
+            rows = []
+            for p, head in DEF_POPULATIONS.items():
+                for v in VARIANTS:
+                    g = t[(t["axes"] == axes) & (t["task_set"] == task_set) & (t["population"] == p)
+                          & (t["variant"] == v)].set_index("size").reindex(SMALL_SIZES)
+                    kept = g["kept"].sum() / g["comparable"].sum() if g["comparable"].sum() else np.nan
+                    rows.append([head, v, f"{kept:.0%}" if np.isfinite(kept) else "",
+                                 *[f"{r.da:.3f} ({int(r.n_tasks)})" if np.isfinite(r.da) else "" for r in g.itertuples()]])
+            blocks += [f"**{axes}, {task_set} cells** (`{DEF_NAME}{AXES_SUFFIX[axes]}.csv`)",
+                       md_table(["population", "definition", "pairs kept", *SMALL_SIZES], rows)]
+    blocks.append(f"Paper tabulars: `{stage}/{pool}/{DEF_NAME}_multi_axes.tex`, `{stage}/{pool}/{DEF_NAME}_mono_axis.tex`.")
+    replace_block(OUT_ROOT / "README.md", "da-definition-sensitivity", "\n\n".join(blocks), f"agreement.py --pool {pool}")
+
+
 def generate_readme(pool: str, out_dir: Path, d: pd.DataFrame, sens: pd.DataFrame) -> None:
     if pool != CANONICAL_POOL:
         return
@@ -252,7 +407,8 @@ if __name__ == "__main__":
     p.add_argument("--pool", default=CANONICAL_POOL, help="the pool whose gate applies and whose folder receives the outputs")
     args = p.parse_args()
     out_dir = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
-    d = per_cell(finals(ladder_frame(POOL)), args.pool)
+    frame = ladder_frame(POOL)
+    d = per_cell(finals(frame), args.pool)
     d.to_csv(out_dir / "agreement_da_size_per_cell_multi_axes.csv", index=False)
     resid = ((2 * d["da"] - 1) - d["tau_a"] - d["gap_pairs"]).abs().max()
     print(f"{len(d)} cells; identity 2·DA − 1 = τ_a + (T_both − T_one)/n to {resid:.1e}; "
@@ -267,3 +423,11 @@ if __name__ == "__main__":
     figure_identity(d, out_dir / "agreement_da_size_identity_multi_axes.png")
     figure_cuts(sens, d, out_dir / "agreement_da_size_cut_sensitivity_multi_axes.png")
     generate_readme(args.pool, out_dir, d, sens)
+    t = definition_sensitivity(frame, args.pool)
+    for axes in ("multi-axis", "mono-axis"):
+        ta = t[t["axes"] == axes]
+        ta.to_csv(out_dir / f"{DEF_NAME}{AXES_SUFFIX[axes]}.csv", index=False)
+        definition_tex(ta, out_dir / f"{DEF_NAME}{AXES_SUFFIX[axes]}.tex")
+    print(t[t["task_set"] == "own"].pivot_table(index=["axes", "population", "variant"], columns="size", values="da",
+                                                sort=False)[SMALL_SIZES].round(3).to_string())
+    generate_definition_readme(args.pool, t)
