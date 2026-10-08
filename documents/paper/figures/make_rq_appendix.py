@@ -1,7 +1,7 @@
 """Write one appendix page per analysis folder from its README.
 
 For every src/signal-and-noise/analysis/rqNN_<name>/ this writes
-documents/paper/sections/app_rqNN_<name>.tex, one page: \\clearpage, then a
+documents/paper/sections/rqs/app_rqNN_<name>.tex, one page: \\clearpage, then a
 full-width block at the top of the page (\\twocolumn[...], so it cannot drift
 to another page as a figure* would): the subsection title (the first page
 also opens their parent section, PARENT), the research question
@@ -33,10 +33,10 @@ the first finding for the main figure, a fixed sentence for the extras.
                  the caption may be a function of the figure's CSV, so its
                  numbers follow each refresh
 
-A FIGURE_PAGES entry writes sections/<stem>.tex, one more figure on a float page
+A FIGURE_PAGES entry writes sections/rqs/<stem>.tex, one more figure on a float page
 of its own, with a caption built from the figure's CSV on every run:
 app_rq02_bbpb, the main-text rq2 figure split into an accuracy and a bBPB row.
-FIXED writes sections/app_fixed_populations.tex, the fixed-task twins (one task
+FIXED writes sections/rqs/app_fixed_populations.tex, the fixed-task twins (one task
 set per line, rule 13) of the paper figures whose task set moves along x, each
 on a float page with a caption read from its CSV. A page whose main figure only
 the cluster run draws (make_rq_figures.PENDING) is skipped until it is drawn.
@@ -58,7 +58,8 @@ import pandas as pd
 
 from make_rq_figures import ANALYSIS, FIGURES, HERE
 
-SECTIONS = HERE.parent / "sections"
+# every page this writes goes to sections/rqs/, the generated part of the paper
+RQS = HERE.parent / "sections" / "rqs"
 # the appendix section the pages are subsections of, opened by the first page
 PARENT = ("Detailed Analyses", "app:analyses")
 # rq12 scores DA against both 1.7B truths once its per-item store run has written the full-truth columns
@@ -1011,7 +1012,7 @@ def rq02_bbpb_caption(d):
         "size. A hollow point is 1.0 by comparing a ranking with itself.")
 
 
-# paper figure stem -> (its caption from its CSV, label): one float page each, sections/<stem>.tex
+# paper figure stem -> (its caption from its CSV, label): one float page each, sections/rqs/<stem>.tex
 FIGURE_PAGES = {"app_rq02_bbpb": (rq02_bbpb_caption, "fig:app_rq02_bbpb")}
 
 
@@ -1108,20 +1109,20 @@ def main():
             print(f"  PENDING app_{folder}: its figure is not drawn yet")
             continue
         tex = page(folder, *PAGES[folder])
-        out = SECTIONS / f"app_{folder}.tex"
+        out = RQS / f"app_{folder}.tex"
         if not out.is_file() or out.read_text() != tex:
             out.write_text(tex)
-        print(f"\\input{{sections/app_{folder}}}")
+        print(f"\\input{{sections/rqs/app_{folder}}}")
     for stem, (caption, label) in FIGURE_PAGES.items():
         tex = float_page(stem, caption, label)
-        out = SECTIONS / f"{stem}.tex"
+        out = RQS / f"{stem}.tex"
         if not out.is_file() or out.read_text() != tex:
             out.write_text(tex)
-        print(f"\\input{{sections/{stem}}}")
-    tex, out = fixed_populations(), SECTIONS / "app_fixed_populations.tex"
+        print(f"\\input{{sections/rqs/{stem}}}")
+    tex, out = fixed_populations(), RQS / "app_fixed_populations.tex"
     if not out.is_file() or out.read_text() != tex:
         out.write_text(tex)
-    print("\\input{sections/app_fixed_populations}")
+    print("\\input{sections/rqs/app_fixed_populations}")
     for f in missing:
         print(f"  NO PAGE for {f}: add it to PAGES")
     return 1 if missing else 0

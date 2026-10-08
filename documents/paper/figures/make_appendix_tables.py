@@ -3,7 +3,7 @@ when the sweep or the evaluation suite does. Each table is read from the
 configs the launcher and the eval watcher read, so it describes the grid that
 is trained, not the one that was planned when the text was written.
 
-    languages   sections/app_02_table_languages.tex (whole file, \\input by
+    languages   sections/rqs/app_02_table_languages.tex (whole file, \\input by
                 app_02_data_mixtures.tex): the FineWeb-2 languages, the
                 smallest trained setting of each scheme that contains them,
                 and the benchmark families the harness offers for them
@@ -52,7 +52,7 @@ import launch_trainings as lt  # noqa: E402
 DATA = REPO / "src" / "pretrain" / "data"
 LADDER_REPORT = REPO / "src" / "signal-and-noise" / "data" / "ladder-report" / "ladder_report.csv"
 SCRIPT = Path(__file__).name
-OUT_LANGUAGES = SECTIONS / "app_02_table_languages.tex"
+OUT_LANGUAGES = SECTIONS / "rqs" / "app_02_table_languages.tex"
 
 # What each data build is, for a reader. A build missing here is printed under
 # its own name, so a new scheme shows up in the table instead of vanishing.
