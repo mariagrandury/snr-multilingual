@@ -12,13 +12,13 @@
 \begin{minipage}[t]{0.485\textwidth}
 \vspace{0pt}
 \begin{rqfinding}
-\textbf{1. Among the 17 families that clear the gate, every two- and three-option family except Global PIQA (parallel, one task, 0.48) has a median SNR of 0.89 to 1.70, and every four-option family sits at 0.41 to 0.83.} Option count is the only family-level design axis with p $<$ 0.05 (H = 5.69, p = 0.017), which one of five uncorrected tests can reach by chance. (Figure~\ref{fig:app_rq09_benchmark_design}.)
+\textbf{1. The four sharpest families by SNR are MultiBLiMP 1.70 (34 tasks), XStoryCloze 1.53 (8), XWinograd 1.45 (6) and PAWS-X 1.37 (5), and the reformulated twins fill the lower half (0.41 to 0.62).} No family-level design characteristic separates the families convincingly, by SNR or by DA-size. (Figure~\ref{fig:app_rq09_benchmark_design}.)
 \\
 \\
-\textbf{2. The top four families are all 2-option.} MultiBLiMP 1.70 (34 tasks), XStoryCloze 1.53 (8), XWinograd 1.45 (6), PAWS-X 1.37 (5).
+\textbf{2. The benchmark whose proxies decide most like 1.7B is not an SNR leader.} HellaSwag has the highest DA-size but sits tenth by SNR (0.61). Three of the four 2-option SNR leaders read 0.50--0.58 on every task above chance (PAWS-X 0.50, XWinograd 0.51, MultiBLiMP 0.58) and XStoryCloze 0.62.
 \\
 \\
-\textbf{3. The best 4-option family, Global-MMLU 0.83, rests on one task.} Among 4-option families with at least three tasks the top is INCLUDE at 0.70 (3 tasks).
+\textbf{3. The reformulated twins do not lift their families into the top band.} Belebele 0.46 (3 tasks) vs Belebele RF 0.49 (57) and LLM-RF 0.62 (59).
 \end{rqfinding}
 \end{minipage}
 
@@ -27,8 +27,41 @@
 \centering
 \includegraphics[width=\textwidth,height=0.36\textheight,keepaspectratio]{figures/app_rq09_benchmark_design.png}
 % source: src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_per_family_ranked_paper.png
-\captionof{figure}{\textbf{Among the 17 families that clear the gate, every two- and three-option family except Global PIQA (parallel, one task, 0.48) has a median SNR of 0.89 to 1.70, and every four-option family sits at 0.41 to 0.83.} Median SNR at 1.7B over the languages of each benchmark family that clears the above-chance gate, ranked. The colour gives the number of answer options.}
+\captionof{figure}{\textbf{The four sharpest families by SNR are MultiBLiMP 1.70 (34 tasks), XStoryCloze 1.53 (8), XWinograd 1.45 (6) and PAWS-X 1.37 (5), and the reformulated twins fill the lower half (0.41 to 0.62).} Median SNR at 1.7B over the languages of each benchmark family that clears the above-chance gate, ranked. The colour gives the number of answer options.}
 \label{fig:app_rq09_benchmark_design}
 \end{minipage}
 \vspace{\baselineskip}
 }]
+
+\begin{table*}[p]
+\centering
+\small
+\caption{\textbf{The 17 benchmark families of the benchmark design analysis and the characteristics it groups them by.} 11 are translated from English and 10 have four answer options. Curation: how the items in each language were made (native: written in the language, human transl.: translated by people, MT: machine translated, MT + post-edit: machine translated and corrected, template: generated from treebank templates). Format: MCQ is a question with lettered options, cloze (RF) scores each option as a continuation, statement (LLM-RF) is the LLM rewrite into a statement with four continuations. Context and Option: the median characters of the context and of an option over 100 sampled English items.}
+\label{tab:app_rq09_benchmark_characteristics}
+\input{figures/app_rq09_benchmark_characteristics}
+% source: src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/benchmark_characteristics.tex
+\end{table*}
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq09_design_da_correlation.png}
+% source: src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/design_da_size_correlation_above_66_either_mono_axis_paper.png
+\caption{\textbf{No characteristic orders the benchmarks by DA-size: every signed rank correlation has a 95\% interval that contains zero.} The answer options, which correlate with SNR at $\rho = -0.66$ ($-0.91$ to $-0.13$), reach $-0.49$ on the reliable tasks and $-0.03$ on every task above chance. A row is one characteristic of the benchmark families (Table \ref{tab:app_rq09_benchmark_characteristics}). For the answer options, the reading passage, the source and the two lengths the value is a Spearman $\rho$ over the benchmarks against the characteristic's code (the options ranked 2 to 4, no passage to passage, translated to native). For curation and task format, which have no order, it is the rank correlation ratio $\eta$ from the Kruskal-Wallis $H$, which has no sign and is always positive. DA-size is the per-task DA-size of Figure~\ref{fig:rq2}: the final checkpoint of each proxy against the 1.7B final, on the mono-axis design pairs of the seed-1904 runs, on the tasks above chance at the proxy and at 1.7B. A benchmark's DA-size is the median over its tasks at a proxy, averaged over the proxies 90M--1B. Left: that mean with a 95\% bootstrap interval over the 13 benchmarks whose tasks pass the reliability filter of Figure~\ref{fig:rq2} (filled), over the 14 benchmarks with any task above chance (hollow), and the same statistics on the median SNR at 1.7B of the 17 benchmarks (diamonds). Right: one line per proxy size, on the reliable tasks. The lengths exist for the original benchmarks with sampled items only.}
+\label{fig:app_rq09_design_da_correlation}
+\end{figure*}
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq09_design_da_by_level.png}
+% source: src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/design_da_size_by_level_above_66_either_mono_axis_paper.png
+\caption{\textbf{HellaSwag has the highest DA-size of the 13 benchmarks (0.75), so the levels it carries (machine translation, translated from English, completion, 4 options, passage) are lifted by one benchmark.} Each row is one level of one characteristic, coloured by characteristic, with the number of benchmarks at that level. A dot is one benchmark at its DA-size minus 0.5, so the dotted line is chance agreement and every benchmark sits to its right. The bar is the level's median. DA-size is the per-task DA-size of Figure~\ref{fig:rq2}: the final checkpoint of each proxy against the 1.7B final, on the mono-axis design pairs of the seed-1904 runs, on the tasks above chance at the proxy and at 1.7B. A benchmark's DA-size is the median over its tasks at a proxy, averaged over the proxies 90M--1B, on the tasks that pass the reliability filter of Figure~\ref{fig:rq2}. HellaSwag is outlined.}
+\label{fig:app_rq09_design_da_by_level}
+\end{figure*}
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq09_design_da_quadrant.png}
+% source: src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/design_da_size_quadrant_above_66_either_mono_axis_paper.png
+\caption{\textbf{On the reliable tasks all 13 benchmarks decide above chance agreement, so the left quadrants stay empty.} On every task above chance 4 benchmarks fall below 0.5. One panel per characteristic with an order: x is the DA-size minus 0.5 and y the characteristic's code centred at 0 (the options ranked 2, 3, 4 as $-1$, 0, $+1$, a binary characteristic as $-1$ and $+1$). Filled dots read the tasks that pass the reliability filter of Figure~\ref{fig:rq2}, hollow dots every task above chance (drawn a little lower). The numbers count the benchmarks per quadrant, reliable (every task). A benchmark on a zero line, such as the three-option XNLI, is in no quadrant. The shaded quadrants are the ones a positive correlation fills. DA-size is the per-task DA-size of Figure~\ref{fig:rq2}: the final checkpoint of each proxy against the 1.7B final, on the mono-axis design pairs of the seed-1904 runs, on the tasks above chance at the proxy and at 1.7B. A benchmark's DA-size is the median over its tasks at a proxy, averaged over the proxies 90M--1B.}
+\label{fig:app_rq09_design_da_quadrant}
+\end{figure*}

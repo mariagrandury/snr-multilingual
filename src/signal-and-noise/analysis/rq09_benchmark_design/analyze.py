@@ -572,17 +572,15 @@ def generate_readme(stage: str, pool: str) -> None:
     n_tasks = int(per_family["n_tasks"].sum())
     top_fam = per_family.sort_values("n_tasks", ascending=False).iloc[0]
     highlight = "\n".join([
-        "- **The answer-count penalty lives in the above-random gate, upstream "
-        "of SNR.** Every family whose tasks sit at chance at the reference size is "
+        "- **The above-random gate decides which families are read at all.** Every "
+        "family whose tasks sit at chance at the reference size is "
         f"dropped before SNR is computed, leaving **{n_families} families** that "
         "clear the gate — most of them 2-option.",
-        ("- **Among survivors, no family-level design feature reaches p < 0.05** "
-         "(five Kruskal–Wallis tests on the same families, uncorrected): "
-         if not sig else
-         f"- **Among survivors, {', '.join(fam_views[v] for v in sig)} reach{'es' if len(sig) == 1 else ''} "
-         "p < 0.05 at the family level** — with five uncorrected tests on the same families, "
-         "one such hit is what chance produces: ")
+        "- **Among survivors, no family-level design axis separates the families convincingly** (five "
+        "Kruskal–Wallis tests on the same families, uncorrected): "
         + "; ".join(f"{fam_views[v]} H = {fmt(r['H'])}, p = {fmt(r['p'], 3)}" for v, r in tested.items())
+        + (f". {', '.join(fam_views[v] for v in sig).capitalize()} {'is' if len(sig) == 1 else 'are'} under 0.05, "
+           "which one of five uncorrected tests reaches by chance" if sig else "")
         + ". Too little variation is left among the survivors (mostly 2-option) to resolve any axis.",
     ] + ([
         f"- **Per-task curation test** (tasks as observations, {n_tasks} tasks of which "

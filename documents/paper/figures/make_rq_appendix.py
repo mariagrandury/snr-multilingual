@@ -178,6 +178,78 @@ def rq13_regimes_caption(d):
         "fit would.")
 
 
+RQ09_POP = ("the per-task DA-size of Figure~\\ref{fig:rq2}: the final checkpoint of each proxy against the 1.7B final, "
+            "on the mono-axis design pairs of the seed-1904 runs, on the tasks above chance at the proxy and at 1.7B. A "
+            "benchmark's DA-size is the median over its tasks at a proxy, averaged over the proxies 90M--1B")
+
+
+def rq09_correlation_caption(d):
+    """The caption of app_rq09_design_da_correlation, its numbers read from the figure's CSV `d`."""
+    v = d.set_index(["reading", "characteristic"])
+    signed = d[d["statistic"] == "spearman_rho"]
+    crosses = lambda r: bool(((signed["reading"] == r) & (signed["ci_low"] <= 0) & (signed["ci_high"] >= 0)).sum()
+                             == (signed["reading"] == r).sum())
+    snr, rel, unf = (v.loc[(r, "n_options")] for r in ("snr", "above_66_either", "unfiltered"))
+    return (
+        "\\textbf{No characteristic orders the benchmarks by DA-size"
+        + (": every signed rank correlation has a 95\\% interval that contains zero" if crosses("above_66_either")
+           and crosses("unfiltered") else "")
+        + f".}} The answer options, which correlate with SNR at $\\rho = {snr['value']:.2f}$ "
+        f"(${snr['ci_low']:.2f}$ to ${snr['ci_high']:.2f}$), reach ${rel['value']:.2f}$ on the reliable tasks and "
+        f"${unf['value']:.2f}$ on every task above chance. A row is one characteristic of the benchmark families (Table "
+        "\\ref{tab:app_rq09_benchmark_characteristics}). For the answer options, the reading passage, the source and the "
+        "two lengths the value is a Spearman $\\rho$ over the benchmarks against the characteristic's code (the options "
+        "ranked 2 to 4, no passage to passage, translated to native). For curation and task format, which have no order, "
+        "it is the rank correlation ratio $\\eta$ from the Kruskal-Wallis $H$, which has no sign and is always positive. "
+        f"DA-size is {RQ09_POP}. Left: that mean with a 95\\% bootstrap interval over the "
+        f"{int(rel['n_benchmarks'])} benchmarks whose tasks pass the reliability filter of Figure~\\ref{{fig:rq2}} "
+        f"(filled), over the {int(unf['n_benchmarks'])} benchmarks with any task above chance (hollow), and the same "
+        f"statistics on the median SNR at 1.7B of the {int(snr['n_benchmarks'])} benchmarks (diamonds). Right: one line per "
+        "proxy size, on the reliable tasks. The lengths exist for the original benchmarks with sampled items only.")
+
+
+def rq09_levels_caption(d):
+    """The caption of app_rq09_design_da_by_level, its numbers read from the figure's CSV `d`."""
+    top = d.loc[d["da_size"].idxmax()]
+    n = d["family"].nunique()
+    return (
+        f"\\textbf{{{top['name']} has the highest DA-size of the {n} benchmarks ({top['da_size']:.2f}), so the levels "
+        f"it carries ({', '.join(d[d['family'] == top['family']]['level'])}) are lifted by one benchmark.}} "
+        "Each row is one level of one characteristic, coloured by characteristic, with the number of benchmarks at that "
+        "level. A dot is one benchmark at its DA-size minus 0.5, so the dotted line is chance agreement and every "
+        f"benchmark sits to its right. The bar is the level's median. DA-size is {RQ09_POP}, on the tasks that pass "
+        f"the reliability filter of Figure~\\ref{{fig:rq2}}. {top['name']} is outlined.")
+
+
+def rq09_quadrant_caption(d):
+    """The caption of app_rq09_design_da_quadrant, its numbers read from the figure's CSV `d`."""
+    dots, cnt = d[(d["row"] == "benchmark") & (d["population"] == "above_66_either")], d[d["row"] == "quadrant count"]
+    left = cnt[cnt["x_side"] < 0].groupby("characteristic")[["n_benchmarks", "n_benchmarks_unfiltered"]].sum()
+    return (
+        f"\\textbf{{On the reliable tasks all {dots['family'].nunique()} benchmarks decide above chance agreement, so "
+        "the left quadrants stay empty.} On every task above chance "
+        f"{int(left['n_benchmarks_unfiltered'].max())} benchmarks fall below 0.5. "
+        "One panel per characteristic with an order: x is the DA-size minus 0.5 and y the characteristic's code centred "
+        "at 0 (the options ranked 2, 3, 4 as $-1$, 0, $+1$, a binary characteristic as $-1$ and $+1$). Filled dots read "
+        "the tasks that pass the reliability filter of Figure~\\ref{fig:rq2}, hollow dots every task above chance "
+        "(drawn a little lower). The numbers count the benchmarks per quadrant, reliable (every task). A benchmark on a "
+        "zero line, such as the three-option XNLI, is in no quadrant. The shaded quadrants are the ones a positive "
+        f"correlation fills. DA-size is {RQ09_POP}.")
+
+
+def rq09_table_caption(d):
+    """The caption of app_rq09_benchmark_characteristics, its numbers read from the table's CSV `d`."""
+    return (
+        f"\\textbf{{The {len(d)} benchmark families of the benchmark design analysis and the characteristics it "
+        f"groups them by.}} {int((d['source_origin'] == 'english_translated').sum())} are translated from English and "
+        f"{int((d['n_options'] == 4).sum())} have four answer options. Curation: how the items in each language were made "
+        "(native: written in the language, human transl.: translated by people, MT: machine translated, MT + post-edit: "
+        "machine translated and corrected, template: generated from treebank templates). Format: MCQ is a question with "
+        "lettered options, cloze (RF) scores each option as a continuation, statement (LLM-RF) is the LLM rewrite into a "
+        "statement with four continuations. Context and Option: the median characters of the context and of an option "
+        "over 100 sampled English items.")
+
+
 # folder -> title, paper figure stem, setup, (README image the finding follows, which bullet)[, extras]
 PAGES = {
     "rq00_gate_and_curves": (
@@ -296,7 +368,11 @@ PAGES = {
         "family, we take the median over its per-language tasks. We keep the benchmark families that clear the "
         "above-chance gate. We group the families by curation, source, task format, answer-option count and "
         "passage use, and we test the groups with a Kruskal-Wallis test.",
-        None, 0),
+        None, 0,
+        (("app_rq09_benchmark_characteristics", rq09_table_caption, "tab:app_rq09_benchmark_characteristics"),
+         ("app_rq09_design_da_correlation", rq09_correlation_caption, "fig:app_rq09_design_da_correlation"),
+         ("app_rq09_design_da_by_level", rq09_levels_caption, "fig:app_rq09_design_da_by_level"),
+         ("app_rq09_design_da_quadrant", rq09_quadrant_caption, "fig:app_rq09_design_da_quadrant"))),
     "rq10_size_generalisation": (
         "Size generalisation to 3B", "app_rq10_size_generalisation",
         "The deep cells trained at 3B (seed 1904) and the same families at 1.7B. Each (family, task) is scored at "
@@ -625,7 +701,12 @@ def float_page(stem, caption, label):
     """A full-width figure on a float page of its own. The figure takes at most
     0.8 of the text height, which leaves room for a caption of ten lines: a float
     taller than the page runs into the bottom margin, which ACL's format check
-    rejects. The page block caps its figure at 0.36 for the same reason."""
+    rejects. The page block caps its figure at 0.36 for the same reason. A stem
+    copied as TeX is a generated table, set in a table* float instead."""
+    if FIGURES[stem][1] == ("tex",):
+        return "\n".join(["\\begin{table*}[p]", "\\centering", "\\small", f"\\caption{{{caption}}}",
+                          f"\\label{{{label}}}", f"\\input{{figures/{stem}}}",
+                          f"% source: {FIGURES[stem][0].relative_to(ANALYSIS.parents[2])}.tex", "\\end{table*}", ""])
     return "\n".join([
         "\\begin{figure*}[p]",
         "\\centering",

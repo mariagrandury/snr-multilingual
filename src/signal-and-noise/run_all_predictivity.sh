@@ -348,6 +348,9 @@ for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq09_benchmark_design/analyze.py --pool "$t"
 done
 run $PY analysis/rq09_benchmark_design/panels.py --pool predictivity
+# the same characteristics against rq02's per-task DA-size (reads rq09's per_family_snr.csv and rq02's reliable tasks)
+lane rq09da rq09 rq02
+run $PY analysis/rq09_benchmark_design/design_da.py --pool predictivity
 
 pass "rq10 — size generalisation (the 3B rung as the reference)"
 # the one reader of above_reference=True: every family with a 3B final, read from
@@ -372,7 +375,7 @@ lane rq11 rq02
 run $PY analysis/rq11_evaluation_recipe/recipe.py --pool predictivity
 
 pass "report figures and the rules check"
-lane final bpb gate rq00 rq01 da rq02 rq04snr rq04 rq05 rq03 rq06 rq07 rq13 rq08 rq12 rq09 rq10 rq11
+lane final bpb gate rq00 rq01 da rq02 rq04snr rq04 rq05 rq03 rq06 rq07 rq13 rq08 rq12 rq09 rq09da rq10 rq11
 run $PY analysis/report_figures/make_figures.py
 # every table on disk against analysis/RULES.md (rule 14)
 run $PY analysis/check_rules.py --quiet
