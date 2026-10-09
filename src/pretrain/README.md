@@ -1,7 +1,7 @@
 # Predictivity-sweep pretraining (CSCS + Azure)
 
 > Pretraining infrastructure for the small-to-large predictivity sweep: a
-> 7-rung size ladder (90M–3B non-embedding; the 3B rung at L ∈ {8, 15, 30, 50}, deep only) × 6 language settings, fixed
+> 7-rung size ladder (90M–3B non-embedding; the 3B rung deep only, at L ∈ {8, 15, 30, 50} in scheme A and {8, 15} in scheme B) × 6 language settings, fixed
 > 50/50 English/multilingual data, each size trained to its own
 > 5×Chinchilla budget. Runs split across the CSCS cluster and Azure ML —
 > **both platforms execute the exact same training logic.**
@@ -82,11 +82,11 @@ walltime to the remaining iters); on Azure resubmitting is the resume.
 | Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, 3B, every size at every setting except 3B at L ∈ {8, 15, 30, 50} only |
 | Language setting L | 1, 2, 8, 15, 30, 50 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
 | Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30} |
-| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}; L8 adds swiglu + muon; L15 adds swiglu + muon; L30 adds swiglu + muon) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B, L50 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1.7B; deep only) · **DCLMP** (L ∈ {1}; deep only) · **FWEB** (L ∈ {1}; deep only) |
+| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}; L8 adds swiglu + muon; L15 adds swiglu + muon; L30 adds swiglu + muon) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B, L50 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}; L30 stops at 1.7B) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1.7B; deep only) · **DCLMP** (L ∈ {1}; deep only) · **FWEB** (L ∈ {1}; deep only) |
 | Ladder (model) | deep (baseline), shallow (arch = shallow), swiglu (activation = swiglu), muon (optimizer = muon) |
 
 **58 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting every scheme and the ladders each is trained in: **219 runs**.
+Counting every scheme and the ladders each is trained in: **218 runs**.
 
 ![Planned runs per grid cell](./pretrain_progress_plan.png)
 
@@ -541,9 +541,9 @@ destination (W&B
 **`mariagrandury-epflnlp/msnr`** — the project the training loss logs to,
 so loss and benchmark curves live side by side). The `auto` group in
 [`configs/tasks.json`](../../configs/tasks.json) lists **benchmark names**
-(arc, belebele, global_mmlu, global_piqa, hellaswag, include_base_44,
-lambada_openai_mt, multiblimp, paws, truthfulqa-multi_mc1, xcopa, xnli,
-xstorycloze, xwinograd); each cell is evaluated on every
+(49 of them since 2026-10-09: the multilingual families, the `rf_` / `rfgm_`
+twins, the promoted probe candidates and the English singletons piqa,
+winogrande and boolq; read the group, not this list); each cell is evaluated on every
 listed benchmark's tasks **in the languages it trains on** (English + its
 setting's FineWeb-2 languages, mapped via
 [`configs/languages.json`](../../configs/languages.json)) — e.g. the L2

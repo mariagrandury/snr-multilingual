@@ -226,3 +226,19 @@ a bare `launch_trainings.py cscs --size 3B` would submit them — so launch by
 ~78 h on 21 nodes ≈ 8 walltime segments ≈ a week queued. A-L30 + B-L30 is
 ~3,400 node-h all in; adding A-L50 makes it ~5,100.
 
+---
+
+# B-L30 removed from the grid (2026-10-09)
+
+`lm-3B-L30-schemeB-deep-seed1904` is **dropped** before it trained a step: no
+checkpoint, no chain progress file, no queued job. `DATA_SCHEMES["B"]["max_size"]`
+caps L30 at 1.7B (the same mechanism AT3 uses), so the launcher, the eval
+watcher and `models.json` no longer plan it. Its 165B build
+(`data-165B/schemeB/fineweb_L30`) stays staged and `REBUILD_165` still lists
+`B:30`, so restoring the cell is removing the cap.
+
+The 3B rung is now **six** cells — A-L8, A-L15, A-L30, A-L50, B-L8, B-L15, all
+trained. On the pair-count table above, that is 7 `L` pairs and 2 `list`
+pairs: only `L` clears `MIN_PAIRS` at the 3B reference; the scheme (`list`)
+axis does not, which is where the paper already stood (it reports six 3B
+configurations). Saved: ~1,700 node-h.

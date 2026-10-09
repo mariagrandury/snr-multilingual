@@ -193,10 +193,11 @@ CSCS_SUBMIT_SCRIPT = SCRIPT_DIR / "launch_pretraining_cscs.sh"
 CSCS_DEFAULT_DATA_DIR = "/iopsstor/scratch/cscs/mariagrandury/data"
 # Where data/launch_builds.sh stages the rebuilds of the builds the grid
 # outgrew: the same layout, FineWeb-2 prefixes only. 92B for the settings the
-# 1.7B row gained (A-L15, A-L50, B-L15); 165B for the four settings the 3B
-# rung trains (A/B at L8 and L15 — a 3B draws 150B from the multilingual
-# half). fineweb_source tries them in this order, smallest first, so a cell
-# keeps the smallest copy that covers its draw.
+# 1.7B row gained (A-L15, A-L50, B-L15); 165B for the settings the 3B
+# rung trains (A at L8/L15/L30/L50, B at L8/L15 — a 3B draws 150B from the
+# multilingual half; B-L30's 165B build is staged but no cell reads it).
+# fineweb_source tries them in this order, smallest first, so a cell keeps
+# the smallest copy that covers its draw.
 CSCS_REBUILD_DATA_DIR = "/iopsstor/scratch/cscs/mariagrandury/data-92B"
 CSCS_REBUILD_DATA_DIRS = (CSCS_REBUILD_DATA_DIR,
                           "/iopsstor/scratch/cscs/mariagrandury/data-165B")
@@ -242,10 +243,13 @@ SIZE_LANG_SETTINGS = {size: LANG_SETTINGS for size in LADDER}
 # WHY the extra two: the finished 2x2 (A/B at L8/L15) yields only 2 mono-axis
 # pairs on `L` and 2 on `list`, and rule 5 needs 3 — so NO design axis is
 # reportable at the 3B reference, and rq10 cannot answer its own question.
-# A-L30 + B-L30 take `L` to 6 and `list` to 3, the minimum that clears both;
+# A-L30 + B-L30 took `L` to 6 and `list` to 3, the minimum that clears both;
 # A-L50 takes `L` to 9 and gives the top rung the full language range.
 # A 165B T=1 build exhausts no language at either setting (the allocation is
 # proportional: every language draws ~47% of its capacity). plan/3b_models.md.
+# B-L30 was REMOVED from the grid on 2026-10-09 before it trained a step
+# (scheme B's max_size below): the 3B rung is the six cells A-L8/L15/L30/L50
+# and B-L8/L15, so `list` is back to 2 pairs at the 3B reference.
 SIZE_LANG_SETTINGS["3B"] = [8, 15, 30, 50]
 
 # --- Data schemes -----------------------------------------------------------
@@ -321,8 +325,11 @@ DATA_SCHEMES = {
                 # opening that setting would create an AT3 3B cell by accident.
                 max_size={15: "1.7B", 30: "1.7B", 50: "1.7B"}, temp=3.0, letter="A", sets="A", seeds="single",
                 ladders=("deep", "shallow"), ladders_by_L={15: ("deep",), 30: ("deep",)}),
+    # B-L30 stops at the 1.7B reference: its 3B cell was planned 2026-09-30
+    # and dropped 2026-10-09 with no checkpoint (its 165B build stays staged
+    # in data-165B/schemeB). Without the cap the 3B rung's L30 opens it.
     "B": dict(label="-schemeB", subdir="schemeB", langs={8, 15, 30},
-              max_size={}, temp=1.0, letter="B", sets="B", seeds="grid",
+              max_size={30: "1.7B"}, temp=1.0, letter="B", sets="B", seeds="grid",
               ladders=("deep", "shallow")),
     # ZH and ES are the second-language intervention at L=2. Their ceiling is
     # the SOURCE, not the budget: the swiss-ai filtered subset holds 71.8B
