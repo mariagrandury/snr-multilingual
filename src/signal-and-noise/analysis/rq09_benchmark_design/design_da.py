@@ -3,7 +3,7 @@ also order the benchmarks by how well a small proxy decides like the reference?
 
 The SNR analysis (`analyze.py`) groups the benchmark families by the
 characteristics of `FAMILY_META` (curation, source origin, task format,
-option count, reading passage) and the length features (`length_features.csv`).
+option count, reading passage, domain) and the length features (`length_features.csv`).
 This reads the same characteristics against DA-size instead of SNR:
 
   population  rq02's per-task DA-size (`reliable_tasks.long_da`: the proxy's final
@@ -25,10 +25,16 @@ This reads the same characteristics against DA-size instead of SNR:
               problems), source as translated from English vs not, task format as continuation
               (the options scored as continuations: completion, minimal pair, classification
               labels, cloze, LLM-RF statement, LAMBADA's last word) vs lettered MCQ (question
-              or passage with lettered options). A characteristic FAMILY_META leaves None
+              or passage with lettered options), and the domain, nominal with eleven levels, as
+              its most populous level against the rest (knowledge vs every other domain; the
+              level is chosen by its count, not by its DA). A characteristic FAMILY_META leaves None
               (no source settles it) drops that benchmark from that row only. 95 % percentile bootstrap over
               the benchmarks; the Kruskal-Wallis H and p of every two-group split beside.
               The same statistics on rq09's SNR (median `snr_mpd_1.7B`) sit beside.
+  per task    the same statistics with each (benchmark, language) task as one observation
+              (`task:<population>` readings): its DA-size is the mean over the proxies 90M-1B
+              that have one, and the bootstrap resamples whole benchmarks (a benchmark's tasks
+              share its characteristics, so they are not independent observations).
 
     benchmark_characteristics.csv / .tex        one row per benchmark of either reading, one column per
                                                 characteristic (the LaTeX table the paper copies)
@@ -46,6 +52,18 @@ This reads the same characteristics against DA-size instead of SNR:
     design_da_size_quadrant_above_66_either_mono_axis.png/.csv (+ _paper)
                                                 the same on the above_66_either tasks (most benchmarks land
                                                 right of chance there)
+    design_da_size_per_task_mono_axis.csv       per (population, task, proxy) the DA-size the figures below read
+    design_da_size_by_level_per_task_above_66_either_mono_axis.png/.csv (+ _paper)
+                                                the by-level figure with one dot per task (its mean over the
+                                                proxies), the level read as the median and IQR over its tasks
+    design_da_size_quadrant_per_task_mono_axis.png/.csv (+ _paper)
+                                                the quadrant figure with one dot per (task, proxy), coloured by
+                                                proxy size, on every gated task
+    design_da_size_quadrant_per_task_above_66_either_mono_axis.png/.csv (+ _paper)
+                                                the same on the above_66_either tasks
+    The quadrant figures colour a dot by its proxy size (the per-benchmark one draws one dot per
+    benchmark and proxy, at the median over its tasks). The by-level figures group the levels under
+    a header row per characteristic.
 
     python analysis/rq09_benchmark_design/design_da.py --pool predictivity
 """
@@ -90,6 +108,7 @@ CHARACTERISTICS = {
     "format_type": ("Task format", "binary", ["continuation", "lettered MCQ"]),
     "n_options": ("Answer options", "ordinal", [2, 3, 4, 5]),
     "passage": ("Reading passage", "binary", [False, True]),
+    "domain_group": ("Domain", "binary", ["other", "knowledge"]),
     "context_len_chars_median": ("Context length", "continuous", None),
     "option_len_chars_median": ("Option length", "continuous", None),
 }
@@ -107,7 +126,8 @@ LEVEL_NAMES = {"translated": "translated", "native": "native", "continuation": "
                "minimal_pair": "minimal pair", "completion": "completion", "classification": "classification",
                "mcq_question_only": "question with options", "mrc_passage": "passage with options",
                "statement_continuation": "statement (LLM-RF)",
-               2: "2 options", 3: "3 options", 4: "4 options", False: "no passage", True: "passage"}
+               2: "2 options", 3: "3 options", 4: "4 options", False: "no passage", True: "passage",
+               "knowledge": "knowledge", "other": "other domains"}
 LENGTH_CSV = HERE / "length_features.csv"
 mpl.rcParams.update(S.RC)
 
@@ -128,25 +148,37 @@ def features() -> pd.DataFrame:
                                   meta["source_origin"] == "english_original"], ["native", "translated", "native"], None)
     meta["source"] = np.where(meta["source_origin"] == "english_translated", "english_translated", "original")
     meta["format_type"] = np.where(meta["format"].isin(LETTERED_FORMATS), "lettered MCQ", "continuation")
+    meta["domain_group"] = np.where(meta["domain"] == "knowledge", "knowledge", "other")
     lf = pd.read_csv(LENGTH_CSV).set_index("family")
     return meta.join(lf[["context_len_chars_median", "option_len_chars_median"]])
 
 
-def per_family(out_dir: Path, pool: str) -> pd.DataFrame:
-    """(population, family, proxy) -> median DA-size over the family's tasks and their count."""
+def per_task(out_dir: Path, pool: str) -> pd.DataFrame:
+    """(population, family, task, proxy) -> the task's DA-size at that proxy."""
     l = long_da(out_dir, pool, axes=AXES)
     l = l[(l["kind"] == "size") & l["size"].isin(SMALL_SIZES)]
     l = l[[f in FAMILY_META and _is_language_aggregate(t, f) for t, f in zip(l["task"], l["family"])]]
     rel = load_reliable(out_dir, FILTER, axes=AXES)
     parts = [l.assign(population="unfiltered"), l[l["task"].isin(set(rel["task"]))].assign(population=FILTER)]
-    d = pd.concat(parts)
-    return (d.groupby(["population", "family", "size"])
+    return pd.concat(parts)[["population", "family", "task", "language", "size", "da", "n_pairs"]]
+
+
+def per_family(tasks: pd.DataFrame) -> pd.DataFrame:
+    """(population, family, proxy) -> median DA-size over the family's tasks and their count."""
+    return (tasks.groupby(["population", "family", "size"])
             .agg(da_size=("da", "median"), n_tasks=("task", "nunique"), n_pairs_min=("n_pairs", "min")).reset_index())
 
 
-def benchmark_values(fam: pd.DataFrame, snr: pd.DataFrame) -> dict[str, pd.Series]:
+def task_means(tasks: pd.DataFrame) -> pd.DataFrame:
+    """(population, family, task) -> the task's DA-size, the mean over the proxies that have one."""
+    return (tasks.groupby(["population", "family", "task", "language"])
+            .agg(da_size=("da", "mean"), n_proxies=("size", "nunique")).reset_index())
+
+
+def benchmark_values(fam: pd.DataFrame, snr: pd.DataFrame, tm: pd.DataFrame) -> dict[str, pd.Series]:
     """Each reading's value per benchmark: mean DA-size over the proxies (both populations), each
-    proxy's DA-size (`size:<s>`, filtered population) and the SNR median."""
+    proxy's DA-size (`size:<s>`, filtered population) and the SNR median; then per task (`task:<pop>`,
+    indexed by the task's benchmark, so the index repeats) the task's mean DA-size over the proxies."""
     out = {}
     for pop in (FILTER, "unfiltered"):
         out[pop] = fam[fam["population"] == pop].groupby("family")["da_size"].mean()
@@ -154,6 +186,8 @@ def benchmark_values(fam: pd.DataFrame, snr: pd.DataFrame) -> dict[str, pd.Serie
     for s in size_order(f["size"].unique()):
         out[f"size:{s}"] = f[f["size"] == s].set_index("family")["da_size"]
     out["snr"] = snr.set_index("family")["snr_median"]
+    for pop in (FILTER, "unfiltered"):
+        out[f"task:{pop}"] = tm[tm["population"] == pop].set_index("family")["da_size"]
     return out
 
 
@@ -178,12 +212,15 @@ def correlations(values: dict[str, pd.Series], feat: pd.DataFrame) -> pd.DataFra
     rows = []
     for reading, v in values.items():
         v = v.dropna()
-        draws = [v.iloc[rng.integers(0, len(v), len(v))] for _ in range(N_BOOT)] if not reading.startswith("size:") else []
+        fams = v.index.unique()           # resample whole benchmarks: a task reading carries all of a benchmark's tasks
+        draws = [v.loc[fams[rng.integers(0, len(fams), len(fams))]] for _ in range(N_BOOT)] \
+            if not reading.startswith("size:") else []
         for col, (label, kind, _) in CHARACTERISTICS.items():
-            n = int(feat.loc[v.index, col].notna().sum())
+            ok = feat.loc[v.index, col].notna()
             row = {"reading": reading, "characteristic": col, "label": label, "kind": kind,
                    "statistic": "spearman_rho", "value": statistic(col, v, feat),
-                   "n_benchmarks": n, "ci_low": np.nan, "ci_high": np.nan, "kruskal_H": np.nan, "kruskal_p": np.nan}
+                   "n_benchmarks": int(feat.loc[fams, col].notna().sum()), "n_tasks": int(ok.sum()),
+                   "ci_low": np.nan, "ci_high": np.nan, "kruskal_H": np.nan, "kruskal_p": np.nan}
             if draws:
                 b = np.array([statistic(col, d, feat) for d in draws])
                 if np.isfinite(b).sum() >= N_BOOT // 2:
@@ -244,22 +281,26 @@ def fig_correlation(c: pd.DataFrame, path: Path, paper: bool) -> None:
     S.save(fig, path)
 
 
-def level_table(values: dict[str, pd.Series], feat: pd.DataFrame) -> pd.DataFrame:
-    """One row per (population, characteristic, benchmark): its level, centred code and DA-size - 0.5."""
+def level_table(units: pd.DataFrame, feat: pd.DataFrame) -> pd.DataFrame:
+    """One row per (population, characteristic, unit): its level, centred code and DA-size - 0.5.
+    `units` has a row per benchmark, task or (task, proxy), with its `population`, `family` and
+    `da_size`; a level no source settles (FAMILY_META None) drops that unit from that row."""
     rows = []
     for pop in (FILTER, "unfiltered"):
+        u = units[(units["population"] == pop) & units["da_size"].notna()]
         for col, (label, kind, levels) in CHARACTERISTICS.items():
             if kind == "continuous":
                 continue
-            for fam, v in values[pop].dropna().items():
-                lv = feat.at[fam, col]
-                if pd.isna(lv):           # no source settles it (FAMILY_META None)
-                    continue
-                rows.append({"population": pop, "characteristic": col, "label": label, "kind": kind,
-                             "level": LEVEL_NAMES[lv], "level_rank": levels.index(lv),
-                             "code": encode(col, lv),
-                             "family": fam, "name": G.paper_name(fam), "da_size": v, "x": v - CHANCE})
-    return pd.DataFrame(rows)
+            lv = u["family"].map(feat[col])
+            g = u[lv.notna()]
+            lv = lv[lv.notna()]
+            rows.append(pd.DataFrame({
+                "population": pop, "characteristic": col, "label": label, "kind": kind,
+                "level": lv.map(LEVEL_NAMES), "level_rank": lv.map(levels.index), "code": lv.map(lambda v: encode(col, v)),
+                "family": g["family"], "name": g["family"].map(G.paper_name),
+                **{c: g[c] for c in ("task", "language", "size") if c in g},
+                "da_size": g["da_size"], "x": g["da_size"] - CHANCE}))
+    return pd.concat(rows, ignore_index=True)
 
 
 def example(t: pd.DataFrame) -> str:
@@ -268,97 +309,148 @@ def example(t: pd.DataFrame) -> str:
     return f.loc[f["da_size"].idxmax(), "family"]
 
 
+def _group_labels(ax, rows: list, counts: dict, colours: dict) -> None:
+    """The y labels of a grouped level figure, left-aligned: a bold header row per characteristic
+    in its colour, then its levels indented under it with their counts."""
+    labels = [CHARACTERISTICS[c][0] if lv is None else f"    {lv[0].upper() + lv[1:]} ({counts[(c, lv)]})"
+              for c, lv in rows]
+    ax.set_yticks(range(len(rows))); ax.set_yticklabels(labels, fontsize=6.5)
+    ax.tick_params(axis="y", length=0)
+    for lab, (c, lv) in zip(ax.get_yticklabels(), rows):
+        lab.set_color(colours[c] if lv is None else S.INK)
+        lab.set_fontweight("bold" if lv is None else "normal")
+    fig = ax.figure
+    fig.canvas.draw()
+    width = max(l.get_window_extent().width for l in ax.get_yticklabels()) * 72 / fig.dpi
+    ax.tick_params(axis="y", pad=width + 2)
+    for lab in ax.get_yticklabels():
+        lab.set_horizontalalignment("left")
+
+
 def fig_levels(t: pd.DataFrame, path: Path, paper: bool) -> None:
-    """A row per characteristic level, grouped and coloured by characteristic; x = DA-size - 0.5
-    (the filtered population), the highest benchmark named on its dot once per characteristic."""
+    """A header row per characteristic, then a row per level, coloured by characteristic; x = DA-size
+    - 0.5 (the filtered population). Per benchmark (no `task` column): a dot per benchmark and the
+    level's median as a bar, the highest benchmark named once per characteristic. Per task: a dot per
+    task and the level's median (bar) and interquartile range (line) over its tasks."""
+    per_task = "task" in t
     top_fam = example(t)
     t = t[t["population"] == FILTER]
     t = t.sort_values(["characteristic", "level_rank"], key=lambda s: s.map(list(CHARACTERISTICS).index)
                       if s.name == "characteristic" else s)
-    rows = list(dict.fromkeys(zip(t["characteristic"], t["level"])))
+    rows = []
+    for c, lv in dict.fromkeys(zip(t["characteristic"], t["level"])):
+        rows += [(c, None)] * (not rows or rows[-1][0] != c) + [(c, lv)]
     pos = {r: i for i, r in enumerate(rows)}
+    counts = t.groupby(["characteristic", "level"]).size().to_dict()
     colours = dict(zip(dict.fromkeys(t["characteristic"]), plt.cm.tab10.colors))
     rng = np.random.default_rng(0)
-    fig, ax = plt.subplots(figsize=(4.6, 0.19 * len(rows) + 0.9))
+    fig, ax = plt.subplots(figsize=(4.6, 0.17 * len(rows) + 0.9))
     for (col, lv), g in t.groupby(["characteristic", "level"], sort=False):
-        y = pos[(col, lv)] + rng.uniform(-0.22, 0.22, len(g))
-        top = (g["family"] == top_fam).to_numpy()
-        ax.scatter(g["x"], y, s=12, color=colours[col], lw=.3, edgecolor="white", zorder=2)
-        # the highest benchmark is the rightmost dot of its row, so its name to the right never covers a dot
-        for x0, y0 in zip(g["x"][top], y[top]):
-            ax.annotate(G.paper_name(top_fam), (x0, y0), xytext=(2.5, 0), textcoords="offset points", ha="left",
-                        va="center", fontsize=5.5, color=S.INK)
+        y = pos[(col, lv)] + rng.uniform(-0.25, 0.25, len(g))
+        if per_task:
+            ax.scatter(g["x"], y, s=5, color=colours[col], alpha=.55, lw=0, zorder=2)
+            q1, q3 = g["x"].quantile([.25, .75])
+            ax.plot([q1, q3], [pos[(col, lv)]] * 2, color=S.INK, lw=1.6, solid_capstyle="butt", zorder=3)
+        else:
+            top = (g["family"] == top_fam).to_numpy()
+            ax.scatter(g["x"], y, s=12, color=colours[col], lw=.3, edgecolor="white", zorder=2)
+            # the highest benchmark is the rightmost dot of its row, so its name to the right never covers a dot
+            for x0, y0 in zip(g["x"][top], y[top]):
+                ax.annotate(G.paper_name(top_fam), (x0, y0), xytext=(2.5, 0), textcoords="offset points", ha="left",
+                            va="center", fontsize=5.5, color=S.INK)
         ax.plot([g["x"].median()] * 2, [pos[(col, lv)] - .35, pos[(col, lv)] + .35], color=S.INK, lw=1, zorder=3)
     for i, (col, lv) in enumerate(rows):
-        if i and rows[i - 1][0] != col:
+        if i and lv is None:
             ax.axhline(i - .5, color=S.GRID, lw=.6)
     ax.axvline(0, color=S.MUTED, lw=.7, ls=":")
     lo, hi = t["x"].min(), t["x"].max()
-    ax.set_xlim(lo - .05 * (hi - lo), hi + .22 * (hi - lo))     # room for the name inside the frame
-    ax.set_yticks(range(len(rows)))
-    ax.set_yticklabels([f"{CHARACTERISTICS[c][0]}: {lv} ({int(((t['characteristic'] == c) & (t['level'] == lv)).sum())})"
-                        for c, lv in rows], fontsize=6.5)
-    for lab, (c, _) in zip(ax.get_yticklabels(), rows):
-        lab.set_color(colours[c])
-    ax.invert_yaxis(); ax.grid(axis="x", color=S.GRID, lw=.5); S.clean(ax)
+    ax.set_xlim(lo - .05 * (hi - lo), hi + (.05 if per_task else .22) * (hi - lo))     # room for the name inside the frame
+    ax.set_ylim(len(rows) - .5, -.5)
+    ax.grid(axis="x", color=S.GRID, lw=.5); S.clean(ax)
+    _group_labels(ax, rows, counts, colours)
     ax.set_xlabel("DA-size minus 0.5")
     if paper:
         fig.tight_layout()
         S.save_paper(fig, path.with_suffix(""))
         return
-    top = G._header(fig, "Benchmark DA-size by characteristic level",
-                    f"dot = one benchmark family (jittered): its DA-size − 0.5 (0 = chance agreement), the mean over 90M–1B of "
-                    f"the median over its {FILTER} tasks (mono-axis, against 1.7B); bar = the level's median; count = benchmarks; "
-                    f"{G.paper_name(top_fam)}, the highest, named once per characteristic")
+    if per_task:
+        top = G._header(fig, "Task DA-size by characteristic level",
+                        f"dot = one (benchmark, language) task (jittered): its DA-size − 0.5 (0 = chance agreement), the mean "
+                        f"over the proxies 90M–1B that have one (mono-axis, against 1.7B), on the {FILTER} tasks; bar = the "
+                        "level's median, line = its interquartile range over the tasks; count = tasks")
+    else:
+        top = G._header(fig, "Benchmark DA-size by characteristic level",
+                        f"dot = one benchmark family (jittered): its DA-size − 0.5 (0 = chance agreement), the mean over 90M–1B of "
+                        f"the median over its {FILTER} tasks (mono-axis, against 1.7B); bar = the level's median; count = benchmarks; "
+                        f"{G.paper_name(top_fam)}, the highest, named once per characteristic")
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path)
 
 
 def fig_quadrant(t: pd.DataFrame, pop: str, path: Path, paper: bool) -> pd.DataFrame:
-    """One panel per characteristic: x = DA-size - 0.5 of population `pop`, y = the centred code
-    (jittered); the benchmarks counted per quadrant, the highest DA-size of `pop` outlined."""
+    """One panel per characteristic: x = DA-size - 0.5 of population `pop` at one proxy, y = the
+    centred code, one dot per benchmark (or task) and proxy, coloured by the proxy's size and drawn in
+    a band of its own inside the level's row (90M lowest, jittered within the band), with the band's
+    median as a red tick; the dots counted per quadrant."""
+    per_task = "task" in t
     t = t[t["population"] == pop]
-    top_fam = t.loc[t["da_size"].idxmax(), "family"]
     cols = list(dict.fromkeys(t["characteristic"]))
+    sizes = size_order(t["size"].unique())
     rng = np.random.default_rng(0)
     ncol = 3
     nrow = -(-len(cols) // ncol)
-    fig, axes = plt.subplots(nrow, ncol, figsize=(2.35 * ncol, 2.2 * nrow + 0.3), sharex=True, squeeze=False)
+    fig, axes = plt.subplots(nrow, ncol, figsize=(2.35 * ncol, 2.2 * nrow + 0.5), sharex=True, squeeze=False)
     counts = []
-    lim = max(0.3, t["x"].abs().max() * 1.15)
+    lim = max(0.3, t["x"].abs().max() + 0.05)
     for ax, col in zip(axes.flat, cols):
         g = t[t["characteristic"] == col]
-        top = (g["family"] == top_fam).to_numpy()
-        ax.axhspan(0, 1.4, xmin=0.5, xmax=1, color=S.RAMP[0], alpha=.12, lw=0)
-        ax.axhspan(-1.4, 0, xmin=0, xmax=0.5, color=S.RAMP[0], alpha=.12, lw=0)
+        levels = CHARACTERISTICS[col][2]
+        band = min(0.4, 0.42 * 2 / (len(levels) - 1)) / len(sizes)          # one sub-band per proxy size
+        ax.axhspan(0, 1.7, xmin=0.5, xmax=1, color=S.RAMP[0], alpha=.12, lw=0)
+        ax.axhspan(-1.7, 0, xmin=0, xmax=0.5, color=S.RAMP[0], alpha=.12, lw=0)
         ax.axvline(0, color=S.MUTED, lw=.7); ax.axhline(0, color=S.MUTED, lw=.7)
-        ax.scatter(g["x"], g["code"] + rng.uniform(-0.15, 0.15, len(g)), s=np.where(top, 20, 14), color=S.SERIES[0],
-                   lw=np.where(top, .8, .3), edgecolor=np.where(top, S.INK, "white"), zorder=2)
+        for k, s in enumerate(sizes):
+            h = g[g["size"] == s]
+            off = (2 * k - len(sizes) + 1) * band
+            ax.scatter(h["x"], h["code"] + off + rng.uniform(-band * .8, band * .8, len(h)), s=3 if per_task else 10,
+                       color=S.SIZE_COLOR[s], alpha=.8 if per_task else 1, lw=0, zorder=2)
+            for c0, m in h.groupby("code")["x"].median().items():          # the band's median
+                ax.plot([m, m], [c0 + off - band, c0 + off + band], color=S.ALERT, lw=1, zorder=3)
         for sx, sy in ((1, 1), (-1, 1), (1, -1), (-1, -1)):
             n = int(((np.sign(g["x"]) == sx) & (np.sign(g["code"]) == sy)).sum())
-            counts.append({"characteristic": col, "x_side": sx, "code_side": sy, "n_benchmarks": n})
-            ax.text(sx * lim * .92, sy * 1.3, str(n), ha="right" if sx > 0 else "left", va="center", fontsize=7,
-                    color=S.INK)
-        levels = CHARACTERISTICS[col][2]
+            counts.append({"characteristic": col, "x_side": sx, "code_side": sy, "n_points": n})
+            ax.text(sx * lim * .95, sy * 1.55, str(n), ha="right" if sx > 0 else "left", va="center", fontsize=7,
+                    color=S.INK, zorder=4)
         ax.set_yticks([encode(col, lv) for lv in levels]); ax.set_yticklabels([LEVEL_NAMES[lv] for lv in levels], fontsize=7)
-        ax.set_ylim(-1.45, 1.45); ax.set_xlim(-lim, lim); ax.set_title(CHARACTERISTICS[col][0], fontsize=8, loc="left")
+        ax.set_ylim(-1.7, 1.7); ax.set_xlim(-lim, lim); ax.set_title(CHARACTERISTICS[col][0], fontsize=8, loc="left")
+        step = 0.5 if lim > 0.5 else 0.2
+        ax.set_xticks([-step, 0, step]); ax.set_xticklabels([f"{v:g}".replace("-", "−") for v in (-step, 0, step)])
         S.clean(ax)
     for ax in axes.flat[len(cols):]:
         ax.axis("off")
-    axes[-1, 1].set_xlabel("DA-size minus 0.5")
+    axes[-1, ncol // 2].set_xlabel("DA-size minus 0.5")
     for ax in axes.flat:
         ax.tick_params(labelbottom=True)
+    handles = [plt.Line2D([], [], ls="", marker="o", ms=4, color=S.SIZE_COLOR[s], label=s) for s in sizes]
+    legend = lambda y: fig.legend(handles=handles, title="Proxy size", title_fontsize=7, fontsize=7, frameon=False,
+                                  ncol=len(sizes), loc="upper center", bbox_to_anchor=(0.5, y))
     if paper:
-        fig.tight_layout()
+        legend(1.0)
+        fig.tight_layout(rect=(0, 0, 1, 0.92))
         S.save_paper(fig, path.with_suffix(""))
     else:
         what = f"its {FILTER} tasks" if pop == FILTER else "every task above chance at the proxy and at 1.7B"
-        top_ = G._header(fig, "Benchmark DA-size against the coded characteristics",
-                         f"dot = one benchmark family; x = DA-size − 0.5 (0 = chance agreement; mean over 90M–1B of the median "
-                         f"over {what}, mono-axis, against 1.7B); y = the characteristic's centred code (ordinal levels "
-                         "ranked, binary ±1), jittered; number = benchmarks per quadrant (a benchmark on a zero line is in "
-                         f"none); shaded = the quadrants a positive correlation fills; outlined = {G.paper_name(top_fam)}")
-        fig.tight_layout(rect=(0, 0, 1, top_))
+        unit = (f"one (benchmark, language) task at one proxy; x = its DA-size − 0.5 (0 = chance agreement; on {what}, "
+                "mono-axis, against 1.7B)") if per_task else (
+                f"one benchmark family at one proxy; x = its DA-size − 0.5 (0 = chance agreement; the median over {what}, "
+                "mono-axis, against 1.7B)")
+        top_ = G._header(fig, f"{'Task' if per_task else 'Benchmark'} DA-size against the coded characteristics",
+                         f"dot = {unit}, coloured by the proxy's size; y = the characteristic's centred code (ordinal "
+                         "levels ranked, binary ±1), each proxy in a band of its own (90M lowest), jittered; red tick = the band's median; number = dots per "
+                         "quadrant (a dot on a zero line is in none); "
+                         "shaded = the quadrants a positive correlation fills")
+        legend(top_)
+        fig.tight_layout(rect=(0, 0, 1, top_ - 0.07))
         S.save(fig, path)
     return pd.DataFrame(counts)
 
@@ -370,7 +462,7 @@ TABLE_NAMES = {"originally_multilingual": "native", "human_translation": "human 
                "mcq_question_only": "MCQ", "mrc_passage": "MCQ + passage", "cloze_completion": "cloze",
                "statement_continuation": "statement (LLM-RF)", "last_word": "last word",
                "english_original": "English", "translation_unknown": "transl. (unknown)", False: "no", True: "yes"}
-TABLE_HEAD = {"curation_category": "Curation", "source_origin": "Source", "format": "Format", "n_options": "Options",
+TABLE_HEAD = {"domain": "Domain", "curation_category": "Curation", "source_origin": "Source", "format": "Format", "n_options": "Options",
               "passage": "Passage", "context_len_chars_median": "Context", "option_len_chars_median": "Option"}
 LENGTHS = ("context_len_chars_median", "option_len_chars_median")
 
@@ -390,8 +482,8 @@ def characteristics_table(families: list, feat: pd.DataFrame, out_dir: Path) -> 
             return f"{v:.0f}" if pd.notna(v) else r["n_options_range"] if pd.notna(r["n_options_range"]) else "--"
         if pd.isna(v):
             return "--" if c in LENGTHS else "unknown"
-        return f"{v:.0f}" if c in LENGTHS else TABLE_NAMES[v]
-    lines = ["\\begin{tabular}{lllllrrr}", "\\toprule",
+        return f"{v:.0f}" if c in LENGTHS else TABLE_NAMES.get(v, v)
+    lines = ["\\begin{tabular}{llllllrrr}", "\\toprule",
              " & ".join(["Benchmark"] + list(TABLE_HEAD.values())) + " \\\\", "\\midrule"]
     lines += [" & ".join([r["benchmark"]] + [cell(c, r[c], r) for c in TABLE_HEAD]) + " \\\\" for _, r in t.iterrows()]
     lines += ["\\bottomrule", "\\end{tabular}", ""]
@@ -399,7 +491,7 @@ def characteristics_table(families: list, feat: pd.DataFrame, out_dir: Path) -> 
     return t
 
 
-def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, quad: pd.DataFrame) -> None:
+def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, tm: pd.DataFrame) -> None:
     if pool != CANONICAL_POOL:
         return
     stage = load_pools()[pool].get("stage", "pretraining")
@@ -409,41 +501,80 @@ def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, quad: pd.Data
 
     def line(reading):
         g = c[c["reading"] == reading].set_index("characteristic")
+        task = reading.startswith("task:")
         return "; ".join(f"{r.label} ρ = {r.value:+.2f}"
                          + (f" [{r.ci_low:+.2f}, {r.ci_high:+.2f}]" if np.isfinite(r.ci_low) else "")
-                         + f" (n = {r.n_benchmarks})" for r in g.itertuples() if np.isfinite(r.value))
+                         + (f" (n = {r.n_tasks} tasks of {r.n_benchmarks}"
+                            + (f", Kruskal–Wallis p = {r.kruskal_p:.3f}" if np.isfinite(r.kruskal_p) else "") + ")" if task
+                            else f" (n = {r.n_benchmarks})") for r in g.itertuples() if np.isfinite(r.value))
+
+    def spread(pop):
+        """How far from chance the benchmarks and their tasks sit (DA-size - 0.5), the evidence for the paper's view."""
+        b = fam[fam["population"] == pop].groupby("family")["da_size"].mean() - CHANCE
+        t = tm.loc[tm["population"] == pop, "da_size"] - CHANCE
+        f = lambda x, w: (f"{w} median {x.median():+.2f} (IQR {x.quantile(.25):+.2f} to {x.quantile(.75):+.2f}, range "
+                          f"{x.min():+.2f} to {x.max():+.2f}), {(x.abs() < .05).mean():.0%} within 0.05 of chance and "
+                          f"{(x >= .16).mean():.0%} at DA-size ≥ 0.66")
+        return f"{f(b, f'{len(b)} benchmarks')}; {f(t, f'{len(t)} tasks')}"
     sizes = [r for r in dict.fromkeys(c["reading"]) if r.startswith("size:")]
     opt = c[(c["characteristic"] == "n_options") & c["reading"].isin(sizes)].set_index("reading")["value"]
+    meta = features()
+    dom = (tm.assign(domain=tm["family"].map(meta["domain"]))
+           .groupby(["population", "domain"]).agg(n_fam=("family", "nunique"), n=("task", "size"), da=("da_size", "median")))
+    snr = pd.read_csv(HERE / stage / pool / "per_family_snr.csv").assign(domain=lambda d: d["family"].map(meta["domain"]))
+    snr_dom = snr.groupby("domain")["snr_median"].agg(["median", "size"]).sort_values("median", ascending=False)
+    files = (f"design_da_size_correlation_{FILTER}_mono_axis", f"design_da_size_by_level_{FILTER}_mono_axis",
+             f"design_da_size_by_level_per_task_{FILTER}_mono_axis", "design_da_size_quadrant_mono_axis",
+             "design_da_size_quadrant_per_task_mono_axis", f"design_da_size_quadrant_{FILTER}_mono_axis",
+             f"design_da_size_quadrant_per_task_{FILTER}_mono_axis")
     body = "\n\n".join([
         "## Benchmark characteristics against DA-size",
         f"Pool `{pool}`: rq02's per-task DA-size (mono-axis pairs, each proxy's final checkpoint against the 1.7B final, gated "
         f"at the proxy and at 1.7B, ≥ 3 pairs) over the paper's `{FILTER}` tasks ({n_fam} families, up to {n_tasks} tasks), "
         "with the unfiltered reading (every gated task) beside it; a benchmark's DA-size is the median over its tasks at a "
-        "proxy and the mean of those medians over 90M–1B. Statistic: Spearman ρ against the centred code of an ordinal or "
-        "binary characteristic (options 2 → 5, no passage → passage) or a length; curation, source and task format are "
-        "binarised, translated → native (written in the language, English originals included, or generated from "
-        "treebanks or planning problems), translated from English → not, and continuation → lettered MCQ; a "
+        "proxy and the mean of those medians over 90M–1B, a task's the mean over the proxies that have one. Statistic: "
+        "Spearman ρ against the centred code of an ordinal or "
+        "binary characteristic (options 2 → 5, no passage → passage) or a length; curation, source, task format and domain "
+        "are binarised, translated → native (written in the language, English originals included, or generated from "
+        "treebanks or planning problems), translated from English → not, continuation → lettered MCQ, and every other "
+        "domain → knowledge (the most populous of the eleven domains, chosen by its count); a "
         "characteristic no source settles (`FAMILY_META` None: BBH's curation method, option count and passage, "
-        "LAMBADA's option count) leaves that benchmark out of that row; 95 % bootstrap over the families. The quadrant "
-        "figure reads every task above chance, so benchmarks fall on both sides of chance agreement; its "
-        f"`{FILTER}` twin, where {n_fam - below} of the {n_fam} benchmarks sit right of 0.5, stays as an analysis figure. Regenerate with `python analysis/rq09_benchmark_design/design_da.py --pool {pool}`.",
-        f"![Characteristics against DA-size]({stage}/{pool}/design_da_size_correlation_above_66_either_mono_axis.png)",
-        f"![DA-size by characteristic level]({stage}/{pool}/design_da_size_by_level_above_66_either_mono_axis.png)",
-        f"![DA-size against the coded characteristics, every task above chance]({stage}/{pool}/design_da_size_quadrant_mono_axis.png)",
+        "LAMBADA's option count) leaves that benchmark out of that row; 95 % bootstrap over the families, which for the "
+        "per-task readings resamples each benchmark with all of its tasks. The by-level figures group each "
+        "characteristic's levels under a header row; the quadrant figures draw one dot per proxy, coloured by its size, "
+        "each size in a band of its own with its median marked. The quadrant figures read every task above chance, so "
+        "benchmarks fall on both sides of chance agreement; their "
+        f"`{FILTER}` twins, where {n_fam - below} of the {n_fam} benchmarks sit right of 0.5, stay as analysis figures. "
+        f"Regenerate with `python analysis/rq09_benchmark_design/design_da.py --pool {pool}`.",
+        f"![Characteristics against DA-size]({stage}/{pool}/{files[0]}.png)",
+        f"![DA-size by characteristic level, one dot per benchmark]({stage}/{pool}/{files[1]}.png)",
+        f"![DA-size by characteristic level, one dot per task]({stage}/{pool}/{files[2]}.png)",
+        f"![DA-size against the coded characteristics, one dot per benchmark and proxy, every task above chance]"
+        f"({stage}/{pool}/{files[3]}.png)",
+        f"![DA-size against the coded characteristics, one dot per task and proxy, every task above chance]"
+        f"({stage}/{pool}/{files[4]}.png)",
         "Key findings (generated):",
         "\n".join([f"- **DA-size, `{FILTER}`** (mean over 90M–1B): {line(FILTER)}.",
                    f"- **DA-size, every gated task**: {line('unfiltered')}.",
                    f"- **SNR at 1.7B** (the same statistics on rq09's family medians): {line('snr')}.",
+                   f"- **DA-size per task, `{FILTER}`** (tasks as observations, the Kruskal–Wallis p treats them as "
+                   f"independent, the interval does not): {line('task:' + FILTER)}.",
+                   f"- **DA-size per task, every gated task**: {line('task:unfiltered')}.",
                    "- **Option count per proxy** (`" + FILTER + "`): "
-                   + ", ".join(f"{s.split(':')[1]} ρ = {v:+.2f}" for s, v in opt.items() if np.isfinite(v)) + "."]),
+                   + ", ".join(f"{s.split(':')[1]} ρ = {v:+.2f}" for s, v in opt.items() if np.isfinite(v)) + ".",
+                   f"- **Aggregating pulls the benchmarks toward chance** (DA-size − 0.5). Every gated task: {spread('unfiltered')}. "
+                   f"`{FILTER}`: {spread(FILTER)}.",
+                   "- **Domain levels** (SNR median over the families at 1.7B, then the median task DA-size on every gated "
+                   "task): " + ", ".join(
+                       f"{d} {r['median']:.2f} ({int(r['size'])} {'family' if r['size'] == 1 else 'families'}"
+                       + (f", task DA-size {dom.loc[('unfiltered', d), 'da']:.2f} over {dom.loc[('unfiltered', d), 'n']} tasks)"
+                          if ("unfiltered", d) in dom.index else ", no gated task)")
+                       for d, r in snr_dom.iterrows()) + "."]),
         "GitHub: " + " · ".join(
             f"[{n}](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/"
             f"rq09_benchmark_design/{stage}/{pool}/{n})"
-            for n in (f"design_da_size_correlation_{FILTER}_mono_axis.png", f"design_da_size_correlation_{FILTER}_mono_axis.csv",
-                      f"design_da_size_by_level_{FILTER}_mono_axis.png", f"design_da_size_by_level_{FILTER}_mono_axis.csv",
-                      "design_da_size_quadrant_mono_axis.png", "design_da_size_quadrant_mono_axis.csv",
-                      f"design_da_size_quadrant_{FILTER}_mono_axis.png", f"design_da_size_quadrant_{FILTER}_mono_axis.csv",
-                      "design_da_size_per_family_mono_axis.csv", "benchmark_characteristics.csv")),
+            for n in [f"{f}.{e}" for f in files for e in ("png", "csv")]
+            + ["design_da_size_per_family_mono_axis.csv", "design_da_size_per_task_mono_axis.csv", "benchmark_characteristics.csv"]),
         "Table: `benchmark_characteristics.csv` (`.tex` for the paper) lists each benchmark's characteristics."])
     replace_block(HERE / "README.md", "design-da", body, f"design_da.py --pool {pool}")
 
@@ -451,34 +582,42 @@ def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, quad: pd.Data
 def main(pool: str) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     out_dir = HERE / stage / pool
-    fam = per_family(DECISION_ACCURACY / stage / pool, pool)
+    tasks = per_task(DECISION_ACCURACY / stage / pool, pool)
+    tasks.to_csv(out_dir / "design_da_size_per_task_mono_axis.csv", index=False)
+    fam = per_family(tasks)
     fam.to_csv(out_dir / "design_da_size_per_family_mono_axis.csv", index=False)
+    tm = task_means(tasks)
     snr = pd.read_csv(out_dir / "per_family_snr.csv")
     feat = features()
-    values = benchmark_values(fam, snr)
+    values = benchmark_values(fam, snr, tm)
     c = correlations(values, feat)
     stem = f"design_da_size_correlation_{FILTER}_mono_axis"
     for paper in (False, True):
         name = stem + ("_paper" if paper else "")
         c.to_csv(out_dir / f"{name}.csv", index=False)
         fig_correlation(c, out_dir / f"{name}.png", paper)
-    lv = level_table(values, feat)
-    quad = None
+    bench = pd.concat([values[p].dropna().rename("da_size").rename_axis("family").reset_index().assign(population=p)
+                       for p in (FILTER, "unfiltered")])
+    # the by-level figures read a benchmark's (task's) mean over the proxies, the quadrants one dot per proxy
+    levels = {"": level_table(bench, feat), "_per_task": level_table(tm, feat)}
+    quadrants = {"": level_table(fam, feat), "_per_task": level_table(tasks.rename(columns={"da": "da_size"}), feat)}
     for paper in (False, True):
         sfx = "_paper" if paper else ""
-        lv[lv["population"] == FILTER].to_csv(out_dir / f"design_da_size_by_level_{FILTER}_mono_axis{sfx}.csv", index=False)
-        fig_levels(lv, out_dir / f"design_da_size_by_level_{FILTER}_mono_axis{sfx}.png", paper)
-        for pop, name in (("unfiltered", "design_da_size_quadrant_mono_axis"),
-                          (FILTER, f"design_da_size_quadrant_{FILTER}_mono_axis")):
-            q = out_dir / f"{name}{sfx}"
-            counts = fig_quadrant(lv, pop, q.with_suffix(".png"), paper)
-            quad = counts if pop == "unfiltered" else quad
-            pd.concat([lv[lv["population"] == pop].assign(row="benchmark"), counts.assign(row="quadrant count")]) \
-                .to_csv(q.with_suffix(".csv"), index=False)
+        for unit, lv in levels.items():
+            name = f"design_da_size_by_level{unit}_{FILTER}_mono_axis{sfx}"
+            lv[lv["population"] == FILTER].to_csv(out_dir / f"{name}.csv", index=False)
+            fig_levels(lv, out_dir / f"{name}.png", paper)
+        for unit, lv in quadrants.items():
+            for pop, name in (("unfiltered", f"design_da_size_quadrant{unit}_mono_axis"),
+                              (FILTER, f"design_da_size_quadrant{unit}_{FILTER}_mono_axis")):
+                q = out_dir / f"{name}{sfx}"
+                counts = fig_quadrant(lv, pop, q.with_suffix(".png"), paper)
+                pd.concat([lv[lv["population"] == pop].assign(row="task" if unit else "benchmark"),
+                           counts.assign(row="quadrant count")]).to_csv(q.with_suffix(".csv"), index=False)
     families = sorted(set(snr["family"]) | set(fam["family"]))
     characteristics_table(families, feat, out_dir)
-    print(c[c["reading"].isin([FILTER, "unfiltered", "snr"])].round(3).to_string(index=False))
-    generate_readme(pool, c, fam, quad)
+    print(c[c["reading"].isin([FILTER, "unfiltered", "snr", f"task:{FILTER}", "task:unfiltered"])].round(3).to_string(index=False))
+    generate_readme(pool, c, fam, tm)
 
 
 if __name__ == "__main__":
