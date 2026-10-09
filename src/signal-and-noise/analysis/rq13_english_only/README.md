@@ -80,7 +80,7 @@ collects them.
   the per-size task populations move and are counted (rule 13).
 
 <!-- BEGIN auto:english-setup (english_only.py --pool predictivity) -->
-Pool `predictivity`, ladder-report snapshot **2026-10-08 12:06**; seed 1904 for every score, the replicate seeds of `predictivity_seeds` for the seed yardstick; gate `predictivity`. 206 English tasks: 107 accuracy-scored (71 original, 35 rf, 1 rfgm), 98 bBPB twins and the English validation BPB `bpb_dclm`.
+Pool `predictivity`, ladder-report snapshot **2026-10-09 04:41**; seed 1904 for every score, the replicate seeds of `predictivity_seeds` for the seed yardstick; gate `predictivity`. 206 English tasks: 107 accuracy-scored (71 original, 35 rf, 1 rfgm), 98 bBPB twins and the English validation BPB `bpb_dclm`.
 
 - **Mirrored family groups** (decision accuracy and the first SNR reading): L1 — `lm-L1-dclmP-deep-seed1904`, `lm-L1-deep-seed1904`, `lm-L1-fweb-deep-seed1904`, `lm-L1-shallow-seed1904`; L2 — `lm-L2-ES-deep-seed1904`, `lm-L2-ZH-deep-seed1904`, `lm-L2-deep-seed1904`, `lm-L2-shallow-seed1904`; L15 — `lm-L15-AT3-deep-seed1904`, `lm-L15-deep-seed1904`, `lm-L15-schemeB-deep-seed1904`, `lm-L15-shallow-seed1904`; L30 — `lm-L30-AT3-deep-seed1904`, `lm-L30-deep-seed1904`, `lm-L30-schemeB-deep-seed1904`, `lm-L30-shallow-seed1904`. Left out, with another number of such families: L8 (3), L50 (3).
 - **Deep against shallow** (the second SNR reading): the two baseline cells at L1, L2, L8, L15, L30, L50.
@@ -298,6 +298,54 @@ Follow-ups:
 
 - The BBH and ACP-Bench RF twins along training, per size: whether they sit
   near chance on the small rungs (a fit on few sizes) or stay flat above it.
+- Next: which benchmarks are in each regime, and whether the well-known ones
+  (MMLU, ARC, HellaSwag, OpenBookQA) are among the predictable ones,
+  [Which English benchmarks scale at L1](#which-english-benchmarks-scale-at-l1).
+
+### Which English benchmarks scale at L1
+
+The figure above gives shares. This version names every point, one panel per
+corpus (its bottom row, the one that sets the regime), and its table adds the
+English accuracy tasks the gate filters out, so a benchmark that never leaves
+chance shows up as `filtered` rather than missing.
+
+<!-- BEGIN auto:english-regimes-l1-tagged (english_regimes.py --pool predictivity) -->
+![Scaling regimes at L1, every task named](pretraining/predictivity/english_only_scaling_regimes_l1_accuracy_tagged.png)
+
+Pool `predictivity`: the figure above with every point named, one panel per corpus (its panel (b)); the L1 deep seed-1904 cell of each English corpus, 90M–1.7B, gate `predictivity`, English accuracy tasks (DCLM-Edu 33, DCLM 33, FineWeb 33 drawn). The table adds the English accuracy tasks the gate filters out (regime `filtered`: above chance at fewer than three sizes, so no fit; DCLM-Edu 77, DCLM 77, FineWeb 77). Regenerate with `python analysis/rq13_english_only/english_regimes.py --pool predictivity`.
+
+Key findings (the well-known English benchmarks, per corpus):
+
+- **Predictable across both in all three corpora**: MMLU RF, Global-MMLU RF, ARC-Easy, ARC-Challenge, HellaSwag, OpenBookQA, XWinograd, LAMBADA, CommonsenseQA RF, Belebele RF, XStoryCloze, XNLI.
+- **MMLU**: filtered by the gate in all three.
+- **Global-MMLU**: filtered by the gate in all three.
+- **Global PIQA**: weak (DCLM-Edu), size only (DCLM), weak (FineWeb).
+- **CommonsenseQA**: filtered by the gate in all three.
+- **Belebele**: filtered by the gate in all three.
+- **TruthfulQA (mc2)**: filtered by the gate in all three.
+
+[english_only_scaling_regimes_l1_accuracy_tagged.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_scaling_regimes_l1_accuracy_tagged.png) · [english_only_scaling_regimes_l1_accuracy_tagged.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_scaling_regimes_l1_accuracy_tagged.csv)
+<!-- END auto:english-regimes-l1-tagged -->
+
+- The well-known benchmarks are the predictable ones. ARC-Easy, ARC-Challenge,
+  HellaSwag, OpenBookQA, LAMBADA, XWinograd, XStoryCloze, XNLI and the RF
+  versions of MMLU, Global-MMLU, Belebele and CommonsenseQA are predictable
+  across both in all three corpora, 12 of the 14 tasks that are in that
+  regime everywhere.
+- The popular ones that drop out never leave chance rather than scale badly:
+  MMLU, Global-MMLU, Belebele and CommonsenseQA in their letter format, and
+  TruthfulQA, are filtered by the gate in all three corpora, and the RF twin
+  of each of the four letter-format ones passes.
+- Global PIQA (English) is the one well-known benchmark above chance that does
+  not scale: weak in DCLM-Edu and FineWeb, size only in DCLM. The rest of the
+  non-predictable tasks are the BBH and ACP-Bench RF subtasks, the two
+  CulturalBench-easy RF tasks, and MathQA, MultiBLiMP and PAWS-X, which change
+  regime with the corpus.
+
+Follow-ups:
+
+- Global PIQA along training at each size: whether the English task sits just
+  above chance (a fit on noise) or plateaus early.
 
 - Next: whether a small L1 proxy also ranks the L1 variants like 1.7B does,
   [Decision accuracy](#decision-accuracy).

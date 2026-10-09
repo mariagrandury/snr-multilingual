@@ -30,12 +30,18 @@ the grey backdrop included.
     english_only_scaling_regimes_l1_accuracy.png / .csv        the L1 cells alone on the English accuracy tasks,
                                                                no grey points; one row per (corpus, task) with its format
     english_only_scaling_regimes_l1_accuracy_paper.png / .csv  the same, bare (rule 18), for the paper
+    english_only_scaling_regimes_l1_accuracy_tagged.png / .csv        the L1 accuracy figure's panel (b), one panel per
+                                                                      corpus, every point named; the table adds the
+                                                                      English accuracy tasks the gate filters out
+                                                                      (regime `filtered`, no fit) and each task's name
+    english_only_scaling_regimes_l1_accuracy_tagged_paper.png / .csv  the same, bare (rule 18), for the paper
 
     python analysis/rq13_english_only/english_regimes.py --pool predictivity
 """
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -58,13 +64,32 @@ from analysis.paths import SCALING_PREDICTABILITY  # noqa: E402
 from analysis.rq01_scaling_predictability.analyze import fit_table  # noqa: E402
 from analysis.rq01_scaling_predictability.regimes import (  # noqa: E402
     CANONICAL as RQ01_POOL, DECLINES, MIN_POINTS, QUADRANTS, R2_SPLIT, REGIME_SHORT, _edged, _quadrants, regime_table)
-from analysis.utils import GRID_SEED, finals, ladder_frame, lower_is_better, variant  # noqa: E402
+from analysis.utils import GRID_SEED, assign_language, benchmark_family, finals, ladder_frame, lower_is_better, variant  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 CORPORA = {"A": "DCLM-Edu", "DCLMP": "DCLM", "FWEB": "FineWeb"}     # the L1 data builds, in the order drawn
 BACKGROUND = "every K (rq01)"
 REGIMES = [v[0] for v in QUADRANTS.values()] + [DECLINES]
 L1_ACCURACY = "english_only_scaling_regimes_l1_accuracy"
+L1_TAGGED = f"{L1_ACCURACY}_tagged"
+FILTERED = "filtered"      # an English accuracy task the gate leaves without a size fit or a trajectory fit
+# a name's colour in the tagged figure: its quadrant's hue, dark enough for 6 pt text
+REGIME_INK = {"predictable across both": "#1c5cab", "predictable during training only": "#3d7a2a",
+              "predictable across size only": "#3f6670", "weak / unpredictable in both": "#a0522d", DECLINES: S.INK}
+# the well-known English benchmarks the README and the paper name, by their task key (original and twins)
+POPULAR = ["mmlu", "rf_mmlu", "global_mmlu_full_en", "rf_global_mmlu_full_en", "arc_easy", "arc_challenge", "hellaswag",
+           "openbookqa", "xwinograd_en", "global_piqa_parallel_cloze_eng_latn", "lambada_openai_mt_en", "commonsense_qa",
+           "rf_commonsense_qa", "belebele_eng_Latn", "rf_belebele_eng_Latn", "truthfulqa_mc2", "xstorycloze_en", "xnli_en"]
+# task names the generic `tag` would read badly
+TAGS = {"arc_easy": "ARC-Easy", "arc_challenge": "ARC-Challenge", "global_piqa_parallel_cloze_eng_latn": "Global PIQA",
+        "lambada_openai_mt_en": "LAMBADA", "truthfulqa-multi_mc1_en": "TruthfulQA-Multi", "blend_us_sample": "BLEnD (US)"}
+SUBTASKS = {"logical_deduction_three_objects": "logical deduction 3", "logical_deduction_five_objects": "logical deduction 5",
+            "logical_deduction_seven_objects": "logical deduction 7", "reasoning_about_colored_objects": "colored objects",
+            "tracking_shuffled_objects_three_objects": "shuffled objects 3",
+            "tracking_shuffled_objects_five_objects": "shuffled objects 5",
+            "tracking_shuffled_objects_seven_objects": "shuffled objects 7",
+            "salient_translation_error_detection": "translation errors", "disambiguation_qa": "disambiguation QA", "united_kingdom": "UK", "united_states": "US",
+            "south_africa": "South Africa"}
 mpl.rcParams.update(S.RC)
 
 
@@ -73,21 +98,45 @@ def cells_of(data: str, L: int = 1):
     return lambda d: d[(d["seed"] == GRID_SEED) & (d["ladder"] == "deep") & (d["L"] == L) & (d["data"] == data)]
 
 
-def table(pool: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+def tag(task: str) -> str:
+    """A task as the tagged figure names it: the paper's benchmark name, the
+    subtask, the twin (`rf_bbh_mcq_date_understanding` -> `BBH date understanding RF`)."""
+    if task in TAGS:
+        return TAGS[task]
+    fmt = variant(task)[0]
+    t = task.removeprefix(f"{fmt}_") if fmt != "original" else task
+    fam = G.base(benchmark_family(t))
+    sub = re.sub(r"(^|_)(eng_Latn|eng_latn|eng|en)$", "", t.removeprefix(fam).strip("_"))
+    name = G.paper_name(fam).replace(" (MCQ)", "")
+    if sub:
+        name += " " + SUBTASKS.get(sub, sub.replace("_", " "))
+    return name + ("" if fmt == "original" else f" {G._TWIN_NAMES[fmt]}")
+
+
+def table(pool: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """The K = 1 regimes per corpus with rq01's points behind (the figure's
-    table), and the single-fit regimes of the English tasks of the deep data-A
-    cell at every L (for the summary)."""
+    table), the single-fit regimes of the English tasks of the deep data-A
+    cell at every L (for the summary), and the English accuracy tasks of each
+    L1 cell that the gate filters out (no regime)."""
     df = ladder_frame(pool)
     fin = finals(df)
+    filtered = []
 
     def one(data, L):
         fits, _ = fit_table(fin, pool, cells=cells_of(data, L))
-        return regime_table(fits, df, pool, cells=cells_of(data, L), min_fits=1)
+        t = regime_table(fits, df, pool, cells=cells_of(data, L), min_fits=1)
+        if L == 1:
+            f = fits[(fits["kind"] == "benchmark") & ~fits["task"].isin(t["task"]) & ~fits["task"].map(lower_is_better)]
+            f = f[(f["task"].map(assign_language) == "en") & (f["task"].map(lambda x: variant(x)[1]) == "acc")]
+            filtered.append(f[["task", "family"]].drop_duplicates().assign(language="en", regime=FILTERED,
+                                                                         corpus=CORPORA[data]))
+        return t
     parts = [one(data, 1).assign(corpus=name) for data, name in CORPORA.items()]
     rq01 = pd.read_csv(SCALING_PREDICTABILITY / load_pools()[RQ01_POOL].get("stage", "pretraining") / RQ01_POOL
                        / "scaling_regimes.csv")
     by_L = pd.concat([one("A", L).assign(corpus=f"L{L} {CORPORA['A']}") for L in sorted(fin["L"].unique()) if L > 1])
-    return pd.concat(parts + [rq01.assign(corpus=BACKGROUND)], ignore_index=True), by_L[by_L["language"] == "en"]
+    return (pd.concat(parts + [rq01.assign(corpus=BACKGROUND)], ignore_index=True), by_L[by_L["language"] == "en"],
+            pd.concat(filtered, ignore_index=True))
 
 
 def l1_accuracy(t: pd.DataFrame) -> pd.DataFrame:
@@ -145,6 +194,101 @@ def figure(t: pd.DataFrame, path: Path, paper: bool) -> None:
         + ("no point from an L > 1 cell" if l1 else "grey = the tasks of rq01's figure (every L, medians over L)"))
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path)
+
+
+def tagged(a: pd.DataFrame, filtered: pd.DataFrame) -> pd.DataFrame:
+    """The L1 accuracy table with each task's name, plus the English accuracy
+    tasks the gate filters out in each L1 cell (regime FILTERED, no fit)."""
+    out = pd.concat([a, filtered.assign(format=filtered["task"].map(lambda x: variant(x)[0]))], ignore_index=True)
+    return out.assign(name=out["task"].map(tag), popular=out["task"].isin(POPULAR))
+
+
+def _column(ax, g: pd.DataFrame, left: bool, fontsize: float) -> None:
+    """Name the points of `g` in a column outside the axes (left or right), in
+    the order of their y and spread just enough not to overlap, each name in
+    its regime's colour with a leader to its point."""
+    g = g.sort_values("r2_trajectory")
+    lo, hi = ax.get_ylim()
+    step = 1.2 * fontsize / 72 / (ax.get_position().height * ax.figure.get_figheight()) * (hi - lo)
+    bottom, top = lo - .06 * (hi - lo), hi + .06 * (hi - lo)
+    y = g["r2_trajectory"].to_numpy(float, copy=True)
+    for i in range(len(y)):
+        y[i] = max(y[i], y[i - 1] + step if i else bottom)
+    for i in range(len(y) - 1, -1, -1):
+        y[i] = min(y[i], y[i + 1] - step if i < len(y) - 1 else top)
+    for r, ty in zip(g.itertuples(), y):
+        ax.annotate(r.name, (r.r2_size, r.r2_trajectory), xytext=(-0.12 if left else 1.03, ty),
+                    textcoords=("axes fraction", "data"), ha="right" if left else "left", va="center",
+                    fontsize=fontsize, color=REGIME_INK[r.regime], annotation_clip=False,
+                    arrowprops=dict(arrowstyle="-", color=S.MUTED, lw=.4, alpha=.6, shrinkA=1, shrinkB=2,
+                                    relpos=(1, .5) if left else (0, .5)))
+
+
+def figure_tagged(a: pd.DataFrame, path: Path, paper: bool) -> None:
+    """Panel (b) of the L1 accuracy figure, one panel per corpus stacked, every
+    point named beside the panel: the points left of R² = 0.5 on the left, the
+    rest on the right (the filtered tasks have no point)."""
+    a = a[a["regime"] != FILTERED]
+    fig, axes = plt.subplots(len(CORPORA), 1, figsize=(7.0, 9.0 if paper else 13.5), sharex=True)
+    top = 0.97 if paper else G._header(
+        fig, "Scaling regimes of the English-only cells on the English benchmarks, every task named",
+        "panel (b) of the figure above, one panel per English corpus: point = one English accuracy task (original, RF or "
+        f"LLM-RF) of the L1 deep seed-{GRID_SEED} cell, 90M–1.7B, above chance at ≥ 3 sizes (rule 1); R² of its final "
+        f"score ~ log N fit against the median R² of score ~ log tokens over each run's checkpoints; quadrants split at "
+        f"R² = {R2_SPLIT}, black edge and black name = ρ < 0 ('{DECLINES}'), a name's colour is its regime; the tasks the "
+        "gate filters out have no point (the CSV lists them)") - 0.02
+    fig.subplots_adjust(left=0.29, right=0.71, top=top, bottom=0.06, hspace=0.2)
+    for ax, name, colour in zip(axes, CORPORA.values(), S.SERIES):
+        g = a[a["corpus"] == name]
+        _quadrants(ax, labels=False)
+        ax.scatter(g["r2_size"], g["r2_trajectory"], **_edged(dict(s=12, color=colour, alpha=.9, zorder=3), g))
+        ax.set_xlim(-0.02, 1.02); ax.set_ylim(-0.02, 1.02); ax.set_xticks([0, .5, 1]); ax.set_yticks([0, .5, 1])
+        for left in (True, False):
+            _column(ax, g[(g["r2_size"] < R2_SPLIT) == left], left, fontsize=6 if paper else 6.5)
+        ax.grid(color=S.GRID, lw=.5); S.clean(ax)
+        ax.set_title(f"{name} ({len(g)} tasks)", fontsize=8.5, loc="left")
+    axes[-1].set_xlabel("R² of the model-size scaling fit")
+    fig.supylabel("Median R² across training-trajectory fits", x=0.02, fontsize=8.5)
+    if paper:
+        S.save_paper(fig, path.with_suffix(""))
+        return
+    S.save(fig, path)
+
+
+def generate_readme_tagged(a: pd.DataFrame, pool: str) -> None:
+    """The block of the tagged figure: the regime of every well-known English
+    benchmark per corpus, read from its table `a`."""
+    if pool != CANONICAL_POOL:
+        return
+    stage = load_pools()[pool].get("stage", "pretraining")
+    short = {**REGIME_SHORT, FILTERED: "filtered by the gate"}
+    wide = a.pivot(index="task", columns="corpus", values="regime").reindex(columns=list(CORPORA.values()))
+    names = a.drop_duplicates("task").set_index("task")["name"]
+
+    def reading(task):
+        r = wide.loc[task]
+        if r.nunique() == 1:
+            return f"{short[r.iloc[0]]} in all three"
+        return ", ".join(f"{short[v]} ({c})" for c, v in r.items())
+    pop = [k for k in POPULAR if k in wide.index]
+    both = [k for k in pop if (wide.loc[k] == "predictable across both").all()]
+    rest = [k for k in pop if k not in both]
+    n = a[a["regime"] != FILTERED].groupby("corpus").size()
+    nf = a[a["regime"] == FILTERED].groupby("corpus").size()
+    body = "\n\n".join([
+        f"![Scaling regimes at L1, every task named]({stage}/{pool}/{L1_TAGGED}.png)",
+        f"Pool `{pool}`: the figure above with every point named, one panel per corpus (its panel (b)); the L1 deep "
+        f"seed-{GRID_SEED} cell of each English corpus, 90M–1.7B, gate `{CANONICAL_POOL}`, English accuracy tasks "
+        f"({', '.join(f'{c} {n[c]}' for c in CORPORA.values())} drawn). The table adds the English accuracy tasks the gate "
+        f"filters out (regime `{FILTERED}`: above chance at fewer than three sizes, so no fit; "
+        + ", ".join(f"{c} {nf.get(c, 0)}" for c in CORPORA.values()) + "). Regenerate with "
+        f"`python analysis/rq13_english_only/english_regimes.py --pool {pool}`.",
+        "Key findings (the well-known English benchmarks, per corpus):",
+        "\n".join([f"- **Predictable across both in all three corpora**: " + ", ".join(names[k] for k in both) + "."]
+                   + [f"- **{names[k]}**: {reading(k)}." for k in rest]),
+        " · ".join(f"[{L1_TAGGED}.{x}](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/"
+                   f"analysis/{HERE.name}/{stage}/{pool}/{L1_TAGGED}.{x})" for x in ("png", "csv"))])
+    replace_block(HERE / "README.md", "english-regimes-l1-tagged", body, f"english_regimes.py --pool {pool}")
 
 
 def generate_readme(t: pd.DataFrame, s: pd.DataFrame, pool: str) -> None:
@@ -223,7 +367,7 @@ def generate_readme_l1(a: pd.DataFrame, pool: str) -> None:
 
 def main(pool: str) -> None:
     out_dir = HERE / load_pools()[pool].get("stage", "pretraining") / pool
-    t, by_L = table(pool)
+    t, by_L, filtered = table(pool)
     s = summary(t, by_L)
     for name in ("english_only_scaling_regimes", "english_only_scaling_regimes_paper"):
         t.to_csv(out_dir / f"{name}.csv", index=False)
@@ -236,6 +380,11 @@ def main(pool: str) -> None:
         a.to_csv(out_dir / f"{name}.csv", index=False)
         figure(a, out_dir / f"{name}.png", paper=name.endswith("_paper"))
     generate_readme_l1(a, pool)
+    at = tagged(a, filtered)
+    for name in (L1_TAGGED, f"{L1_TAGGED}_paper"):
+        at.to_csv(out_dir / f"{name}.csv", index=False)
+        figure_tagged(at, out_dir / f"{name}.png", paper=name.endswith("_paper"))
+    generate_readme_tagged(at, pool)
 
 
 if __name__ == "__main__":
