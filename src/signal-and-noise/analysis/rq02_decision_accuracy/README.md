@@ -1957,6 +1957,8 @@ The same task × size DAs (multi-axis pairs of `predictivity`, finals), split by
 | all cloze | acc at chance at every size | 350M |  | 0.64 (161) | 0.45 | 0.98 |
 | all cloze | acc at chance at every size | 600M |  | 0.62 (161) | 0.45 | 0.95 |
 | all cloze | acc at chance at every size | 1B |  | 0.64 (161) | 0.46 | 0.97 |
+
+![bBPB where accuracy is at chance](pretraining/predictivity/bench_bpb_da_size_by_acc_gate_multi_axes_paper.png)
 <!-- END auto:bench-bpb-acc-gate -->
 
 **bBPB where accuracy is at chance: DA-size · no filter · multi-axis pairs
@@ -1990,7 +1992,7 @@ twin rank near the per-language BPB level (0.74–0.96, FineWeb2 macro
 - Per benchmark: which families carry the 0.6 (include_v2_en sits near 0.5
   on every reading, 0.48 / 0.49 / 0.52 in the per-benchmark table).
 
-GitHub: [bench_bpb_da_size_by_acc_gate_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/bench_bpb_da_size_by_acc_gate_multi_axes.csv)
+GitHub: [bench_bpb_da_size_by_acc_gate_multi_axes_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/bench_bpb_da_size_by_acc_gate_multi_axes_paper.png) · [bench_bpb_da_size_by_acc_gate_multi_axes_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/bench_bpb_da_size_by_acc_gate_multi_axes_paper.csv) · [bench_bpb_da_size_by_acc_gate_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/bench_bpb_da_size_by_acc_gate_multi_axes.csv)
 
 **Follow-ups**
 
