@@ -59,14 +59,14 @@ Pool `predictivity` (seed 1904, every data build), mono-axis pairs, ≥ 3 pairs 
 
 | population | filter | tasks | cells | diagonal | same benchmark, other language | other benchmark, same language | other benchmark and language | off-diagonal share ≥ 0.75 |
 |---|---|---|---|---|---|---|---|---|
-| trained | `above_chance` | 468 | 219024 | 0.51 | 0.48 | 0.48 | 0.48 | 0.04 |
-| trained | `above_66_either` | 109 | 11881 | 0.64 | 0.59 | 0.59 | 0.53 | 0.14 |
+| trained | `above_chance` | 467 | 218089 | 0.51 | 0.48 | 0.48 | 0.48 | 0.04 |
+| trained | `above_66_either` | 106 | 11236 | 0.64 | 0.60 | 0.59 | 0.53 | 0.15 |
 | trained | `L8` | 154 | 23716 | 0.50 | 0.50 | 0.48 | 0.48 | 0.00 |
 | trained | `hellaswag` | 26 | 676 | 0.71 | 0.63 | – | – | 0.30 |
-| all_languages | `above_chance` | 880 | 774400 | 0.57 | 0.52 | 0.50 | 0.47 | 0.01 |
-| all_languages | `above_66_either` | 109 | 11881 | 0.67 | 0.59 | 0.60 | 0.52 | 0.05 |
-| all_languages | `L8` | 302 | 91204 | 0.55 | 0.53 | 0.48 | 0.45 | 0.00 |
-| all_languages | `hellaswag` | 31 | 961 | 0.71 | 0.56 | – | – | 0.09 |
+| all_languages | `above_chance` | 863 | 744769 | 0.57 | 0.52 | 0.50 | 0.47 | 0.01 |
+| all_languages | `above_66_either` | 106 | 11236 | 0.67 | 0.59 | 0.60 | 0.52 | 0.05 |
+| all_languages | `L8` | 297 | 88209 | 0.55 | 0.53 | 0.48 | 0.45 | 0.00 |
+| all_languages | `hellaswag` | 31 | 961 | 0.70 | 0.57 | – | – | 0.09 |
 
 ![HellaSwag, language against language](pretraining/predictivity/cross_task_da_size_by_language_hellaswag_all_languages_mono_axis.png)
 
@@ -357,10 +357,10 @@ Per benchmark family, decision accuracy of a proxy size against the 1.7B MACRO r
 | bbpb_rfgm_include_base_44 | 7 | macro 0.80 / best lang 0.79 (de) | macro 0.79 / best lang 0.82 (es) | macro 0.82 / best lang 0.86 (ja) | macro 0.74 / best lang 0.80 (fr) | macro 0.84 / best lang 0.85 (es) |
 | bbpb_xnli | 6 | macro 0.62 / en 0.43 / best lang 0.70 (ru) | macro 0.74 / en 0.51 / best lang 0.77 (zh) | macro 0.68 / en 0.40 / best lang 0.78 (ru) | macro 0.73 / en 0.62 / best lang 0.76 (ru) | macro 0.69 / en 0.57 / best lang 0.68 (ru) |
 | bbpb_xstorycloze | 4 | macro 0.85 / en 0.58 / best lang 0.90 (ru) | macro 0.92 / en 0.60 / best lang 0.92 (es) | macro 0.81 / en 0.47 / best lang 0.83 (zh) | macro 0.80 / en 0.53 / best lang 0.85 (ru) | macro 0.87 / en 0.66 / best lang 0.88 (es) |
-| global_piqa_parallel_cloze | 6 | — | — | — | macro 0.40 / en 0.40 / best lang 0.40 (en) | macro 0.59 / en 0.51 / best lang 0.65 (ja) |
+| global_piqa_parallel_cloze | 6 | — | — | — | macro 0.51 / en 0.40 / best lang 0.51 (ja) | macro 0.59 / en 0.51 / best lang 0.65 (ja) |
 | hellaswag | 6 | macro 0.84 / en 0.68 / best lang 0.84 (es) | macro 0.84 / en 0.82 / best lang 0.84 (it) | macro 0.78 / en 0.69 / best lang 0.82 (it) | macro 0.76 / en 0.68 / best lang 0.78 (fr) | macro 0.88 / en 0.84 / best lang 0.88 (es) |
 | include_v2_en | 7 | macro 0.59 / best lang 0.71 (ja) | macro 0.58 / best lang 0.57 (ja) | macro 0.51 / best lang 0.56 (de) | macro 0.54 / best lang 0.65 (zh) | macro 0.62 / best lang 0.66 (zh) |
-| include_v2_og | 7 | macro 0.51 / best lang 0.57 (ru) | macro 0.53 / best lang 0.64 (ru) | macro 0.57 / best lang 0.60 (ru) | macro 0.61 / best lang 0.70 (it) | macro 0.71 / best lang 0.70 (it) |
+| include_v2_og | 7 | macro 0.51 / best lang 0.57 (ru) | macro 0.53 / best lang 0.64 (ru) | macro 0.60 / best lang 0.60 (ru) | macro 0.61 / best lang 0.70 (it) | macro 0.71 / best lang 0.70 (it) |
 | lambada_openai_mt | 5 | macro 0.75 / en 0.57 / best lang 0.86 (de) | macro 0.76 / en 0.65 / best lang 0.77 (de) | macro 0.68 / en 0.56 / best lang 0.67 (es) | macro 0.74 / en 0.74 / best lang 0.78 (it) | macro 0.88 / en 0.80 / best lang 0.88 (de) |
 | multiblimp | 6 | macro 0.71 / en 0.42 / best lang 0.72 (it) | macro 0.66 / en 0.39 / best lang 0.71 (fr) | macro 0.79 / en 0.51 / best lang 0.76 (de) | macro 0.68 / en 0.51 / best lang 0.71 (ru) | macro 0.68 / en 0.50 / best lang 0.66 (es) |
 | paws | 4 | macro 0.42 / best lang 0.42 (es) | macro 0.62 / en 0.62 / best lang 0.62 (en) | macro 0.62 / en 0.62 / best lang 0.62 (en) | macro 0.45 / en 0.57 / best lang 0.57 (en) | macro 0.57 / en 0.46 / best lang 0.57 (de) |

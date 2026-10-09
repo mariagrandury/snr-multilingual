@@ -123,31 +123,31 @@ The thresholds above say from which token count a benchmark is measurable. The p
 |---|---|---|---|---|---|---|
 | all cells | mono-axis | 90M | 0.770 | 0.701 | 0.714 | 891 |
 | all cells | mono-axis | 175M | 0.750 | 0.720 | 0.724 | 910 |
-| all cells | mono-axis | 350M | 0.772 | 0.737 | 0.736 | 930 |
-| all cells | mono-axis | 600M | 0.796 | 0.745 | 0.753 | 1091 |
+| all cells | mono-axis | 350M | 0.772 | 0.737 | 0.738 | 930 |
+| all cells | mono-axis | 600M | 0.796 | 0.745 | 0.759 | 1103 |
 | all cells | mono-axis | 1B | 0.830 | 0.767 | 0.789 | 1103 |
 | all cells | multi-axis | 90M | 0.819 | 0.743 | 0.771 | 4878 |
 | all cells | multi-axis | 175M | 0.838 | 0.800 | 0.779 | 5023 |
 | all cells | multi-axis | 350M | 0.852 | 0.812 | 0.804 | 5184 |
-| all cells | multi-axis | 600M | 0.877 | 0.810 | 0.827 | 6056 |
+| all cells | multi-axis | 600M | 0.877 | 0.810 | 0.831 | 6134 |
 | all cells | multi-axis | 1B | 0.886 | 0.820 | 0.849 | 6134 |
 | same policy | mono-axis | 90M | 0.770 | 0.703 | 0.720 | 891 |
 | same policy | mono-axis | 175M | 0.750 | 0.712 | 0.718 | 910 |
-| same policy | mono-axis | 350M | 0.772 | 0.747 | 0.745 | 930 |
-| same policy | mono-axis | 600M | 0.796 | 0.757 | 0.758 | 1091 |
+| same policy | mono-axis | 350M | 0.772 | 0.747 | 0.747 | 930 |
+| same policy | mono-axis | 600M | 0.796 | 0.757 | 0.765 | 1103 |
 | same policy | mono-axis | 1B | 0.830 | 0.770 | 0.788 | 1103 |
 | same policy | multi-axis | 90M | 0.819 | 0.743 | 0.767 | 4878 |
 | same policy | multi-axis | 175M | 0.838 | 0.793 | 0.786 | 5023 |
 | same policy | multi-axis | 350M | 0.852 | 0.821 | 0.816 | 5184 |
-| same policy | multi-axis | 600M | 0.877 | 0.820 | 0.827 | 6056 |
+| same policy | multi-axis | 600M | 0.877 | 0.820 | 0.831 | 6134 |
 | same policy | multi-axis | 1B | 0.886 | 0.827 | 0.854 | 6134 |
 
 | size | median SE all | median SE tokens | median SE gate | cells kept by tokens |
 |---|---|---|---|---|
 | 90M | 0.0086 | 0.0110 | 0.0083 | 0.56 |
 | 175M | 0.0099 | 0.0123 | 0.0095 | 0.66 |
-| 350M | 0.0100 | 0.0121 | 0.0100 | 0.71 |
-| 600M | 0.0120 | 0.0131 | 0.0112 | 0.78 |
+| 350M | 0.0101 | 0.0121 | 0.0102 | 0.72 |
+| 600M | 0.0121 | 0.0131 | 0.0114 | 0.78 |
 | 1B | 0.0138 | 0.0146 | 0.0135 | 0.83 |
 | 1.7B | 0.0159 | 0.0162 | 0.0147 | 0.85 |
 
@@ -158,7 +158,7 @@ Key findings (`token_exclusion_da_size_both_axes.csv`, `token_exclusion_da_size_
 - **On the families that keep an aggregate, leaving out the cells below the threshold lowers the decision accuracy of the aggregate.** Over the 18 families every policy scores, mono-axis DA-size is 0.75–0.83 with every cell and 0.70–0.77 without the excluded ones (−0.02 to −0.07 per proxy size), multi-axis 0.82–0.89 against 0.74–0.83. Holding the 1.7B aggregate at every cell gives the same picture (0.70–0.77), so the drop is on the proxy side.
 - **The drop sits in the families the exclusion cuts deepest.** Mono-axis, pooled over the proxies: Global PIQA (parallel) 0.74 → 0.47, ARC 0.86 → 0.68, PAWS-X 0.66 → 0.49, INCLUDE v2 (original) 0.79 → 0.63; the families with no excluded cell (HellaSwag, MultiBLiMP, Belebele RF and LLM-RF, XCOPA, INCLUDE v2 EN) do not move.
 - **The standard error of the aggregate rises.** The median SE goes from 0.0086 to 0.0110 at 90M and from 0.0159 to 0.0162 at 1.7B, since the exclusion keeps 56 % of the cells at 90M and 85 % at 1.7B: fewer languages outweigh the smaller spread.
-- **What the exclusion does remove is the families at chance.** The nine families that never reach the threshold lose their aggregate; with every cell it ranks the designs at 0.44–0.65 (mono-axis), so the exclusion keeps those near-coin-flip aggregates out of a decision, while within a kept family the at-chance languages still help the ranking.
+- **What the exclusion does remove is the families at chance.** The nine families that never reach the threshold lose their aggregate; with every cell it ranks the designs at 0.44–0.65 (mono-axis), so the exclusion keeps those near-chance aggregates out of a decision, while within a kept family the at-chance languages still help the ranking.
 - **The gate behaves like the token threshold.** Keeping only the cells above chance gives 0.72–0.79 mono-axis and a median SE at or below the all-cells one.
 
 Follow-ups:
@@ -175,7 +175,7 @@ The generated block below carries the four populations (the plan grid `deep_A_19
 
 `tokens_seen.py`, `predictivity_seeds` pool: a language's evaluation against the training tokens of that language the model had seen (its share of the mixture from the build's plan × the cell's budget × the checkpoint's share of the run). Regenerate with `python analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_seeds`.
 
-**Share of a benchmark's cells above chance against the tokens seen.** One (task, size, L) cell per benchmark, language and language setting; above chance by rule 1's Wilson test on the cell's runs; cells binned 3 per decade of tokens, a point = the share of the bin's cells above chance with the cell count, one line per size. Two populations: `deep_A_1904`, the plan grid, deep / data A / seed 1904: one run per cell; `1904`, every seed-1904 run at the (size, L) that trains the language, every data build and ladder. The `.csv` next to each figure is the cell table (benchmark, task, language, model_size, language_scheme, train_tokens, task_score, above_chance, share_above, n_runs), `_points.csv` the binned values drawn. The `_ckpts` twins read the same runs at every evaluated tenth (a cell = (task, size, L, tenth), x = the tokens seen by that checkpoint): ten times the cells, and a token axis that runs through every training run. Each cell table is drawn per benchmark (`_by_benchmark_`), per language (`_by_language_`, panels from the best- to the least-resourced language) and pooled (`_all_`, one panel; their `.csv` is the binned points drawn). Cells above chance: `deep_A_1904` 6898 of 14657 (841 tasks), `deep_A_1904_ckpts` 64768 of 146570 (841 tasks), `1904` 7968 of 16602 (841 tasks), `1904_ckpts` 75060 of 166020 (841 tasks).
+**Share of a benchmark's cells above chance against the tokens seen.** One (task, size, L) cell per benchmark, language and language setting; above chance by rule 1's Wilson test on the cell's runs; cells binned 3 per decade of tokens, a point = the share of the bin's cells above chance with the cell count, one line per size. Two populations: `deep_A_1904`, the plan grid, deep / data A / seed 1904: one run per cell; `1904`, every seed-1904 run at the (size, L) that trains the language, every data build and ladder. The `.csv` next to each figure is the cell table (benchmark, task, language, model_size, language_scheme, train_tokens, task_score, above_chance, share_above, n_runs), `_points.csv` the binned values drawn. The `_ckpts` twins read the same runs at every evaluated tenth (a cell = (task, size, L, tenth), x = the tokens seen by that checkpoint): ten times the cells, and a token axis that runs through every training run. Each cell table is drawn per benchmark (`_by_benchmark_`), per language (`_by_language_`, panels from the best- to the least-resourced language) and pooled (`_all_`, one panel; their `.csv` is the binned points drawn). Cells above chance: `deep_A_1904` 6898 of 14657 (841 tasks), `deep_A_1904_ckpts` 64768 of 146570 (841 tasks), `1904` 7957 of 16602 (841 tasks), `1904_ckpts` 74997 of 166020 (841 tasks).
 
 ![Share above chance vs tokens seen, deep_A_1904](pretraining/predictivity_seeds/pass_prob_vs_train_tokens_by_benchmark_deep_A_1904.png)
 
@@ -196,8 +196,8 @@ The generated block below carries the four populations (the plan grid `deep_A_19
 Key findings:
 - `deep_A_1904`: 47% of 14657 cells above chance; per size 90M 38%, 175M 39%, 350M 44%, 600M 48%, 1B 54%, 1.7B 60%.
 - `deep_A_1904_ckpts`: 44% of 146570 cells above chance; per size 90M 36%, 175M 37%, 350M 41%, 600M 45%, 1B 50%, 1.7B 56%.
-- `1904`: 48% of 16602 cells above chance; per size 90M 38%, 175M 41%, 350M 45%, 600M 51%, 1B 55%, 1.7B 59%.
-- `1904_ckpts`: 45% of 166020 cells above chance; per size 90M 37%, 175M 38%, 350M 41%, 600M 47%, 1B 51%, 1.7B 57%.
+- `1904`: 48% of 16602 cells above chance; per size 90M 38%, 175M 41%, 350M 45%, 600M 50%, 1B 55%, 1.7B 59%.
+- `1904_ckpts`: 45% of 166020 cells above chance; per size 90M 37%, 175M 38%, 350M 42%, 600M 46%, 1B 51%, 1.7B 57%.
 <!-- END auto:chance-vs-train-tokens -->
 
 Follow-ups:

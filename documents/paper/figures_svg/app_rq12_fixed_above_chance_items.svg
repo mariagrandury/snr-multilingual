@@ -944,8 +944,8 @@ z
    <g id="line2d_25">
     <path d="M 53.15763 170.589745 
 L 88.832526 182.241672 
-L 124.507421 180.226994 
-L 160.182317 161.969529 
+L 124.507421 180.142429 
+L 160.182317 162.075816 
 L 195.857212 155.973282 
 L 231.532108 146.248566 
 " clip-path="url(#p7b18cc7067)" style="fill: none; stroke-dasharray: 3.3,2.2; stroke-dashoffset: 0; stroke: #1b1b19; stroke-opacity: 0.45; stroke-width: 1.1"/>
@@ -983,8 +983,8 @@ z
    <g id="line2d_27">
     <path d="M 53.15763 119.682139 
 L 88.832526 111.57382 
-L 124.507421 105.877264 
-L 160.182317 68.705987 
+L 124.507421 105.635089 
+L 160.182317 70.008975 
 L 195.857212 54.834828 
 L 231.532108 43.969552 
 " clip-path="url(#p7b18cc7067)" style="fill: none; stroke-dasharray: 3.3,2.2; stroke-dashoffset: 0; stroke: #2a78d6; stroke-opacity: 0.45; stroke-width: 1.1"/>
@@ -1820,8 +1820,8 @@ z
    <g id="line2d_59">
     <path d="M 304.781668 100.634352 
 L 340.456563 78.242608 
-L 376.131459 75.597364 
-L 411.806354 55.849243 
+L 376.131459 75.14332 
+L 411.806354 54.679953 
 L 447.481249 30.900869 
 L 483.156145 31.630622 
 " clip-path="url(#p9d4ff323af)" style="fill: none; stroke-dasharray: 3.3,2.2; stroke-dashoffset: 0; stroke: #2a78d6; stroke-opacity: 0.45; stroke-width: 1.1"/>
@@ -2520,8 +2520,8 @@ z
    <g id="line2d_95">
     <path d="M 556.405705 72.839011 
 L 600.999324 72.713338 
-L 645.592944 73.989982 
-L 690.186563 67.313083 
+L 645.592944 74.10704 
+L 690.186563 66.961772 
 L 734.780182 75.548971 
 " clip-path="url(#pfb9958a32c)" style="fill: none; stroke-dasharray: 3.3,2.2; stroke-dashoffset: 0; stroke: #1b1b19; stroke-opacity: 0.45; stroke-width: 1.1"/>
    </g>
@@ -2543,8 +2543,8 @@ L 734.780182 68.630347
    <g id="line2d_97">
     <path d="M 556.405705 69.431343 
 L 600.999324 70.30891 
-L 645.592944 71.298165 
-L 690.186563 65.336454 
+L 645.592944 71.65249 
+L 690.186563 65.082583 
 L 734.780182 70.673601 
 " clip-path="url(#pfb9958a32c)" style="fill: none; stroke-dasharray: 3.3,2.2; stroke-dashoffset: 0; stroke: #2a78d6; stroke-opacity: 0.45; stroke-width: 1.1"/>
    </g>

@@ -326,9 +326,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.1,
-    "da": 0.474,
+    "da": 0.475,
     "cells": 6,
-    "items": 3247,
+    "items": 3244,
     "refs": "1.7B"
    },
    {
@@ -339,7 +339,7 @@
     "frac": 0.2,
     "da": 0.489,
     "cells": 6,
-    "items": 3247,
+    "items": 3244,
     "refs": "1.7B"
    },
    {
@@ -348,9 +348,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.3,
-    "da": 0.46,
+    "da": 0.461,
     "cells": 6,
-    "items": 3247,
+    "items": 3244,
     "refs": "1.7B"
    },
    {
@@ -361,7 +361,7 @@
     "frac": 0.4,
     "da": 0.519,
     "cells": 6,
-    "items": 3247,
+    "items": 3244,
     "refs": "1.7B"
    },
    {
@@ -372,7 +372,7 @@
     "frac": 0.5,
     "da": 0.499,
     "cells": 6,
-    "items": 3247,
+    "items": 3244,
     "refs": "1.7B"
    },
    {
@@ -383,7 +383,7 @@
     "frac": 0.6,
     "da": 0.525,
     "cells": 6,
-    "items": 3247,
+    "items": 3244,
     "refs": "1.7B"
    },
    {
@@ -394,7 +394,7 @@
     "frac": 0.7,
     "da": 0.574,
     "cells": 6,
-    "items": 3247,
+    "items": 3244,
     "refs": "1.7B"
    },
    {
@@ -405,7 +405,7 @@
     "frac": 0.8,
     "da": 0.535,
     "cells": 6,
-    "items": 3247,
+    "items": 3244,
     "refs": "1.7B"
    },
    {
@@ -414,9 +414,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.9,
-    "da": 0.543,
+    "da": 0.542,
     "cells": 6,
-    "items": 3247,
+    "items": 3244,
     "refs": "1.7B"
    },
    {
@@ -427,7 +427,7 @@
     "frac": 1.0,
     "da": 0.569,
     "cells": 6,
-    "items": 3247,
+    "items": 3244,
     "refs": "1.7B"
    },
    {
@@ -438,7 +438,7 @@
     "frac": 0.1,
     "da": 0.461,
     "cells": 6,
-    "items": 3501,
+    "items": 3498,
     "refs": "1.7B"
    },
    {
@@ -449,7 +449,7 @@
     "frac": 0.2,
     "da": 0.467,
     "cells": 6,
-    "items": 3501,
+    "items": 3498,
     "refs": "1.7B"
    },
    {
@@ -458,9 +458,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.3,
-    "da": 0.449,
+    "da": 0.45,
     "cells": 6,
-    "items": 3501,
+    "items": 3498,
     "refs": "1.7B"
    },
    {
@@ -469,9 +469,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.4,
-    "da": 0.47,
+    "da": 0.469,
     "cells": 6,
-    "items": 3501,
+    "items": 3498,
     "refs": "1.7B"
    },
    {
@@ -480,9 +480,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.5,
-    "da": 0.486,
+    "da": 0.487,
     "cells": 6,
-    "items": 3501,
+    "items": 3498,
     "refs": "1.7B"
    },
    {
@@ -493,7 +493,7 @@
     "frac": 0.6,
     "da": 0.472,
     "cells": 6,
-    "items": 3501,
+    "items": 3498,
     "refs": "1.7B"
    },
    {
@@ -502,9 +502,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.7,
-    "da": 0.474,
+    "da": 0.475,
     "cells": 6,
-    "items": 3501,
+    "items": 3498,
     "refs": "1.7B"
    },
    {
@@ -515,7 +515,7 @@
     "frac": 0.8,
     "da": 0.465,
     "cells": 6,
-    "items": 3501,
+    "items": 3498,
     "refs": "1.7B"
    },
    {
@@ -524,9 +524,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.9,
-    "da": 0.469,
+    "da": 0.47,
     "cells": 6,
-    "items": 3501,
+    "items": 3498,
     "refs": "1.7B"
    },
    {
@@ -535,9 +535,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 1.0,
-    "da": 0.47,
+    "da": 0.471,
     "cells": 6,
-    "items": 3501,
+    "items": 3498,
     "refs": "1.7B"
    },
    {
@@ -2924,7 +2924,7 @@
     "frac": 0.1,
     "da": 0.482,
     "cells": 3,
-    "items": 1323,
+    "items": 1322,
     "refs": "1.7B"
    },
    {
@@ -2935,7 +2935,7 @@
     "frac": 0.2,
     "da": 0.45,
     "cells": 3,
-    "items": 1323,
+    "items": 1322,
     "refs": "1.7B"
    },
    {
@@ -2946,7 +2946,7 @@
     "frac": 0.3,
     "da": 0.454,
     "cells": 3,
-    "items": 1323,
+    "items": 1322,
     "refs": "1.7B"
    },
    {
@@ -2957,7 +2957,7 @@
     "frac": 0.4,
     "da": 0.479,
     "cells": 3,
-    "items": 1323,
+    "items": 1322,
     "refs": "1.7B"
    },
    {
@@ -2966,9 +2966,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.5,
-    "da": 0.434,
+    "da": 0.435,
     "cells": 3,
-    "items": 1323,
+    "items": 1322,
     "refs": "1.7B"
    },
    {
@@ -2979,7 +2979,7 @@
     "frac": 0.6,
     "da": 0.463,
     "cells": 3,
-    "items": 1323,
+    "items": 1322,
     "refs": "1.7B"
    },
    {
@@ -2990,7 +2990,7 @@
     "frac": 0.7,
     "da": 0.465,
     "cells": 3,
-    "items": 1323,
+    "items": 1322,
     "refs": "1.7B"
    },
    {
@@ -3001,7 +3001,7 @@
     "frac": 0.8,
     "da": 0.439,
     "cells": 3,
-    "items": 1323,
+    "items": 1322,
     "refs": "1.7B"
    },
    {
@@ -3012,7 +3012,7 @@
     "frac": 0.9,
     "da": 0.464,
     "cells": 3,
-    "items": 1323,
+    "items": 1322,
     "refs": "1.7B"
    },
    {
@@ -3023,7 +3023,7 @@
     "frac": 1.0,
     "da": 0.453,
     "cells": 3,
-    "items": 1323,
+    "items": 1322,
     "refs": "1.7B"
    },
    {
@@ -3032,9 +3032,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.1,
-    "da": 0.495,
+    "da": 0.494,
     "cells": 3,
-    "items": 1375,
+    "items": 1376,
     "refs": "1.7B"
    },
    {
@@ -3045,7 +3045,7 @@
     "frac": 0.2,
     "da": 0.48,
     "cells": 3,
-    "items": 1375,
+    "items": 1376,
     "refs": "1.7B"
    },
    {
@@ -3054,9 +3054,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.3,
-    "da": 0.522,
+    "da": 0.523,
     "cells": 3,
-    "items": 1375,
+    "items": 1376,
     "refs": "1.7B"
    },
    {
@@ -3065,9 +3065,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.4,
-    "da": 0.499,
+    "da": 0.497,
     "cells": 3,
-    "items": 1375,
+    "items": 1376,
     "refs": "1.7B"
    },
    {
@@ -3078,7 +3078,7 @@
     "frac": 0.5,
     "da": 0.482,
     "cells": 3,
-    "items": 1375,
+    "items": 1376,
     "refs": "1.7B"
    },
    {
@@ -3087,9 +3087,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.6,
-    "da": 0.506,
+    "da": 0.505,
     "cells": 3,
-    "items": 1375,
+    "items": 1376,
     "refs": "1.7B"
    },
    {
@@ -3098,9 +3098,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.7,
-    "da": 0.497,
+    "da": 0.496,
     "cells": 3,
-    "items": 1375,
+    "items": 1376,
     "refs": "1.7B"
    },
    {
@@ -3109,9 +3109,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.8,
-    "da": 0.479,
+    "da": 0.478,
     "cells": 3,
-    "items": 1375,
+    "items": 1376,
     "refs": "1.7B"
    },
    {
@@ -3120,9 +3120,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.9,
-    "da": 0.478,
+    "da": 0.48,
     "cells": 3,
-    "items": 1375,
+    "items": 1376,
     "refs": "1.7B"
    },
    {
@@ -3131,9 +3131,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 1.0,
-    "da": 0.48,
+    "da": 0.479,
     "cells": 3,
-    "items": 1375,
+    "items": 1376,
     "refs": "1.7B"
    },
    {

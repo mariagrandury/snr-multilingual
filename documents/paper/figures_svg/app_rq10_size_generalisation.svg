@@ -1731,44 +1731,44 @@ z
    </g>
    <g id="FillBetweenPolyCollection_1">
     <defs>
-     <path id="m6a15b9bab3" d="M 414.35773 -147.497501 
+     <path id="m12473ece05" d="M 414.35773 -147.497501 
 L 414.35773 -118.627649 
 L 484.104302 -128.325788 
-L 556.8056 -121.000672 
-L 613.33868 -120.917343 
+L 556.8056 -121.151277 
+L 613.33868 -121.098275 
 L 666.917035 -127.213153 
 L 666.917035 -136.789106 
 L 666.917035 -136.789106 
-L 613.33868 -144.133982 
-L 556.8056 -139.25854 
+L 613.33868 -144.250229 
+L 556.8056 -139.409803 
 L 484.104302 -141.144899 
 L 414.35773 -147.497501 
 z
 "/>
     </defs>
     <g clip-path="url(#p0d64f0f02b)">
-     <use xlink:href="#m6a15b9bab3" x="0" y="254.270469" style="fill: #1b1b19; fill-opacity: 0.1"/>
+     <use xlink:href="#m12473ece05" x="0" y="254.270469" style="fill: #1b1b19; fill-opacity: 0.1"/>
     </g>
    </g>
    <g id="FillBetweenPolyCollection_2">
     <defs>
-     <path id="m8de7539197" d="M 414.35773 -138.820841 
+     <path id="m0ef745e358" d="M 414.35773 -138.820841 
 L 414.35773 -132.009668 
 L 484.104302 -123.89933 
-L 556.8056 -119.607395 
-L 613.33868 -127.120444 
+L 556.8056 -119.716648 
+L 613.33868 -127.157887 
 L 666.917035 -130.118291 
 L 666.917035 -141.652611 
 L 666.917035 -141.652611 
-L 613.33868 -142.732117 
-L 556.8056 -134.049017 
+L 613.33868 -142.829372 
+L 556.8056 -134.226186 
 L 484.104302 -131.668163 
 L 414.35773 -138.820841 
 z
 "/>
     </defs>
     <g clip-path="url(#p0d64f0f02b)">
-     <use xlink:href="#m8de7539197" x="0" y="254.270469" style="fill: #1b1b19; fill-opacity: 0.1"/>
+     <use xlink:href="#m0ef745e358" x="0" y="254.270469" style="fill: #1b1b19; fill-opacity: 0.1"/>
     </g>
    </g>
    <g id="FillBetweenPolyCollection_3">
@@ -2181,8 +2181,8 @@ L 679.545 31.481562
    <g id="line2d_50">
     <path d="M 414.35773 121.207894 
 L 484.104302 119.535125 
-L 556.8056 124.140862 
-L 613.33868 121.744806 
+L 556.8056 123.989929 
+L 613.33868 121.596217 
 L 666.917035 122.269339 
 " clip-path="url(#p0d64f0f02b)" style="fill: none; stroke-dasharray: 3.6,2.4; stroke-dashoffset: 0; stroke: #1b1b19; stroke-width: 1.2"/>
     <defs>
@@ -2201,23 +2201,23 @@ z
     <g clip-path="url(#p0d64f0f02b)">
      <use xlink:href="#md594428fbf" x="414.35773" y="121.207894" style="fill: #1b1b19; stroke: #1b1b19"/>
      <use xlink:href="#md594428fbf" x="484.104302" y="119.535125" style="fill: #1b1b19; stroke: #1b1b19"/>
-     <use xlink:href="#md594428fbf" x="556.8056" y="124.140862" style="fill: #1b1b19; stroke: #1b1b19"/>
-     <use xlink:href="#md594428fbf" x="613.33868" y="121.744806" style="fill: #1b1b19; stroke: #1b1b19"/>
+     <use xlink:href="#md594428fbf" x="556.8056" y="123.989929" style="fill: #1b1b19; stroke: #1b1b19"/>
+     <use xlink:href="#md594428fbf" x="613.33868" y="121.596217" style="fill: #1b1b19; stroke: #1b1b19"/>
      <use xlink:href="#md594428fbf" x="666.917035" y="122.269339" style="fill: #1b1b19; stroke: #1b1b19"/>
     </g>
    </g>
    <g id="line2d_51">
     <path d="M 414.35773 118.855214 
 L 484.104302 126.486722 
-L 556.8056 127.442263 
-L 613.33868 119.344188 
+L 556.8056 127.299052 
+L 613.33868 119.276839 
 L 666.917035 118.385018 
 " clip-path="url(#p0d64f0f02b)" style="fill: none; stroke: #1b1b19; stroke-width: 1.6; stroke-linecap: square"/>
     <g clip-path="url(#p0d64f0f02b)">
      <use xlink:href="#md594428fbf" x="414.35773" y="118.855214" style="fill: #1b1b19; stroke: #1b1b19"/>
      <use xlink:href="#md594428fbf" x="484.104302" y="126.486722" style="fill: #1b1b19; stroke: #1b1b19"/>
-     <use xlink:href="#md594428fbf" x="556.8056" y="127.442263" style="fill: #1b1b19; stroke: #1b1b19"/>
-     <use xlink:href="#md594428fbf" x="613.33868" y="119.344188" style="fill: #1b1b19; stroke: #1b1b19"/>
+     <use xlink:href="#md594428fbf" x="556.8056" y="127.299052" style="fill: #1b1b19; stroke: #1b1b19"/>
+     <use xlink:href="#md594428fbf" x="613.33868" y="119.276839" style="fill: #1b1b19; stroke: #1b1b19"/>
      <use xlink:href="#md594428fbf" x="666.917035" y="118.385018" style="fill: #1b1b19; stroke: #1b1b19"/>
     </g>
    </g>

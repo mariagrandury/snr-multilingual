@@ -40,17 +40,17 @@ Pooled DA-size (tasks; share of the comparable pairs kept):
 
 | pairs | population | pairs kept | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|---|---|
-| multi-axis | Benchmarks | every pair | 0.595 (849; 100%) | 0.584 (873; 100%) | 0.586 (892; 100%) | 0.584 (924; 100%) | 0.590 (962; 100%) |
+| multi-axis | Benchmarks | every pair | 0.595 (849; 100%) | 0.584 (873; 100%) | 0.586 (892; 100%) | 0.584 (923; 100%) | 0.590 (962; 100%) |
 | multi-axis | BPB | every pair | 0.945 (50; 100%) | 0.944 (50; 100%) | 0.885 (50; 100%) | 0.785 (50; 100%) | 0.910 (50; 100%) |
-| multi-axis | Benchmarks | reference gap > 1 x sqrt(2) seed sd | 0.660 (849; 52%) | 0.643 (873; 52%) | 0.651 (892; 52%) | 0.650 (924; 52%) | 0.656 (962; 52%) |
+| multi-axis | Benchmarks | reference gap > 1 x sqrt(2) seed sd | 0.660 (849; 52%) | 0.643 (873; 52%) | 0.651 (892; 52%) | 0.650 (923; 52%) | 0.656 (962; 52%) |
 | multi-axis | BPB | reference gap > 1 x sqrt(2) seed sd | 0.986 (50; 75%) | 0.986 (50; 75%) | 0.951 (50; 75%) | 0.882 (50; 75%) | 0.975 (50; 75%) |
-| multi-axis | Benchmarks | reference gap > 2 x sqrt(2) seed sd | 0.729 (849; 25%) | 0.709 (873; 25%) | 0.726 (892; 25%) | 0.724 (924; 25%) | 0.725 (962; 25%) |
+| multi-axis | Benchmarks | reference gap > 2 x sqrt(2) seed sd | 0.729 (849; 25%) | 0.709 (873; 25%) | 0.726 (892; 25%) | 0.724 (923; 25%) | 0.725 (962; 25%) |
 | multi-axis | BPB | reference gap > 2 x sqrt(2) seed sd | 0.990 (50; 56%) | 0.993 (50; 56%) | 0.973 (50; 56%) | 0.945 (50; 56%) | 0.995 (50; 56%) |
-| mono-axis | Benchmarks | every pair | 0.573 (544; 100%) | 0.553 (561; 100%) | 0.558 (569; 100%) | 0.549 (599; 100%) | 0.551 (623; 100%) |
+| mono-axis | Benchmarks | every pair | 0.573 (544; 100%) | 0.553 (561; 100%) | 0.558 (569; 100%) | 0.549 (598; 100%) | 0.551 (623; 100%) |
 | mono-axis | BPB | every pair | 0.919 (32; 100%) | 0.923 (32; 100%) | 0.836 (32; 100%) | 0.674 (32; 100%) | 0.865 (32; 100%) |
-| mono-axis | Benchmarks | reference gap > 1 x sqrt(2) seed sd | 0.619 (544; 54%) | 0.588 (561; 54%) | 0.608 (569; 54%) | 0.598 (599; 54%) | 0.594 (623; 54%) |
+| mono-axis | Benchmarks | reference gap > 1 x sqrt(2) seed sd | 0.619 (544; 54%) | 0.588 (561; 54%) | 0.608 (569; 54%) | 0.598 (598; 54%) | 0.594 (623; 54%) |
 | mono-axis | BPB | reference gap > 1 x sqrt(2) seed sd | 0.987 (32; 60%) | 0.987 (32; 60%) | 0.940 (32; 60%) | 0.850 (32; 60%) | 0.969 (32; 60%) |
-| mono-axis | Benchmarks | reference gap > 2 x sqrt(2) seed sd | 0.661 (544; 25%) | 0.625 (561; 25%) | 0.651 (569; 25%) | 0.654 (599; 25%) | 0.642 (623; 25%) |
+| mono-axis | Benchmarks | reference gap > 2 x sqrt(2) seed sd | 0.661 (544; 25%) | 0.625 (561; 25%) | 0.651 (569; 25%) | 0.654 (598; 25%) | 0.642 (623; 25%) |
 | mono-axis | BPB | reference gap > 2 x sqrt(2) seed sd | 0.991 (32; 37%) | 0.991 (32; 37%) | 0.962 (32; 37%) | 0.936 (32; 37%) | 0.991 (32; 37%) |
 
 Table: `decisive_pairs_da_size_both_axes.csv`.

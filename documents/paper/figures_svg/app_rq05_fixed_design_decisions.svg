@@ -1415,16 +1415,16 @@ z
    <g id="line2d_67">
     <path d="M 49.452107 267.696732 
 L 100.96811 271.578508 
-L 152.484113 264.857373 
-L 204.000116 279.490481 
+L 152.484113 264.863115 
+L 204.000116 279.435246 
 L 255.516119 276.289296 
 " clip-path="url(#pdca1ed5cf1)" style="fill: none; stroke-dasharray: 3.33,1.44; stroke-dashoffset: 0; stroke: #0d366b; stroke-opacity: 0.45; stroke-width: 0.9"/>
    </g>
    <g id="line2d_68">
     <path d="M 49.452107 281.502001 
 L 100.96811 278.356996 
-L 152.484113 282.09404 
-L 204.000116 278.044168 
+L 152.484113 282.068819 
+L 204.000116 278.128799 
 L 255.516119 272.226862 
 " clip-path="url(#pdca1ed5cf1)" style="fill: none; stroke-dasharray: 3.33,1.44; stroke-dashoffset: 0; stroke: #3987e5; stroke-opacity: 0.45; stroke-width: 0.9"/>
    </g>
@@ -1463,8 +1463,8 @@ L 255.516119 240.805112
    <g id="line2d_73">
     <path d="M 49.452107 255.10442 
 L 100.96811 256.721919 
-L 152.484113 256.569135 
-L 204.000116 257.224765 
+L 152.484113 256.459166 
+L 204.000116 257.203274 
 L 255.516119 258.053843 
 " clip-path="url(#pdca1ed5cf1)" style="fill: none; stroke-dasharray: 3.33,1.44; stroke-dashoffset: 0; stroke: #eb6834; stroke-opacity: 0.45; stroke-width: 0.9"/>
    </g>

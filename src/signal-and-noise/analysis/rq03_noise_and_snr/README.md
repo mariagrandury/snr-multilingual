@@ -97,22 +97,22 @@ and the outputs of the 2026-10-08 refresh (detrended checkpoint noise).
 Numbers from the `predictivity_seeds` pool. Regenerate with `python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_seeds`.
 
 - **Noise definitions.** Seed noise = sample std (n−1) of the final score across the replicate seeds of the deep data-A cell; checkpoint noise = std of the grid seed's run over the noise window, the k/20 points in the last 20% of the run (80/85/90/95/100 %, the same for BPB and benchmarks), `utils.checkpoint_noise`: detrended by a line (residual SD, n−2, the rule-4 default) and raw (ddof 0, the labelled alternative). The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter of one run: above 1 a re-roll of the seed moves the score more than the late checkpoints do.
-- **Gate.** 9027 of 33438 (size, L, task) cells are at chance at their size (rule 1); they keep their row, carry no number and enter no median below.
-- **Seed noise vs detrended checkpoint noise** — median ratio 1.75 over 4394 (size, L, task) cells with seed replicates.
-- **Depth effect vs seed noise** — median |Δ|/seed-std 1.31; 31% of 4389 cells above 2× (a distinct model for SNR, not a re-roll).
+- **Gate.** 9036 of 33438 (size, L, task) cells are at chance at their size (rule 1); they keep their row, carry no number and enter no median below.
+- **Seed noise vs detrended checkpoint noise** — median ratio 1.75 over 4391 (size, L, task) cells with seed replicates.
+- **Depth effect vs seed noise** — median |Δ|/seed-std 1.31; 31% of 4386 cells above 2× (a distinct model for SNR, not a re-roll).
 
 **Effect over noise** (median over the ungated (size, L, task) cells; `n` = cells behind the median):
 
 | population | effect / noise | median | n |
 |---|---|---|---|
-| benchmark | arch / seed | 1.26 | 4232 |
-| benchmark | arch / ckpt | 2.20 | 20796 |
+| benchmark | arch / seed | 1.26 | 4229 |
+| benchmark | arch / ckpt | 2.20 | 20789 |
 | benchmark | scheme_B / seed | 1.21 | 1679 |
 | benchmark | scheme_B / ckpt | 2.17 | 9644 |
 | benchmark | scheme_C / seed | 1.63 | 775 |
 | benchmark | scheme_C / ckpt | 3.56 | 1436 |
-| benchmark | temperature / seed | 1.79 | 3366 |
-| benchmark | temperature / ckpt | 3.04 | 16660 |
+| benchmark | temperature / seed | 1.79 | 3363 |
+| benchmark | temperature / ckpt | 3.04 | 16652 |
 | bpb | arch / seed | 1.77 | 139 |
 | bpb | arch / ckpt | 1.95 | 636 |
 | bpb | scheme_B / seed | 0.27 | 32 |

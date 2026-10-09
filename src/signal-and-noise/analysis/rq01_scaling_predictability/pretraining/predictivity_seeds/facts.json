@@ -11,10 +11,10 @@
   }
  },
  "rq1": {
-  "n_fits": 3666,
+  "n_fits": 3669,
   "n_tasks": 1298,
-  "gated_series": 1274,
-  "gated_rungs": 795,
+  "gated_series": 1271,
+  "gated_rungs": 812,
   "families": [
    {
     "family": "bbpb_blend_sample",
@@ -66,13 +66,6 @@
     "n_options": NaN
    },
    {
-    "family": "global_piqa_parallel_cloze",
-    "r2": 0.437,
-    "rho": 0.5,
-    "n": 6,
-    "n_options": 4.0
-   },
-   {
     "family": "rf_acp_bench_mcq",
     "r2": 0.489,
     "rho": 0.647,
@@ -92,6 +85,13 @@
     "rho": -0.771,
     "n": 79,
     "n_options": NaN
+   },
+   {
+    "family": "global_piqa_parallel_cloze",
+    "r2": 0.593,
+    "rho": 0.5,
+    "n": 10,
+    "n_options": 4.0
    },
    {
     "family": "rf_bbh_mcq",
@@ -157,17 +157,17 @@
     "n_options": 4.0
    },
    {
-    "family": "rf_include_base_44",
-    "r2": 0.842,
-    "rho": 0.993,
-    "n": 48,
+    "family": "rf_belebele",
+    "r2": 0.852,
+    "rho": 0.943,
+    "n": 122,
     "n_options": 4.0
    },
    {
-    "family": "rf_belebele",
-    "r2": 0.85,
-    "rho": 0.943,
-    "n": 124,
+    "family": "rf_include_base_44",
+    "r2": 0.854,
+    "rho": 1.0,
+    "n": 48,
     "n_options": 4.0
    },
    {
@@ -209,7 +209,7 @@
     "family": "include_v2_og",
     "r2": 0.885,
     "rho": 1.0,
-    "n": 141,
+    "n": 138,
     "n_options": 4.0
    },
    {
@@ -377,7 +377,7 @@
     "family": "arc_mt",
     "r2": 0.985,
     "rho": 1.0,
-    "n": 8,
+    "n": 12,
     "n_options": 4.0
    },
    {

@@ -298,7 +298,7 @@
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.47,
+    "decision_acc": 0.471,
     "cells": 6,
     "refs": "1.7B",
     "size_matched": false
@@ -498,7 +498,7 @@
     "label": "data scheme (A vs B, B at L8\u2013L30)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.48,
+    "decision_acc": 0.479,
     "cells": 3,
     "refs": "1.7B",
     "size_matched": true

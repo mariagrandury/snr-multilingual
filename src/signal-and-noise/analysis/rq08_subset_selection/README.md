@@ -10,11 +10,11 @@
 <!-- BEGIN auto:highlight (smooth_subtasks.py --pool predictivity) -->
 ## Highlighted result
 
-- **`arc` 350M (per_benchmark)** — a subset beats the full set: SNR **2.82 → 5.57** (**+2.75**) with `arc_easy`.
 - **`bbpb_rf_belebele` 1B (per_benchmark)** — a subset beats the full set: SNR **3.08 → 5.78** (**+2.71**) with `bbpb_rf_belebele_eng_Latn|bbpb_rf_belebele_rus_Cyrl|bbpb_rf_belebele_zho_Hant|bbpb_rf_belebele_spa_Latn|… (+1)`.
 - **`bbpb_paws` 175M (per_benchmark)** — a subset beats the full set: SNR **3.49 → 6.00** (**+2.52**) with `bbpb_paws_es|bbpb_paws_de|bbpb_paws_zh`.
-- **Median gain by case** — global_mmlu_full_subjects 1.03; global_mmlu_full_per_language 0.83; per_benchmark 0.77 (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
-- **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **86 of 196** swept cells beat the null's 95th percentile: `bbpb_rf_belebele` 1B, `bbpb_paws` 175M, `bbpb_rfgm_belebele` 175M, `bbpb_rfgm_belebele` 350M, `bbpb_rfgm_belebele` 1B.
+- **`arc` 350M (per_benchmark)** — a subset beats the full set: SNR **2.86 → 5.36** (**+2.51**) with `arc_easy`.
+- **Median gain by case** — global_mmlu_full_subjects 1.03; global_mmlu_full_per_language 0.83; per_benchmark 0.78 (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
+- **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **89 of 197** swept cells beat the null's 95th percentile: `bbpb_rf_belebele` 1B, `bbpb_paws` 175M, `bbpb_rfgm_belebele` 175M, `bbpb_rfgm_belebele` 350M, `bbpb_rfgm_belebele` 1B.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -116,18 +116,18 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | case | task | size | full → best SNR | +gain | null p95 | best subset |
 |---|---|---|---|---|---|---|
-| per_benchmark | `arc` | 350M | 2.82 → 5.57 | +2.75 | 5.57 | `arc_easy` |
 | per_benchmark | `bbpb_rf_belebele` | 1B | 3.08 → 5.78 | +2.71 | 5.29 | `bbpb_rf_belebele_eng_Latn` \| `bbpb_rf_belebele_rus_Cyrl` \| `bbpb_rf_belebele_zho_Hant` \| `bbpb_rf_belebele_spa_Latn` \| `… (+1)` |
 | per_benchmark | `bbpb_paws` | 175M | 3.49 → 6.00 | +2.52 | 4.95 | `bbpb_paws_es` \| `bbpb_paws_de` \| `bbpb_paws_zh` |
+| per_benchmark | `arc` | 350M | 2.86 → 5.36 | +2.51 | 5.36 | `arc_easy` |
 | per_benchmark | `bbpb_rfgm_belebele` | 175M | 3.06 → 5.55 | +2.49 | 4.26 | `bbpb_rfgm_belebele_spa_Latn` \| `bbpb_rfgm_belebele_rus_Cyrl` \| `bbpb_rfgm_belebele_zho_Hant` |
 | per_benchmark | `bbpb_rfgm_belebele` | 350M | 3.14 → 5.51 | +2.37 | 5.23 | `bbpb_rfgm_belebele_spa_Latn` \| `bbpb_rfgm_belebele_rus_Cyrl` \| `bbpb_rfgm_belebele_eng_Latn` \| `bbpb_rfgm_belebele_zho_Hans` |
 | per_benchmark | `bbpb_rfgm_belebele` | 1B | 3.26 → 5.57 | +2.31 | 5.16 | `bbpb_rfgm_belebele_eng_Latn` \| `bbpb_rfgm_belebele_spa_Latn` \| `bbpb_rfgm_belebele_rus_Cyrl` \| `bbpb_rfgm_belebele_zho_Hant` |
+| per_benchmark | `hellaswag` | 600M | 3.20 → 5.51 | +2.31 | 4.25 | `hellaswag_es` \| `hellaswag_ru` |
 | per_benchmark | `hellaswag` | 175M | 3.19 → 5.49 | +2.30 | 4.43 | `hellaswag_es` \| `hellaswag_ru` |
-| per_benchmark | `hellaswag` | 350M | 3.19 → 5.48 | +2.29 | 5.01 | `hellaswag_es` \| `hellaswag_ru` \| `hellaswag_it` \| `hellaswag_fr` |
 | per_benchmark | `hellaswag` | 90M | 3.22 → 5.49 | +2.28 | 4.61 | `hellaswag_es` \| `hellaswag_ru` |
+| per_benchmark | `hellaswag` | 350M | 3.24 → 5.50 | +2.27 | 4.95 | `hellaswag_es` \| `hellaswag_fr` \| `hellaswag_ru` \| `hellaswag_it` |
 | per_benchmark | `bbpb_rfgm_belebele` | 1.7B | 3.31 → 5.56 | +2.25 | 5.20 | `bbpb_rfgm_belebele_zho_Hant` \| `bbpb_rfgm_belebele_spa_Latn` \| `bbpb_rfgm_belebele_eng_Latn` \| `bbpb_rfgm_belebele_rus_Cyrl` |
 | per_benchmark | `arc` | 1.7B | 3.37 → 5.58 | +2.21 | 4.05 | `arc_easy` \| `arc_challenge` |
-| per_benchmark | `arc` | 1B | 3.51 → 5.71 | +2.20 | 4.35 | `arc_challenge` \| `arc_easy` |
 
 ![](pretraining/predictivity/global_mmlu_full_subjects.png)
 <!-- END auto:results -->
@@ -173,14 +173,14 @@ GitHub: [gain_over_null.png](https://github.com/mariagrandury/snr-multilingual/b
 <!-- BEGIN auto:reference-solved (reference_solved.py --pool predictivity) -->
 ## Items the reference solves
 
-DA-size, final checkpoints, multi-axis pairs of `predictivity` (grid seed), gate `predictivity` at the proxy and the reference, 473 tasks with per-item outputs. An item is solved when at least 0.5 of the 1.7B runs of the selecting half answer it right; the subset's proxy mean is scored against the 1.7B final of the full task on the other half's pairs, both ways round (held out, rule 11), beside the full set on the same pairs; the in-sample column selects with every 1.7B run and has seen the truth. SNR = relative dispersion of the design means over the relative k-fold noise, read at the proxy alone; the solved set's SNR is on the items at least half of all the 1.7B runs solve, while the DA it is correlated with is the held-out one. Regenerate with `python analysis/rq08_subset_selection/reference_solved.py --pool predictivity`. The store `predictivity` lacks 9 of the pool's models (lm-1.7B-L8-swiglu-seed1904, lm-175M-L15-b168-muon-seed1904, lm-175M-L30-b168-muon-seed1904, lm-175M-L8-b168-muon-seed1904, lm-350M-L15-muon-seed1904, lm-350M-L30-muon-seed1904, lm-90M-L15-b84-muon-seed1904, lm-90M-L30-b84-muon-seed1904, lm-90M-L8-b84-muon-seed1904); they are left out until the store is rebuilt for the pool.
+DA-size, final checkpoints, multi-axis pairs of `predictivity` (grid seed), gate `predictivity` at the proxy and the reference, 472 tasks with per-item outputs. An item is solved when at least 0.5 of the 1.7B runs of the selecting half answer it right; the subset's proxy mean is scored against the 1.7B final of the full task on the other half's pairs, both ways round (held out, rule 11), beside the full set on the same pairs; the in-sample column selects with every 1.7B run and has seen the truth. SNR = relative dispersion of the design means over the relative k-fold noise, read at the proxy alone; the solved set's SNR is on the items at least half of all the 1.7B runs solve, while the DA it is correlated with is the held-out one. Regenerate with `python analysis/rq08_subset_selection/reference_solved.py --pool predictivity`. The store `predictivity` lacks 13 of the pool's models (lm-1.7B-L8-swiglu-seed1904, lm-175M-L15-b168-muon-seed1904, lm-175M-L30-b168-muon-seed1904, lm-175M-L8-b168-muon-seed1904, lm-350M-L15-muon-seed1904, lm-350M-L30-muon-seed1904, lm-350M-L8-muon-seed1904, lm-600M-L15-muon-seed1904, lm-600M-L30-muon-seed1904, lm-600M-L8-muon-seed1904, lm-90M-L15-b84-muon-seed1904, lm-90M-L30-b84-muon-seed1904, lm-90M-L8-b84-muon-seed1904); they are left out until the store is rebuilt for the pool.
 
 | proxy | tasks | solved share | DA all (held out) | DA solved (held out) | Δ | Wilcoxon p | DA solved (in sample) | ρ(SNR, DA) all | ρ(SNR, DA) solved |
 |---|---|---|---|---|---|---|---|---|---|
 | 90M | 238 | 0.42 | 0.53 | 0.56 | +0.033 | 0.000 | 0.57 | 0.39 | 0.49 |
 | 175M | 272 | 0.41 | 0.54 | 0.57 | +0.030 | 0.000 | 0.57 | 0.40 | 0.51 |
-| 350M | 302 | 0.41 | 0.53 | 0.55 | +0.021 | 0.001 | 0.56 | 0.37 | 0.42 |
-| 600M | 343 | 0.40 | 0.55 | 0.56 | +0.013 | 0.003 | 0.57 | 0.45 | 0.50 |
+| 350M | 301 | 0.41 | 0.53 | 0.55 | +0.021 | 0.001 | 0.56 | 0.37 | 0.41 |
+| 600M | 340 | 0.40 | 0.55 | 0.56 | +0.015 | 0.001 | 0.57 | 0.45 | 0.51 |
 | 1B | 375 | 0.39 | 0.57 | 0.57 | +0.004 | 0.327 | 0.58 | 0.39 | 0.39 |
 
 ![Items the reference solves](pretraining/predictivity/reference_solved_da_size_multi_axes.png)
@@ -232,8 +232,8 @@ Per-item subset selection over the `predictivity` design variants, from the per-
 |---|---|---|---|---|
 | 90M | 238 | 0.53 | 0.34 | 0.37 |
 | 175M | 272 | 0.54 | 0.34 | 0.37 |
-| 350M | 302 | 0.53 | 0.37 | 0.39 |
-| 600M | 343 | 0.54 | 0.33 | 0.37 |
+| 350M | 301 | 0.53 | 0.37 | 0.39 |
+| 600M | 340 | 0.54 | 0.33 | 0.37 |
 | 1B | 375 | 0.57 | 0.32 | 0.35 |
 
 ![per-item ladder](pretraining/predictivity/per_item_ladder.png)

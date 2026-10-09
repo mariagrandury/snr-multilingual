@@ -99,7 +99,7 @@ GitHub: [recipe_da_size_variants_multi_axes_paper.png](https://github.com/mariag
 ### 1. The recommendation: which variant reaches τ from the smallest proxy
 
 <!-- BEGIN auto:results (recipe.py --pool predictivity) -->
-DA-size against the 1.7B final, multi-axis pairs (rule 15), pool `predictivity`, rq02's early-small table written 2026-10-08 12:46, ≥ 3 pairs; reliable = DA-size ≥ τ = 0.75 (`utils.RELIABLE_DA`); safe size = the smallest proxy from which it stays ≥ τ at every larger proxy. Every row says what it predicts: an accuracy variant its accuracy at 1.7B (gate `predictivity` at the proxy and the reference); a bBPB variant either its original's accuracy at 1.7B (**bBPB → 1.7B accuracy**, gated on that accuracy at the reference only, the reading of `bench_bpb_da.py`) or its own bBPB at 1.7B (**bBPB → 1.7B bBPB**, no chance level, never gated). 1662 tasks over 31 benchmarks. The bBPB twins are read on the same checkpoint grid as the accuracy variants. A mean over fewer than 5 tasks is left blank (`n < 5`) in the tables below and the figures; it stays in the CSVs. Regenerate with `python analysis/rq11_evaluation_recipe/recipe.py --pool predictivity`.
+DA-size against the 1.7B final, multi-axis pairs (rule 15), pool `predictivity`, rq02's early-small table written 2026-10-09 05:07, ≥ 3 pairs; reliable = DA-size ≥ τ = 0.75 (`utils.RELIABLE_DA`); safe size = the smallest proxy from which it stays ≥ τ at every larger proxy. Every row says what it predicts: an accuracy variant its accuracy at 1.7B (gate `predictivity` at the proxy and the reference); a bBPB variant either its original's accuracy at 1.7B (**bBPB → 1.7B accuracy**, gated on that accuracy at the reference only, the reading of `bench_bpb_da.py`) or its own bBPB at 1.7B (**bBPB → 1.7B bBPB**, no chance level, never gated). 1662 tasks over 31 benchmarks. The bBPB twins are read on the same checkpoint grid as the accuracy variants. A mean over fewer than 5 tasks is left blank (`n < 5`) in the tables below and the figures; it stays in the CSVs. Regenerate with `python analysis/rq11_evaluation_recipe/recipe.py --pool predictivity`.
 
 **How the pick is made**, per bBPB reading and scoring of the pick (benchmarks with a value; reliable somewhere = mean safe rank below 5, a task of the pick safe from some proxy on; never reliable = 5.00, no task of the pick ever safe):
 
@@ -137,7 +137,7 @@ DA-size against the 1.7B final, multi-axis pairs (rule 15), pool `predictivity`,
 | XCOPA | bBPB → 1.7B accuracy | original · accuracy → 1.7B accuracy | safe rank | 4.88 | never | 0.12 | 8 / 8 | 8 | 0.48 |
 | XCOPA | bBPB → 1.7B bBPB | original · bBPB → 1.7B bBPB | safe rank | 3.17 | 1B | 0.50 | 6 / 6 | 6 | 0.74 |
 | ARC (MT) | bBPB → 1.7B accuracy | original · bBPB → 1.7B accuracy | safe rank | 4.91 | never | 0.09 | 11 / 11 | 11 | 0.62 |
-| ARC (MT) | bBPB → 1.7B bBPB | original · accuracy → 1.7B accuracy | only variant | 5.00 | never | 0.00 | 10 / 11 | 10 | 0.55 |
+| ARC (MT) | bBPB → 1.7B bBPB | original · accuracy → 1.7B accuracy | only variant | 5.00 | never | 0.00 | 10 / 11 | 10 | 0.56 |
 | INCLUDE v2 (EN) | bBPB → 1.7B accuracy | original · accuracy → 1.7B accuracy | safe rank | 4.97 | never | 0.03 | 41 / 42 | 67 | 0.48 |
 | INCLUDE v2 (EN) | bBPB → 1.7B bBPB | original · bBPB → 1.7B bBPB | safe rank | 4.94 | never | 0.06 | 16 / 16 | 18 | 0.50 |
 | MMLU | bBPB → 1.7B accuracy | RF · bBPB → 1.7B accuracy | DA-size tie-break | n < 5 | never | 0.00 | 1 / 1 | 1 | n < 5 |
@@ -154,7 +154,7 @@ DA-size against the 1.7B final, multi-axis pairs (rule 15), pool `predictivity`,
 | XWinograd | bBPB → 1.7B bBPB | original · accuracy → 1.7B accuracy | only variant | 5.00 | never | 0.00 | 6 / 6 | 6 | 0.53 |
 | PAWS-X | bBPB → 1.7B accuracy | original · bBPB → 1.7B accuracy | only variant | 5.00 | never | 0.00 | 5 / 8 | 5 | 0.52 |
 | PAWS-X | bBPB → 1.7B bBPB | original · bBPB → 1.7B bBPB | safe rank | n < 5 | 350M | 1.00 | 2 / 2 | 2 | n < 5 |
-| Global PIQA (parallel) | bBPB → 1.7B accuracy | original · bBPB → 1.7B accuracy | only variant | 5.00 | never | 0.00 | 8 / 46 | 10 | 0.50 (shared cells: 0.54) |
+| Global PIQA (parallel) | bBPB → 1.7B accuracy | original · bBPB → 1.7B accuracy | only variant | 5.00 | never | 0.00 | 8 / 46 | 10 | 0.50 (shared cells: 0.50) |
 | Global PIQA (parallel) | bBPB → 1.7B bBPB | original · bBPB → 1.7B bBPB | only variant | 3.59 | never | 0.47 | 38 / 38 | 51 | 0.74 |
 | ACP-Bench (MCQ) | bBPB → 1.7B accuracy | RF · bBPB → 1.7B accuracy | DA-size tie-break | 5.00 | never | 0.00 | 1 / 1 | 5 | 0.49 (shared cells: 0.50) |
 | ACP-Bench (MCQ) | bBPB → 1.7B bBPB | RF · accuracy → 1.7B accuracy | only variant | 5.00 | never | 0.00 | 1 / 1 | 5 | 0.44 |
@@ -239,8 +239,8 @@ cells both have.
 
 | variant | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|
-| original · accuracy → 1.7B accuracy | 0.55 (157) | 0.57 (180) | 0.56 (201) | 0.58 (227) | 0.59 (256) |
-| RF · accuracy → 1.7B accuracy | 0.48 (76) | 0.50 (91) | 0.47 (101) | 0.50 (122) | 0.55 (130) |
+| original · accuracy → 1.7B accuracy | 0.55 (157) | 0.57 (180) | 0.56 (200) | 0.58 (226) | 0.59 (256) |
+| RF · accuracy → 1.7B accuracy | 0.48 (76) | 0.50 (91) | 0.47 (101) | 0.49 (120) | 0.55 (130) |
 | LLM-RF · accuracy → 1.7B accuracy | 0.48 (69) | 0.49 (71) | 0.52 (75) | 0.50 (80) | 0.54 (84) |
 | original · bBPB → 1.7B accuracy | 0.60 (273) | 0.57 (273) | 0.58 (273) | 0.59 (273) | 0.59 (273) |
 | RF · bBPB → 1.7B accuracy | 0.59 (139) | 0.59 (139) | 0.59 (139) | 0.59 (139) | 0.60 (139) |
@@ -248,24 +248,20 @@ cells both have.
 | original · bBPB → 1.7B bBPB | 0.69 (284) | 0.64 (284) | 0.65 (284) | 0.66 (284) | 0.67 (284) |
 | RF · bBPB → 1.7B bBPB | 0.71 (90) | 0.71 (90) | 0.71 (90) | 0.69 (90) | 0.72 (90) |
 | LLM-RF · bBPB → 1.7B bBPB | 0.88 (35) | 0.85 (35) | 0.86 (35) | 0.76 (35) | 0.83 (35) |
-| all variants, bBPB → 1.7B accuracy | 0.57 (803) | 0.56 (843) | 0.56 (878) | 0.57 (930) | 0.58 (971) |
-| all variants, bBPB → 1.7B bBPB | 0.63 (711) | 0.61 (751) | 0.61 (786) | 0.61 (838) | 0.63 (879) |
+| all variants, bBPB → 1.7B accuracy | 0.57 (803) | 0.56 (843) | 0.56 (877) | 0.57 (927) | 0.58 (971) |
+| all variants, bBPB → 1.7B bBPB | 0.63 (711) | 0.61 (751) | 0.61 (785) | 0.61 (835) | 0.63 (879) |
 
 The same over the paired tasks (those whose own original, every `bbpb_`/`rf_`/`rfgm_` prefix stripped, has an accuracy value at that proxy, so the gate treats every variant alike):
 
 | variant | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|
-| original · accuracy → 1.7B accuracy | 0.55 (157) | 0.57 (180) | 0.56 (201) | 0.58 (227) | 0.59 (256) |
-| RF · accuracy → 1.7B accuracy |  |  |  | n = 1 |  |
-| LLM-RF · accuracy → 1.7B accuracy |  |  |  | n = 1 |  |
-| original · bBPB → 1.7B accuracy | 0.64 (149) | 0.59 (170) | 0.59 (191) | 0.60 (216) | 0.60 (245) |
-| RF · bBPB → 1.7B accuracy |  |  |  | n = 1 |  |
-| LLM-RF · bBPB → 1.7B accuracy |  |  |  | n = 1 |  |
-| original · bBPB → 1.7B bBPB | 0.76 (72) | 0.69 (80) | 0.72 (84) | 0.68 (94) | 0.70 (102) |
-| RF · bBPB → 1.7B bBPB |  |  |  | n = 2 | n = 1 |
+| original · accuracy → 1.7B accuracy | 0.55 (157) | 0.57 (180) | 0.56 (200) | 0.58 (226) | 0.59 (256) |
+| original · bBPB → 1.7B accuracy | 0.64 (149) | 0.59 (170) | 0.60 (190) | 0.60 (215) | 0.60 (245) |
+| original · bBPB → 1.7B bBPB | 0.76 (72) | 0.69 (80) | 0.72 (84) | 0.68 (93) | 0.70 (102) |
+| RF · bBPB → 1.7B bBPB |  |  |  | n = 1 | n = 1 |
 | LLM-RF · bBPB → 1.7B bBPB |  |  |  | n = 1 | n = 1 |
-| all variants, bBPB → 1.7B accuracy | 0.59 (306) | 0.58 (350) | 0.58 (392) | 0.59 (447) | 0.59 (501) |
-| all variants, bBPB → 1.7B bBPB | 0.61 (229) | 0.61 (260) | 0.61 (285) | 0.61 (326) | 0.62 (360) |
+| all variants, bBPB → 1.7B accuracy | 0.59 (306) | 0.58 (350) | 0.58 (390) | 0.59 (441) | 0.59 (501) |
+| all variants, bBPB → 1.7B bBPB | 0.61 (229) | 0.61 (260) | 0.61 (284) | 0.61 (321) | 0.62 (360) |
 
 ![Variants together and apart](pretraining/predictivity/recipe_da_size_variants_multi_axes.png)
 <!-- END auto:variants -->

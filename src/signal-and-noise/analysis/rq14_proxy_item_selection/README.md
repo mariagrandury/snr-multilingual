@@ -57,26 +57,26 @@ Follow-ups:
 <!-- BEGIN auto:proxy-item-selection (proxy_item_selection.py --pool predictivity) -->
 ## Results
 
-Pool `predictivity`, per-item store `predictivity`. DA-size, finals, pool predictivity (seed 1904), held-out half's pairs (>= 3 per half), both halves averaged; items ranked by point-biserial discrimination (within size) on the other half's 600M and 1B runs, the top q kept; scored against the 1.7B final of the full task. Random = 20 draws of the kept count from the items with a discrimination; dotted = rq12's items above chance over every 1.7B final (reads the reference, upper bound). Gate predictivity at the proxy and the reference (rule 1); the task count moves across sizes (rule 13). Regenerate with `python analysis/rq14_proxy_item_selection/proxy_item_selection.py --pool predictivity --store-pool predictivity`. The store lacks 9 of the pool's models (lm-1.7B-L8-swiglu-seed1904, lm-175M-L15-b168-muon-seed1904, lm-175M-L30-b168-muon-seed1904, lm-175M-L8-b168-muon-seed1904, lm-350M-L15-muon-seed1904, lm-350M-L30-muon-seed1904, lm-90M-L15-b84-muon-seed1904, lm-90M-L30-b84-muon-seed1904, lm-90M-L8-b84-muon-seed1904); they are left out until the store is rebuilt for the pool.
+Pool `predictivity`, per-item store `predictivity`. DA-size, finals, pool predictivity (seed 1904), held-out half's pairs (>= 3 per half), both halves averaged; items ranked by point-biserial discrimination (within size) on the other half's 600M and 1B runs, the top q kept; scored against the 1.7B final of the full task. Random = 20 draws of the kept count from the items with a discrimination; dotted = rq12's items above chance over every 1.7B final (reads the reference, upper bound). Gate predictivity at the proxy and the reference (rule 1); the task count moves across sizes (rule 13). Regenerate with `python analysis/rq14_proxy_item_selection/proxy_item_selection.py --pool predictivity --store-pool predictivity`. The store lacks 13 of the pool's models (lm-1.7B-L8-swiglu-seed1904, lm-175M-L15-b168-muon-seed1904, lm-175M-L30-b168-muon-seed1904, lm-175M-L8-b168-muon-seed1904, lm-350M-L15-muon-seed1904, lm-350M-L30-muon-seed1904, lm-350M-L8-muon-seed1904, lm-600M-L15-muon-seed1904, lm-600M-L30-muon-seed1904, lm-600M-L8-muon-seed1904, lm-90M-L15-b84-muon-seed1904, lm-90M-L30-b84-muon-seed1904, lm-90M-L8-b84-muon-seed1904); they are left out until the store is rebuilt for the pool.
 
 **DA-size on the held-out half**, kept / full task / random / rq12's reference-selected items (tasks), mean over the tasks; the task count moves along a row (rule 13):
 
 | pairs | kept | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|---|
-| mono-axis | 25% | 0.441 / 0.502 / 0.450 / 0.513 (237) | 0.467 / 0.513 / 0.463 / 0.522 (271) | 0.456 / 0.491 / 0.451 / 0.494 (301) | 0.480 / 0.519 / 0.477 / 0.510 (342) | 0.500 / 0.526 / 0.481 / 0.531 (374) |
-| mono-axis | 50% | 0.465 / 0.502 / 0.464 / 0.513 (237) | 0.466 / 0.513 / 0.481 / 0.522 (271) | 0.478 / 0.491 / 0.470 / 0.494 (301) | 0.492 / 0.519 / 0.494 / 0.510 (342) | 0.508 / 0.526 / 0.503 / 0.531 (374) |
-| mono-axis | 75% | 0.470 / 0.502 / 0.465 / 0.513 (237) | 0.481 / 0.513 / 0.490 / 0.522 (271) | 0.480 / 0.491 / 0.476 / 0.494 (301) | 0.507 / 0.519 / 0.505 / 0.510 (342) | 0.518 / 0.526 / 0.512 / 0.531 (374) |
-| multi-axis | 25% | 0.470 / 0.528 / 0.468 / 0.556 (238) | 0.497 / 0.539 / 0.483 / 0.566 (272) | 0.491 / 0.531 / 0.480 / 0.554 (302) | 0.514 / 0.547 / 0.502 / 0.558 (343) | 0.528 / 0.571 / 0.511 / 0.574 (375) |
-| multi-axis | 50% | 0.490 / 0.528 / 0.484 / 0.556 (238) | 0.503 / 0.539 / 0.505 / 0.566 (272) | 0.512 / 0.531 / 0.501 / 0.554 (302) | 0.533 / 0.547 / 0.526 / 0.558 (343) | 0.554 / 0.571 / 0.538 / 0.574 (375) |
-| multi-axis | 75% | 0.498 / 0.528 / 0.490 / 0.556 (238) | 0.516 / 0.539 / 0.513 / 0.566 (272) | 0.514 / 0.531 / 0.510 / 0.554 (302) | 0.542 / 0.547 / 0.536 / 0.558 (343) | 0.559 / 0.571 / 0.550 / 0.574 (375) |
+| mono-axis | 25% | 0.441 / 0.502 / 0.450 / 0.513 (237) | 0.467 / 0.513 / 0.463 / 0.522 (271) | 0.457 / 0.492 / 0.452 / 0.495 (300) | 0.479 / 0.518 / 0.477 / 0.510 (339) | 0.500 / 0.526 / 0.481 / 0.531 (374) |
+| mono-axis | 50% | 0.465 / 0.502 / 0.464 / 0.513 (237) | 0.466 / 0.513 / 0.481 / 0.522 (271) | 0.478 / 0.492 / 0.471 / 0.495 (300) | 0.492 / 0.518 / 0.494 / 0.510 (339) | 0.508 / 0.526 / 0.503 / 0.531 (374) |
+| mono-axis | 75% | 0.470 / 0.502 / 0.465 / 0.513 (237) | 0.481 / 0.513 / 0.490 / 0.522 (271) | 0.481 / 0.492 / 0.477 / 0.495 (300) | 0.508 / 0.518 / 0.505 / 0.510 (339) | 0.518 / 0.526 / 0.512 / 0.531 (374) |
+| multi-axis | 25% | 0.470 / 0.528 / 0.468 / 0.556 (238) | 0.497 / 0.539 / 0.483 / 0.566 (272) | 0.491 / 0.532 / 0.480 / 0.555 (301) | 0.514 / 0.545 / 0.502 / 0.557 (340) | 0.528 / 0.571 / 0.511 / 0.574 (375) |
+| multi-axis | 50% | 0.490 / 0.528 / 0.484 / 0.556 (238) | 0.503 / 0.539 / 0.505 / 0.566 (272) | 0.512 / 0.532 / 0.501 / 0.555 (301) | 0.533 / 0.545 / 0.525 / 0.557 (340) | 0.554 / 0.571 / 0.538 / 0.574 (375) |
+| multi-axis | 75% | 0.498 / 0.528 / 0.490 / 0.556 (238) | 0.516 / 0.539 / 0.513 / 0.566 (272) | 0.515 / 0.532 / 0.510 / 0.555 (301) | 0.541 / 0.545 / 0.535 / 0.557 (340) | 0.559 / 0.571 / 0.550 / 0.574 (375) |
 
 **Gain over random items** (mean paired difference over the same tasks):
 
 | pairs | kept | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|---|
-| mono-axis | 25% | -0.009 | +0.005 | +0.005 | +0.003 | +0.018 |
-| mono-axis | 50% | +0.001 | -0.015 | +0.008 | -0.002 | +0.005 |
-| mono-axis | 75% | +0.006 | -0.009 | +0.004 | +0.002 | +0.006 |
+| mono-axis | 25% | -0.009 | +0.005 | +0.005 | +0.002 | +0.018 |
+| mono-axis | 50% | +0.001 | -0.015 | +0.008 | -0.003 | +0.005 |
+| mono-axis | 75% | +0.006 | -0.009 | +0.004 | +0.003 | +0.006 |
 | multi-axis | 25% | +0.002 | +0.013 | +0.011 | +0.012 | +0.017 |
 | multi-axis | 50% | +0.006 | -0.002 | +0.011 | +0.007 | +0.016 |
 | multi-axis | 75% | +0.008 | +0.003 | +0.005 | +0.006 | +0.008 |

@@ -39,23 +39,23 @@ z
    </g>
    <g id="FillBetweenPolyCollection_1">
     <defs>
-     <path id="m574c06fa03" d="M 49.434171 -139.427036 
+     <path id="m4f84628b9a" d="M 49.434171 -139.427036 
 L 49.434171 -131.492239 
 L 95.983672 -128.633403 
-L 144.505184 -129.347746 
-L 182.23588 -129.231011 
+L 144.505184 -129.394296 
+L 182.23588 -129.196282 
 L 217.994565 -129.446083 
 L 217.994565 -138.952618 
 L 217.994565 -138.952618 
-L 182.23588 -137.151798 
-L 144.505184 -137.447937 
+L 182.23588 -137.153589 
+L 144.505184 -137.50363 
 L 95.983672 -137.017455 
 L 49.434171 -139.427036 
 z
 "/>
     </defs>
     <g clip-path="url(#pfa2fec99e8)">
-     <use xlink:href="#m574c06fa03" x="0" y="225.107578" style="fill: #1b1b19; fill-opacity: 0.1"/>
+     <use xlink:href="#m4f84628b9a" x="0" y="225.107578" style="fill: #1b1b19; fill-opacity: 0.1"/>
     </g>
    </g>
    <g id="matplotlib.axis_1">
@@ -1308,8 +1308,8 @@ z
    <g id="line2d_35">
     <path d="M 49.434171 89.647941 
 L 95.983672 92.282149 
-L 144.505184 91.709737 
-L 182.23588 91.916174 
+L 144.505184 91.658615 
+L 182.23588 91.932643 
 L 217.994565 90.908228 
 " clip-path="url(#pfa2fec99e8)" style="fill: none; stroke: #1b1b19; stroke-width: 2; stroke-linecap: square"/>
     <defs>
@@ -1328,8 +1328,8 @@ z
     <g clip-path="url(#pfa2fec99e8)">
      <use xlink:href="#md594428fbf" x="49.434171" y="89.647941" style="fill: #1b1b19; stroke: #1b1b19"/>
      <use xlink:href="#md594428fbf" x="95.983672" y="92.282149" style="fill: #1b1b19; stroke: #1b1b19"/>
-     <use xlink:href="#md594428fbf" x="144.505184" y="91.709737" style="fill: #1b1b19; stroke: #1b1b19"/>
-     <use xlink:href="#md594428fbf" x="182.23588" y="91.916174" style="fill: #1b1b19; stroke: #1b1b19"/>
+     <use xlink:href="#md594428fbf" x="144.505184" y="91.658615" style="fill: #1b1b19; stroke: #1b1b19"/>
+     <use xlink:href="#md594428fbf" x="182.23588" y="91.932643" style="fill: #1b1b19; stroke: #1b1b19"/>
      <use xlink:href="#md594428fbf" x="217.994565" y="90.908228" style="fill: #1b1b19; stroke: #1b1b19"/>
     </g>
    </g>
