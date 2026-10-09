@@ -3,8 +3,8 @@ still hold one rung ABOVE it, at 3B?
 
 Every other RQ stops at the reference (rule 10). This is the one analysis that
 opts in with `above_reference=True`: it takes every family with a final at the
-`--reference` rung (3B: deep, L ∈ {8, 15} in data builds A and B, plus A-L30,
-B-L30 and A-L50 as their evaluations land) and reads, on those families alone,
+`--reference` rung (3B: deep, L ∈ {8, 15} in data builds A and B, plus A-L30
+and A-L50) and reads, on those families alone,
 
   (a) DA-size from every smaller rung to the reference, pooled over the gated
       tasks — the scale-convergence line one rung further out — beside the
@@ -75,12 +75,12 @@ OUT_ROOT = SIZE_GENERALISATION
 POOL = "predictivity_seeds"                   # every trained cell; the pairs are held at the grid seed by pair_sets
 REFERENCE = next((s for s in EVAL_SIZES if NON_EMB[s] > NON_EMB[TARGET_SIZE]), TARGET_SIZE)   # 3B today
 FRACS = [*CKPT_DA_EARLY_FRACS, 1.0]
-# The design set of a rung: which families it was planned with. `3B` is the
-# deep cells of plan/3b_models.md: L8/L15 in A and B, plus A-L30, B-L30 and
-# A-L50 (added 2026-09-30); `all` is every family.
+# The design set of a rung: which families it trains. `3B` is the six deep
+# cells of plan/3b_models.md: L8/L15 in A and B, plus A-L30 and A-L50 (added
+# 2026-09-30); `all` is every family.
 DESIGNS = {"all": lambda a: pd.Series(True, index=a.index),
-           "3B": lambda a: (a["arch"] == "deep") & (a["activation"] == "xielu") & a["L"].isin([8, 15, 30, 50])
-                           & a["data"].isin(["A", "B"])}
+           "3B": lambda a: (a["arch"] == "deep") & (a["activation"] == "xielu")
+                           & ((a["data"].eq("A") & a["L"].isin([8, 15, 30, 50])) | (a["data"].eq("B") & a["L"].isin([8, 15])))}
 mpl.rcParams.update(S.RC)
 
 

@@ -7,9 +7,12 @@ makes the decisions the 1.7B model makes (rule 10, `analysis/RULES.md`). The
 3B rung asks the one question that frame cannot: whether the reference itself
 is a proxy for the next rung.
 
-Seven cells are planned at 3B for it (deep, seed 1904: L ∈ {8, 15, 30, 50} in
-scheme A and L ∈ {8, 15, 30} in scheme B; `plan/3b_models.md`), and a cell
-enters each analysis once its 3B final is evaluated in the ladder report. This
+Six cells train at 3B for it (deep, seed 1904: L ∈ {8, 15, 30, 50} in
+scheme A and L ∈ {8, 15} in scheme B; `plan/3b_models.md`), and a cell
+enters each analysis once its 3B final is evaluated in the ladder report.
+Among six cells the data scheme moves in two mono-axis pairs (A vs B at L8 and
+L15), below the three a decision needs (rule 5), so the language count is the
+only design axis read on its own at 3B. This
 folder is therefore the only reader of `build_snr_pool(above_reference=True)`
 and the only one the rule-10 checker exempts (`check_rules.EXEMPT`).
 
@@ -18,8 +21,7 @@ acc_norm on the cloze-format originals), outputs of the full refresh of
 2026-10-08 (detrended checkpoint noise), pool `predictivity` (seed 1904).
 Six 3B cells are in the report and all six are scored at both 1.7B and 3B
 (A-L8, A-L15, A-L30, A-L50, B-L8, B-L15): A-L30's benchmark final has landed
-but its last BPB evaluation is at iteration 123,420 of 145,200, and B-L30 is
-not in the report yet.
+but its last BPB evaluation is at iteration 123,420 of 145,200.
 
 The rung is asked two things:
 
@@ -52,8 +54,8 @@ The rung is asked two things:
   the two readings differ in the reference and in the bBPB twins' coverage
   (next bullet). The reference-consistency section reads both references on
   identical decisions, twins included; the preview (`--reference 1.7B
-  --design 3B`) reads the whole 3B design set, B-L30 included, to
-  1.7B.
+  --design 3B`) reads the six families of the 3B design set to 1.7B with
+  the 1.7B gate alone.
 - **The bBPB twins at both references.** The per-item store now holds every
   checkpoint of every seed-1904 cell up to 1.7B and of five of the six 3B
   cells (not A-L30, `bench_bpb.csv`), so the twins enter every benchmark row
@@ -95,13 +97,13 @@ GitHub: [gate_share_and_da_size_mono_axis_paper.png](https://github.com/mariagra
 |---|---|---|---|---|---|---|
 | mono-axis | 90M | 0.53 | 457 | 0.53 | 0.96 | 10 |
 | mono-axis | 175M | 0.50 | 466 | 0.53 | 0.96 | 10 |
-| mono-axis | 350M | 0.49 | 487 | 0.52 | 0.81 | 10 |
-| mono-axis | 600M | 0.53 | 516 | 0.53 | 0.94 | 10 |
+| mono-axis | 350M | 0.49 | 486 | 0.52 | 0.81 | 10 |
+| mono-axis | 600M | 0.54 | 517 | 0.53 | 0.94 | 10 |
 | mono-axis | 1B | 0.54 | 537 | 0.52 | 0.90 | 10 |
 | mono-axis | 1.7B | 0.50 | 551 | — | 0.96 | 10 |
 | multi-axis | 90M | 0.54 | 504 | 0.54 | 0.94 | 12 |
 | multi-axis | 175M | 0.51 | 517 | 0.54 | 0.94 | 12 |
-| multi-axis | 350M | 0.50 | 540 | 0.54 | 0.88 | 12 |
+| multi-axis | 350M | 0.50 | 539 | 0.54 | 0.88 | 12 |
 | multi-axis | 600M | 0.54 | 573 | 0.54 | 0.91 | 12 |
 | multi-axis | 1B | 0.55 | 599 | 0.53 | 0.90 | 12 |
 | multi-axis | 1.7B | 0.51 | 618 | — | 0.95 | 12 |
@@ -158,57 +160,58 @@ Follow-ups:
   compares like with like; until then read the reference-consistency table.
 - Add the reference's earlier checkpoints as proxies (DA-ckpt at 3B) once its
   k/10 grid is evaluated; `per_task()` already takes any `frac`.
-- The rung's families are all deep: no depth pair, so the by-transformation
-  reading is limited to the language count and the scheme.
+- The rung's families are all deep: no depth pair, and the scheme moves in
+  two mono-axis pairs only, so the by-transformation reading is limited to the
+  language count.
 
 ### The preview: the 3B design set read to 1.7B
 
 The control that separates "3B is unpredictable" from "this population is
-unpredictable at any reference". It reads all seven 3B-design families at
-1.7B, where B-L30 already has a final, so its population is wider
-than the 3B table's six.
+unpredictable at any reference". It reads the six 3B-design families at
+1.7B, the population of the 3B table.
 
 <!-- BEGIN auto:above-reference-1.7B-design3B (above_reference.py --pool predictivity --reference 1.7B --design 3B) -->
 ## The 1.7B rung as the reference — preview on the `3B` design set
 
 **DA-size and DA-goal · reference 1.7B · multi-axis and mono-axis pairs at the grid seed · gate `predictivity` at the proxy, the Wilson rule on the 1.7B runs at the reference · no filter.** Regenerate with `python analysis/rq10_size_generalisation/above_reference.py --pool predictivity --reference 1.7B --design 3B`.
 
-**Population.** 7 families with a final at 1.7B (lm-L15-deep-seed1904, lm-L15-schemeB-deep-seed1904, lm-L30-deep-seed1904, lm-L30-schemeB-deep-seed1904, lm-L50-deep-seed1904, lm-L8-deep-seed1904, lm-L8-schemeB-deep-seed1904); DA-size pooled over the gated benchmark tasks with ≥ 3 pairs, and separately over the per-language BPB tasks (never gated — no chance level; only the languages every paired family scores clear 3 pairs, which is why the BPB column rests on far fewer tasks).
+**Population.** 6 families with a final at 1.7B (lm-L15-deep-seed1904, lm-L15-schemeB-deep-seed1904, lm-L30-deep-seed1904, lm-L50-deep-seed1904, lm-L8-deep-seed1904, lm-L8-schemeB-deep-seed1904); DA-size pooled over the gated benchmark tasks with ≥ 3 pairs, and separately over the per-language BPB tasks (never gated — no chance level; only the languages every paired family scores clear 3 pairs, which is why the BPB column rests on far fewer tasks).
 
 ![Size generalisation to 1.7B](pretraining/predictivity/above_reference_1.7B_design3B.png)
 
 | axes | proxy | DA-size → 1.7B | tasks | DA-size → 1.7B (same families) | BPB DA-size → 1.7B | BPB tasks |
 |---|---|---|---|---|---|---|
-| mono-axis | 90M | 0.53 | 680 | 0.53 | 0.88 | 21 |
-| mono-axis | 175M | 0.52 | 704 | 0.52 | 0.88 | 21 |
-| mono-axis | 350M | 0.51 | 728 | 0.51 | 0.85 | 21 |
-| mono-axis | 600M | 0.52 | 761 | 0.52 | 0.88 | 21 |
-| mono-axis | 1B | 0.52 | 785 | 0.52 | 0.76 | 21 |
-| multi-axis | 90M | 0.53 | 843 | 0.53 | 0.91 | 31 |
-| multi-axis | 175M | 0.52 | 875 | 0.52 | 0.91 | 31 |
-| multi-axis | 350M | 0.52 | 904 | 0.52 | 0.87 | 31 |
-| multi-axis | 600M | 0.53 | 944 | 0.53 | 0.91 | 31 |
-| multi-axis | 1B | 0.53 | 972 | 0.53 | 0.77 | 31 |
+| mono-axis | 90M | 0.53 | 587 | 0.53 | 0.86 | 16 |
+| mono-axis | 175M | 0.53 | 606 | 0.53 | 0.85 | 16 |
+| mono-axis | 350M | 0.52 | 627 | 0.52 | 0.81 | 16 |
+| mono-axis | 600M | 0.53 | 677 | 0.53 | 0.87 | 16 |
+| mono-axis | 1B | 0.51 | 697 | 0.51 | 0.82 | 16 |
+| multi-axis | 90M | 0.54 | 686 | 0.54 | 0.89 | 21 |
+| multi-axis | 175M | 0.54 | 710 | 0.54 | 0.88 | 21 |
+| multi-axis | 350M | 0.54 | 733 | 0.54 | 0.84 | 21 |
+| multi-axis | 600M | 0.55 | 789 | 0.55 | 0.89 | 21 |
+| multi-axis | 1B | 0.53 | 815 | 0.53 | 0.86 | 21 |
 
 Files: [`above_reference_1.7B_design3B.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.png), [`above_reference_1.7B_design3B.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.csv), [`above_reference_1.7B_design3B_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B_per_task.csv).
 <!-- END auto:above-reference-1.7B-design3B -->
 
 Key findings:
 
-- **On the seven design families, DA-size to 1.7B is a coin flip from every
-  proxy size.** Benchmark tasks only (the bBPB twins left out): 0.50 / 0.50 /
-  0.48 / 0.49 / 0.50 mono-axis at 90M / 175M / 350M / 600M / 1B over 178–283
-  gated tasks, and 0.49 / 0.50 / 0.49 / 0.50 / 0.52 multi-axis over 224–353;
+- **On the six design families, DA-size to 1.7B is at chance from every
+  proxy size.** Benchmark tasks only (the bBPB twins left out): 0.52 / 0.51 /
+  0.47 / 0.50 / 0.51 mono-axis at 90M / 175M / 350M / 600M / 1B over 160–270
+  gated tasks, and 0.51 / 0.52 / 0.49 / 0.52 / 0.52 multi-axis over 184–313;
   the 3B question therefore starts from a population whose 1.7B ranking the
   ladder does not resolve either.
-- **Every row of the table pools the bBPB twins.** The 502 mono-axis (619
-  multi-axis) twin tasks alone give 0.53–0.54 (0.53–0.55) at every proxy size,
-  which lifts the rows to 0.51–0.53 over 680–972 tasks.
-- **The pair sets are larger than at 3B.** Seven families give 21 multi-axis
-  and 12 mono-axis pairs against 15 and 9 for the six at 3B, so the two
-  tables differ in population as well as in reference.
-- **BPB on these families reaches 0.76–0.91 at the 1.7B reference**
-  (0.76–0.88 mono-axis over 21 tasks, 0.77–0.91 multi-axis over 31), against
+- **Every row of the table pools the bBPB twins.** The 427 mono-axis (502
+  multi-axis) twin tasks alone give 0.52–0.55 (0.54–0.56) at every proxy size,
+  which lifts the rows to 0.51–0.55 over 587–815 tasks.
+- **The pair sets are those of the 3B table.** The six families give 15
+  multi-axis and 9 mono-axis pairs at both references, so the two tables
+  differ in the reference and in the bBPB twins' coverage, not in the
+  decisions.
+- **BPB on these families reaches 0.81–0.89 at the 1.7B reference**
+  (0.81–0.87 mono-axis over 16 tasks, 0.84–0.89 multi-axis over 21), against
   0.81–0.96 to 3B over 10–12: the channel that works does not degrade with the
   rung.
 
@@ -312,8 +315,8 @@ Follow-ups:
 
 - The gate rests on 1–6 runs per (task, rung), and 34 of the 169 newly
   admitted tasks on a single run (a language only the L50 family trains).
-  More 3B cells would tighten the gate directly; this, not the
-  decision-accuracy table, is where B-L30 would pay.
+  More 3B cells would tighten the gate directly, more than they would the
+  decision-accuracy table.
 - Ask in the gate analysis (`../rq00_gate_and_curves/README.md`) whether the
   newly admitted tasks' DA is any better than the already-admitted ones', i.e.
   whether measurability buys reliability.
@@ -368,13 +371,13 @@ Benchmark accuracy, pooled DA-size [90 % band]:
 |---|---|---|---|---|
 | mono-axis | 90M | 446 | 0.52 [0.45, 0.60] | 0.54 [0.52, 0.55] |
 | mono-axis | 175M | 465 | 0.53 [0.50, 0.57] | 0.50 [0.48, 0.52] |
-| mono-axis | 350M | 486 | 0.51 [0.46, 0.56] | 0.49 [0.45, 0.53] |
-| mono-axis | 600M | 515 | 0.52 [0.46, 0.58] | 0.53 [0.49, 0.58] |
+| mono-axis | 350M | 485 | 0.51 [0.46, 0.56] | 0.49 [0.45, 0.53] |
+| mono-axis | 600M | 516 | 0.52 [0.46, 0.58] | 0.53 [0.49, 0.58] |
 | mono-axis | 1B | 536 | 0.52 [0.49, 0.54] | 0.54 [0.51, 0.57] |
 | multi-axis | 90M | 492 | 0.53 [0.44, 0.61] | 0.55 [0.51, 0.59] |
 | multi-axis | 175M | 516 | 0.54 [0.50, 0.58] | 0.51 [0.48, 0.54] |
-| multi-axis | 350M | 539 | 0.53 [0.49, 0.56] | 0.50 [0.47, 0.53] |
-| multi-axis | 600M | 572 | 0.54 [0.47, 0.61] | 0.54 [0.51, 0.56] |
+| multi-axis | 350M | 538 | 0.53 [0.49, 0.56] | 0.50 [0.47, 0.53] |
+| multi-axis | 600M | 572 | 0.54 [0.47, 0.61] | 0.54 [0.51, 0.57] |
 | multi-axis | 1B | 597 | 0.53 [0.48, 0.57] | 0.55 [0.52, 0.58] |
 
 Spearman between the two references' DA, over the benchmark tasks and over the benchmarks (mean DA of their tasks):
@@ -383,13 +386,13 @@ Spearman between the two references' DA, over the benchmark tasks and over the b
 |---|---|---|---|---|---|
 | mono-axis | 90M | -0.01 | 446 | -0.08 | 60 |
 | mono-axis | 175M | 0.03 | 465 | 0.20 | 60 |
-| mono-axis | 350M | 0.02 | 486 | -0.06 | 60 |
-| mono-axis | 600M | 0.03 | 515 | 0.34 | 62 |
+| mono-axis | 350M | 0.01 | 485 | -0.06 | 60 |
+| mono-axis | 600M | 0.03 | 516 | 0.32 | 62 |
 | mono-axis | 1B | 0.11 | 536 | 0.21 | 62 |
 | multi-axis | 90M | 0.04 | 492 | -0.06 | 60 |
 | multi-axis | 175M | 0.06 | 516 | 0.14 | 60 |
-| multi-axis | 350M | 0.07 | 539 | -0.05 | 60 |
-| multi-axis | 600M | 0.04 | 572 | 0.41 | 62 |
+| multi-axis | 350M | 0.07 | 538 | -0.05 | 60 |
+| multi-axis | 600M | 0.04 | 572 | 0.40 | 62 |
 | multi-axis | 1B | 0.11 | 597 | 0.20 | 62 |
 
 ![SNR at two rungs](pretraining/predictivity/reference_consistency_snr.png)
@@ -500,14 +503,14 @@ The 1.7B reference is one run per design, and the 3B reading above pools six fam
 |---|---|---|---|---|
 | mono-axis | 90M | 0.50 (101) | 0.52 (101) | 0.50 (101) |
 | mono-axis | 175M | 0.46 (114) | 0.52 (114) | 0.47 (114) |
-| mono-axis | 350M | 0.48 (129) | 0.51 (129) | 0.49 (129) |
-| mono-axis | 600M | 0.50 (150) | 0.46 (150) | 0.51 (150) |
+| mono-axis | 350M | 0.48 (128) | 0.51 (128) | 0.50 (128) |
+| mono-axis | 600M | 0.50 (152) | 0.46 (152) | 0.51 (152) |
 | mono-axis | 1B | 0.52 (160) | 0.49 (160) | 0.52 (160) |
 | mono-axis | 1.7B | 0.54 (168) | — | 0.50 (168) |
 | multi-axis | 90M | 0.46 (111) | 0.51 (111) | 0.49 (111) |
 | multi-axis | 175M | 0.46 (128) | 0.52 (128) | 0.48 (128) |
-| multi-axis | 350M | 0.49 (143) | 0.52 (143) | 0.49 (143) |
-| multi-axis | 600M | 0.51 (165) | 0.48 (165) | 0.51 (165) |
+| multi-axis | 350M | 0.49 (142) | 0.53 (142) | 0.49 (142) |
+| multi-axis | 600M | 0.51 (167) | 0.48 (167) | 0.51 (167) |
 | multi-axis | 1B | 0.52 (179) | 0.52 (179) | 0.53 (179) |
 | multi-axis | 1.7B | 0.54 (189) | — | 0.51 (189) |
 
@@ -558,7 +561,6 @@ Key findings (`reference_choice_da_all_both_axes.csv`; snapshot of the 2026-10-0
 - **Its BPB cannot be read yet.** The 3B K = 30 cell has no BPB final; the same pairs read to 1.7B give 0.67–0.86 in BPB, below the 0.82–0.96 of every 3B pair.
 
 Follow-ups:
-- B-L30 at 3B, once evaluated, gives a within-K = 30 decision (scheme A vs B) at 3B, still one pair per task.
 - Replicate seeds of a 1.7B design, which would give the reference-side spread at the reference itself.
 
 

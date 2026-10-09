@@ -12,7 +12,7 @@ families. This asks what DA-size and DA-goal read when the reference is
              the three reference seeds is the reference-side seed noise of one
              proxy reading, which the 1.7B reference cannot show.
   3B K=30    the 3B final, over the decisions that involve the one K = 30 family
-             at 3B (A-L30: B-L30 is not in the report), i.e. its pairs with the
+             at 3B (A-L30), i.e. its pairs with the
              five other 3B families; proxies 90M–1.7B. The same pairs read to the
              1.7B final, and every 3B pair (rq10's pooled reading) beside it.
 

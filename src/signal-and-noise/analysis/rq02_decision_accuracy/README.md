@@ -2118,7 +2118,19 @@ larger scale"; `plan/next_analyses.md` §7c)
 - The ladder's own 3B rung, read in the
   [size-generalisation write-up](../rq10_size_generalisation/README.md): the
   one within-recipe generalisation above the current reference
-  (`above_reference=True` in `build_snr_pool`).
+  (`above_reference=True` in `build_snr_pool`). What it shows so far (six
+  deep families, A-L8/L15/L30/L50 and B-L8/L15, 2026-10-08 refresh): the
+  conclusions of this README hold one rung up. Per-language BPB carries over,
+  the 1.7B finals ordering the 3B decisions at 0.96 mono-axis and 0.95
+  multi-axis and every proxy from 90M reaching at least 0.81, with
+  `bpb_macro` matching every 1.7B → 3B pair (6/6 mono-axis, 10/10
+  multi-axis). Benchmark accuracy reads 0.47–0.52 to either reference on
+  identical decisions, so its gap to BPB is not an artefact of the 1.7B
+  reference. The rung also measures more of the suite: the gate admits 687
+  of 841 tasks at 3B against 522 at 1.7B, mostly the original-format
+  multilingual knowledge benchmarks whose reformulated twins are already
+  above chance at 1.7B. With six families the check covers the language
+  count and the scheme only.
 - The trend of DA-size across proxies per task: does agreement rise
   monotonically towards the reference? A task whose DA-size climbs 175M →
   1B is the one whose ranking is converging.
