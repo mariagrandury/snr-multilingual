@@ -26,6 +26,8 @@ For example, the median required margins are 9.00 percentage points for nonparal
 \textbf{The formulation effect.}
 The corresponding fractions of benchmark-language-size cells that pass the filter over the six sizes from 90M to 1.7B are 37.5\%, 1.1\%, 100.0\% and 4.1\%, respectively. The reformulated variants of Belebele and Global-MMLU pass in 75.4\% and 73.9\% of their cells.
 
+Figure~\ref{fig:app_chance_share} gives the share of language tasks that pass the threshold per benchmark, Figure~\ref{fig:app_chance_reformulation} the same share per answer format, and Figure~\ref{fig:app_chance_full} the verdict of every language task.
+
 
 \begin{figure}[t]
     \centering
@@ -44,7 +46,7 @@ The corresponding fractions of benchmark-language-size cells that pass the filte
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=\linewidth]{figures/app_rq00_chance_full.png}
+    \includegraphics[width=\linewidth,height=0.85\textheight,keepaspectratio]{figures/app_rq00_chance_full.png}
 \caption{Language tasks that pass the chance threshold per benchmark.}
     \label{fig:app_chance_full}
 \end{figure*}

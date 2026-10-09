@@ -13,7 +13,7 @@ std (ddof 0), kept as the labelled alternative. The seed std is the sample
 std (n−1). A ratio near 1 means the two
 levels are the same model as far as a ranking is concerned (the "read this
 against the seed row" rule of `ladder_report.md`): a decision on such a cell
-is a coin flip whatever its decision accuracy (rq05) says. The seed-over-
+is random whatever its decision accuracy (rq05) says. The seed-over-
 checkpoint ratio is also what says how optimistic the checkpoint-noise SNR
 of `run_apertus_snr_variants.py` is.
 

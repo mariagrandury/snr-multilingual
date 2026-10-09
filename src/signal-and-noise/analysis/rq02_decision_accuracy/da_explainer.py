@@ -275,7 +275,7 @@ def generate_readme(pool: str, t: pd.DataFrame) -> None:
             f"- A cell of n pairs takes the values k/n: at the minimum of {MIN_PAIRS} pairs that is 0, ⅓, ⅔, 1, so a per-cell DA is read on "
             "its lattice and the figures draw the pooled ratio over tasks (`scale_convergence.py`) or the mean over cells (`by_L.py`), never one cell. "
             f"The ringed cells ({', '.join(above)}) are the ones the `above_66_*` filters would keep (cut {CUT:g}).",
-            "- 0.5 is a coin flip on every untied pair; since a one-sided tie is a miss, an uninformative proxy sits below it, at "
+            "- 0.5 is chance agreement on every untied pair; since a one-sided tie is a miss, an uninformative proxy sits below it, at "
             f"0.5 × (1 − the share of pairs one side ties): ≈ {0.5 * (1 - tie):.2f} on the ladder ({tie:.0%} one-sided ties over the "
             "benchmark cells that pass the gate, `agreement_da_size_per_cell_multi_axes.csv`). The seed null of `seed_uncertainty.py` is a different baseline (two seeds of "
             "one design, read in its own section).",

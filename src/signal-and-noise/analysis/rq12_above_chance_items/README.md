@@ -249,7 +249,7 @@ reference, pooled over the tasks with the 90 % leave-one-family-out band.
 - **The tasks the recomputed gate admits pull the pooled line down, not
   up.** Pooled, the full benchmark reads 0.535–0.560 (multi-axis), *gate,
   then items* 0.535–0.552 and *items, then gate* 0.511–0.527 (695–755 tasks).
-- **The admitted cells rank at or below a coin flip.** The 290–408 admitted
+- **The admitted cells rank at or below chance.** The 290–408 admitted
   cells per proxy read 0.470–0.500 (multi-axis, 0.500 at 175M; mono-axis
   0.452–0.485), and higher the more items their task keeps: 0.399 at 1–30
   kept items, 0.469, 0.502 and 0.520 in the middle bins, 0.537 above 1,000.
@@ -298,7 +298,7 @@ the mono-axis twin is
   loses at 175M–1B (−0.02 to −0.08, 12–13 tasks) and XCOPA at 1B (−0.11, 8
   tasks).
 - **The *items, then gate* panel fills in benchmarks the full benchmark does
-  not read at that proxy, near or below a coin flip.** Global-MMLU reads
+  not read at that proxy, near or below chance.** Global-MMLU reads
   0.45–0.57 (23–29 tasks), Global PIQA parallel 0.39–0.44 (60–63) and
   CulturalBench-hard 0.38–0.44 (10–18); ACP-Bench cloze reads 0.91–0.98 on
   its 7 tasks only through the tie convention (34 of its 35 multi-axis cells

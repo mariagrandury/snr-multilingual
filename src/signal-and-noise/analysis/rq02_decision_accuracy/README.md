@@ -321,7 +321,7 @@ Key findings (definitions, so nothing to measure):
 
 - On the toy, DA-size 0.50, DA-ckpt 0.17 and DA-goal 0.67 over the six multi-axis pairs; over the three mono-axis pairs 0.33 / 0.00 / 0.67. The tied pair (Deep-A-T1 = Deep-A-T3 at the proxy's final) is a miss wherever the other side decides it, an agreement only if both sides tie — `decision_acc_fast`'s convention, order-invariant.
 - A cell of n pairs takes the values k/n: at the minimum of 3 pairs that is 0, ⅓, ⅔, 1, so a per-cell DA is read on its lattice and the figures draw the pooled ratio over tasks (`scale_convergence.py`) or the mean over cells (`by_L.py`), never one cell. The ringed cells (DA-goal multi-axis 0.67, DA-goal mono-axis 0.67) are the ones the `above_66_*` filters would keep (cut 0.66).
-- 0.5 is a coin flip on every untied pair; since a one-sided tie is a miss, an uninformative proxy sits below it, at 0.5 × (1 − the share of pairs one side ties): ≈ 0.47 on the ladder (7% one-sided ties over the benchmark cells that pass the gate, `agreement_da_size_per_cell_multi_axes.csv`). The seed null of `seed_uncertainty.py` is a different baseline (two seeds of one design, read in its own section).
+- 0.5 is chance agreement on every untied pair; since a one-sided tie is a miss, an uninformative proxy sits below it, at 0.5 × (1 − the share of pairs one side ties): ≈ 0.47 on the ladder (7% one-sided ties over the benchmark cells that pass the gate, `agreement_da_size_per_cell_multi_axes.csv`). The seed null of `seed_uncertainty.py` is a different baseline (two seeds of one design, read in its own section).
 - DA-goal at the final checkpoint is DA-size, and at the reference size DA-ckpt is DA-goal: the early-and-small grid's last column and last row are the other two figures' numbers.
 - `by transformation` is the mono-axis set split by the axis a pair moves; each group needs its own three pairs. On the ladder a (task, size) cell at the final checkpoint holds 3–3 for activation (XIELU vs SwiGLU), 4–12 for data scheme (A vs B vs C), 3–10 for depth (deep vs shallow), 3–42 for language count, 3–4 for temperature (T=1 vs T=3) (`da_all_by_transformation_per_task_mono_axis.csv`), so the smaller groups often fall below the minimum and are NaN (`early_small_da_*_by_transformation_*`, `scale_convergence_da_size_transformation_panels*`).
 
@@ -335,7 +335,7 @@ Files: [`da_all_explainer_both_axes.png`](https://github.com/mariagrandury/snr-m
 
 ## Figures, in storyline order
 
-### 1. The full population: a smaller model is close to a coin flip
+### 1. The full population: a smaller model is close to chance
 
 **DA-size · no filter · multi-axis pairs (`_mono_axis` twin: mono-axis) ·
 pairs from `predictivity` at seed 1904 · gate `predictivity`.**
@@ -466,7 +466,7 @@ GitHub: [scale_convergence_da_size_L_multi_axes.png](https://github.com/mariagra
 GitHub: [scale_convergence_da_size_transformation_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_transformation_multi_axes.png) · [scale_convergence_da_size_transformation_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_transformation_multi_axes.csv) ·
 GitHub: [scale_convergence_da_size_transformation_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_transformation_mono_axis.png) · [scale_convergence_da_size_transformation_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_transformation_mono_axis.csv)
 
-What this leaves open is whether the coin flip is the average of a few
+What this leaves open is whether the chance-level agreement is the average of a few
 reliable tasks and many hopeless ones — figure 2.
 
 ### 2. The paper figure is a conditional statement
@@ -518,8 +518,8 @@ lines. CSVs: `rq2_da_all_above_66_either_transformation_mono_axis.csv`,
   population the DA-size of a fully trained proxy stays at 0.60–0.64 from 90M
   to 1B (0.643 at 90M, 0.644 at 1B). Temperature reads 0.71–0.74, language
   count 0.60–0.62, depth 0.47–0.59 (its 600M low on depth pairs that are not
-  size-matched) and the data scheme 0.48–0.53 on 131–138 tasks, close to a
-  coin flip.
+  size-matched) and the data scheme 0.48–0.53 on 131–138 tasks, close to
+  chance.
 - **The population is mostly bBPB twins.** 612 of the 737 mono-axis tasks that
   pass either cut are twins. Since the twins now exist at every size, the
   line rests on 690–723 tasks at every proxy and reads one mix of scores.
@@ -680,7 +680,7 @@ the tasks whose median DA-size or median DA-ckpt is ≥ 0.66 (the paper rq2
 figure's population), so it selects on DA and every map over it is
 conditional; the paper captions say so. It is the more informative one per
 benchmark and language: on it the proxy size matters (below), while the
-unfiltered maps are close to a coin flip almost everywhere, so they mostly
+unfiltered maps are close to chance almost everywhere, so they mostly
 restate figure 1.
 
 ![DA per benchmark and language, above_66_either, mono-axis pairs](pretraining/predictivity/rq2_da_all_by_benchmark_and_language_above_66_either_mono_axis.png)
@@ -1044,7 +1044,7 @@ Files: [`early_small_da_goal_by_transformation_mono_axis.png`](https://github.co
   and the twins alone 0.61–0.67 (1.7B 0.67 → 0.85).
 - **The two estimands give one verdict.** The pooled-over-decisions reading of
   figure 1 (0.58–0.59) and this mean-over-tasks one (0.60–0.63 at 5C) both sit
-  near a coin flip.
+  near chance.
 - **BPB reads the 1.7B ranking at ≥ 0.75 from 90M at 0.5C (0.95).** It stays
   there at 175M (0.91–0.96), 350M (0.83–0.92) and 1B (0.76–0.92). The 600M row
   never gets there (0.70–0.74), the one size where BPB is not a safe proxy,
@@ -1586,7 +1586,7 @@ Paper tabulars: `pretraining/predictivity/da_size_definition_sensitivity_multi_a
 
 **Key findings**
 
-- **No definition lifts accuracy DA far from a coin flip.** On accuracy alone
+- **No definition lifts accuracy DA far from chance.** On accuracy alone
   (multi-axis, own cells) the current rule reads 0.51–0.57 from 90M to 1B,
   ties as one half 0.54–0.60, the reference's ties dropped 0.53–0.58
   (96 % of the pairs kept), and the strictest filter (gap > 2 seed SD of a
@@ -1726,7 +1726,7 @@ on the accuracy side only.** Figures 1–10 read every benchmark through its
 accuracy, a step function of the log-likelihoods the harness already
 computed, with the twins added at every size and checkpoint (Setup). This figure reads the same items, the same final checkpoints and the same
 pairs through the gold answer's bits-per-byte (**bBPB**). Does a continuous
-score rank like the reference where accuracy is a coin flip?
+score rank like the reference where accuracy is at chance?
 
 How bBPB is computed (no model is re-run; `build_per_item_store.py` +
 `bench_bpb_da.py`):
@@ -1907,7 +1907,7 @@ every number below is in [`bench_bpb_da_size_summary_multi_axes.csv`](pretrainin
 - **The lettered tasks give no reading.**
   - Only 7 of 157 lettered tasks are above chance at 1.7B, and their
     continuation is a letter.
-  - bBPB → acc there is 0.42–0.53, i.e. a coin flip. The `rf_` twins are the
+  - bBPB → acc there is 0.42–0.53, i.e. chance. The `rf_` twins are the
     way to read those items continuously.
 
 <!-- BEGIN auto:bench-bpb-acc-gate (bench_bpb_da.py --pool predictivity) -->
@@ -1965,7 +1965,7 @@ The same task × size DAs (multi-axis pairs of `predictivity`, finals), split by
 of `predictivity` (the 406 pairs above) · finals · gate `predictivity` on the
 accuracy side, used here to split the tasks, not to drop them.** Does the
 twin rank near the per-language BPB level (0.74–0.96, FineWeb2 macro
-0.95–0.98) where accuracy is a coin flip?
+0.95–0.98) where accuracy is at chance?
 
 **Key findings**
 

@@ -2,7 +2,7 @@
 
 **Question.** Does a proxy rank the design decisions better once the pairs the 1.7B reference itself cannot separate from seed noise are left out?
 
-[DA-size](../rq02_decision_accuracy/README.md) counts every pair of design variants, including pairs whose 1.7B scores differ by less than seed noise. On those pairs the reference's order is a coin flip, so a proxy that "misses" it has missed nothing, and they pull every DA toward 0.5. The [permutation null](../rq02_permutation_null/README.md) asks how far DA is from chance; this analysis asks how much of the gap to 1 is the reference's own noise.
+[DA-size](../rq02_decision_accuracy/README.md) counts every pair of design variants, including pairs whose 1.7B scores differ by less than seed noise. On those pairs the reference's order is random, so a proxy that "misses" it has missed nothing, and they pull every DA toward 0.5. The [permutation null](../rq02_permutation_null/README.md) asks how far DA is from chance; this analysis asks how much of the gap to 1 is the reference's own noise.
 
 ## Setup
 

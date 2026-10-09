@@ -7,6 +7,8 @@ This appendix gives the training grid and the checkpoint schedule (\S\ref{app:tr
 \subsection{Training Grid and Checkpoints}
 \label{app:training-grid}
 
+Table~\ref{tab:schemes} lists every data build and ladder of the grid with its number of runs.
+
 % BEGIN generated: grid (make_appendix_tables.py)
 \begin{table*}[t]
 \centering
@@ -23,17 +25,17 @@ A & resource-ranked lists & A & 1 & deep + SwiGLU & 8, 15, 30 & 90M--1.7B & 18 &
 A & resource-ranked lists & A & 1 & deep + Muon & 8, 15, 30 & 90M--1.7B & 18 & -- \\
 AT3 & scheme-A lists, flattened & A & 3 & deep & 15, 30, 50 & 90M--1.7B & 18 & -- \\
 AT3 & scheme-A lists, flattened & A & 3 & shallow & 50 & 90M--1.7B & 6 & -- \\
-B & diversity-first lists & B & 1 & deep & 8, 15, 30 & 90M--3B & 23 & 2 \\
+B & diversity-first lists & B & 1 & deep & 8, 15, 30 & 90M--1.7B and 3B at $K \in \{8, 15\}$ & 22 & 2 \\
 B & diversity-first lists & B & 1 & shallow & 8, 15, 30 & 90M--1.7B & 18 & -- \\
 ZH & Chinese as second language & B & 1 & deep & 2 & 90M--1.7B & 6 & -- \\
 ES & Spanish as second language & C & 1 & deep & 2 & 90M--1.7B & 6 & -- \\
 DCLMP & DCLM without the edu filter & B & 1 & deep & 1 & 90M--1.7B & 6 & -- \\
 FWEB & FineWeb (crawls $\le$ 2022) & C & 1 & deep & 1 & 90M--1.7B & 6 & -- \\
 \midrule
-Total & & & & & & & 219 & 20 \\
+Total & & & & & & & 218 & 20 \\
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Training grid.} One row per data build and ladder. $M$ is the data scheme of the build at its $K$. A is the baseline recipe, and B and C are the alternatives at that $K$. $T$ is the sampling temperature of the build. These are the two design axes that a build sets. The ladders are deep (the baseline), shallow (about twice the width-to-depth ratio) and deep + SwiGLU (the activation axis). All three use AdEMAMix. Runs counts the runs of every seed. Repl.\ counts the replicate-seed runs among them (Table~\ref{tab:grid}). At the ladder-report snapshot, 218 of the 219 runs had finished. The unfinished run is 3B-K30-schemeB-deep-seed1904.}
+\caption{\textbf{Training grid.} One row per data build and ladder. $M$ is the data scheme of the build at its $K$. A is the baseline recipe, and B and C are the alternatives at that $K$. $T$ is the sampling temperature of the build. These are the two design axes that a build sets. The ladders are deep (the baseline), shallow (about twice the width-to-depth ratio) and deep + SwiGLU (the activation axis). All three use AdEMAMix. Runs counts the runs of every seed. Repl.\ counts the replicate-seed runs among them (Table~\ref{tab:grid}). All 218 runs had finished at the ladder-report snapshot.}
 \label{tab:schemes}
 \end{table*}
 % END generated: grid
@@ -44,6 +46,7 @@ Total & & & & & & & 219 & 20 \\
 \begin{table}[t]
 \centering
 \small
+\begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lccccccc}
 \toprule
 $K$ & 90M & 175M & 350M & 600M & 1B & 1.7B & 3B \\
@@ -56,6 +59,7 @@ $K$ & 90M & 175M & 350M & 600M & 1B & 1.7B & 3B \\
 50 & 1 & 3 & 1 & 3 & 1 & 1 & 1 \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{\textbf{Random seeds.} Number of seeds per $(N, K)$ cell of the deep scheme-A grid (58 runs). The replicate seeds are 64, 313 and 1904 at 175M and 600M, and 28, 1797 and 1904 at 1B. Each seed changes both the initialization and the data order. Replicate seeds exist only in the deep ladder. Every other ladder and data build trains seed 1904 alone. The scheme-B $K=30$ cell at 1B also trains the 1B replicate seeds.}
 \label{tab:grid}
 \end{table}

@@ -83,7 +83,7 @@ Each is divided by a noise of \S\ref{app:sur-noise} to give an SNR.
 Table~3 of \citet{heineman_signal_2025} prints a formula for each. The last column records where the code computes something else.
 We write $c_i$ for the final scores, $\bar{c}$ for their mean, $\bar{w}$ for the mean of the window means, $c_{(i)}$ for the $i$-th smallest score with $c_{(0)} = 0$, and $\tilde{c}_i = (c_i - \min c)/(\max c - \min c)$.
 
-\begin{table}[h]
+\begin{table*}[t]
 \centering
 \scriptsize
 \begin{tabular}{@{}p{0.19\linewidth}p{0.36\linewidth}p{0.39\linewidth}@{}}
@@ -116,7 +116,7 @@ We write $c_i$ for the final scores, $\bar{c}$ for their mean, $\bar{w}$ for the
 \end{tabular}
 \caption{The 22 signal definitions (\texttt{snr/snr\_variants.py}, from the code released with \citet{heineman_signal_2025}). The four discrepancy signals read scores as points of $[0,1]$ and are computed on benchmarks only.}
 \label{tab:sur-signals}
-\end{table}
+\end{table*}
 
 Appendix A.4 of \citet{heineman_signal_2025} also names five measures in prose (variance, mean distance, relative standard deviation, star discrepancy, dispersion). They correspond to \texttt{rms\_deviation} squared, \texttt{mpd}, \texttt{rel\_std}, \texttt{star\_discrepancy} and \texttt{dispersion}.
 In their Table~3 the $R^2$ with decision accuracy is 0.57 for relative dispersion and relative standard deviation, 0.55 for relative mean pairwise distance, 0.48 for the interquartile range, and below 0.10 for the Gini, discrepancy and depth signals.
@@ -160,9 +160,9 @@ In the terms of \citet{wang_measuring_2025}, checkpoint and seed noise are predi
 \label{app:sur-finetasks}
 
 FineTasks \citep{kydlicek_finetasks_nodate} selects tasks with four criteria computed along training, defined with formulas in the FineWeb2 paper \citep{penedo_fineweb2_2025}.
-With $M$ the runs, $m(s)$ the score of run $m$ at step $s$, $\sigma_s$ the standard deviation over runs at step $s$ and $b$ the random baseline:
+Table~\ref{tab:sur-finetasks} gives them, with $M$ the runs, $m(s)$ the score of run $m$ at step $s$, $\sigma_s$ the standard deviation over runs at step $s$ and $b$ the random baseline.
 
-\begin{table}[h]
+\begin{table*}[t]
 \centering
 \scriptsize
 \begin{tabular}{@{}p{0.14\linewidth}p{0.33\linewidth}p{0.47\linewidth}@{}}
@@ -177,21 +177,21 @@ Ordering consistency & mean $\tau_a$ of the run rankings at consecutive steps in
 \end{tabular}
 \caption{The FineTasks criteria (\texttt{finetasks\_criteria.py}). Their ``noise'' is the spread across runs at one step, which the SNR framework calls signal: their SNR is the inverse of our relative signal, averaged over the run.}
 \label{tab:sur-finetasks}
-\end{table}
+\end{table*}
 
 The first analysis of statistics beyond SNR (\texttt{analyze.py}, \texttt{finetasks\_criteria.py}) also scored the following proxy-only statistics, which have no external source. They are the $R^2$ of the linear fit of the score on $\log N$ over the rungs up to the proxy, the margin $\bar{x} - c$ above chance, and the proxy's own DA-ckpt at 10\,\%, 50\,\% and 90\,\%. They are also the gain of the mean score between 50\,\% (or 90\,\%) and the final checkpoint, the slope of the mean score over the last three tenths, and the earliest tenth from which $\tau_a$ with the final ranking stays at or above 0.8. Finally, they are the mean $\tau_a$ between the rankings inside the noise window, the variance of the rank of a variant over the second half of training, the standard deviation of the final scores across variants, and the item count.
 
 \subsection{The catalogue of statistics from the literature}
 \label{app:sur-catalogue}
 
-Tables~\ref{tab:sur-separation}--\ref{tab:sur-agreement} define the catalogue (\texttt{catalogue.py}).
+Tables~\ref{tab:sur-separation}, \ref{tab:sur-stability}, \ref{tab:sur-shape} and~\ref{tab:sur-agreement} define the catalogue (\texttt{catalogue.py}), grouped by what a statistic asks: whether the variants separate against the noise, whether the proxy's ranking holds still within its run, whether the task behaves like a learnable measurement, and whether the proxy agrees with the smaller rungs, the loss and the other benchmarks.
 Most of these statistics were proposed for a different unit of replication, such as test items, topics, seeds or public models.
 We port each one to what one proxy size offers, that is, the checkpoints of its noise window and the rungs below it. The last column states what we changed.
 ``Own'' marks a statistic that the cited paper motivates but does not define.
 Throughout, $s_a$ is the checkpoint noise of $W_a$ (\S\ref{app:sur-notation}), $s = \sqrt{\frac{1}{V}\sum_a s_a^2}$ the pooled one, $d_{ab} = |x_a - x_b|$, $z_{ab} = d_{ab}/\sqrt{s_a^2 + s_b^2}$ (capped at 50), and $\mathrm{se}_p = \sqrt{p(1-p)/n}$ the binomial standard error \citep{miller_adding_2024}.
 $\mathrm{MS_B}$ and $\mathrm{MS_W}$ are the between-variant and within-variant mean squares of the $V \times 5$ matrix of window scores.
 
-\begin{table}[h]
+\begin{table*}[t]
 \centering
 \scriptsize
 \begin{tabular}{@{}p{0.215\linewidth}p{0.28\linewidth}p{0.14\linewidth}p{0.285\linewidth}@{}}
@@ -216,9 +216,9 @@ $\mathrm{MS_B}$ and $\mathrm{MS_W}$ are the between-variant and within-variant m
 \end{tabular}
 \caption{Catalogue, separation: is the spread across variants large against the noise?}
 \label{tab:sur-separation}
-\end{table}
+\end{table*}
 
-\begin{table}[h]
+\begin{table*}[t]
 \centering
 \scriptsize
 \begin{tabular}{@{}p{0.215\linewidth}p{0.28\linewidth}p{0.14\linewidth}p{0.285\linewidth}@{}}
@@ -239,9 +239,9 @@ $\mathrm{MS_B}$ and $\mathrm{MS_W}$ are the between-variant and within-variant m
 \end{tabular}
 \caption{Catalogue, rank stability: does the proxy's ranking hold still inside its own run? Four of them compare an early ranking with the final one (\texttt{sign\_persistence}, \texttt{settling\_time}, \texttt{da\_ckpt\_mean}, \texttt{da\_ckpt\_half}). They are circular against DA-ckpt and are not scored against it.}
 \label{tab:sur-stability}
-\end{table}
+\end{table*}
 
-\begin{table}[h]
+\begin{table*}[t]
 \centering
 \scriptsize
 \begin{tabular}{@{}p{0.215\linewidth}p{0.28\linewidth}p{0.14\linewidth}p{0.285\linewidth}@{}}
@@ -262,9 +262,9 @@ $\mathrm{MS_B}$ and $\mathrm{MS_W}$ are the between-variant and within-variant m
 \end{tabular}
 \caption{Catalogue, curve shape: does the task behave like a learnable, unsaturated measurement?}
 \label{tab:sur-shape}
-\end{table}
+\end{table*}
 
-\begin{table}[h]
+\begin{table*}[t]
 \centering
 \scriptsize
 \begin{tabular}{@{}p{0.215\linewidth}p{0.28\linewidth}p{0.14\linewidth}p{0.285\linewidth}@{}}
@@ -291,7 +291,7 @@ $\mathrm{MS_B}$ and $\mathrm{MS_W}$ are the between-variant and within-variant m
 \end{tabular}
 \caption{Catalogue, the small ladder (top), agreement with the loss and with other benchmarks (middle), and controls.}
 \label{tab:sur-agreement}
-\end{table}
+\end{table*}
 
 \paragraph{Statistics we cannot compute.}
 The ladder report holds one aggregate score per checkpoint.
@@ -328,29 +328,30 @@ Fourth, the benchmark noise is largely a function of the item count, and the ite
 Fifth, the pooled correlation hides large differences between strata (Table~\ref{tab:sur-corr-strata}). The relative-standard-deviation SNR reaches $\rho = 0.79$ over all clusters but 0.51--0.67 within one proxy size, 0.81 within HellaSwag and 0.27 on the per-language bits per byte.
 
 % BEGIN generated: surrogate-tables (make_surrogate_tables.py)
-\begin{table}[h]
+\begin{table*}[t]
 \centering
 \scriptsize
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}llrrr@{}}
 \toprule
 \textbf{Family} & \textbf{Statistic} & \textbf{DA-size} & \textbf{DA-goal} & \textbf{DA-ckpt} \\
 \midrule
 ceiling & the truth re-read at 90\,\% & 0.92 & 0.95 & 0.99 \\
 \midrule
-separation & \texttt{mde\_resolved} & \textbf{0.79} & \textbf{0.83} & \textbf{0.91} \\
- & \texttt{resolved\_pairs\_noise} & \textbf{0.77} & \textbf{0.80} & \textbf{0.91} \\
- & \texttt{retest\_agreement} & \textbf{0.76} & \textbf{0.80} & \textbf{0.91} \\
+separation & \texttt{mde\_resolved} & \textbf{0.80} & \textbf{0.83} & \textbf{0.91} \\
+ & \texttt{resolved\_pairs\_noise} & \textbf{0.77} & \textbf{0.81} & \textbf{0.91} \\
+ & \texttt{retest\_agreement} & \textbf{0.77} & \textbf{0.80} & \textbf{0.91} \\
  & \texttt{gap\_over\_noise} & \textbf{0.75} & \textbf{0.79} & \textbf{0.84} \\
- & \texttt{icc\_window} & \textbf{0.66} & \textbf{0.68} & \textbf{0.76} \\
- & \texttt{eta2\_window} & \textbf{0.63} & \textbf{0.66} & \textbf{0.74} \\
+ & \texttt{icc\_window} & \textbf{0.65} & \textbf{0.69} & \textbf{0.76} \\
  & \texttt{cronbach\_alpha} & \textbf{0.63} & \textbf{0.66} & \textbf{0.77} \\
- & \texttt{g\_coefficient} & \textbf{0.59} & \textbf{0.62} & \textbf{0.70} \\
- & \texttt{prob\_outperform} & \textbf{0.57} & \textbf{0.61} & \textbf{0.72} \\
- & \texttt{resolved\_pairs\_binomial} & \textbf{0.51} & \textbf{0.56} & \textbf{0.56} \\
- & \texttt{binomial\_snr} & \textbf{0.50} & \textbf{0.57} & \textbf{0.60} \\
+ & \texttt{eta2\_window} & \textbf{0.63} & \textbf{0.66} & \textbf{0.74} \\
+ & \texttt{g\_coefficient} & \textbf{0.59} & \textbf{0.62} & \textbf{0.71} \\
+ & \texttt{prob\_outperform} & \textbf{0.57} & \textbf{0.61} & \textbf{0.73} \\
+ & \texttt{resolved\_pairs\_binomial} & \textbf{0.51} & \textbf{0.56} & \textbf{0.57} \\
+ & \texttt{binomial\_snr} & \textbf{0.51} & \textbf{0.57} & \textbf{0.60} \\
  & \texttt{tie\_rate\_items} & \textbf{$-$0.47} & \textbf{$-$0.46} & \textbf{$-$0.62} \\
- & \texttt{dior} & \textbf{0.38} & \textbf{0.40} & \textbf{0.49} \\
- & \texttt{noise\_to\_binomial} & \textbf{0.20} & \textbf{0.24} & \textbf{0.21} \\
+ & \texttt{dior} & \textbf{0.37} & \textbf{0.40} & \textbf{0.49} \\
+ & \texttt{noise\_to\_binomial} & \textbf{0.21} & \textbf{0.25} & \textbf{0.22} \\
 \midrule
 rank stability & \texttt{da\_ckpt\_mean} & \textbf{0.83} & \textbf{0.87} & -- \\
  & \texttt{sign\_persistence} & \textbf{0.83} & \textbf{0.87} & -- \\
@@ -359,78 +360,80 @@ rank stability & \texttt{da\_ckpt\_mean} & \textbf{0.83} & \textbf{0.87} & -- \\
  & \texttt{crossings} & \textbf{$-$0.80} & \textbf{$-$0.84} & -- \\
  & \texttt{consecutive\_kendall\_late} & \textbf{0.78} & \textbf{0.82} & -- \\
  & \texttt{sign\_consistency\_window} & \textbf{0.77} & \textbf{0.81} & \textbf{0.93} \\
- & \texttt{window\_kendall} & \textbf{0.75} & \textbf{0.78} & \textbf{0.90} \\
- & \texttt{settling\_time} & \textbf{$-$0.72} & \textbf{$-$0.75} & -- \\
- & \texttt{kendall\_w\_window} & \textbf{0.69} & \textbf{0.72} & \textbf{0.85} \\
- & \texttt{split\_half} & \textbf{0.55} & \textbf{0.58} & \textbf{0.69} \\
+ & \texttt{window\_kendall} & \textbf{0.74} & \textbf{0.78} & \textbf{0.90} \\
+ & \texttt{settling\_time} & \textbf{$-$0.71} & \textbf{$-$0.75} & -- \\
+ & \texttt{kendall\_w\_window} & \textbf{0.69} & \textbf{0.73} & \textbf{0.85} \\
+ & \texttt{split\_half} & \textbf{0.56} & \textbf{0.58} & \textbf{0.70} \\
 \midrule
 curve shape & \texttt{late\_slope\_to\_noise} & \textbf{0.68} & \textbf{0.70} & \textbf{0.75} \\
  & \texttt{gain\_over\_noise} & \textbf{0.67} & \textbf{0.69} & \textbf{0.74} \\
  & \texttt{monotonicity\_steps} & \textbf{0.64} & \textbf{0.66} & \textbf{0.73} \\
- & \texttt{autocorr} & \textbf{0.56} & \textbf{0.57} & \textbf{0.68} \\
+ & \texttt{autocorr} & \textbf{0.56} & \textbf{0.57} & \textbf{0.67} \\
  & \texttt{total\_variation} & \textbf{$-$0.52} & \textbf{$-$0.54} & \textbf{$-$0.66} \\
- & \texttt{monotonicity} & \textbf{0.50} & \textbf{0.51} & \textbf{0.64} \\
- & \texttt{z\_above\_chance} & \textbf{0.30} & \textbf{0.40} & \textbf{0.54} \\
- & \texttt{emerged\_share} & \textbf{0.20} & \textbf{0.27} & \textbf{0.40} \\
- & \texttt{item\_information} & 0.06 & 0.13 & \textbf{0.15} \\
- & \texttt{nonrandom} & 0.05 & 0.13 & \textbf{0.16} \\
+ & \texttt{monotonicity} & \textbf{0.50} & \textbf{0.51} & \textbf{0.63} \\
+ & \texttt{z\_above\_chance} & \textbf{0.31} & \textbf{0.39} & \textbf{0.54} \\
+ & \texttt{emerged\_share} & \textbf{0.20} & \textbf{0.27} & \textbf{0.41} \\
+ & \texttt{item\_information} & 0.06 & 0.12 & \textbf{0.16} \\
+ & \texttt{nonrandom} & 0.06 & 0.12 & \textbf{0.16} \\
 \midrule
-small ladder & \texttt{prev\_rung\_da} & \textbf{0.81} & \textbf{0.83} & \textbf{0.89} \\
+small ladder & \texttt{prev\_rung\_da} & \textbf{0.82} & \textbf{0.84} & \textbf{0.88} \\
  & \texttt{ladder\_da} & \textbf{0.81} & \textbf{0.83} & \textbf{0.89} \\
  & \texttt{rung\_sign\_consistency} & \textbf{0.81} & \textbf{0.83} & \textbf{0.88} \\
- & \texttt{rung\_gap\_corr} & \textbf{0.77} & \textbf{0.80} & \textbf{0.83} \\
+ & \texttt{rung\_gap\_corr} & \textbf{0.77} & \textbf{0.80} & \textbf{0.82} \\
  & \texttt{scale\_gain\_over\_noise} & \textbf{0.60} & \textbf{0.61} & \textbf{0.66} \\
- & \texttt{size\_monotonicity} & \textbf{0.43} & \textbf{0.44} & \textbf{0.55} \\
- & \texttt{projected\_flip\_rate} & \textbf{$-$0.20} & \textbf{$-$0.17} & \textbf{$-$0.15} \\
+ & \texttt{size\_monotonicity} & \textbf{0.43} & \textbf{0.44} & \textbf{0.54} \\
+ & \texttt{projected\_flip\_rate} & \textbf{$-$0.20} & \textbf{$-$0.17} & \textbf{$-$0.14} \\
 \midrule
 pseudo-reference & \texttt{pseudo\_ref\_da} & \textbf{0.79} & \textbf{0.81} & \textbf{0.83} \\
 \midrule
-agreement & \texttt{bpb\_rank\_agreement} & \textbf{0.82} & \textbf{0.84} & \textbf{0.91} \\
+agreement & \texttt{bpb\_rank\_agreement} & \textbf{0.82} & \textbf{0.85} & \textbf{0.91} \\
  & \texttt{language\_consensus} & \textbf{0.77} & \textbf{0.80} & \textbf{0.86} \\
- & \texttt{item\_total\_corr} & \textbf{0.63} & \textbf{0.65} & \textbf{0.70} \\
+ & \texttt{item\_total\_corr} & \textbf{0.63} & \textbf{0.65} & \textbf{0.69} \\
  & \texttt{bpb\_corr\_training} & \textbf{0.61} & \textbf{0.63} & \textbf{0.73} \\
- & \texttt{benchmark\_consensus} & \textbf{0.34} & \textbf{0.33} & \textbf{0.35} \\
+ & \texttt{benchmark\_consensus} & \textbf{0.34} & \textbf{0.34} & \textbf{0.35} \\
 \midrule
-control & \texttt{n\_items} & \textbf{0.37} & \textbf{0.40} & \textbf{0.52} \\
- & \texttt{n\_pairs} & \textbf{$-$0.24} & \textbf{$-$0.26} & \textbf{$-$0.28} \\
- & \texttt{chance} & \textbf{0.15} & \textbf{0.20} & \textbf{0.27} \\
+control & \texttt{n\_items} & \textbf{0.38} & \textbf{0.40} & \textbf{0.52} \\
+ & \texttt{n\_pairs} & \textbf{$-$0.25} & \textbf{$-$0.26} & \textbf{$-$0.29} \\
+ & \texttt{chance} & \textbf{0.15} & \textbf{0.20} & \textbf{0.28} \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Spearman $\rho$ of each catalogue statistic with decision accuracy over the benchmark tasks, one point per (benchmark, language) cluster (317--420 clusters for DA-size, 317--420 for DA-goal, 323--420 for DA-ckpt). We use every pair of variants and pool over the proxy sizes 90M--1B. For DA-goal and DA-ckpt, we also pool over the nine early checkpoints. Bold marks Benjamini-Hochberg $q < 0.05$ over every configuration of the search. A statistic without a value is circular for that truth or has too few clusters. Within a family, rows are ordered by $|\rho|$ with DA-size. }
 \label{tab:sur-corr-catalogue}
-\end{table}
+\end{table*}
 
-\begin{table}[h]
+\begin{table*}[t]
 \centering
 \scriptsize
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}lrrrrrrrrr@{}}
 \toprule
  & \multicolumn{3}{c}{\textbf{DA-size}} & \multicolumn{3}{c}{\textbf{DA-goal}} & \multicolumn{3}{c}{\textbf{DA-ckpt}} \\
 \cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}
 \textbf{Signal} & alone & /ckpt & /$k$-fold & alone & /ckpt & /$k$-fold & alone & /ckpt & /$k$-fold \\
 \midrule
-\texttt{rel\_mpd} & \textbf{0.15} & \textbf{0.79} & \textbf{0.53} & \textbf{0.16} & \textbf{0.83} & \textbf{0.59} & 0.04 & \textbf{0.86} & \textbf{0.64} \\
-\texttt{rel\_std} & \textbf{0.12} & \textbf{0.79} & \textbf{0.53} & \textbf{0.13} & \textbf{0.82} & \textbf{0.60} & $-$0.00 & \textbf{0.85} & \textbf{0.60} \\
-\texttt{iqr} & \textbf{0.14} & \textbf{0.75} & \textbf{0.46} & \textbf{0.15} & \textbf{0.78} & \textbf{0.51} & 0.03 & \textbf{0.81} & \textbf{0.53} \\
-\texttt{rel\_dispersion} & $-$0.01 & \textbf{0.68} & \textbf{0.51} & $-$0.01 & \textbf{0.71} & \textbf{0.58} & \textbf{$-$0.13} & \textbf{0.74} & \textbf{0.56} \\
-\texttt{aad} & 0.11 & \textbf{0.62} & \textbf{0.42} & \textbf{0.13} & \textbf{0.65} & \textbf{0.50} & 0.10 & \textbf{0.73} & \textbf{0.55} \\
-\texttt{rms\_deviation} & 0.09 & \textbf{0.61} & \textbf{0.44} & 0.11 & \textbf{0.64} & \textbf{0.52} & 0.08 & \textbf{0.73} & \textbf{0.55} \\
-\texttt{dist\_std} & 0.09 & \textbf{0.61} & \textbf{0.44} & 0.11 & \textbf{0.64} & \textbf{0.52} & 0.07 & \textbf{0.72} & \textbf{0.54} \\
-\texttt{mpd} & 0.11 & \textbf{0.61} & \textbf{0.43} & \textbf{0.13} & \textbf{0.64} & \textbf{0.51} & 0.10 & \textbf{0.73} & \textbf{0.57} \\
-\texttt{quartile\_deviation} & 0.12 & \textbf{0.56} & \textbf{0.38} & \textbf{0.13} & \textbf{0.59} & \textbf{0.46} & 0.11 & \textbf{0.67} & \textbf{0.49} \\
-\texttt{dispersion} & $-$0.00 & \textbf{0.54} & \textbf{0.45} & 0.02 & \textbf{0.57} & \textbf{0.53} & $-$0.02 & \textbf{0.66} & \textbf{0.52} \\
-\texttt{range} & $-$0.00 & \textbf{0.54} & \textbf{0.45} & 0.02 & \textbf{0.57} & \textbf{0.53} & $-$0.02 & \textbf{0.66} & \textbf{0.52} \\
+\texttt{rel\_mpd} & \textbf{0.15} & \textbf{0.79} & \textbf{0.53} & \textbf{0.16} & \textbf{0.83} & \textbf{0.59} & 0.04 & \textbf{0.87} & \textbf{0.65} \\
+\texttt{rel\_std} & \textbf{0.12} & \textbf{0.79} & \textbf{0.54} & \textbf{0.13} & \textbf{0.82} & \textbf{0.60} & $-$0.00 & \textbf{0.85} & \textbf{0.61} \\
+\texttt{iqr} & \textbf{0.15} & \textbf{0.75} & \textbf{0.47} & \textbf{0.15} & \textbf{0.78} & \textbf{0.52} & 0.03 & \textbf{0.81} & \textbf{0.54} \\
+\texttt{rel\_dispersion} & $-$0.01 & \textbf{0.69} & \textbf{0.52} & $-$0.01 & \textbf{0.72} & \textbf{0.58} & \textbf{$-$0.13} & \textbf{0.74} & \textbf{0.56} \\
+\texttt{aad} & 0.11 & \textbf{0.62} & \textbf{0.43} & \textbf{0.13} & \textbf{0.65} & \textbf{0.50} & 0.11 & \textbf{0.73} & \textbf{0.56} \\
+\texttt{rms\_deviation} & 0.09 & \textbf{0.61} & \textbf{0.45} & 0.11 & \textbf{0.64} & \textbf{0.52} & 0.08 & \textbf{0.73} & \textbf{0.56} \\
+\texttt{dist\_std} & 0.09 & \textbf{0.61} & \textbf{0.45} & 0.11 & \textbf{0.64} & \textbf{0.52} & 0.07 & \textbf{0.72} & \textbf{0.55} \\
+\texttt{mpd} & 0.11 & \textbf{0.61} & \textbf{0.43} & \textbf{0.12} & \textbf{0.64} & \textbf{0.51} & 0.10 & \textbf{0.73} & \textbf{0.58} \\
+\texttt{quartile\_deviation} & 0.11 & \textbf{0.56} & \textbf{0.40} & \textbf{0.13} & \textbf{0.59} & \textbf{0.47} & 0.11 & \textbf{0.67} & \textbf{0.51} \\
+\texttt{dispersion} & $-$0.00 & \textbf{0.54} & \textbf{0.45} & 0.01 & \textbf{0.57} & \textbf{0.53} & $-$0.02 & \textbf{0.66} & \textbf{0.52} \\
+\texttt{range} & $-$0.00 & \textbf{0.54} & \textbf{0.45} & 0.01 & \textbf{0.57} & \textbf{0.53} & $-$0.02 & \textbf{0.66} & \textbf{0.52} \\
 \texttt{dispersion\_shifted} & -- & \textbf{0.54} & \textbf{0.45} & -- & \textbf{0.57} & \textbf{0.51} & -- & \textbf{0.67} & \textbf{0.64} \\
-\texttt{gini} & 0.11 & \textbf{0.53} & \textbf{0.42} & 0.10 & \textbf{0.56} & \textbf{0.46} & 0.11 & \textbf{0.66} & \textbf{0.63} \\
-\texttt{mad} & 0.09 & \textbf{0.52} & \textbf{0.40} & 0.10 & \textbf{0.55} & \textbf{0.48} & 0.08 & \textbf{0.64} & \textbf{0.52} \\
-\texttt{rel\_mpsd} & 0.09 & \textbf{0.44} & \textbf{0.23} & 0.10 & \textbf{0.46} & \textbf{0.28} & 0.03 & \textbf{0.45} & \textbf{0.29} \\
-\texttt{star\_discrepancy\_shifted} & 0.09 & \textbf{0.35} & \textbf{0.43} & 0.10 & \textbf{0.41} & \textbf{0.49} & \textbf{0.20} & \textbf{0.55} & \textbf{0.65} \\
-\texttt{discrepancy} & \textbf{0.20} & \textbf{0.33} & \textbf{0.43} & \textbf{0.19} & \textbf{0.39} & \textbf{0.48} & \textbf{0.21} & \textbf{0.49} & \textbf{0.60} \\
-\texttt{mpsd} & 0.05 & \textbf{0.31} & \textbf{0.23} & 0.07 & \textbf{0.33} & \textbf{0.28} & 0.03 & \textbf{0.34} & \textbf{0.30} \\
-\texttt{star\_discrepancy} & 0.09 & \textbf{0.31} & \textbf{0.45} & 0.08 & \textbf{0.37} & \textbf{0.50} & 0.09 & \textbf{0.48} & \textbf{0.63} \\
-\texttt{rel\_star\_discrepancy} & $-$0.02 & \textbf{0.27} & \textbf{0.37} & $-$0.09 & \textbf{0.31} & \textbf{0.40} & \textbf{$-$0.14} & \textbf{0.38} & \textbf{0.51} \\
-\texttt{tukey} & \textbf{$-$0.17} & \textbf{0.21} & \textbf{0.42} & \textbf{$-$0.21} & \textbf{0.22} & \textbf{0.45} & \textbf{$-$0.35} & \textbf{0.17} & \textbf{0.55} \\
-\texttt{projection} & \textbf{$-$0.21} & 0.05 & \textbf{0.36} & \textbf{$-$0.24} & 0.06 & \textbf{0.41} & \textbf{$-$0.38} & 0.04 & \textbf{0.47} \\
+\texttt{gini} & 0.11 & \textbf{0.53} & \textbf{0.42} & 0.11 & \textbf{0.56} & \textbf{0.46} & \textbf{0.12} & \textbf{0.66} & \textbf{0.64} \\
+\texttt{mad} & 0.09 & \textbf{0.52} & \textbf{0.41} & 0.10 & \textbf{0.56} & \textbf{0.48} & 0.08 & \textbf{0.64} & \textbf{0.52} \\
+\texttt{rel\_mpsd} & 0.09 & \textbf{0.44} & \textbf{0.24} & 0.10 & \textbf{0.46} & \textbf{0.28} & 0.03 & \textbf{0.45} & \textbf{0.30} \\
+\texttt{star\_discrepancy\_shifted} & 0.09 & \textbf{0.34} & \textbf{0.43} & 0.09 & \textbf{0.40} & \textbf{0.49} & \textbf{0.20} & \textbf{0.55} & \textbf{0.66} \\
+\texttt{discrepancy} & \textbf{0.20} & \textbf{0.33} & \textbf{0.43} & \textbf{0.20} & \textbf{0.39} & \textbf{0.48} & \textbf{0.21} & \textbf{0.49} & \textbf{0.60} \\
+\texttt{mpsd} & 0.05 & \textbf{0.31} & \textbf{0.23} & 0.07 & \textbf{0.33} & \textbf{0.29} & 0.03 & \textbf{0.34} & \textbf{0.31} \\
+\texttt{star\_discrepancy} & 0.08 & \textbf{0.31} & \textbf{0.45} & 0.08 & \textbf{0.37} & \textbf{0.50} & 0.08 & \textbf{0.48} & \textbf{0.63} \\
+\texttt{rel\_star\_discrepancy} & $-$0.03 & \textbf{0.27} & \textbf{0.37} & $-$0.09 & \textbf{0.31} & \textbf{0.40} & \textbf{$-$0.14} & \textbf{0.39} & \textbf{0.51} \\
+\texttt{tukey} & \textbf{$-$0.16} & \textbf{0.22} & \textbf{0.42} & \textbf{$-$0.20} & \textbf{0.23} & \textbf{0.45} & \textbf{$-$0.35} & \textbf{0.18} & \textbf{0.55} \\
+\texttt{projection} & \textbf{$-$0.21} & 0.06 & \textbf{0.36} & \textbf{$-$0.24} & 0.06 & \textbf{0.40} & \textbf{$-$0.38} & 0.04 & \textbf{0.47} \\
 \midrule
 \multicolumn{10}{@{}l}{\emph{Each noise alone}} \\
 \texttt{ckpt\_rel} & \multicolumn{3}{c}{\textbf{$-$0.44}} & \multicolumn{3}{c}{\textbf{$-$0.45}} & \multicolumn{3}{c}{\textbf{$-$0.58}} \\
@@ -441,13 +444,15 @@ control & \texttt{n\_items} & \textbf{0.37} & \textbf{0.40} & \textbf{0.52} \\
 \texttt{kfold\_abs} & \multicolumn{3}{c}{\textbf{$-$0.41}} & \multicolumn{3}{c}{\textbf{$-$0.43}} & \multicolumn{3}{c}{\textbf{$-$0.55}} \\
 \bottomrule
 \end{tabular}
-\caption{The signal $\times$ noise grid. We give the Spearman $\rho$ with decision accuracy of each signal alone, of its ratio to the relative checkpoint noise (/ckpt, where \texttt{rel\_dispersion} / \texttt{ckpt\_rel} is the SNR of \citet{heineman_signal_2025} as released, with the detrended checkpoint noise) and of its ratio to the relative $k$-fold benchmark noise (/$k$-fold). The last rows give each noise alone. The population and conventions are the same as in Table~\ref{tab:sur-corr-catalogue}. Rows are ordered by $|\rho|$ of the checkpoint-noise SNR with DA-size. The strongest of the 132 ratios is \texttt{mpd} / \texttt{ckpt\_abs}, $\rho = 0.79$ for DA-size, \texttt{mpd} / \texttt{ckpt\_abs}, $\rho = 0.83$ for DA-goal and \texttt{mpd} / \texttt{ckpt\_abs}, $\rho = 0.86$ for DA-ckpt.}
+\end{adjustbox}
+\caption{The signal $\times$ noise grid. We give the Spearman $\rho$ with decision accuracy of each signal alone, of its ratio to the relative checkpoint noise (/ckpt, where \texttt{rel\_dispersion} / \texttt{ckpt\_rel} is the SNR of \citet{heineman_signal_2025} as released, with the detrended checkpoint noise) and of its ratio to the relative $k$-fold benchmark noise (/$k$-fold). The last rows give each noise alone. The population and conventions are the same as in Table~\ref{tab:sur-corr-catalogue}. Rows are ordered by $|\rho|$ of the checkpoint-noise SNR with DA-size. The strongest of the 132 ratios is \texttt{mpd} / \texttt{ckpt\_abs}, $\rho = 0.79$ for DA-size, \texttt{mpd} / \texttt{ckpt\_abs}, $\rho = 0.83$ for DA-goal and \texttt{mpd} / \texttt{ckpt\_abs}, $\rho = 0.87$ for DA-ckpt.}
 \label{tab:sur-corr-snr}
-\end{table}
+\end{table*}
 
 \begin{table*}[t]
 \centering
 \scriptsize
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}lrrlrlr@{}}
 \toprule
 \textbf{Stratum} & \textbf{Clusters} & \textbf{SNR} & \textbf{Best SNR definition} & $\rho$ & \textbf{Best statistic} & $\rho$ \\
@@ -460,27 +465,28 @@ proxy 350M & 419 & \textbf{0.67} & \texttt{mpd} / \texttt{ckpt\_abs} & \textbf{0
 proxy 600M & 420 & \textbf{0.66} & \texttt{rms\_deviation} / \texttt{ckpt\_abs} & \textbf{0.66} & \texttt{sign\_persistence} & \textbf{0.67} \\
 proxy 1B & 420 & \textbf{0.65} & \texttt{mpd} / \texttt{ckpt\_abs} & \textbf{0.66} & \texttt{ladder\_da} & \textbf{0.72} \\
 \midrule
-$K$ = 8 tier & 116 & \textbf{0.66} & \texttt{mpd} / \texttt{ckpt\_abs} & \textbf{0.70} & \texttt{ladder\_da} & \textbf{0.86} \\
+$K$ = 8 tier & 116 & \textbf{0.66} & \texttt{mpd} / \texttt{ckpt\_abs} & \textbf{0.70} & \texttt{ladder\_da} & \textbf{0.87} \\
 $K$ = 15 tier & 69 & \textbf{0.71} & \texttt{dispersion} / \texttt{ckpt\_abs} & \textbf{0.74} & \texttt{sign\_persistence} & \textbf{0.83} \\
 $K$ = 30 tier & 113 & \textbf{0.79} & \texttt{mpd} / \texttt{ckpt\_abs} & \textbf{0.80} & \texttt{prev\_rung\_da} & \textbf{0.82} \\
 $K$ = 50 tier & 122 & \textbf{0.80} & \texttt{dispersion} / \texttt{ckpt\_abs} & \textbf{0.81} & \texttt{mde\_resolved} & \textbf{0.83} \\
 \midrule
-HellaSwag & 26 & \textbf{0.81} & \texttt{mpd} / \texttt{kfold\_abs} & \textbf{0.93} & \texttt{resolved\_pairs\_binomial} & \textbf{0.93} \\
-ARC & 16 & 0.29 & \texttt{rel\_dispersion} / \texttt{projection\_depth} & 0.34 & \texttt{pseudo\_ref\_da} & 0.64 \\
-ARC (translated) & 10 & 0.15 & \texttt{projection} / \texttt{ckpt\_rel} & 0.65 & \texttt{projection} / \texttt{ckpt\_rel} & 0.65 \\
-XNLI & 13 & $-$0.10 & \texttt{star\_discrepancy} / \texttt{kfold\_rel} & 0.47 & \texttt{size\_monotonicity} & 0.57 \\
-MultiBLiMP & 34 & \textbf{0.77} & \texttt{rel\_mpd} / \texttt{ckpt\_abs} & \textbf{0.87} & \texttt{mde\_resolved} & \textbf{0.88} \\
-INCLUDE v2 (original language) & 31 & 0.37 & \texttt{projection} / \texttt{kfold\_rel} & \textbf{0.45} & \texttt{pseudo\_ref\_da} & \textbf{0.72} \\
-INCLUDE v2 (English) & 41 & $-$0.19 & \texttt{rel\_dispersion} / \texttt{kfold\_abs} & 0.25 & \texttt{bpb\_rank\_agreement} & \textbf{0.45} \\
-Belebele RF & 49 & 0.26 & \texttt{tukey} / \texttt{kfold\_rel} & 0.33 & \texttt{pseudo\_ref\_da} & \textbf{0.57} \\
-Belebele LLM-RF & 49 & 0.13 & \texttt{dispersion} / \texttt{kfold\_rel} & 0.31 & \texttt{prev\_rung\_da} & \textbf{0.39} \\
-Global-MMLU RF & 28 & \textbf{0.51} & \texttt{mpd} / \texttt{kfold\_abs} & \textbf{0.56} & \texttt{window\_kendall} & \textbf{0.74} \\
-INCLUDE RF & 25 & 0.43 & \texttt{rel\_std} / \texttt{kfold\_rel} & \textbf{0.53} & \texttt{sign\_persistence} & \textbf{0.84} \\
-INCLUDE LLM-RF & 25 & 0.33 & \texttt{mpd} / \texttt{kfold\_rel} & 0.41 & \texttt{bpb\_rank\_agreement} & \textbf{0.75} \\
+HellaSwag & 26 & \textbf{0.82} & \texttt{rel\_mpd} / \texttt{kfold\_abs} & \textbf{0.93} & \texttt{rel\_mpd} / \texttt{kfold\_abs} & \textbf{0.93} \\
+ARC & 16 & 0.17 & \texttt{tukey} / \texttt{kfold\_rel} & 0.25 & \texttt{pseudo\_ref\_da} & 0.64 \\
+ARC (translated) & 10 & 0.15 & \texttt{projection} / \texttt{projection\_depth} & 0.65 & \texttt{pseudo\_ref\_da} & 1.00 \\
+XNLI & 13 & $-$0.07 & \texttt{star\_discrepancy} / \texttt{kfold\_rel} & 0.39 & \texttt{size\_monotonicity} & 0.55 \\
+MultiBLiMP & 34 & \textbf{0.78} & \texttt{rel\_mpd} / \texttt{ckpt\_abs} & \textbf{0.88} & \texttt{mde\_resolved} & \textbf{0.88} \\
+INCLUDE v2 (original language) & 31 & 0.35 & \texttt{projection} / \texttt{kfold\_rel} & \textbf{0.43} & \texttt{pseudo\_ref\_da} & \textbf{0.73} \\
+INCLUDE v2 (English) & 41 & $-$0.18 & \texttt{rel\_dispersion} / \texttt{kfold\_abs} & 0.24 & \texttt{language\_consensus} & \textbf{0.45} \\
+Belebele RF & 49 & 0.26 & \texttt{mpsd} / \texttt{ckpt\_rel} & 0.31 & \texttt{pseudo\_ref\_da} & \textbf{0.61} \\
+Belebele LLM-RF & 49 & 0.12 & \texttt{dispersion} / \texttt{kfold\_rel} & 0.31 & \texttt{prev\_rung\_da} & \textbf{0.39} \\
+Global-MMLU RF & 28 & \textbf{0.52} & \texttt{mpd} / \texttt{kfold\_abs} & \textbf{0.57} & \texttt{window\_kendall} & \textbf{0.73} \\
+INCLUDE RF & 25 & \textbf{0.48} & \texttt{rel\_std} / \texttt{kfold\_rel} & \textbf{0.58} & \texttt{sign\_persistence} & \textbf{0.83} \\
+INCLUDE LLM-RF & 25 & 0.33 & \texttt{mpd} / \texttt{kfold\_rel} & 0.40 & \texttt{bpb\_rank\_agreement} & \textbf{0.73} \\
 \midrule
-per-language BPB & 50 & 0.27 & \texttt{mad} / \texttt{ckpt\_rel} & \textbf{0.62} & \texttt{retest\_agreement} & \textbf{0.76} \\
+per-language BPB & 50 & 0.28 & \texttt{mad} / \texttt{ckpt\_rel} & \textbf{0.61} & \texttt{retest\_agreement} & \textbf{0.75} \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Spearman $\rho$ of a surrogate with DA-size within one stratum of the benchmark tasks: one proxy size, one language-count tier (the tasks in the languages that first enter the scheme-A lists at that $K$), one benchmark, or the per-language bits per byte. \emph{SNR} is the relative standard deviation over the relative checkpoint noise. The next columns give the strongest of the 132 signal $\times$ noise ratios and the strongest statistic of the whole catalogue in the stratum. The population and conventions are those of Table~\ref{tab:sur-corr-catalogue}: one point per (benchmark, language) cluster, every pair of variants, the proxies 90M--1B pooled except in the proxy rows. Strata with fewer than 10 clusters are not shown. A best-of-many $\rho$ in a small stratum is optimistic, so the SNR column is the like-for-like comparison across rows. Bold marks Benjamini-Hochberg $q < 0.05$.}
 \label{tab:sur-corr-strata}
 \end{table*}

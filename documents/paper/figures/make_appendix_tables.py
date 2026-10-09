@@ -228,7 +228,7 @@ def grid_table(runs: list[dict], done: int, missing: list[str]) -> str:
 
 def seeds_table(runs: list[dict]) -> str:
     sizes = list(lt.LADDER)
-    lines = [r"\begin{table}[t]", r"\centering", r"\small",
+    lines = [r"\begin{table}[t]", r"\centering", r"\small", r"\begin{adjustbox}{max width=\linewidth}",
              r"\begin{tabular}{l" + "c" * len(sizes) + "}", r"\toprule",
              "$K$ & " + " & ".join(sizes) + r" \\", r"\midrule"]
     for L in lt.LANG_SETTINGS:
@@ -245,7 +245,7 @@ def seeds_table(runs: list[dict]) -> str:
                     if r["seed"] != 1904 and r["build"] != "A"}, key=lambda x: (x[0], lt.LADDER.index(x[1]), x[2]))
     other_txt = "".join(f" The scheme-{b} $K={L}$ cell at {s} also trains the {s} replicate seeds." for b, s, L in other)
     n_a = sum(r["build"] == "A" and r["ladder"] == "deep" for r in runs)
-    lines += [r"\bottomrule", r"\end{tabular}",
+    lines += [r"\bottomrule", r"\end{tabular}", r"\end{adjustbox}",
               r"\caption{\textbf{Random seeds.} Number of seeds per $(N, K)$ cell of the deep scheme-A grid "
               rf"({n_a} runs). The replicate seeds are "
               rf"{seeds_txt}. Each seed changes both the initialization and the data order. Replicate seeds exist "

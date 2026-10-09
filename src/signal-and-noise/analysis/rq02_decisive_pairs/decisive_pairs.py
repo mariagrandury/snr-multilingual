@@ -2,7 +2,7 @@
 
 Decision accuracy counts every pair of design variants, including pairs the
 1.7B reference itself cannot separate: when two variants' reference scores
-differ by less than seed noise, the reference's order is a coin flip, and a
+differ by less than seed noise, the reference's order is random, and a
 proxy that "misses" it has missed nothing. Those pairs pull every DA toward
 0.5. This script keeps, per task, the pairs whose reference gap exceeds K seed
 standard deviations of a difference of two runs (sqrt(2) x the task's seed sd
