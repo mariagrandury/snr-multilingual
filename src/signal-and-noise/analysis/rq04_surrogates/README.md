@@ -362,6 +362,49 @@ script's gate, without the `bbpb_` rows or with them alone)
   whether the 600M DA-size against 1.7B is itself an outlier in the
   decision-accuracy tables.
 
+### Statistics beyond SNR, split by scoring (added 2026-10-09)
+
+The same statistics, gate and x axis as `rq3_surrogates.png`, with the
+benchmark panel split into the accuracy tasks (302–470 per proxy) and their
+816 bBPB twins; the per-language BPB panel is unchanged
+(`analyze.py --pool predictivity` writes it beside the pooled figure).
+
+![Surrogates by scoring](pretraining/predictivity/rq3_surrogates_by_scoring.png)
+
+GitHub: [rq3_surrogates_by_scoring.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/rq3_surrogates_by_scoring.png) · [rq3_surrogates_by_scoring.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/rq3_surrogates_by_scoring.csv)
+
+**Key findings** (pool `predictivity`, DA-size against 1.7B, gated, the
+2026-10-08 per-task table)
+
+- **The ρ ≈ 0.6 level and the early-agreement lead come from the bBPB
+  twins.** The early-checkpoint agreement reads 0.57–0.70 on the twins and
+  0.23–0.40 on the accuracy tasks; SNR relative std 0.48–0.61 against
+  0.35–0.43; the inverted noise 0.45–0.57 against 0.19–0.40; the scaling-fit
+  R² 0.37–0.50 against 0.25–0.38. On the accuracy tasks SNR relative std
+  leads at 90M–600M and the early agreement only at 1B.
+- **Signal alone and the margin carry nothing in either population:** signal
+  −0.21 to 0.11 on accuracy, −0.14 to −0.04 on bBPB; margin 0.01–0.11
+  (accuracy only, the twins have no chance level).
+- **Against the earlier write-ups.** Before the twins (2026-10-05 table) the
+  benchmark panel was accuracy only and read SNR relative std 0.05–0.15,
+  early agreement 0.03–0.23, inverted noise 0.20–0.34 (the leader at every
+  proxy). On the accuracy tasks alone that moved to 0.35–0.43 / 0.23–0.40 /
+  0.19–0.40 without any twin: on the same 231–355 tasks, the 2026-10-07 pool
+  redefinition (every seed-1904 cell, schemes and swiglu included) lifts SNR
+  relative std to 0.23–0.40 and the detrended noise (2026-10-08) to
+  0.40–0.49; acc_norm, the ungated non-accuracy tasks and the new evals move
+  it by about 0.01. The detrended noise is also what makes the twins' SNR
+  strong: with the raw SD the twins read 0.20–0.46 and the pooled panel
+  0.25–0.53. The corrected chance levels of the 2026-10-08 mask change no ρ.
+- **The per-language BPB flip at 600M is not a bBPB effect:** that panel has
+  no twins; on the 2026-10-05 table (34 languages) SNR relative std read
+  +0.85 at 600M, and it reads −0.42 since the 50-language, every-cell pool.
+
+**Follow-ups**
+
+- The by-scoring tables in the generated README block, so the numbers above
+  are read from the pipeline rather than recomputed for this note.
+
 ### FineTasks' criteria — setup
 
 A selection rule computed on one size, with no larger model in sight, is the
