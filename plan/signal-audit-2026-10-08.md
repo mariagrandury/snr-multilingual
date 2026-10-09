@@ -242,6 +242,8 @@ Impact: **medium.** It admits OBQA and helps ARC. It is not the main cause.
 
 Impact: **medium on the arch axis and on any LM/BPB DA at 600M**; low elsewhere.
 
+Follow-up (2026-10-09): candidate shapes, retrain cost and options in [`600m-depth-pair-mismatch.md`](600m-depth-pair-mismatch.md).
+
 ### F6. No EOD (or BOS) between training documents; evals prepend BOS (verified deviation; measured harmless)
 
 - **The build.**
