@@ -95,11 +95,12 @@ def size_medians(fits: pd.DataFrame, min_fits: int = MIN_FITS) -> pd.DataFrame:
     return g[g["n_size_fits"] >= min_fits]
 
 
-def trajectory_medians(df: pd.DataFrame, pool: str, cells=_grid) -> pd.DataFrame:
+def trajectory_medians(df: pd.DataFrame, pool: str, cells=_grid, mask: pd.DataFrame | None = None) -> pd.DataFrame:
     """Per task: median R² of score ~ a + b log10(tokens) over the run's
     checkpoints, one fit per (L, size) grid cell where the task is above
-    chance (rule 1, `grids.mark_gated`); `cells` as in `fit_table`."""
-    g0 = G.mark_gated(cells(df), pool, "size", "primary_score")
+    chance (rule 1, `grids.mark_gated`, `mask` replacing the pool's); `cells`
+    as in `fit_table`."""
+    g0 = G.mark_gated(cells(df), pool, "size", "primary_score", mask=mask)
     g0 = g0[~g0["gated"] & (g0["tokens"] > 0) & on_shared_grid(g0)]     # rule 3: BPB's twentieths are not a benchmark's
     rows = []
     for (task, L, size), g in g0.groupby(["task", "L", "size"]):
@@ -114,11 +115,13 @@ def trajectory_medians(df: pd.DataFrame, pool: str, cells=_grid) -> pd.DataFrame
     return g[g["n_trajectory_fits"] >= MIN_FITS]
 
 
-def regime_table(fits: pd.DataFrame, df: pd.DataFrame, pool: str, cells=_grid, min_fits: int = MIN_FITS) -> pd.DataFrame:
+def regime_table(fits: pd.DataFrame, df: pd.DataFrame, pool: str, cells=_grid, min_fits: int = MIN_FITS,
+                 mask: pd.DataFrame | None = None) -> pd.DataFrame:
     """One row per task: the size and trajectory medians and the regime, over
     `cells` (the deep data-A seed-1904 grid by default); `min_fits` is the
-    size fits a task needs (one per L)."""
-    t = size_medians(fits, min_fits).join(trajectory_medians(df, pool, cells), how="inner").reset_index()
+    size fits a task needs (one per L); `mask` replaces the pool's gate (the
+    majority-chance sensitivity, rq00's majority_chance.py)."""
+    t = size_medians(fits, min_fits).join(trajectory_medians(df, pool, cells, mask), how="inner").reset_index()
     t["family"] = t["task"].map(benchmark_family)
     t["language"] = t["task"].map(assign_language)
     t = languages_only(t)     # rule 7: the loss is not a benchmark-language pair

@@ -83,6 +83,11 @@ from analysis.paths import GATE_AND_CURVES
 # report, so written here it replaced the canonical tables every RQ reads,
 # which happened on 2026-10-08. Unset, nothing changes.
 GATE_DIR = Path(os.environ.get("SNR_GATE_DIR") or GATE_AND_CURVES)
+# The chance level `task_chance` returns: "uniform" (rule 1, the gate every RQ
+# reads) or "majority", max(uniform, the task's majority-class baseline,
+# tasks.json `majority`), which only the sensitivity analysis
+# `majority_chance.py` sets, together with a GATE_DIR of its own.
+CHANCE_MODE = os.environ.get("SNR_CHANCE", "uniform")
 
 # proportion_confint's alpha is the TWO-sided level, so 0.10 gives the
 # one-sided 95 % lower bound ("is this run above chance?" is one-sided).
@@ -173,13 +178,17 @@ def task_chance(task: str) -> float:
     """The chance level of uniform guessing: CHANCE for a variable-option family
     (CHANCE_BY_PREFIX for such a task inside a mixed family), else
     1 / task_n_options, NaN when the task has no option count or is not scored
-    on an accuracy (`configs.accuracy_metric`)."""
+    on an accuracy (`configs.accuracy_metric`). With CHANCE_MODE "majority",
+    the larger of that and the task's majority-class baseline."""
     if accuracy_metric(task) is None:
         return float("nan")
     c = CHANCE.get(benchmark_family(task))
     if c is None:
         c = next((v for p, v in CHANCE_BY_PREFIX.items() if task.startswith(p)), None)
-    return float(c) if c is not None else 1 / task_n_options(task)
+    c = float(c) if c is not None else 1 / task_n_options(task)
+    if CHANCE_MODE == "majority":
+        c = max(c, float(load_tasks().get(task, {}).get("majority") or 0))
+    return c
 
 
 def task_n_options(task: str) -> float:

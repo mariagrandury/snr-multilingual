@@ -194,6 +194,10 @@ done
 # Unreadable parts are skipped; pool models the store lacks are printed.
 lane rq02 da rq00 rq01
 run $PY analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity
+# The majority-class chance sensitivity (rq00 README section 1c): the gate rerun with max(uniform, majority)
+# into rq00_gate_and_curves/majority_chance/ (never the canonical tables), and the rq00 / rq01 / rq02 headline
+# numbers under it; reads bench_bpb_da's per-task table and tasks.json's `majority` (written by --derive).
+run $PY analysis/rq00_gate_and_curves/majority_chance.py
 for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq02_decision_accuracy/da_per_benchmark.py --pool "$t"
   run $PY analysis/rq02_decision_accuracy/early_small.py --pool "$t"

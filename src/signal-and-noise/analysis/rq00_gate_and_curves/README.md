@@ -318,6 +318,26 @@ Follow-ups:
 - Gate every task against its constant-answer accuracy (the share of its majority gold label) instead of 1/n, which would remove these passes at the source.
 - The same per-option test on every task at 90M, to count the passes the constant answer explains beyond these ten.
 
+### 1c. A majority-class chance level: how much of the gate rests on uniform guessing?
+
+Section 1b found passes that a constant answer explains, and its first follow-up proposed holding every task to its constant-answer accuracy. The canonical gate keeps uniform guessing (rule 1), so this is a sensitivity analysis: the same gate rerun with max(uniform, majority) as the chance level, where the majority baseline is the share of a task's evaluated items whose gold option index is the most frequent one, i.e. the accuracy of always answering "A" (or always "yes"). It is read from the harness samples of the ladder's final checkpoints for 1,664 of the 1,669 accuracy tasks of `configs/tasks.json` (`auto`, `auto_probe` and `discarded`; their `majority` key) and lives in [`majority_chance/`](majority_chance/), never in the tables the RQs read. A constant preference can reach that baseline only where each answer position carries a fixed label on every item (a letter, Yes / No, True / False: 559 tasks); on cloze tasks whose answers change per item the scored log-likelihoods never see the position, so a third gate applies the majority level to the labelled tasks alone.
+
+![Majority-class chance: which tasks flip, and what the gate keeps](majority_chance/majority_chance.png)
+
+*Pool `predictivity` (seed 1904, 90M–1.7B), the same runs and Wilson rule as the canonical gate; the rerun reproduces the canonical mask on every task whose chance level does not move (0 differing cells). Population: the 841 trained tasks with a chance level, cells read on the runs that train the language. Regenerate with `python analysis/rq00_gate_and_curves/majority_chance.py` (`--derive --write-tasks-json` rereads the samples).*
+
+Key findings (`majority_pass_counts.csv`, `majority_flips.csv`, `majority_by_benchmark.csv`, `majority_downstream.csv`; ladder report 2026-10-08 12:06):
+- **Taken at face value, the majority level removes two fifths of the gate's passes.** Trained tasks above chance fall from 311 to 132 of 841 at 90M and from 507 to 376 at 1.7B, and the tasks never above chance rise from 313 to 465; 1,017 of the 2,428 passing trained cells (42 %), of 370 tasks, flip from pass to fail (179 at 90M, 131 at 1.7B).
+- **Almost all of it is answer order, which a log-likelihood model cannot use.** 95 % of the flipped cells are cloze tasks with per-item answers: MultiBLiMP lists the grammatical sentence first and TruthfulQA its true answers first (majority 1.0, every MultiBLiMP pass flips), and the harness keeps the source datasets' gold-position skew in INCLUDE v2 (majority up to 0.84), the RF and LLM-RF twins of Belebele, Global-MMLU and INCLUDE (0.27–0.28 against 0.25, enough over 900–14,000 items), ARC, XStoryCloze and Global PIQA.
+- **Where a constant answer is possible, the gate barely moves.** On the labelled tasks alone the counts are 296 at 90M and 498 at 1.7B (against 311 and 507), 46 cells of 31 tasks: CulturalBench-easy (10 countries, letter keys with majorities of 0.45–0.86 over 7–59 items), PAWS-X (5 languages, majority 0.55), the letter-format Belebele, Global-MMLU and INCLUDE (13 tasks that the uniform gate barely passed), BBH (MCQ) and BLEnD. XNLI's labels are balanced (0.333) and BoolQ is not evaluated on the ladder.
+- **The downstream headline numbers hold.** rq02's DA-size on accuracy moves by at most 0.006 under either majority gate (0.51–0.57 from 90M to 1B). rq01's share of accuracy and BPB tasks predictable along size and training rises from 78 % (273 of 352) to 90 % of 222 under the full majority gate, because the 130 tasks it drops are less often predictable (74 of them, 57 %), and is 78 % of 350 on the labelled tasks alone; the median size-fit R² of the accuracy tasks is 0.88 (322 tasks) and 0.92 (192).
+
+Follow-ups:
+- Count the constant-answer passes the labelled gate removes per checkpoint, not only at the final one, to see whether the early passes of section 1b are all of them.
+- Read the majority level per run instead of per task (the option the run picks most often, as in 1b), which bounds what a run's constant preference can reach rather than what the key allows.
+
+[`majority_chance.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/majority_chance/majority_chance.png) / [`.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/majority_chance/majority_chance.csv), [`majority_baselines.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/majority_chance/majority_baselines.csv), [`majority_downstream.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/majority_chance/majority_downstream.csv).
+
 
 ### 2. The gate by answer count, and the Signal ranking
 
