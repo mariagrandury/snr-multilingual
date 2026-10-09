@@ -134,7 +134,7 @@ While the conditions under which small-scale evaluations are predictive have bee
 %a challenge compounded in multilingual settings where many language–specific tasks exhibit little measurable signal at small scales.
 This work asks four foundational questions around this practice: (1) for multilingual language models, at what model size do evaluations become sufficiently predictive of larger models? (2) how early during pretraining can decisions be taken? (3) can we determine before doing many expensive evaluations whether a particular evaluation is likely to be informative at small-scale? and (4) how do these patterns change as multilingual training data varies in composition? 
 We pretrain a controlled ladder of \nmodels models spanning six sizes from 90M to 1.7B non-embedding parameters and six language settings from 1 to 50 languages, with four design interventions and seed replicates. 
-We evaluate 12 aligned checkpoints from each run using per-language bits per byte over 100 languages and tasks from \nbenchmarks multilingual benchmark families.
+We evaluate 12 aligned checkpoints from each run using per-language bits per byte over 100 languages and \nbenchanalysed benchmarks (\ntasksanalysed language tasks). Of the \nbenchconsidered benchmarks (\ntasksconsidered tasks) we considered, we analyse these \nbenchanalysed and keep at each model size only their tasks above chance.
 % RQ1
 We characterize which benchmark families exhibit predictable scaling across model size and training, and distinguish benchmarks whose performance improves consistently from those whose scaling is weak, noisy, or non-monotonic. 
 % RQ2

@@ -1,181 +1,123 @@
-% https://aclrollingreview.org/responsibleNLPresearch/
-% Filled 2026-10-08: each question is followed by ANSWER (with the section, appendix or table
-% that answers it) and, where the paper does not answer it yet, a \TODO{...} marker (main.tex
-% defines \TODO on Overleaf). This file is the source of the ARR checklist form and is not \input.
+% ARR Responsible NLP Research checklist: https://aclrollingreview.org/responsibleNLPresearch/
+% Source of the checklist form; not \input in main.tex. Each question is in bold, and its answer is
+% plain text (only \ref and \S) so it can be copied from the compiled PDF into the submission form.
+% \TODO{...} marks what the paper does not answer yet (main.tex defines \TODO). The ARR guidance for
+% each question is kept below it as comments.
 
+\section*{Responsible NLP Research Checklist}
 
-A. For every submission:
-A1. Did you describe the limitations of your work?
+\subsection*{A. For every submission}
 
-ANSWER: Yes. Limitations section (unnumbered, 06_statements.tex). The analysis states its own caveats where they apply: the single 1.7B reference run per configuration and the seed null (\S\ref{subsec:rq2}, Appendix~\ref{app:rq02_decision_accuracy}), the 600M depth pairs that are not size-matched (Table~\ref{tab:app_rq03_flip_attribution}), and the moving task populations (Appendix~\ref{app:fixed_populations}).
+\paragraph{A1. Did you describe the limitations of your work?}
+Yes. Limitations section (unnumbered). The analysis states its own caveats where they apply: the single 1.7B reference run per configuration and the seed null (\S\ref{subsec:rq2}, Appendix~\ref{app:rq02_decision_accuracy}), the 600M depth pairs that are not size-matched (Table~\ref{tab:app_rq03_flip_attribution}), and the moving task populations (Appendix~\ref{app:fixed_populations}).
 \TODO{The Limitations section is still a list of notes. Write it as prose before submission.}
+% Point out any strong assumptions and how robust your results are to violations of these assumptions
+% (e.g., independence assumptions, noiseless settings, model well-specification, asymptotic
+% approximations only held locally). Reflect on the scope of your claims, e.g., if you only tested your
+% approach on a few datasets, languages, or did a few runs. If you analyze model biases: which
+% definition of bias are you using? See Blodgett et al. (2020). Reviewers will be specifically
+% instructed to not penalize honesty concerning limitations.
 
-
-Point out any strong assumptions and how robust your results are to violations of these assumptions (e.g., independence assumptions, noiseless settings, model well-specification, asymptotic approximations only held locally). Reflect on how these assumptions might be violated in practice and what the implications would be.
-Reflect on the scope of your claims, e.g., if you only tested your approach on a few datasets, languages, or did a few runs. In general, empirical results often depend on implicit assumptions, which should be articulated. Reflect on the factors that influence the performance of your approach. For example, a speech-to-text system might not be able to be reliably used to provide closed captions for online lectures because it fails to handle technical jargon.
-If you analyze model biases: which definition of bias are you using? Did you state the motivation and definition explicitly? See the discussion in Blodgett et al. (2020).
-We understand that authors might fear that complete honesty about limitations might be used by reviewers as grounds for rejection. It is worth keeping in mind that a worse outcome might be if reviewers discover limitations that aren’t acknowledged in the paper. In general, we advise authors to use their best judgement and recognize that individual actions in favor of transparency play an important role in developing norms that preserve the integrity of the community. Reviewers will be specifically instructed to not penalize honesty concerning limitations.
-A2. Did you discuss any potential risks of your work?
-
-ANSWER: Partly. Ethical Statement section (unnumbered, 06_statements.tex): compute cost. The model card lists bias, risks and out-of-scope uses (Appendix~\ref{app:hf_model_card}).
+\paragraph{A2. Did you discuss any potential risks of your work?}
+Partly. Ethical Statement section (unnumbered): compute cost. The model card lists bias, risks and out-of-scope uses (Appendix~\ref{app:hf_model_card}).
 \TODO{Discuss the risks of releasing models trained on web data (toxic or biased generations, no safety tuning), the energy use, and the uneven coverage of low-resource languages. The model card appendix is not \input in the repo main.tex.}
+% Examples of risks include malicious or unintended harmful uses (disinformation, fake profiles,
+% surveillance), environmental impact, fairness, privacy and security considerations. See Leins et al.
+% (2020). Does the research contribute to overgeneralization, bias confirmation, under or overexposure
+% of specific languages, topics, or applications? See Hovy and Spruit (2016). Consider the stakeholders
+% that could be impacted, dual use, and cite relevant mitigation strategies (gated release, monitoring
+% misuse, improving efficiency and accessibility). See Dev et al. (2021).
 
+\subsection*{B. Did you use or create scientific artifacts?}
+Yes. We use pretraining corpora, benchmarks, a tokenizer and an evaluation harness, and we create a ladder of models with their checkpoints and evaluation logs.
+% Scientific artifacts may include code, data, models or other artifacts.
 
-Examples of risks include potential malicious or unintended harmful effects and uses (e.g., disinformation, generating fake profiles, surveillance), environmental impact (e.g., training huge models), fairness considerations (e.g., deployment of technologies that could further disadvantage or exclude historically disadvantaged groups), privacy considerations (e.g., a paper on model/data stealing), and security considerations (e.g., adversarial attacks). See discussion in Leins et. al. (2020) as examples.
-Does the research contribute to overgeneralization, bias confirmation, under or overexposure of specific languages, topics, or applications at the expense of others? See Hovy and Spruit (2016) for examples.
-We expect many papers to be foundational research and not tied to particular applications, let alone deployments. However, we encourage authors to discuss potential risks if they see a path to any positive or negative applications. For example, the authors can emphasize how their systems are intended to be used, how they can safeguard their systems against misuse, or propose future research directions.
-Consider different stakeholders that could be impacted by your work. Is it possible that research benefits some stakeholders while harming others? Does it pay special attention to vulnerable or marginalized communities? Does the research lead to exclusion of certain groups? See Dev et. al (2021) for examples.
-Consider dual use, i.e, possible benefits or harms that could arise when the technology is being used as intended and functioning correctly, benefits or harms that could arise when the technology is being used as intended but gives incorrect results, and benefits or harms following from (intentional or unintentional) misuse of the technology.
-Consider citing previous work on relevant mitigation strategies for the potential risks of the work (e.g., gated release of models, providing defenses in addition to attacks, mechanisms for monitoring misuse, mechanisms to monitor how a system learns from feedback over time, improving the efficiency and accessibility of NLP).
-B. Did you use or create scientific artifacts?
-
-ANSWER: Yes. We use pretraining corpora, benchmarks, a tokenizer and an evaluation harness, and we create a ladder of models with their checkpoints and evaluation logs.
-
-Scientific artifacts may include code, data, models or other artifacts.
-Most NLP research uses scientific artifacts.
-Many NLP papers are accompanied by new scientific artifacts.
-B1. Did you cite the creators of artifacts you used?
-
-ANSWER: Yes. Corpora: DCLM-Edu and FineWeb-2 (\S\ref{subsec:models}, Appendix~\ref{app:data-mixtures}). Benchmarks: Table~\ref{tab:benchmark-families} (Appendix~\ref{app:evaluation-protocol}). Harness: \S\ref{subsec:evaluation} and Appendix~\ref{app:evaluation-protocol}. Architecture recipe and tokenizer: Apertus (Appendix~\ref{app:model-configurations}). Reformulation model: \S\ref{subsec:rq0}.
+\paragraph{B1. Did you cite the creators of artifacts you used?}
+Yes. Corpora: DCLM-Edu and FineWeb-2 (\S\ref{subsec:models}, Appendix~\ref{app:data-mixtures}). Benchmarks: Table~\ref{tab:benchmark-families} (Appendix~\ref{app:evaluation-protocol}). Harness: \S\ref{subsec:evaluation} and Appendix~\ref{app:evaluation-protocol}. Architecture recipe and tokenizer: Apertus (Appendix~\ref{app:model-configurations}). Reformulation model: \S\ref{subsec:rq0}.
 \TODO{State the versions (dataset revisions, harness commit) once anonymity allows. Check that every benchmark in Table~\ref{tab:benchmark-families} carries a citation.}
+% For composite artifacts like GLUE, cite all creators. Cite the original paper that produced the code
+% package or dataset. State which version of the asset you are using. If possible, include a URL.
 
-
-For composite artifacts like the GLUE benchmark, this means all creators.
-Cite the original paper that produced the code package or dataset.
-Remember to state which version of the asset you’re using.
-If possible, include a URL.
-B2. Did you discuss the license or terms for use and / or distribution of any artifacts?
-
-ANSWER: Partly. The released models are Apache 2.0 (model card, Appendix~\ref{app:hf_model_card}).
+\paragraph{B2. Did you discuss the license or terms for use and/or distribution of any artifacts?}
+Partly. The released models are Apache 2.0 (model card, Appendix~\ref{app:hf_model_card}).
 \TODO{Not addressed: the licenses of DCLM-Edu, FineWeb-2 and the benchmarks, and the terms of use of the model used for the reformulation.}
+% State the name of the license (e.g., CC-BY 4.0) for each asset. If you scraped or collected data,
+% state the copyright and terms of service of the source. If you release assets, include a license,
+% copyright information and terms of use. If you repackage a dataset, state the original license and
+% the one for the derived asset.
 
-
-State the name of the license (e.g., CC-BY 4.0) for each asset.
-If you scraped or collected data from a particular source (e.g., website or social media API), you should state the copyright and terms of service of that source. Please note that some sources do not allow inference of protected categories like gender, sexual orientation, health status, etc.
-The data might be in public domain and licensed for research purposes.
-The data might be used with consent of its creators or copyright holders.
-If the data is used without consent, the paper makes the case to justify its legal basis (e.g., research performed in the public interest under GDPR).
-If you are releasing assets, you should include a license, copyright information, and terms of use in the package.
-If you are repackaging an existing dataset, you should state the original license as well as the one for the derived asset (if it has changed).
-If you cannot find this information online, you are encouraged to reach out to the asset’s creators.
-B3. Did you discuss if your use of existing artifact(s) was consistent with their intended use, provided that it was specified? For the artifacts you create, do you specify intended use and whether that is compatible with the original access conditions (in particular, derivatives of data accessed for research purposes should not be used outside of research contexts)?
-
-ANSWER: Partly. Intended and out-of-scope uses of the released models: model card, Uses (Appendix~\ref{app:hf_model_card}).
+\paragraph{B3. Did you discuss if your use of existing artifacts was consistent with their intended use, provided that it was specified? For the artifacts you create, do you specify intended use and whether that is compatible with the original access conditions?}
+Partly. Intended and out-of-scope uses of the released models: model card, Uses (Appendix~\ref{app:hf_model_card}).
 \TODO{Not addressed: that our use of the corpora and benchmarks (research pretraining and evaluation) is consistent with their intended use.}
+% Derivatives of data accessed for research purposes should not be used outside of research contexts.
+% The paper specifies efforts to limit use to safe circumstances (e.g., a data/model statement), and
+% discusses harms from the limitations of the data collection, especially for marginalized populations.
 
-
-Data and/or pretrained models are released under a specified license that is compatible with the conditions under which access to data was granted (in particular, derivatives of data accessed for research purposes should not be deployed in the real world as anything other than a research prototype, especially commercially)
-The paper specifies the efforts to limit the potential use to circumstances in which the data/models could be used safely (such as an accompanying data/model statement).
-The data is sufficiently anonymized to make identification of individuals impossible without significant effort. If this is not possible due to the research type, please state so explicitly and explain why.
-The paper discusses the harms that may ensue from the limitations of the data collection methodology, especially concerning marginalized/vulnerable populations, and specifies the scope within which the data can be used safely.
-B4. Did you discuss the steps taken to check whether the data that was collected / used contains any information that names or uniquely identifies individual people or offensive content, and the steps taken to protect / anonymize it?
-
-ANSWER: No.
+\paragraph{B4. Did you discuss the steps taken to check whether the data that was collected/used contains any information that names or uniquely identifies individual people or offensive content, and the steps taken to protect/anonymize it?}
+No.
 \TODO{Not addressed: we apply no PII or offensive-content filtering of our own and rely on the filtering of DCLM-Edu and FineWeb-2. Say so, with a pointer to their documentation.}
+% Explain how you checked for offensive content and identifiers (script, manual sample, etc.) and how
+% you anonymized the data. List further privacy protection measures. If personal data is used, specify
+% the standards applied for its storage and processing.
 
+\paragraph{B5. Did you provide documentation of the artifacts, e.g., coverage of domains, languages, and linguistic phenomena, demographic groups represented, etc.?}
+Yes. Languages and token shares of every mixture: Table~\ref{tab:app-languages} (Appendix~\ref{app:data-mixtures}). Benchmarks, task types and languages: Table~\ref{tab:benchmark-families} (Appendix~\ref{app:evaluation-protocol}). Models: Appendix~\ref{app:methodology} and the model card (Appendix~\ref{app:hf_model_card}).
+% Report the language of any language data, even for commonly used benchmarks. Toolkits: data
+% statements, model cards, dataset cards, datasheets for datasets.
 
-There are some settings where the existence of offensive content is not necessarily bad (e.g., swear words occur naturally in text), or part of the research question (i.e., hate speech). This question is just to encourage discussion of potentially undesirable properties.
-Explain how you checked for offensive content and identifiers (e.g., with a script, manually on a sample, etc.).
-Explain how you anonymized the data, i.e., removed identifying information like names, phone and credit card numbers, addresses, user names, etc. Examples are monodirectional hashes, replacement, or removal of data points. If anonymization is not possible due to the nature of the research (e.g., author identification), explain why.
-List any further privacy protection measures you are using: separation of author metadata from text, licensing, etc.
-If any personal data is used: the paper specifies the standards applied for its storage and processing, and any anonymization efforts.
-If the individual speakers remain identifiable via search: the paper discusses possible harms from misuse of this data, and their mitigation.
-B5. Did you provide documentation of the artifacts, e.g., coverage of domains, languages, and linguistic phenomena, demographic groups represented, etc.?
-
-ANSWER: Yes. Languages and token shares of every mixture: Table~\ref{tab:app-languages} (Appendix~\ref{app:data-mixtures}). Benchmarks, task types and languages: Table~\ref{tab:benchmark-families} (Appendix~\ref{app:evaluation-protocol}). Models: Appendix~\ref{app:methodology} and the model card (Appendix~\ref{app:hf_model_card}).
-
-
-Be sure to report the language of any language data, even if it is commonly-used benchmarks.
-Describe basic information about the data that was used, such as the domain of the text, any information about the demographics of the authors, etc.
-Here are some documentation toolkits you may find useful:
-
-Data statements: https://techpolicylab.uw.edu/data-statements/
-Model cards (Hugging Face): https://huggingface.co/docs/hub/en/model-cards
-Dataset cards (Hugging Face): https://huggingface.co/docs/hub/en/datasets-cards
-Datasheets for datasets: https://dl.acm.org/doi/10.1145/3458723
-B6. Did you report relevant statistics like the number of examples, details of train / test / dev splits, etc. for the data that you used / created?
-
-ANSWER: Yes. Training tokens per size and language: \S\ref{subsec:models} and Appendix~\ref{app:data-mixtures}. Item counts per benchmark: the token-threshold table (Table~\ref{tab:rq0_thresholds}) and Appendix~\ref{app:chance-threshold}. Task counts: Appendix~\ref{app:evaluation-protocol}.
+\paragraph{B6. Did you report relevant statistics like the number of examples, details of train/test/dev splits, etc. for the data that you used/created?}
+Yes. Training tokens per size and language: \S\ref{subsec:models} and Appendix~\ref{app:data-mixtures}. Item counts per benchmark: the token-threshold table (Table~\ref{tab:rq0_thresholds}) and Appendix~\ref{app:chance-threshold}. Task counts: Appendix~\ref{app:evaluation-protocol}.
 \TODO{Say which split (test or validation) each benchmark is scored on.}
+% Include the number of examples in train/validation/test splits, even for common benchmarks.
 
+\subsection*{C. Did you run computational experiments?}
+Yes.
 
-Even for commonly-used benchmark datasets, include the number of examples in train / validation / test splits, as these provide necessary context for a reader to understand experimental results. For example, small differences in accuracy on large test sets may be significant, while on small test sets they may not be.
-
-C. Did you run computational experiments?
-
-ANSWER: Yes.
-
-C1. Did you report the number of parameters in the models used, the total computational budget (e.g., GPU hours), and computing infrastructure used?
-
-ANSWER: Yes. Parameters per size: Table~\ref{tab:ladder} (Appendix~\ref{app:model-configurations}). Compute (\npretrainnodehours node-hours of pretraining, \nothernodehours of evaluation and data work, \ngpuhours GPU-hours) and hardware (GH200 nodes): model card (Appendix~\ref{app:hf_model_card}).
+\paragraph{C1. Did you report the number of parameters in the models used, the total computational budget (e.g., GPU hours), and computing infrastructure used?}
+Yes. Parameters per size: Table~\ref{tab:ladder} (Appendix~\ref{app:model-configurations}). Compute (\npretrainnodehours node-hours of pretraining, \nothernodehours of evaluation and data work, \ngpuhours GPU-hours) and hardware (GH200 nodes): model card (Appendix~\ref{app:hf_model_card}).
 \TODO{The compute sentence of \S\ref{subsec:models} is commented out and the model card is not \input in the repo main.tex, so the compute is in no compiled section there. Restore one of the two.}
+% Report the number of parameters even for common models. Include the total GPU hours, parallelism and
+% GPU size, for all experiments, not only the final runs. An estimate is better than nothing.
 
-
-Even for commonly-used models like BERT, reporting the number of parameters is important because it provides context necessary for readers to understand experimental results. The size of a model has an impact on performance, and it shouldn’t be up to a reader to have to go look up the number of parameters in models to remind themselves of this information.
-The total computational budget can be presented however is most appropriate for the paper – if most experiments were run on GPUs, then important information would likely include the total number of GPU hours, the amount of parallelism across GPUs, the size of the GPUs, etc. to allow a reader to estimate the computational requirements to reproduce, use, or build upon the work.
-Note that this should include information about all experiments, not just the final runs that led to the results presented in the paper. If exact numbers are not available, an estimate is better than nothing.
-C2. Did you discuss the experimental setup, including hyperparameter search and best-found hyperparameter values?
-
-ANSWER: Yes. \S\ref{subsec:models} and Appendix~\ref{app:methodology} (grid, optimizer, schedule and per-size hyperparameters in Table~\ref{tab:ladder}). The architecture and optimizer follow the Apertus recipe (Appendix~\ref{app:model-configurations}).
+\paragraph{C2. Did you discuss the experimental setup, including hyperparameter search and best-found hyperparameter values?}
+Yes. \S\ref{subsec:models} and Appendix~\ref{app:methodology} (grid, optimizer, schedule and per-size hyperparameters in Table~\ref{tab:ladder}). The architecture and optimizer follow the Apertus recipe (Appendix~\ref{app:model-configurations}).
 \TODO{State whether any hyperparameter search was run, and how the per-size learning rates were set.}
+% Describe model selection and preprocessing. Report hyperparameter search results, even if stopped
+% early, and the best-found values. Report which dataset was used to determine the hyperparameters.
 
+\paragraph{C3. Did you report descriptive statistics about your results (e.g., error bars around results, summary statistics from sets of experiments), and is it transparent whether you are reporting the max, mean, etc. or just a single run?}
+Yes. Every number names its population (seed-1904 runs, pairs and tasks). Intervals: jackknife bands and bootstrap intervals in the figures, Wilson bounds for the above-chance filter (\S\ref{subsec:evaluation}), the seed replicates as a noise baseline (\S\ref{subsec:methodology-da}, Appendix~\ref{app:rq02_decision_accuracy}) and a permutation null (Appendix~\ref{app:rq02_permutation_null}).
+% Error bars from different seeds, Clopper-Pearson intervals, or expected validation performance. Make
+% clear whether a result is a single run, the max across seeds, or an average.
 
-The experimental setup should include information about exactly how experiments were set up, like how model selection was done (e.g., early stopping on validation data, the single model with the lowest loss, etc.), how data was preprocessed, etc.
-Many research projects involve manually tuning hyperparameters until some “good” values are found, and then running a final experiment which is reported in the paper. Other projects involve using random search or grid search to find hyperparameters. In all cases, report the results of such experiments, even if they were stopped early or didn’t lead to your best results, as it allows a reader to know the process necessary to get to the final result and to estimate which hyperparameters were important to tune.
-Be sure to include the best-found hyperparameter values (e.g., learning rate, regularization, etc.) as these are critically important for others to build on your work.
-The experimental setup should likely be described in the main body of the paper, as that is important for reviewers to understand the results, but large tables of hyperparameters or the results of hyperparameter searches could be presented in the main paper or appendix.
-Report which dataset was used to determine the hyperparameters. Unless under special circumstances, hyperparameters should not be tuned on the evaluation (held-out) dataset.
-C3. Did you report descriptive statistics about your results (e.g., error bars around results, summary statistics from sets of experiments), and is it transparent whether you are reporting the max, mean, etc. or just a single run?
-
-ANSWER: Yes. Every number names its population (seed-1904 runs, pairs and tasks). Intervals: jackknife bands and bootstrap intervals in the figures, Wilson bounds for the gate (\S\ref{subsec:evaluation}), the seed replicates as a noise baseline (\S\ref{subsec:methodology-da}, Appendix~\ref{app:rq02_decision_accuracy}) and a permutation null (Appendix~\ref{app:rq02_permutation_null}).
-
-
-Error bars can be computed by running experiments with different random seeds, Clopper–Pearson confidence intervals can be placed around the results (e.g., accuracy), or expected validation performance can be useful tools here.
-In all cases, when a result is reported, it should be clear if it is from a single run, the max across N random seeds, the average, etc.
-When reporting a result on a test set, be sure to report a result of the same model on the validation set (if available) so others reproducing your work don’t need to evaluate on the test set to confirm a reproduction.
-C4. If you used existing packages (e.g., for preprocessing, for normalization, or for evaluation, such as NLTK, Spacy, ROUGE, etc.), did you report the implementation, model, and parameter settings used?
-
-ANSWER: Yes. LM Evaluation Harness (pinned fork) and vLLM: Appendix~\ref{app:evaluation-protocol}. Megatron-LM and Transformers: model card (Appendix~\ref{app:hf_model_card}). The SNR code of \citet{heineman_signal_2025}: Appendix~\ref{app:surrogates}.
+\paragraph{C4. If you used existing packages (e.g., for preprocessing, for normalization, or for evaluation, such as NLTK, SpaCy, ROUGE, etc.), did you report the implementation, model, and parameter settings used?}
+Yes. LM Evaluation Harness (pinned fork) and vLLM: Appendix~\ref{app:evaluation-protocol}. Megatron-LM and Transformers: model card (Appendix~\ref{app:hf_model_card}). The SNR code of Heineman et al. (2025): Appendix~\ref{app:surrogates}.
 \TODO{Give version numbers or commits for the harness, vLLM and Megatron-LM once anonymity allows.}
+% Give version numbers or the specific implementation, cite the original work (or a URL), and explain
+% any modifications to an existing library.
 
+\subsection*{D. Did you use human annotators (e.g., crowdworkers) or research with human participants?}
+No. D1 to D5 do not apply.
 
-The version number or reference to specific implementation is important because different implementations of the same metric can lead to slightly different results (e.g., ROUGE).
-The paper cites the original work for the model or software package. If no paper exists, a URL to the website or repository is included.
-If you modified an existing library, explain what changes you made.
-D. Did you use human annotators (e.g., crowdworkers) or research with human participants?
+\paragraph{D1. Did you report the full text of instructions given to participants, including e.g., screenshots, disclaimers of any risks to participants or annotators, etc.?}
+Not applicable.
 
-ANSWER: No. D1 to D5 do not apply.
+\paragraph{D2. Did you report information about how you recruited (e.g., crowdsourcing platform, students) and paid participants, and discuss if such payment is adequate given the participants' demographic (e.g., country of residence)?}
+Not applicable.
 
-D1. Did you report the full text of instructions given to participants, including e.g., screenshots, disclaimers of any risks to participants or annotators, etc.?
+\paragraph{D3. Did you discuss whether and how consent was obtained from people whose data you're using/curating?}
+Not applicable.
 
-Examples of risks include a crowdsourcing experiment which might show offensive content or collect personal identifying information (PII). Ideally, the participants should be warned.
-Including this information in the supplemental material is fine, but if the main contribution of your paper involves human subjects, then we strongly encourage you to include as much detail as possible in the main paper.
-D2. Did you report information about how you recruited (e.g., crowdsourcing platform, students) and paid participants, and discuss if such payment is adequate given the participants’ demographic (e.g., country of residence)?
+\paragraph{D4. Was the data collection protocol approved (or determined exempt) by an ethics review board?}
+Not applicable.
 
-Be explicit about how you recruited your participants. For instance, mention the specific crowdsourcing platform used. If participants are students, give information about the population (e.g., graduate/undergraduate, from a specific field), and how they were compensated (e.g., for course credit or through payment).
-In case of payment, provide the amount paid for each task (including any bonuses), and discuss how you determined the amount of time a task would take. Include discussion on how the wage was determined and how you determined that this was a fair wage.
-D3. Did you discuss whether and how consent was obtained from people whose data you’re using/curating?
+\paragraph{D5. Did you report the basic demographic and geographic characteristics of the annotator population that is the source of the data?}
+Not applicable.
 
-For example, if you collected data via crowdsourcing, did your instructions to crowdworkers explain how the data would be used?
+\subsection*{E. Did you use AI assistants (e.g., ChatGPT, Copilot) in your research, coding, or writing?}
 
-D4. Was the data collection protocol approved (or determined exempt) by an ethics review board?
-
-Depending on the country in which research is conducted, ethics review (e.g., from an IRB board in the US context) may be required for any human subjects research. If an ethics review board was involved, you should clearly state it in the paper. However, stating that you obtained approval from an ethics review board does not imply that the societal impact of the work does not need to be discussed.
-For initial submissions, do not include any information that would break anonymity, such as the institution conducting the review.
-D5. Did you report the basic demographic and geographic characteristics of the annotator population that is the source of the data?
-
-State if your data include any protected information (e.g., sexual orientation or political views under GDPR).
-The paper is accompanied by a data statement (see Bender and Friedman, 2018) describing the basic demographic and geographic characteristics of the author population that is the source of the data, and the population that it is intended to represent.
-If applicable: the paper describes whether any characteristics of the human subjects were self-reported (preferably) or inferred (in what way), justifying the methodology and choice of description categories.
-E. Did you use AI assistants (e.g., ChatGPT, Copilot) in your research, coding, or writing?
-E1. If you used any AI assistants, did you include information about your use?
-
-ANSWER: Yes. AI use Statement (unnumbered, 06_statements.tex).
+\paragraph{E1. If you used any AI assistants, did you include information about your use?}
+Yes. AI use Statement (unnumbered).
 \TODO{The statement covers writing and code review. Add that a language model rewrote the INCLUDE and Belebele items for the model-based reformulation (\S\ref{subsec:rq0}), as a research tool rather than an assistant.}
-
-
-E1. Elaboration For Yes Or No. For yes, provide a section number, or include your elaboration directly in the checklist response. For no, justify why not.
-
-Any use of AI assistants has to conform with the ACL publications ethics policy, especially with respect to authorship criteria.
-
-E1. Section Or Justification
+% For yes, provide a section number or include the elaboration directly. For no, justify why not. Any
+% use of AI assistants has to conform with the ACL publications ethics policy.
