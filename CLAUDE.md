@@ -219,7 +219,12 @@ numbers against `documents/ladder-facts.json` and prints the ones that moved.
 bpb chain and **restarts** the auto-eval watcher, so the running watcher always
 matches the code on disk — a watcher holds its constants from import time, and
 on 2026-09-21 one started before a path fix kept writing conversions to the old
-capstor tree for three hours after the fix landed. `ladder` (04:00) publishes,
+capstor tree for three hours after the fix landed. The restart goes through the
+watcher's own cross-node lock (`auto_evals_cscs.py --stop`, then a fresh
+`--watch`), never `pgrep`, which sees one login node: on 2026-10-08 two
+watchers on ln001 submitted the same 231 evals
+(`src/pretrain/CLAUDE.md` #15). Start or stop a watcher by hand the same way;
+a second one refuses to start. `ladder` (04:00) publishes,
 installs, then submits the analysis plus a separate `afterany` job for the
 `--curves` grids, so the hour they cost does not lengthen the main refresh.
 While the analysis code is mid-change, `touch

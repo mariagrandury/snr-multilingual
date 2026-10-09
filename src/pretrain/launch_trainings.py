@@ -1725,17 +1725,25 @@ def main() -> None:
         # covers every ladder and scheme in a pass, so a launch of the deep
         # ladder no longer leaves the shallow and scheme-B cells waiting for
         # a watcher nobody remembered to start.
-        watcher = "auto_evals_cscs.py --watch"
-        if subprocess.run(["pgrep", "-f", watcher], capture_output=True).returncode:
+        # Asked of the watcher's own lock on the shared filesystem, not
+        # `pgrep`, which sees only this login node: on 2026-10-08 that let
+        # this start a second watcher beside a hand-started one on ln001, and
+        # both submitted the same 231 evals. Two launches racing here are
+        # still safe — the second watcher refuses at its own take_lock.
+        from auto_evals_cscs import lock_holder, lock_path
+        held = lock_holder(lock_path())
+        if held and held[1]:
+            print(f"(auto-evals already watching: {held[0]})")
+        else:
             AUTO_EVAL_LOGS.mkdir(parents=True, exist_ok=True)
             log = open(AUTO_EVAL_LOGS / "auto_evals.log", "a")
-            subprocess.Popen([sys.executable, "auto_evals_cscs.py",
+            # -u: block-buffered, a killed watcher loses its last output.
+            subprocess.Popen([sys.executable, "-u", "auto_evals_cscs.py",
                               "--watch", "1800"], cwd=str(SCRIPT_DIR),
-                             stdout=log, stderr=log, start_new_session=True)
+                             stdout=log, stderr=log, start_new_session=True,
+                             env={**os.environ, "PYTHONUNBUFFERED": "1"})
             print("started auto-evals (all ladders/schemes); opt out with "
                   "--no-auto-evals")
-        else:
-            print("(auto-evals already watching)")
 
     # Refresh the training-side figures (plan, simple, detailed), the generated
     # grid block in README.md / the plan doc and the 1B/1.7B status table.

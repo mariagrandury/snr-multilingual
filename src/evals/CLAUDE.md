@@ -242,8 +242,9 @@ reads the group once, before the `--watch` loop (`benchmarks =
 auto_benchmarks(group)`), and `configs.load_tasks` is `lru_cache`d, so a
 process started yesterday holds yesterday's benchmark list *and* yesterday's
 task table. Promoting a benchmark into `auto` therefore takes effect only
-when the watcher is restarted (or a one-shot pass is run alongside it) — the
-restart is the launch, and it is what submits the top-ups.
+when the watcher is restarted (`--stop`, then `--watch`; a one-shot pass can
+no longer run alongside it, both take the same lock — pretrain CLAUDE.md #15)
+— the restart is the launch, and it is what submits the top-ups.
 
 BBH and ACP-Bench are *mixed*: `scripts/make_cloze_tasks.py` measures each
 subtask against the cached data and splits them by what they actually are.

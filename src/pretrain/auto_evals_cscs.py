@@ -9,11 +9,15 @@ whether it saved 20, 40 or 60 times (launch_trainings.due_iters). Evaluate
 them on the "auto" benchmark group (configs/tasks.json) and push to W&B
 `mariagrandury-epflnlp/msnr` — the same project the training loss logs to.
 
-Idempotent, safe to run alongside the trainings (login node, tmux):
+Idempotent, safe to run alongside the trainings (login node, tmux). One
+pass at a time: a real pass, one-shot or --watch, takes a lock on the shared
+filesystem and refuses to start while another login node's watcher holds it
+(take_lock); --stop asks that holder to exit, from any node:
 
     cd src
     python3.11 pretrain/auto_evals_cscs.py --dry-run
-    python3.11 pretrain/auto_evals_cscs.py --watch 600   # one pass every 10 min
+    python3.11 -u pretrain/auto_evals_cscs.py --watch 1800   # a pass every 30 min
+    python3.11 pretrain/auto_evals_cscs.py --stop        # stop it, wherever it runs
     python3.11 pretrain/auto_evals_cscs.py --retry-held
     python3.11 pretrain/auto_evals_cscs.py --name lm-175M-L1-deep-seed1904 --max-submit 2
     python3.11 pretrain/auto_evals_cscs.py --convert-only
@@ -63,10 +67,13 @@ HF cache (see README "Before the first CSCS run").
 from __future__ import annotations
 
 import argparse
+import atexit
 import json
 import math
 import os
 import re
+import signal
+import socket
 import subprocess
 import sys
 import tempfile
@@ -220,6 +227,176 @@ def active_jobs() -> set[str] | None:
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return None
     return set(out.stdout.split()) if out.returncode == 0 else None
+
+
+def already_queued(job: str) -> bool:
+    """Asks the controller again, right before an sbatch, whether a job named
+    JOB is pending or running (any user). `active_jobs()` is read once per
+    pass, so a second pass that started with the same snapshot sees none of
+    the first one's submissions. True as well when squeue cannot answer, for
+    active_jobs()' reason: an unknown queue is not an empty one."""
+    try:
+        out = subprocess.run(["squeue", "-h", "-n", job, "-o", "%i"],
+                             capture_output=True, text=True, timeout=30)
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return True
+    return out.returncode != 0 or bool(out.stdout.strip())
+
+
+# --- one watcher at a time, across every login node --------------------------
+# Each pass reads the queue once (active_jobs), so two passes that start
+# together submit the same work twice: on 2026-10-08/09 a hand-started watcher
+# and the one launch_trainings.py spawned ran side by side on ln001 and both
+# submitted the same 231 evals, and the same happened twice before on ln004.
+# The old guards were `pgrep`, which sees only its own login node, while
+# $HOME and /iopsstor are shared by all of them. So a pass takes a lock on
+# the shared filesystem, nightly.sh's take_lock pattern: mkdir is the atomic
+# primitive, `owner` records "host pid start ttl". A holder on THIS host is
+# alive iff its pid is and runs this script (/proc; a reused pid is not a
+# watcher). A holder on another host cannot be asked, so it is alive until its
+# `heartbeat` (touched before every cell and every minute of the sleep) is
+# older than its ttl, 3 x the watch interval. Stopping one from another node
+# is the `stop` file it reads at each heartbeat (`--stop`).
+LOCK_DIR = Path(os.environ.get(
+    "AUTO_EVALS_LOCK_DIR",
+    f"/iopsstor/scratch/cscs/{os.environ.get('USER', 'mariagrandury')}/logs/auto_evals"))
+_HELD: dict = {}   # the lock this process holds: {"path": Path, "owner": str}
+
+
+def lock_path(job_suffix: str = "") -> Path:
+    """Per user (LOCK_DIR is) and per benchmark group: a probe pass submits
+    differently named jobs, so it may run beside the watcher."""
+    return LOCK_DIR / f"watcher{job_suffix}.lock"
+
+
+def _read(path: Path) -> str:
+    try:
+        return path.read_text().strip()
+    except OSError:
+        return ""
+
+
+def lock_holder(path: Path) -> tuple[str, bool] | None:
+    """(owner line, alive) for the lock at PATH; None when nobody holds it."""
+    if not path.is_dir():
+        return None
+    owner = _read(path / "owner")
+    try:
+        host, pid, _, ttl = owner.split()
+        pid, ttl = int(pid), int(ttl)
+    except ValueError:
+        # Between a holder's mkdir and its write, or a crash in between:
+        # live for a minute, stale after.
+        try:
+            return owner or "?", time.time() - path.stat().st_mtime < 60
+        except OSError:
+            return None
+    if host == socket.gethostname():
+        cmd = _read(Path(f"/proc/{pid}/cmdline")).replace("\0", " ")
+        return owner, "auto_evals_cscs" in cmd
+    try:
+        age = time.time() - (path / "heartbeat").stat().st_mtime
+    except OSError:
+        return owner, False
+    return owner, age < ttl
+
+
+def _release() -> None:
+    """Remove the lock, if it is still ours (a node that judged us stale and
+    took it over owns it now)."""
+    path = _HELD.pop("path", None)
+    if path is None or _read(path / "owner") != _HELD.pop("owner"):
+        return
+    for f in ("stop", "heartbeat", "owner"):
+        (path / f).unlink(missing_ok=True)
+    try:
+        path.rmdir()
+    except OSError:
+        pass
+
+
+def _on_signal(signum, _frame):
+    raise SystemExit(128 + signum)      # unwinds through atexit -> _release
+
+
+def take_lock(path: Path, ttl: int) -> None:
+    """Hold PATH for the life of this process, or exit naming its holder."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    held = lock_holder(path)
+    if held and not held[1]:
+        # Stale. Re-read just before removing, so a node that took it over
+        # in between keeps it; the mkdir below then settles any race.
+        print(f"taking over a stale watcher lock ({held[0]})", file=sys.stderr)
+        if _read(path / "owner") == held[0]:
+            for f in ("stop", "heartbeat", "owner"):
+                (path / f).unlink(missing_ok=True)
+            try:
+                path.rmdir()
+            except OSError:
+                pass
+    try:
+        path.mkdir()
+    except FileExistsError:
+        held = lock_holder(path)
+        raise SystemExit(f"another auto-eval pass holds {path}: "
+                         f"{held[0] if held else '?'} (host pid start ttl) — "
+                         "not starting a second. `auto_evals_cscs.py --stop` "
+                         "stops it from any login node.")
+    owner = f"{socket.gethostname()} {os.getpid()} {int(time.time())} {ttl}"
+    (path / "owner").write_text(owner + "\n")
+    (path / "heartbeat").touch()
+    _HELD.update(path=path, owner=owner)
+    atexit.register(_release)
+    signal.signal(signal.SIGTERM, _on_signal)
+    # Not over nohup's SIG_IGN: a hangup must not end a detached watcher.
+    if signal.getsignal(signal.SIGHUP) is not signal.SIG_IGN:
+        signal.signal(signal.SIGHUP, _on_signal)
+
+
+def heartbeat() -> None:
+    """Prove this holder alive to the other nodes, and leave when asked."""
+    path = _HELD.get("path")
+    if path is None:
+        return
+    stop = _read(path / "stop")
+    if stop and stop == " ".join(_HELD["owner"].split()[:2]):
+        print(f"stop requested ({path / 'stop'}) — exiting", flush=True)
+        raise SystemExit(0)
+    try:
+        (path / "heartbeat").touch()
+    except OSError:
+        pass        # one missed beat is far inside the ttl
+
+
+def request_stop(path: Path, wait: int) -> int:
+    """Ask the pass holding PATH to exit, from any login node: a stop file it
+    reads at its next heartbeat, plus SIGTERM when it runs on this host. Waits
+    up to WAIT seconds for the lock to be released; 0 once nothing live holds
+    it, 1 if the holder is still there."""
+    held = lock_holder(path)
+    if held is None or not held[1]:
+        print(f"no live watcher holds {path}" + (f" (stale: {held[0]})" if held else ""))
+        return 0
+    if len(held[0].split()) < 4:
+        print(f"{path} is being taken right now — retry in a minute", file=sys.stderr)
+        return 1
+    host, pid = held[0].split()[:2]
+    (path / "stop").write_text(f"{host} {pid}\n")
+    print(f"stop requested for {host}:{pid}")
+    if host == socket.gethostname():
+        try:
+            os.kill(int(pid), signal.SIGTERM)
+        except OSError:
+            pass
+    deadline = time.time() + wait
+    while time.time() < deadline:
+        held = lock_holder(path)
+        if held is None or not held[1] or held[0].split()[:2] != [host, pid]:
+            print(f"{host}:{pid} has stopped")
+            return 0
+        time.sleep(5)
+    print(f"{host}:{pid} still holds {path} after {wait}s", file=sys.stderr)
+    return 1
 
 
 def remaining_tasks(name: str, logs_root: Path, tasks: list[str]) -> list[str]:
@@ -491,7 +668,8 @@ def hf_staged(cell: str, it: int, staging: Path) -> bool:
 
 def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
                 task_list: list[str], size: str, dry_run: bool,
-                exclude: set[str] = frozenset(), suffix: str = "") -> None:
+                exclude: set[str] = frozenset(), suffix: str = "") -> bool:
+    """Submit one eval job; False when the last-moment queue check finds one."""
     name = f"{cell}-iter{it}"
     job = job_name("eval", name) + suffix
     hf_dir = staging / cell / f"iter_{it:07d}"
@@ -543,11 +721,15 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
     cmd = ["sbatch", f"--job-name={job}",
            f"--time={eval_walltime(size, n_tasks)}",
            "--export=ALL", "scripts/evaluate.sbatch", str(hf_dir), name]
+    if not dry_run and already_queued(job):
+        print(f"  skip: {job} is already queued")
+        return False
     print(f"  submit: {job}")
     if dry_run:
         print(f"    (cd {EVALS_DIR} && TASKS=<{n_tasks} tasks> ... {' '.join(cmd)})")
     else:
         subprocess.run(cmd, cwd=EVALS_DIR, env=env, check=True)
+    return True
 
 
 def submit_convert(cell: str, iters: list[int], staging: Path,
@@ -560,6 +742,9 @@ def submit_convert(cell: str, iters: list[int], staging: Path,
            # keep the large intermediate torch checkpoint on scratch (fast,
            # transient) instead of churning it on capstor.
            "TMP_TORCH_BASE": f"/iopsstor/scratch/cscs/{os.environ.get('USER', 'mariagrandury')}/snr-hf-checkpoints/_tmp_torch"}
+    if not dry_run and already_queued(convert_job_name(cell)):
+        print(f"  skip: {convert_job_name(cell)} is already queued")
+        return
     print(f"  submit: convert {cell} iters {iters}")
     if dry_run:
         print(f"    (HF_TOKENIZER={TOKENIZER_MODEL} STAGING_BASE={staging} "
@@ -678,6 +863,7 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
             # controller timeout. The watcher runs unattended behind every
             # launch, so one blip must cost one cell for one pass, not kill
             # the whole loop.
+            heartbeat()
             try:
                 one_cell(args, {**c, "ladder": ladder}, cell, scheme, configs, root, staging,
                          logs_root, benchmarks, running, errors, submitted)
@@ -843,10 +1029,9 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
         name = f"{cell}-iter{it}"
         if hf_staged(cell, it, staging) \
                 and job_name("eval", name) + args.job_suffix not in running:
-            submit_eval(cell, it, staging, logs_root, task_list, c["size"],
-                        args.dry_run, exclude=set(held.get(it, {})),
-                        suffix=args.job_suffix)
-            submitted["evals"] += 1
+            submitted["evals"] += submit_eval(
+                cell, it, staging, logs_root, task_list, c["size"], args.dry_run,
+                exclude=set(held.get(it, {})), suffix=args.job_suffix)
 
 
 def main() -> None:
@@ -921,7 +1106,14 @@ def main() -> None:
                         "--watch the watcher protects itself again from the "
                         "second pass on.")
     p.add_argument("--watch", type=int, metavar="SECONDS",
-                   help="keep running, one pass every SECONDS")
+                   help="keep running, one pass every SECONDS. One pass at a "
+                        "time per user and group, across every login node: "
+                        "a pass refuses to start while another holds the lock "
+                        "(LOCK_DIR, overridable with AUTO_EVALS_LOCK_DIR)")
+    p.add_argument("--stop", type=int, nargs="?", const=600, metavar="WAIT",
+                   help="ask the running watcher (of this --group) to exit, "
+                        "from any login node, and wait up to WAIT seconds "
+                        "(default 600) for it; exit 1 if it is still there")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--root", default=str(CKPT_ROOT),
                    help=f"Megatron run root (default: {CKPT_ROOT})")
@@ -945,6 +1137,18 @@ def main() -> None:
     # two groups on one checkpoint are different work, so no watcher may read
     # another's job as its own and skip it.
     args.job_suffix = "" if args.group == "auto" else f"-{args.group.removeprefix('auto_')}"
+    if args.stop is not None:
+        sys.exit(request_stop(lock_path(args.job_suffix), args.stop))
+    # A dry-run submits nothing, so it may preview beside a running watcher.
+    # Every real pass takes the lock, the one-shot ones included: "refuse
+    # while a watcher runs" alone would still let two one-shots (or a
+    # one-shot and a watcher started a second later) overlap.
+    if args.dry_run:
+        held = lock_holder(lock_path(args.job_suffix))
+        if held and held[1]:
+            print(f"(a watcher is running: {held[0]} — this dry-run takes no lock)\n")
+    else:
+        take_lock(lock_path(args.job_suffix), ttl=3 * (args.watch or 1800))
     if args.retry_held:
         print("--retry-held: the failure gate is off for this pass only\n")
     while True:
@@ -983,7 +1187,12 @@ def main() -> None:
                 print(f"(1B/1.7B status not refreshed: {e})", file=sys.stderr)
         if not args.watch:
             break
-        time.sleep(args.watch)
+        # In steps, so the heartbeat stays fresh and a stop request lands
+        # within a minute even while idle.
+        wake = time.time() + args.watch
+        while (left := wake - time.time()) > 0:
+            heartbeat()
+            time.sleep(min(60, left))
 
 
 if __name__ == "__main__":

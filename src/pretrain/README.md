@@ -30,8 +30,11 @@ python3.11 launch_trainings.py cscs --size 90M --langs 2   # one cell
 # 3. Auto-evals while training (tmux; converts every save, evals 12/run
 #    of the size's grid, on the run's own save grid, + each run's final one,
 #    pushes to W&B mariagrandury-epflnlp/msnr;
-#    the W&B key comes from your env or src/evals/scripts/wandb_api_key.txt)
-python3.11 auto_evals_cscs.py --watch 600
+#    the W&B key comes from your env or src/evals/scripts/wandb_api_key.txt).
+#    The launcher starts one for you; only one runs per user, whichever login
+#    node it is on — a second refuses and names the first.
+python3.11 -u auto_evals_cscs.py --watch 1800
+python3.11 auto_evals_cscs.py --stop       # from any login node
 
 # 4. Monitor
 python3.11 pretrain_progress.py                    # per-cell status lines
@@ -546,8 +549,17 @@ setting's FineWeb-2 languages, mapped via
 [`configs/languages.json`](../../configs/languages.json)) — e.g. the L2
 cells get `hellaswag` + `hellaswag_ru` + … (23 tasks); L30 cells get 233,
 L50 cells 329.
-Both watchers are idempotent: stop them, restart them, run them twice —
-nothing duplicates.
+Both watchers are idempotent: stop them, restart them, and a pass submits
+only what is missing. Two CSCS passes running AT ONCE are another matter: each
+reads the queue once, so both would submit the same jobs (2026-10-08: 231
+evals twice, CLAUDE.md #15). Every real pass therefore takes a lock on the
+shared filesystem, `/iopsstor/scratch/cscs/$USER/logs/auto_evals/watcher.lock`
+(per `--group`; `AUTO_EVALS_LOCK_DIR` overrides the directory), and refuses
+to start while a live pass holds it, on this login node or any other.
+`--dry-run` takes no lock. `--stop` stops the holder from any node — SIGTERM
+on its own node, a stop file it reads within a minute elsewhere — and waits
+for the lock to go; a holder that died is taken over on the next start. As a
+second guard, each sbatch is preceded by `squeue -h -n <job>`.
 
 - **CSCS** — [`auto_evals_cscs.py`](auto_evals_cscs.py) scans the checkpoint
   tree each pass and, per due checkpoint: submits a
@@ -563,7 +575,8 @@ nothing duplicates.
 
   ```bash
   python3.11 auto_evals_cscs.py --dry-run       # preview one pass
-  python3.11 auto_evals_cscs.py --watch 600     # tmux: a pass every 10 min
+  python3.11 -u auto_evals_cscs.py --watch 1800 # a pass every 30 min, one per user
+  python3.11 auto_evals_cscs.py --stop          # stop it, from any login node
   python3.11 auto_evals_cscs.py --retry-held    # after fixing a root cause
   # every auto language, not only the trained ones — always filter it:
   # unfiltered, one pass submits ~1,300 eval jobs (2026-09-13)

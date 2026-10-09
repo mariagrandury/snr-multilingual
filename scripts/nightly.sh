@@ -136,31 +136,19 @@ do_evals() {
     # pre-move capstor path for three hours after the fix landed, splitting
     # msnr-hf-models across two trees. Restarting nightly is what guarantees
     # the running watcher matches the code on disk.
-    # -u $USER, or pgrep matches a collaborator's watcher too. And the pattern
-    # insists on a python process: a plain `-f "auto_evals_cscs.py --watch"`
-    # also matches any SHELL whose command line happens to contain that string
-    # — it matched this session's own `bash -c` while being tested, and killing
-    # that is not what "restart the watcher" means.
-    local pat=${WATCHER_PAT:-'python[0-9.]* +[^ ]*auto_evals_cscs\.py +--watch'}
-    local olds
-    olds=$(pgrep -u "$USER" -f "$pat" 2>/dev/null || true)
-    if [ -n "$olds" ]; then
-        say "stopping $(wc -w <<<"$olds") running watcher(s): $(tr '\n' ' ' <<<"$olds")"
-        # shellcheck disable=SC2086
-        kill $olds 2>/dev/null
-        sleep 5
-        olds=$(pgrep -u "$USER" -f "$pat" 2>/dev/null || true)
-        if [ -n "$olds" ]; then
-            # Do NOT start another: "restart" that leaves the old one running
-            # is how you get two watchers, which is the thing this prevents.
-            # Not escalating to SIGKILL either — a watcher mid-submit is the
-            # user's to kill, and tomorrow's pass will try again.
-            say "ERROR: still alive after SIGTERM: $(tr '\n' ' ' <<<"$olds") —"
-            say "       refusing to start a second watcher; kill it by hand"
-            FAILED+=("watcher would not stop"); return
-        fi
-    else
-        say "no watcher was running"
+    # Through the watcher's own lock, not `pgrep`: pgrep sees this login node
+    # only, and the timer may fire on ln001 while the watcher runs on ln004 —
+    # on 2026-10-08/09 two watchers on one node submitted the same 231 evals.
+    # `--stop` finds the holder wherever it runs: SIGTERM if it is on this
+    # node, a stop file it reads within a minute otherwise (ssh cannot reach
+    # another login node from here), and it waits for the lock to go.
+    local wlog=$LOG_DIR/$STAMP.watcher.log wpid
+    cd "$REPO/src" || { FAILED+=("cannot cd to $REPO/src"); return; }
+    if ! "$PY" -u pretrain/auto_evals_cscs.py --stop "${WATCHER_STOP_WAIT:-900}" >>"$LOG" 2>&1; then
+        # Do NOT start another: it would refuse at the lock anyway, and a
+        # holder that ignores its stop file is the user's to look at.
+        say "ERROR: the running watcher did not stop (see above) — not restarting it"
+        FAILED+=("watcher would not stop"); cd "$REPO" || true; return
     fi
 
     say "starting a fresh watcher (SBATCH_PARTITION=preemptable, --watch 1800)"
@@ -170,10 +158,11 @@ do_evals() {
     # shell's, and a piped caller never sees EOF. Background setsid alone, and
     # disown it so nothing waits. setsid/nohup/env are all exec-chains, so $!
     # is the python process itself.
-    local wlog=$LOG_DIR/$STAMP.watcher.log wpid
-    cd "$REPO/src" || { FAILED+=("cannot cd to $REPO/src"); return; }
-    setsid nohup env SBATCH_PARTITION=preemptable \
-        "$PY" pretrain/auto_evals_cscs.py --watch 1800 >>"$wlog" 2>&1 &
+    # -u / PYTHONUNBUFFERED: block-buffered into a file, a killed watcher
+    # loses up to 8 KB of unwritten output (the 2026-10-06..09
+    # $STAMP.watcher.log files are all 0 bytes).
+    setsid nohup env SBATCH_PARTITION=preemptable PYTHONUNBUFFERED=1 \
+        "$PY" -u pretrain/auto_evals_cscs.py --watch 1800 >>"$wlog" 2>&1 &
     wpid=$!
     disown "$wpid" 2>/dev/null
     cd "$REPO" || true
@@ -183,7 +172,7 @@ do_evals() {
         NOTES+=("watcher pid $wpid, log $wlog")
         say "watcher up (pid $wpid): $(tr '\0' ' ' < /proc/$wpid/cmdline 2>/dev/null | cut -c1-70)"
     else
-        say "ERROR: the watcher died within 3s — see $wlog"
+        say "ERROR: the watcher died within 3s — see $wlog (a lock refusal names the holder)"
         FAILED+=("watcher did not start")
     fi
 }
@@ -326,7 +315,7 @@ if (( DRY )); then
     echo "status:      $STATUS"
     if [ "$MODE" = evals ]; then
         echo "would run    bash evals/scripts/launch_bpb.sh"
-        echo "would kill   any auto_evals_cscs.py --watch of $USER, then start one fresh"
+        echo "would stop   the lock holder (auto_evals_cscs.py --stop, any login node), then start one fresh"
     else
         echo "would run    $PY pretrain/ladder_report.py --plot --publish --push-hf --push-git"
         echo "then         install the report (fetch if the push landed, local copy if not) + cmp"

@@ -36,7 +36,7 @@ reintroduces the drift this design removed.
 | `launch_pretraining_azure.sh` | `azure/get_megatron.sh` checkout, MBS auto-shrink to GPU count, torchrun |
 | `launch_trainings.py` | **the grid** (`LADDER`, `LANG_SETTINGS`, `DATA_SCHEMES`, `SEED_TRIPLES` — every other tool imports them from here) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
 | `pretrain_progress.py` | CSCS per-cell actions (`done/fresh/resume/corrupt` — the same `cell_action` the launcher uses) + `--is-valid` CLI + the plan table and three heatmaps (`--plot`): planned runs, finished models, and eval work outstanding. `--plot` also rewrites the generated grid block in README.md and the plan doc, so the figures and counts cannot drift from the constants in `launch_trainings.py`. `--plot`, every launch and every watcher pass also write `pretrain_progress_1b_17b.md` (per 1B/1.7B run of any account: data read, checkpoint, job, jobs left; then the launch commands). |
-| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (the ten tenths of training on the run's own save grid — `due_iters` — plus the k/20 points of the noise window, 85 % and 95 %, and the final: 12 per run at every size; the FLOPs-milestone add-on decided 09-02 is not implemented yet) submits convert-snr then evaluate.sbatch (one eval worker per GPU, results per task, so a killed job resumes on the next pass with only the missing tasks; `--max-attempts` holds back tasks that keep failing, `--retry-held` frees them for one pass after you fix the cause — the reason shown is the task's own, or its job log's only when that log belongs to the same run and family (../evals/CLAUDE.md "A second opinion from the wrong job's log"); `--all-languages` swaps a cell's trained languages for every language any task is tagged with; `--reformulated` was removed on 2026-10-03, after its groups were retired on 2026-09-23 (the twins are in `auto`, the candidates in `auto_probe`); `--size` filters, default `EVAL_SIZES` = the whole ladder, 90M included since its batch-84 retrain of 2026-09-23); needs models.json entries (`sync_models_json.py`) |
+| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (the ten tenths of training on the run's own save grid — `due_iters` — plus the k/20 points of the noise window, 85 % and 95 %, and the final: 12 per run at every size; the FLOPs-milestone add-on decided 09-02 is not implemented yet) submits convert-snr then evaluate.sbatch (one eval worker per GPU, results per task, so a killed job resumes on the next pass with only the missing tasks; `--max-attempts` holds back tasks that keep failing, `--retry-held` frees them for one pass after you fix the cause — the reason shown is the task's own, or its job log's only when that log belongs to the same run and family (../evals/CLAUDE.md "A second opinion from the wrong job's log"); `--all-languages` swaps a cell's trained languages for every language any task is tagged with; `--reformulated` was removed on 2026-10-03, after its groups were retired on 2026-09-23 (the twins are in `auto`, the candidates in `auto_probe`); `--size` filters, default `EVAL_SIZES` = the whole ladder, 90M included since its batch-84 retrain of 2026-09-23); needs models.json entries (`sync_models_json.py`). One real pass at a time per user and `--group`, across login nodes: a shared-filesystem lock (#15), `--stop` from any node |
 | `sync_models_json.py` | upserts one models.json entry per grid cell — conversion + W&B push resolve through it |
 |  `auto_evals_azure.py` | Azure watcher: same due rule against blob storage |
 
@@ -597,6 +597,48 @@ refuses an `apertus` config whose `hidden_act` is not `xielu`. Lesson: a
 reload into a class with no slot for a weight is a warning, not an error, so
 read `output_loading_info`.
 
+### 15. Two watchers submit everything twice (2026-10-08/09)
+A pass reads the queue ONCE (`active_jobs()`) and dedupes every submission
+against that snapshot, so two passes that start together each see the other's
+work as missing. On 2026-10-08 a hand-started `auto_evals_cscs.py --watch 1800`
+and the one `launch_trainings.py` spawned ran side by side on ln001; at 23:00
+both submitted the same 231 evals and 3 conversions within one second. The
+second copies burned 99.5 node-hours before 165 of them were cancelled, and
+with two smaller bursts earlier that day (17:00, 19:00) and one on 10-07,
+275 jobs went out twice since 10-07 at 121 node-hours (sacct, pairs of one name
+submitted < 10 min apart). The same had happened twice on ln004. The guards
+were `pgrep`, in the launcher and in `nightly.sh`, which see one login node;
+`$HOME` and `/iopsstor` are shared by all of them, so neither the timer nor the
+launcher could see a watcher on another node. Per-task idempotency does not
+save it: both copies start before either has a result, so both run every task.
+
+The fix is nightly.sh's lock, on the watcher itself (`take_lock`): every real
+pass, one-shot or `--watch`, mkdirs
+`/iopsstor/scratch/cscs/$USER/logs/auto_evals/watcher[-<group>].lock`
+(`AUTO_EVALS_LOCK_DIR` overrides) holding `host pid start ttl`, and refuses to
+start, naming the holder, while it is live. A holder on the same node is live
+iff `/proc/<pid>/cmdline` is this script (a dead or reused pid is stale); one
+on another node is live until its `heartbeat` file, touched before every cell
+and every minute of the sleep, is older than its ttl (3 × the watch interval).
+A stale lock is taken over. SIGTERM (and SIGHUP, unless nohup ignores it)
+unwinds through atexit, which removes the lock only if it is still ours.
+One-shot passes take it too, rather than only refusing while a watcher runs:
+"refuse" alone still lets two one-shots, or a one-shot and a watcher started a
+second later, overlap; `--dry-run` takes no lock (it submits nothing). The lock
+is per user and per `--group`: a probe pass names its jobs differently, and a
+collaborator's watcher is hers to run. Another node's watcher cannot be
+killed from here, so `--stop` writes a `stop` file naming the holder, which
+exits at its next heartbeat (within a minute while idle, after the current
+cell mid-pass), plus SIGTERM when the holder is on this node; it then waits
+for the lock to go. `nightly.sh evals` restarts the watcher through it, and
+the launcher starts one only when no live holder exists. Second guard:
+`submit_eval`/`submit_convert` re-ask `squeue -h -n <job>` immediately before
+each sbatch (`already_queued`), so even two passes that slip past the lock
+collide only within that one call. Every spawned watcher runs `-u` /
+`PYTHONUNBUFFERED=1`: block-buffered into a file, a killed one loses up to
+8 KB of unwritten output (the nightly `*.watcher.log` files of 10-06..09 are
+all empty), so its log cannot say how far it got.
+
 ---
 
 ## Live state (read, don't trust snapshots)
@@ -606,6 +648,11 @@ read `output_loading_info`.
 python3.11 pretrain_progress.py            # what a re-launch would do; --plot for heatmaps
 python launch_trainings.py cscs --dry-run  # first
 python launch_trainings.py cscs            # then for real (skips done/active, resumes partial)
+
+# CSCS: the eval watcher. One per user, across every login node (#15)
+python3.11 -u auto_evals_cscs.py --watch 1800   # refuses if one is already running
+python3.11 auto_evals_cscs.py --stop            # stop it, whichever node it is on
+cat /iopsstor/scratch/cscs/$USER/logs/auto_evals/watcher.lock/owner   # who holds it
 
 # Azure: watcher submits convert+eval as checkpoints land (one per workspace)
 source azure/env.sh && python auto_evals_azure.py --watch 600
