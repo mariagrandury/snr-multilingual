@@ -14,7 +14,7 @@
 ## Highlighted result
 
 - **The benchmarks that separate the language settings most: `cultural_bench_easy`, `bbpb_bbh_cloze`, `bbpb_bbh_mcq`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1.7B.
-- **Above-random gate.** Of **1679 benchmarks, 997 clear chance at ≥1 size** and 954 at 1.7B (682 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
+- **Above-random gate.** Of **1693 benchmarks, 981 clear chance at ≥1 size** and 940 at 1.7B (712 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
 <!-- END auto:highlight -->
 
 ## Setup
@@ -113,11 +113,11 @@ An educational reading of the rule above on one benchmark-language task (the gat
 Key findings:
 
 - `include_v2_og_hungarian_hungary` has 4 options (0.25 chance) and 1,386 items, so a single run needs 0.270 (+0.020 over chance) for its LCB to clear chance; at n = 1,386 the bound sits 0.019 below the score.
-- Verdict per size (runs passing / runs that train the language, ≥ 50% needed): 90M 1/11 → at chance, 175M 5/11 → at chance, 350M 6/11 → above, 600M 5/10 → above, 1B 6/10 → above, 1.7B 8/10 → above; the task enters every RQ from **350M** on and is grey below it.
-- What that means in rq02 (panel c): a DA-size cell needs the proxy and the reference above chance, so `include_v2_og_hungarian_hungary` contributes only the 350M → 1.7B, 600M → 1.7B, 1B → 1.7B DA-size cell(s); a DA-ckpt cell needs the run's own size above chance, so it contributes only the 350M, 600M, 1B, 1.7B run(s). 4 of 11 cells are blanked; the task is never a decision at 90M, 175M.
+- Verdict per size (runs passing / runs that train the language, ≥ 50% needed): 90M 1/11 → at chance, 175M 5/11 → at chance, 350M 6/11 → above, 600M 5/11 → at chance, 1B 6/10 → above, 1.7B 8/10 → above; the task enters every RQ from **350M** on and is grey below it.
+- What that means in rq02 (panel c): a DA-size cell needs the proxy and the reference above chance, so `include_v2_og_hungarian_hungary` contributes only the 350M → 1.7B, 1B → 1.7B DA-size cell(s); a DA-ckpt cell needs the run's own size above chance, so it contributes only the 350M, 1B, 1.7B run(s). 6 of 11 cells are blanked; the task is never a decision at 90M, 175M, 600M.
 - The highlighted run `lm-350M-L30-deep-seed1904` ends at 0.258 with LCB 0.239: not above chance — a score above the dotted line is not enough, the band's lower edge has to be.
-- Population: 63 runs over 6 sizes (rule 2: only the runs that train the language count; a run scored on a language it never saw sits at chance and would drag the share down). The six runs of a size answer the same items, so their verdicts are correlated, not six independent trials.
-- What the gate is not: chance is uniform guessing (1/4), so a run that always picks the majority gold label is not caught (on `include_v2_og_hungarian_hungary` that scores the majority label's share, above 0.25); and the gate is not a filter on DA — it blanks a cell by the gate alone, whatever the DA there (DA-size per proxy: 90M 0.56 gated; 175M 0.69 gated; 350M 0.40; 600M 0.64; 1B 0.56).
+- Population: 64 runs over 6 sizes (rule 2: only the runs that train the language count; a run scored on a language it never saw sits at chance and would drag the share down). The six runs of a size answer the same items, so their verdicts are correlated, not six independent trials.
+- What the gate is not: chance is uniform guessing (1/4), so a run that always picks the majority gold label is not caught (on `include_v2_og_hungarian_hungary` that scores the majority label's share, above 0.25); and the gate is not a filter on DA — it blanks a cell by the gate alone, whatever the DA there (DA-size per proxy: 90M 0.56 gated; 175M 0.69 gated; 350M 0.40; 600M 0.64 gated; 1B 0.56).
 
 Follow-ups:
 
@@ -280,6 +280,106 @@ What the gate leaves open — whether the at-chance families are unreadable
 for any model of these sizes or only for this ladder — is figure 4; whether
 the format is the cause is figure 3.
 
+### 1a. Every benchmark we considered, the screened ones included
+
+Figure 1 and the counts above are the analysed population, the `auto` group.
+We also screened other benchmarks and did not adopt them: the `auto_probe`
+benchmarks outside `auto` and the `discarded` group. They were evaluated only
+on the final checkpoint of the 600M, 1B and 1.7B cells (the probe jobs of
+2026-09-22 on, `auto_evals_cscs.py --group auto_probe --size 600M,1B,1.7B
+--final-only`; `../rq00_task_reformulation/probe.sh` gates them), and of six
+3B cells (deep L8, L15, L30 and L50, scheme-B L8 and L15, iteration 145200)
+from the 2026-10-09 probe jobs on, so this variant reads them at
+`utils.PROBE_SIZES` (600M, 1B, 1.7B and 3B) where the probe gate has a
+result, on the runs that train each task's language, and marks them apart
+from the analysed ones. A size without a probe result has no verdict, never
+a fail: until the 3B jobs land and `probe.sh` re-runs the probe gate (with
+`--above-reference`, the 3B column), every output is the 600M to 1.7B one.
+The analysed group stays at 90M to 1.7B (rule 10), so the all-considered row
+is read at 600M, 1B and 1.7B alone. `discarded` keeps its definition (at
+chance at 1B and at 1.7B, `utils.DISCARD_SIZES`, the rule `configs/tasks.json`
+was built with); with a 3B column `gate_screened_verdicts_all_considered.csv`
+adds per screened task `discard_rule`, `fails_600M` and `passes_3B`, so the
+tasks at chance at 1B and 1.7B that clear it at 3B, and those a 600M pass
+would keep, can be listed.
+
+**The nine benchmarks promoted into `auto` on 2026-10-09** (`plan/probe-promotion-2026-10-09.md`:
+rf_m_mmlu, rf_mmmlu, kobest, multiblimp-extra, noreval, toksuite, piqa,
+winogrande, boolq) are not analysed until their ladder evals land: rule 3
+reads a task along the run at the ten tenths, and these have the probe's
+final checkpoints alone (piqa, winogrande and boolq have no result at all).
+`utils.pending_benchmarks()` holds an `auto` benchmark out of the analysed
+group until at least half the seed-1904 cells that score it do so at ten
+checkpoints or more in the ladder report; until then this variant counts a
+probed one with the screened benchmarks (it was screened, and its verdicts
+are the probe's) and leaves an unevaluated one out, and the paper's counts
+(`make_appendix_tables.py`) do the same. It moves on its own as the ladder
+evals arrive. It is
+built in the shared layer (`utils.considered_tasks`, `above_random.considered_gate`)
+and no pool reads it: the DA and SNR populations stay on `auto`, and the
+canonical figures and tables of figure 1 are unchanged. Snapshot: the
+canonical gate of the 2026-10-09 04:46 refresh and the probe gate written by
+`probe.sh` on 2026-10-09 with `configs/tasks.json` as landed at 14:35 (no 3B
+column yet).
+
+<!-- BEGIN auto:considered (panels.py --pool predictivity) -->
+## Every considered benchmark, the screened ones included
+
+**Pool `predictivity` (seed 1904), the same gate; a cell is read on the runs that train the task's language.** Analysed = the `auto` group at every size (the canonical tables above). Screened = the `auto_probe` benchmarks outside `auto`, and discarded = the `discarded` group: both evaluated on the final checkpoint of the 1B and 1.7B cells only (`rq00_task_reformulation/probe.sh`, gate tables in `utils.PROBE_GATE_DIR`), so their columns below 1B are empty and the all-considered row is read at those two sizes. Tasks without a chance level have no verdict. No pool reads this variant: the DA and SNR populations stay on `auto`. Regenerate with `python analysis/rq00_gate_and_curves/panels.py --paper`.
+
+| group | format | benchmarks | tasks | 90M | 175M | 350M | 600M | 1B | 1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| Analysed | original | 30 | 577 | 166 / 577 | 178 / 577 | 201 / 577 | 221 / 577 | 253 / 577 | 279 / 577 |
+| Analysed | RF | 8 | 169 | 76 / 169 | 91 / 169 | 101 / 169 | 120 / 169 | 130 / 169 | 139 / 169 |
+| Analysed | LLM-RF | 2 | 95 | 69 / 95 | 71 / 95 | 75 / 95 | 80 / 95 | 85 / 95 | 89 / 95 |
+| Analysed | all | 40 | 841 | 311 / 841 | 340 / 841 | 377 / 841 | 421 / 841 | 468 / 841 | 507 / 841 |
+| Screened, not adopted | original | 41 | 466 |  |  |  |  | 321 / 466 | 332 / 466 |
+| Screened, not adopted | RF | 7 | 44 |  |  |  |  | 39 / 44 | 43 / 44 |
+| Screened, not adopted | all | 48 | 510 |  |  |  |  | 360 / 510 | 375 / 510 |
+| Discarded | original | 9 | 100 |  |  |  |  | 0 / 100 | 0 / 100 |
+| All considered | all | 90 | 1451 |  |  |  |  | 828 / 1451 | 882 / 1451 |
+
+![Every considered benchmark against the gate](pretraining/predictivity/first_size_share_all_considered_paper.png)
+
+Files: [`gate_pass_counts_all_considered.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/gate_pass_counts_all_considered.csv) / [`.tex`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/gate_pass_counts_all_considered.tex), [`first_size_share_all_considered_paper.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/first_size_share_all_considered_paper.png) / [`.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/first_size_share_all_considered_paper.csv).
+<!-- END auto:considered -->
+
+**Key findings** (`gate_pass_counts_all_considered.csv`, `first_size_share_all_considered_paper.csv`)
+
+- **We considered 90 benchmarks with a chance level, 1,451 tasks on the 50
+  trained languages.** 40 are analysed (841 tasks), 48 were screened and not
+  adopted (510 tasks) and 9 hold the 100 `discarded` tasks (7 of them share a
+  benchmark with screened tasks; HAE-RAE Bench and TurkishMMLU are discarded
+  whole). With the tasks that have no chance level (LAMBADA, MELA, XQuAD and
+  the f1 tasks) the count is 92 benchmarks and 1,485 tasks.
+- **Most screened tasks did not fail the gate.** 360 of 510 (71 %) pass at
+  1B and 375 (74 %) at 1.7B, 354 at both and 129 at neither. They were not
+  adopted for cost, redundancy with an analysed benchmark, or a pending
+  decision (`plan/probe-promotion-2026-10-09.md`), not because the gate
+  rejected them. All 100 discarded tasks fail at both sizes.
+- **Over everything considered the gate keeps 828 of 1,451 tasks (57 %) at
+  1B and 882 (61 %) at 1.7B,** against 468 and 507 of the 841 analysed (56 %,
+  60 %).
+- **The format effect holds on the screened set.** At 1.7B the RF twins pass
+  43 of 44 screened tasks (98 %) against 332 of 466 originals (71 %); among
+  the analysed tasks RF passes 139 of 169 (82 %), LLM-RF 89 of 95 (94 %) and
+  the originals 279 of 577 (48 %).
+- **13 benchmarks never pass at 1.7B, eight of them multiple-choice
+  knowledge exams** (ArabicMMLU, CareQA, C-Eval, MMMLU, the OALL Arabic MMLU
+  and EXAMS, TurkishMMLU, HAE-RAE Bench), with ACVA (OALL), Bangla, the
+  FrenchBench extra RF twin, TruthfulQA (mc1) and TruthfulQA-Multi (mc2). 21
+  screened benchmarks pass in every task at 1.7B, among them the RF twins of
+  MMLU (Okapi), ArabicMMLU and CareQA, whose letter originals pass in 1 of 27,
+  0 of 1 and 0 of 1 tasks.
+
+**Follow-ups**
+
+- Re-run the probe gate after the next refresh: the discarded verdicts are
+  re-read here on trained runs from the 2026-10-08 probe tables, and the
+  `lm-1.7B-L8-swiglu-seed1904` cell finished after the probe ran.
+- The 1B and 1.7B levels of the screened panel are not comparable with the
+  analysed panel's: a screened task at 1B may already pass at 600M.
+
 ### 1b. The early passes: a constant answer, the longest option, or a related language?
 
 Figure 1 found CulturalBench-easy above chance at 90M and at chance from 175M on, and the token curves (`../rq00_chance_vs_train_tokens`) show a few tasks above chance at very small token counts of their language and at chance at intermediate ones. The paper names two candidate causes, a preference for the longest option early in training and the tokens of a related language; the letter bias suspected above is a third. The table tests the three on the stored per-option log-likelihoods and on the all-language evaluation of the deep scheme-A ladder.
@@ -367,12 +467,12 @@ Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00
 
 | options | chance | above ≥1 size | above @1.7B |
 |---|---|---|---|
-| 2 | 0.50 | 314 / 416 | 309 / 416 |
-| 3 | 0.33 | 24 / 33 | 22 / 33 |
-| 4 | 0.25 | 611 / 1141 | 577 / 1141 |
-| 5 | 0.20 | 16 / 46 | 15 / 46 |
-| 6 | 0.17 | 28 / 31 | 28 / 31 |
-| 7 | 0.14 | 1 / 7 | 1 / 7 |
+| 2 | 0.50 | 313 / 423 | 308 / 423 |
+| 3 | 0.33 | 23 / 31 | 21 / 31 |
+| 4 | 0.25 | 603 / 1121 | 572 / 1121 |
+| 5 | 0.20 | 35 / 75 | 33 / 75 |
+| 6 | 0.17 | 1 / 4 | 1 / 4 |
+| 7 | 0.14 | 3 / 34 | 3 / 34 |
 | 8 | 0.12 | 2 / 2 | 1 / 2 |
 | 10 | 0.10 | 0 / 2 | 0 / 2 |
 | 12 | 0.08 | 1 / 1 | 1 / 1 |
@@ -519,7 +619,7 @@ rule on 1,169 of its 1,171 cells), not the Wilson gate the auto block names.*
 <!-- BEGIN auto:above-random-external (above_random_external.py --pool predictivity) -->
 ## Benchmark floors: the ladder's gate against the public models'
 
-Of the 73 tasks both tiers score, 27 are at chance at every ladder size. Where the external models (270M–70B, every release the external tier holds, base and post-trained, same gate) first read them: ≤ 600M 8, 1B–1.7B 16, 3B–4B 0, 7B–14B 1, ≥ 27B 0, never 2. A task readable at ≤ 1.7B by a public model is a size/recipe floor (the 5×-Chinchilla ladder does not reach it; public models of that size train on 10–36 T tokens); a task that needs ≥ 3B or is never read is a benchmark or language-resource floor. "Never reads" is the gate's verdict: at every ladder size fewer than 50% of the size's runs that train the task's language clear the one-sided 95 % Wilson bound over chance; single runs may clear it. Overlap is the 36-sweep's 86-task list only, less the 25 tasks in a language no ladder cell trains at some size (there the gate reads untrained runs, a transfer measurement, rule 2). Regenerate with `python analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity`.
+Of the 73 tasks both tiers score, 27 are at chance at every ladder size. Where the external models (270M–70B, every release the external tier holds, base and post-trained, same gate) first read them: ≤ 600M 8, 1B–1.7B 16, 3B–4B 0, 7B–14B 1, ≥ 27B 0, never 2. A task readable at ≤ 1.7B by a public model is a size/recipe floor (the 5×-Chinchilla ladder does not reach it; public models of that size train on 10–36 T tokens); a task that needs ≥ 3B or is never read is a benchmark or language-resource floor. "Never reads" is the gate's verdict: at every ladder size fewer than 50% of the size's runs that train the task's language clear the one-sided 95 % Wilson bound over chance; single runs may clear it. Overlap is the 36-sweep's 86-task list only, less the 26 tasks in a language no ladder cell trains at some size (there the gate reads untrained runs, a transfer measurement, rule 2). Regenerate with `python analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity`.
 
 | family | ≤ 600M | 1B–1.7B | 3B–4B | 7B–14B | ≥ 27B | never |
 |---|---|---|---|---|---|---|
@@ -833,6 +933,18 @@ Headline numbers from the `custom_swissai_hf` pool (Signal) and the `custom` abo
 - `pretraining/predictivity/early_passes.{csv,tex}`, `early_passes_runs.csv` —
   the tasks that pass at very few tokens and fail later, tested for a constant
   answer, the longest option and a related language (`early_passes.py`, section 1b).
+- `pretraining/predictivity/gate_pass_counts_all_considered.{csv,tex}`,
+  `first_size_share_all_considered_paper.{png,csv}`: the gate over every
+  benchmark we considered, the screened and discarded ones at 1B and 1.7B
+  (and 3B once the 3B probe results are in the probe gate) beside the
+  analysed ones (`panels.py`, section 1a; read from `utils.PROBE_GATE_DIR`
+  for the screened tasks); with a 3B column also
+  `gate_screened_verdicts_all_considered.csv` (`discard_rule`, `passes_3B`).
+- `majority_chance/` — the majority-class chance sensitivity (`majority_chance.py`, section 1c):
+  `majority_baselines.csv` (per task: items, majority baseline, its index, whether the
+  answer positions carry fixed labels), the rerun gate under `gate/pretraining/predictivity/`,
+  `majority_pass_counts.csv`, `majority_flips.csv`, `majority_by_benchmark.csv`,
+  `majority_downstream.csv`, and `majority_chance{,_paper}.{png,csv}`.
 - Scripts: `above_random.py` (gate), `run_apertus.py` (accuracy vs FLOPs,
   Signal), `curves.py`, `panels.py`, `above_random_external.py`,
-  `above_random_example.py`, `early_passes.py`.
+  `above_random_example.py`, `early_passes.py`, `majority_chance.py`.

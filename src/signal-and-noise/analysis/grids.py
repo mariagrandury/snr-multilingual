@@ -75,6 +75,21 @@ PAPER_NAMES = {
     "acp_bench_mcq": "ACP-Bench (MCQ)", "acp_bench_cloze": "ACP-Bench (cloze)", "cultural_bench_easy": "CulturalBench-easy",
     "cultural_bench_hard": "CulturalBench-hard", "blend_sample": "BLEnD", "mathqa": "MathQA", "openbookqa": "OpenBookQA",
     "toxigen": "ToxiGen", "bbq": "BBQ", "bpb": "BPB", "loss": "training loss",
+    # the screened benchmarks (`auto_probe` outside `auto`, and `discarded`): rq00's "all considered" variant
+    "arabicmmlu": "ArabicMMLU", "bangla": "Bangla", "blimp_nl": "BLiMP-NL", "careqa": "CareQA", "ceval": "C-Eval",
+    "copal_id": "COPAL-ID", "evalita_llm": "EVALITA-LLM", "evalita_llm_extra": "EVALITA-LLM (extra)",
+    "french_bench": "FrenchBench", "french_bench_extra": "FrenchBench (extra)", "haerae": "HAE-RAE Bench",
+    "headqa": "HEAD-QA", "ibero_arc": "ARC (IberoBench)", "ibero_cola": "CoLA (IberoBench)",
+    "ibero_copa": "COPA (IberoBench)", "ibero_nli": "NLI (IberoBench)", "ibero_openbookqa": "OpenBookQA (IberoBench)",
+    "ibero_paraphrase": "Paraphrase (IberoBench)", "ibero_piqa": "PIQA (IberoBench)", "ibero_siqa": "SIQA (IberoBench)",
+    "ibero_truthfulqa": "TruthfulQA (IberoBench)", "kmmlu": "KMMLU", "kobest": "KoBEST", "m_mmlu": "MMLU (Okapi)",
+    "m_truthfulqa_mc1": "TruthfulQA mc1 (Okapi)", "m_truthfulqa_mc2": "TruthfulQA mc2 (Okapi)", "mela": "MELA",
+    "mmmlu": "MMMLU", "multiblimp-extra": "MultiBLiMP (extra)", "noreval": "NorEval", "noreval_extra": "NorEval (extra)",
+    "oall_acva": "ACVA (OALL)", "oall_alghafa": "AlGhafa (OALL)", "oall_arabic_mmlu": "Arabic MMLU (OALL)",
+    "oall_exams": "Arabic EXAMS (OALL)", "oall_mt": "AlGhafa translated (OALL)", "toksuite": "TokSuite",
+    "toksuite_math": "TokSuite math", "toksuite_stem": "TokSuite STEM", "truthfulqa-multi_mc2": "TruthfulQA-Multi (mc2)",
+    "truthfulqa_mc1": "TruthfulQA (mc1)", "turblimp": "TurBLiMP", "turkishmmlu": "TurkishMMLU", "xquad": "XQuAD",
+    "zhoblimp": "ZhoBLiMP",
 }
 _TWIN_NAMES = {"rf": "RF", "rfgm": "LLM-RF", "bbpb": "bBPB"}
 

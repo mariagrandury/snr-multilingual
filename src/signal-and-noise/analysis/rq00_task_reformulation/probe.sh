@@ -14,6 +14,10 @@
 #   above_random          the gate, over every task in the report; with
 #                         SNR_TRAINED_GROUPS the multilingual candidates are
 #                         read on the cells that trained their language.
+#                         --above-reference adds the 3B column (final
+#                         checkpoint of the 3B cells; empty until their
+#                         probe evals land), read by rq00's "all considered"
+#                         variant at utils.PROBE_SIZES.
 #                         Written to $PROBE_GATE, NOT the canonical tables:
 #                         this gate counts the probe as trained and reads the
 #                         fresh local report, and until 2026-10-08 it replaced
@@ -42,7 +46,7 @@ cd "$ROOT"
 echo ">>> n_items";            $PY src/evals/scripts/derive_task_options.py --only-missing
 echo ">>> ladder report";      $PY src/pretrain/ladder_report.py --check benchmarks --plot
 cd src/signal-and-noise
-echo ">>> gate";               SNR_GATE_DIR=$PROBE_GATE $PY analysis/rq00_gate_and_curves/above_random.py --only predictivity
+echo ">>> gate";               SNR_GATE_DIR=$PROBE_GATE $PY analysis/rq00_gate_and_curves/above_random.py --only predictivity --above-reference
 echo ">>> original vs rf";     $PY analysis/rq00_task_reformulation/compare.py --tag probe --families "$FAMILIES"
 echo ">>> survivors";          SNR_GATE_DIR=$PROBE_GATE $PY analysis/rq00_task_reformulation/probe_survivors.py
 echo ">>> rules";              $PY analysis/check_rules.py

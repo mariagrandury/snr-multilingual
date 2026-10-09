@@ -16,6 +16,7 @@ higher-numbered one's OUTPUT belongs here instead.
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from functools import lru_cache
@@ -805,6 +806,72 @@ def auto_tasks() -> frozenset[str]:
     from pretrain import ladder_report as lr
     benchmarks = [b for g in os.environ.get("SNR_TRAINED_GROUPS", "auto").split(",") for b in lr.auto_benchmarks(g.strip())]
     return frozenset(lr.tasks_for_benchmarks(benchmarks, lr.eval_languages(1, "A", all_languages=True)))
+
+
+# The probe screen (rq00_task_reformulation/probe.sh): its gate tables sit
+# outside the repo, and its verdicts are read on the final checkpoint of the
+# 600M, 1B, 1.7B and 3B cells (PROBE_SIZES: the probe jobs ran `--size
+# 600M,1B,1.7B --final-only` from 2026-09-22 on, the six 3B ones on
+# 2026-10-09; probe.sh runs the gate with `--above-reference` so the 3B
+# column exists at all). The `discarded` rule stays at DISCARD_SIZES, the
+# rule configs/tasks.json was built with: a task leaves the screen when it is
+# at chance at 1B and at 1.7B, whatever 600M or 3B says. A size with no probe
+# result (3B until the six 3B probe jobs land) has no row, never a fail.
+PROBE_GATE_DIR = Path(os.environ.get("SNR_PROBE_GATE_DIR") or "/iopsstor/scratch/cscs/mariagrandury/snr-probe-gate")
+DISCARD_SIZES = ("1B", "1.7B")
+PROBE_SIZES = ("600M", *DISCARD_SIZES, "3B")
+CONSIDERED_GROUPS = ("auto", "probe", "discarded")
+
+
+@lru_cache(maxsize=None)
+def pending_benchmarks() -> frozenset[str]:
+    """The `auto` benchmarks not analysed yet: in the group, but fewer than
+    half the seed-1904 cells that score any of their tasks in the ladder
+    report do so at ten checkpoints or more (rule 3 reads a task along the
+    run, at the ten tenths), or no cell scores them at all. On 2026-10-09
+    these are the nine promoted that day: rf_m_mmlu, rf_mmmlu, kobest,
+    multiblimp-extra, noreval and toksuite with the probe's final checkpoints
+    alone, piqa, winogrande and boolq with no result. It empties on its own
+    as their ladder evals land. Only rq00's "all considered" variant
+    (`considered_tasks`) and the paper's counts (make_appendix_tables.py) read
+    it; rule 2's trained set (`auto_tasks`) does not."""
+    from pretrain import ladder_report as lr
+    from snr.download.ladder import ladder_dir
+    path = ladder_dir() / "ladder_report.csv"
+    head = set(pd.read_csv(path, nrows=0).columns)
+    langs = lr.eval_languages(1, "A", all_languages=True)
+    cols = {b: [f"bench__{t}" for t in lr.tasks_for_benchmarks([b], langs) if f"bench__{t}" in head]
+            for b in lr.auto_benchmarks("auto")}
+    df = pd.read_csv(path, usecols=["cell", "seed", "iter", *{c for v in cols.values() for c in v}], low_memory=False)
+    df = df[df["seed"] == GRID_SEED]
+    pending = set()
+    for b, c in cols.items():
+        n = df[df[c].notna().any(axis=1)].groupby("cell")["iter"].nunique() if c else pd.Series(dtype=int)
+        if not len(n) or (n >= len(SHARED_FRACS)).mean() < 0.5:
+            pending.add(b)
+    return frozenset(pending)
+
+
+@lru_cache(maxsize=None)
+def considered_tasks() -> dict[str, str]:
+    """Every benchmark task the study considered, in every language, mapped to
+    its group: `auto` (`auto_tasks`, the analysed population, less the
+    `pending_benchmarks`), `probe` (the `auto_probe` benchmarks not analysed:
+    outside `auto`, or in it but pending; screened at PROBE_SIZES) or
+    `discarded` (the `discarded` group). A pending benchmark never probed
+    (piqa, winogrande, boolq) has no result and no group. Only rq00's "all
+    considered" gate variant reads it; no pool does, so no DA or SNR
+    population moves (RULES.md, "The probe candidates are not in the
+    populations")."""
+    from pretrain import ladder_report as lr
+    langs = lr.eval_languages(1, "A", all_languages=True)
+    pending = pending_benchmarks()
+    analysed = [b for b in lr.auto_benchmarks("auto") if b not in pending]
+    probe = [b for b in lr.auto_benchmarks("auto_probe") if b not in analysed]
+    out = dict.fromkeys(lr.auto_benchmarks("discarded"), "discarded")
+    out.update(dict.fromkeys(lr.tasks_for_benchmarks(probe, langs), "probe"))
+    out.update(dict.fromkeys(lr.tasks_for_benchmarks(analysed, langs), "auto"))
+    return out
 
 
 def with_bbpb_twins(df: pd.DataFrame) -> pd.DataFrame:

@@ -71,9 +71,12 @@
 % verify_paper_results.py on every refresh (runs 90M--1.7B, evaluated checkpoints, per-language parent
 % benchmark tasks incl. the reformulated twins) with the charged compute from plan/compute-costs.json
 % (\npretrainnodehours, \nothernodehours, \ngpuhours).
+% \nbenchanalysed / \ntasksanalysed (Table~\ref{tab:benchmark-families}), \nbenchscreened / \ntasksscreened /
+% \ntasksdiscarded (Table~\ref{tab:screened-benchmarks}, the screened tasks and the discarded ones among them) and
+% \nbenchconsidered / \ntasksconsidered (the two together) are written by make_appendix_tables.py too.
 % BEGIN generated: nbenchmarks (make_appendix_tables.py)
 \newcommand{\nbenchmarks}{18 }
-\newcommand{\nruns}{219 }
+\newcommand{\nruns}{218 }
 \newcommand{\nrunsfinished}{218 }
 \newcommand{\ntasksKone}{107 }
 \newcommand{\ntasksKtwo}{127 }
@@ -81,6 +84,13 @@
 \newcommand{\ntasksKfifteen}{456 }
 \newcommand{\ntasksKthirty}{639 }
 \newcommand{\ntasksKfifty}{846 }
+\newcommand{\nbenchanalysed}{40 }
+\newcommand{\ntasksanalysed}{846 }
+\newcommand{\nbenchscreened}{52 }
+\newcommand{\ntasksscreened}{639 }
+\newcommand{\ntasksdiscarded}{229 }
+\newcommand{\nbenchconsidered}{92 }
+\newcommand{\ntasksconsidered}{1,485 }
 % END generated: nbenchmarks
 % BEGIN generated: constants (verify_paper_results.py)
 \newcommand{\nmodels}{207 }

@@ -31,7 +31,7 @@ ROOT = HERE.parents[3]
 sys.path.insert(0, str(ROOT / "src" / "signal-and-noise"))
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
-from analysis.utils import ANALYSIS_SIZES, assign_language, languages_only  # noqa: E402
+from analysis.utils import ANALYSIS_SIZES, PROBE_SIZES, assign_language, considered_tasks, languages_only  # noqa: E402
 
 TASKS_JSON = ROOT / "configs" / "tasks.json"
 POOL = "predictivity"
@@ -60,6 +60,11 @@ def main() -> None:
     if mask is None:
         sys.exit(f"no gate mask for pool {POOL}: run above_random.py --only {POOL} first")
     sizes = [s for s in ANALYSIS_SIZES if s in mask.columns]
+    # a probe size above the reference (3B, from probe.sh's --above-reference gate) once a screened task (`probe` or
+    # `discarded`, outside `auto`: the promoted ones have 3B evals already) has a verdict there, i.e. once the 3B
+    # probe jobs land
+    cand = mask.index.map(considered_tasks()).isin(["probe", "discarded"])
+    sizes += [s for s in PROBE_SIZES if s not in sizes and s in mask.columns and mask.loc[cand, s].notna().any()]
     # assign_language, not the raw tasks.json tag: INCLUDE writes Japanese as
     # `jp` and Chinese as `cn`, which the analysis folds to ja/zh — reading the
     # tag straight would split Japanese across two rows here and nowhere else.

@@ -331,6 +331,50 @@ def load_mask(pool: str) -> pd.DataFrame | None:
     return m[[c for c in m.columns if c in bucket_order()]].astype("Int64")
 
 
+def considered_gate(pool: str = "predictivity") -> pd.DataFrame:
+    """The gate over every benchmark task the study considered
+    (`utils.considered_tasks`), one row per (task, size) cell read on the runs
+    that train the task's language: task, family, language, group, format,
+    size, score, random_baseline, above (1/0). `auto` cells are the committed
+    gate's, at every size (the share's `trained` population, as `panels.py`
+    reads them). `probe` and `discarded` cells come from the probe screen's
+    runs (`utils.PROBE_GATE_DIR`, written by probe.sh) at `utils.PROBE_SIZES`
+    alone (600M, 1B, 1.7B, and 3B where the probe gate has a 3B run: a size with
+    no run has no row, never a 0), and are re-read here on the runs whose
+    cell trains the language, since the screen's own share counts a
+    `discarded` task as untrained.
+    Tasks without a chance level have no verdict and no row. Nothing gates
+    with it: it is the population of rq00's "all considered" tables only."""
+    from pretrain.ladder_report import CELL_RE, SCHEME_OF, eval_languages
+    from evals.scripts.utils.configs import _TASK_LANG_ALIASES
+    from analysis.utils import PROBE_GATE_DIR, PROBE_SIZES, considered_tasks, languages_only, variant
+    group = considered_tasks()
+    d = GATE_DIR / "pretraining" / pool
+    scores = pd.read_csv(d / "above_random_scores.csv")
+    sizes = [b for b in bucket_order() if b in scores.columns]
+    melt = lambda f, cols, name: pd.read_csv(d / f).melt(id_vars="task", value_vars=cols, var_name="size", value_name=name)
+    auto = (scores.melt(id_vars=["task", "family", "language", "random_baseline"], value_vars=sizes,
+                        var_name="size", value_name="score")
+            .merge(melt("above_random_mask.csv", sizes, "above"), on=["task", "size"])
+            .merge(melt("above_random_share.csv", [f"{s}__population" for s in sizes], "population")
+                   .assign(size=lambda x: x["size"].str.removesuffix("__population")), on=["task", "size"]))
+    auto = auto[(auto["population"] == "trained") & auto["above"].notna() & auto["task"].map(group).eq("auto")]
+    p = PROBE_GATE_DIR / "pretraining" / pool
+    meta = pd.read_csv(p / "above_random_scores.csv", usecols=["task", "family", "language", "random_baseline"])
+    runs = pd.read_csv(p / "above_random_runs.csv").merge(meta, on="task")
+    runs = runs[runs["bucket"].isin(PROBE_SIZES) & runs["task"].map(group).isin(["probe", "discarded"])
+                & runs["above"].notna()]
+    cell = runs["model"].map(CELL_RE.match)
+    trains = [_TASK_LANG_ALIASES.get(l, l) in eval_languages(int(m["L"]), SCHEME_OF[m["scheme"] or ""])
+              for l, m in zip(runs["language"], cell)]
+    probe = (runs[trains].groupby(["task", "family", "language", "random_baseline", "bucket"])
+             .agg(score=("score", "mean"), share=("above", "mean")).reset_index().rename(columns={"bucket": "size"}))
+    probe["above"] = probe.pop("share").ge(MIN_SHARE).astype(int)
+    out = languages_only(pd.concat([auto.drop(columns="population"), probe], ignore_index=True))
+    out["above"] = out["above"].astype(int)
+    return out.assign(group=out["task"].map(group), format=out["task"].map(lambda t: variant(t)[0]))
+
+
 # Above-random reports, one per model-set pool we gate. Output dirs are
 # pool-named (matching every other RQ — no separate label namespace), each with
 # a caption for the appendix slide:
@@ -345,14 +389,19 @@ REPORTS = [
 ]
 
 
-def run(pool: str) -> None:
+def run(pool: str, above_reference: bool = False) -> None:
     # build_snr_pool folds in the externals when the pool sets include_external
     # (custom_swissai_hf), is custom-only for seeds_*, and pools every non-custom
     # model for `external`. Lazy import: run_apertus_snr_variants imports
     # SIZES/scores_and_mask from here, so a module-top import would be circular.
     from analysis.utils import build_snr_pool
 
-    df = build_snr_pool(pool, untrained=True)   # the gate covers every task, trained or not: rq06 gates with it too
+    # the gate covers every task, trained or not: rq06 gates with it too.
+    # `above_reference` (the probe screen alone, probe.sh) widens it to the 3B
+    # rung through build_snr_pool's rule-10 opt-out, the one rq10 reads; the
+    # loader's require_final keeps a (cell, task) only once its final
+    # checkpoint is scored, so a 3B cell without a probe result has no verdict.
+    df = build_snr_pool(pool, untrained=True, above_reference=above_reference)
     scores, mask, meta, runs, share, population = scores_and_mask(df, runs=True)
     buckets = list(scores.columns)
 
@@ -464,11 +513,16 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--only", choices=[pool for pool, _ in REPORTS], default=None,
                    help="Generate only this pool's report (default: all).")
+    p.add_argument("--above-reference", action="store_true",
+                   help="the probe screen alone (probe.sh): add the rungs above the reference (3B), final "
+                        "checkpoint only. Refused without SNR_GATE_DIR, so the canonical gate stays at 90M-1.7B (rule 10).")
     args = p.parse_args()
+    if args.above_reference and not os.environ.get("SNR_GATE_DIR"):
+        p.error("--above-reference writes a gate above the reference: set SNR_GATE_DIR to a scratch dir (probe.sh does)")
     for pool, _caption in REPORTS:
         if args.only and pool != args.only:
             continue
-        run(pool)
+        run(pool, above_reference=args.above_reference)
 
 
 if __name__ == "__main__":

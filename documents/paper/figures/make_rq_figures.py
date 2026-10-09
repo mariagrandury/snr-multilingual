@@ -25,7 +25,11 @@ comes from). The .tex carries the source path as a comment next to the
     app_rq00_chance_share      <- rq00_gate_and_curves/panels.py --paper    first_size_share_paper
     app_rq00_chance_share_horizontal <- the same, first_size_share_paper_horizontal (its bars along the x axis)
     app_rq00_chance_full       <- the same                                  first_size_above_random_paper
+    app_rq00_chance_considered <- the same                                  first_size_share_all_considered_paper
+                             (the analysed benchmarks beside the screened and discarded ones, 600M, 1B and 1.7B, and 3B once the 3B probe results land)
     app_rq00_chance_reformulation <- rq00_task_reformulation/reformulations_gate.py --paper  reformulations_gate_paper
+    app_rq00_majority_chance <- rq00_gate_and_curves/majority_chance.py  majority_chance/majority_chance_paper
+                             (the majority-class chance sensitivity, a float page of its own: make_rq_appendix FIGURE_PAGES)
     app_rq02_da_goal_multi_axes_bpb <- rq01_scaling_predictability/tokens_seen.py --paper  da_goal_multi_axes_across_langs_bpb_paper
                              (written to rq02_da_vs_train_tokens/)
     app_rq00_chance_vs_train_tokens <- the same, rq00_chance_vs_train_tokens/      pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_paper
@@ -42,14 +46,17 @@ comes from). The .tex carries the source path as a comment next to the
                              (these three: the extra float pages of the language-transfer appendix page)
     app_rq07_external_frameworks <- rq07_external_frameworks/analyze.py --pool predictivity --paper  snr_apertus_vs_snr_allenai_paper
     app_rq08_subset_selection  <- rq08_subset_selection/panels.py --paper                gain_over_null_paper
-    app_rq09_benchmark_design  <- rq09_benchmark_design/analyze.py --pool predictivity --paper  snr_per_family_ranked_paper
+    app_rq09_benchmark_design  <- rq09_benchmark_design/analyze.py --pool predictivity --paper  snr_per_family_ranked_paper_horizontal
+                             (the families along x; the vertical snr_per_family_ranked_paper stays in the analysis)
     app_rq09_design_da_correlation <- rq09_benchmark_design/design_da.py  design_da_size_correlation_above_66_either_mono_axis_paper
-    app_rq09_design_da_by_level    <- the same                       design_da_size_by_level_above_66_either_mono_axis_paper
-    app_rq09_design_da_quadrant    <- the same                       design_da_size_quadrant_mono_axis_paper (every task above chance)
+    app_rq09_design_da_by_level    <- the same                       design_da_size_by_level_per_task_above_66_either_mono_axis_paper
+    app_rq09_design_da_quadrant    <- the same                       design_da_size_quadrant_per_task_mono_axis_paper (every task above chance)
+                             (these two: one dot per (benchmark, language) task; the per-benchmark twins stay in the analysis)
     app_rq09_benchmark_characteristics <- the same                   benchmark_characteristics.tex (a LaTeX table)
                              (these four: the extra float pages of the benchmark-design appendix page)
     app_rq00_token_exclusion <- rq00_chance_vs_train_tokens/token_exclusion.py  token_exclusion_da_size_mono_axis.tex
     app_rq00_early_passes      <- rq00_gate_and_curves/early_passes.py           early_passes.tex
+    app_rq00_pass_counts_considered <- rq00_gate_and_curves/panels.py --paper  gate_pass_counts_all_considered.tex
     app_rq10_reference_choice  <- rq10_size_generalisation/reference_choice.py   reference_choice_da_size_both_axes.tex
                              (these three: LaTeX tables, extra floats of their folders' appendix pages)
     app_rq10_size_generalisation <- rq10_size_generalisation/reference_consistency.py --paper
@@ -63,7 +70,8 @@ comes from). The .tex carries the source path as a comment next to the
                              (rq2 in two rows: accuracy above, the bBPB twins below)
     app_rq02_da_by_language     <- the same                    rq2_da_all_by_benchmark_and_language_above_66_either_mono_axis
     app_rq02_da_size_by_language_per_proxy <- the same         rq2_da_size_by_benchmark_and_language_per_proxy_above_66_either_mono_axis
-                             (these two: the extra full-page figures of the decision-accuracy appendix page)
+    app_rq02_bbpb_acc_gate     <- rq02_decision_accuracy/bench_bpb_da.py  bench_bpb_da_size_by_acc_gate_multi_axes_paper
+                             (these three: extra full-page figures of the decision-accuracy appendix page)
     app_rq03_noise_and_snr     <- rq03_noise_and_snr/effect_vs_noise.py --paper (pool predictivity_seeds)  effect_vs_noise_paper
     app_rq03_flip_attribution  <- rq03_noise_and_snr/flip_attribution.py  flip_attribution_da_size_by_axis_both_axes.tex
                              (a LaTeX table, the extra float of the noise-and-SNR appendix page)
@@ -73,7 +81,8 @@ comes from). The .tex carries the source path as a comment next to the
                              (these five: the main figure of an appendix page of make_rq_appendix.py)
     app_rq13_english_scaling_regimes <- rq13_english_only/english_regimes.py   english_only_scaling_regimes_paper
     app_rq13_english_scaling_regimes_l1_accuracy <- the same   english_only_scaling_regimes_l1_accuracy_paper
-                             (these two: the extra figures of the English-only appendix page)
+    app_rq13_english_scaling_regimes_l1_accuracy_tagged <- the same   english_only_scaling_regimes_l1_accuracy_tagged_paper
+                             (these three: the extra figures of the English-only appendix page)
     app_rq02_permutation_null  <- rq02_permutation_null/permutation_null.py       permutation_null_da_size_paper
     app_rq02_decisive_pairs    <- rq02_decisive_pairs/decisive_pairs.py           decisive_pairs_da_size_paper
     app_rq14_proxy_item_selection <- rq14_proxy_item_selection/proxy_item_selection.py  proxy_item_selection_da_size_multi_axes_paper
@@ -122,6 +131,7 @@ FIGURES = {
     "app_rq00_token_exclusion": (ANALYSIS.joinpath("rq00_chance_vs_train_tokens", *PRED, "token_exclusion_da_size_mono_axis"),
                                  ("tex",)),
     "app_rq00_early_passes": (GATE / "early_passes", ("tex",)),
+    "app_rq00_pass_counts_considered": (GATE / "gate_pass_counts_all_considered", ("tex",)),
     "app_rq10_reference_choice": (ANALYSIS.joinpath("rq10_size_generalisation", *PRED, "reference_choice_da_size_both_axes"),
                                   ("tex",)),
     "rq1": (RQ01 / "scaling_regimes_outliers_paper", ("png",)),
@@ -131,7 +141,9 @@ FIGURES = {
     "app_rq00_chance_share": (GATE / "first_size_share_paper", ("png",)),
     "app_rq00_chance_share_horizontal": (GATE / "first_size_share_paper_horizontal", ("png",)),
     "app_rq00_chance_full": (GATE / "first_size_above_random_paper", ("png",)),
+    "app_rq00_chance_considered": (GATE / "first_size_share_all_considered_paper", ("png",)),
     "app_rq00_chance_reformulation": (ANALYSIS / "rq00_task_reformulation" / "reformulations_gate_paper", ("png",)),
+    "app_rq00_majority_chance": (ANALYSIS / "rq00_gate_and_curves" / "majority_chance" / "majority_chance_paper", ("png",)),
     "app_rq02_da_goal_multi_axes_bpb": (DA_TOKENS / "da_goal_multi_axes_across_langs_bpb_paper", ("png",)),
     "app_rq00_chance_vs_train_tokens": (CHANCE_TOKENS / "pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_paper", ("png",)),
     "app_rq00_benchmark_curves": (CURVES / "benchmark_curves_paper", ("png",)),
@@ -151,13 +163,14 @@ FIGURES = {
     "app_rq07_external_frameworks": (ANALYSIS.joinpath("rq07_external_frameworks", *PRED, "snr_apertus_vs_snr_allenai_paper"),
                                 ("png",)),
     "app_rq08_subset_selection": (ANALYSIS.joinpath("rq08_subset_selection", *PRED, "gain_over_null_paper"), ("png",)),
-    "app_rq09_benchmark_design": (ANALYSIS.joinpath("rq09_benchmark_design", *PRED, "snr_per_family_ranked_paper"), ("png",)),
+    "app_rq09_benchmark_design": (ANALYSIS.joinpath("rq09_benchmark_design", *PRED, "snr_per_family_ranked_paper_horizontal"),
+                                  ("png",)),
     "app_rq09_design_da_correlation": (ANALYSIS.joinpath("rq09_benchmark_design", *PRED,
                                                           "design_da_size_correlation_above_66_either_mono_axis_paper"), ("png",)),
     "app_rq09_design_da_by_level": (ANALYSIS.joinpath("rq09_benchmark_design", *PRED,
-                                                       "design_da_size_by_level_above_66_either_mono_axis_paper"), ("png",)),
+                                                       "design_da_size_by_level_per_task_above_66_either_mono_axis_paper"), ("png",)),
     "app_rq09_design_da_quadrant": (ANALYSIS.joinpath("rq09_benchmark_design", *PRED,
-                                                       "design_da_size_quadrant_mono_axis_paper"), ("png",)),
+                                                       "design_da_size_quadrant_per_task_mono_axis_paper"), ("png",)),
     "app_rq09_benchmark_characteristics": (ANALYSIS.joinpath("rq09_benchmark_design", *PRED, "benchmark_characteristics"),
                                            ("tex",)),
     "app_rq10_size_generalisation": (ANALYSIS.joinpath("rq10_size_generalisation", *PRED, "gate_share_and_da_size_mono_axis_paper"),
@@ -176,6 +189,8 @@ FIGURES = {
     "app_rq02_da_size_by_language_per_proxy": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED,
                                                                  "rq2_da_size_by_benchmark_and_language_per_proxy_above_66_either_mono_axis"),
                                                ("png",)),
+    "app_rq02_bbpb_acc_gate": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED, "bench_bpb_da_size_by_acc_gate_multi_axes_paper"),
+                               ("png",)),
     "app_rq03_noise_and_snr": (ANALYSIS.joinpath("rq03_noise_and_snr", *SEEDS, "effect_vs_noise_paper"), ("png",)),
     "app_rq03_flip_attribution": (ANALYSIS.joinpath("rq03_noise_and_snr", *PRED, "flip_attribution_da_size_by_axis_both_axes"),
                                   ("tex",)),
@@ -187,6 +202,8 @@ FIGURES = {
                                          ("png",)),
     "app_rq13_english_scaling_regimes_l1_accuracy": (ANALYSIS.joinpath(
         "rq13_english_only", *PRED, "english_only_scaling_regimes_l1_accuracy_paper"), ("png",)),
+    "app_rq13_english_scaling_regimes_l1_accuracy_tagged": (ANALYSIS.joinpath(
+        "rq13_english_only", *PRED, "english_only_scaling_regimes_l1_accuracy_tagged_paper"), ("png",)),
     "app_rq02_definition_sensitivity": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED,
                                                           "da_size_definition_sensitivity_multi_axes"), ("tex",)),
     "app_rq02_seed_uncertainty": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED, "seed_uncertainty_da_all_seed_null_paper"),

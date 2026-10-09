@@ -82,7 +82,12 @@ SHARED_TABLES = {"da_size_vs_da_ckpt_reliable_tasks_": "da_all_reliable_tasks_bo
 #     rq10 is the size-generalization RQ — the one analysis of OUR sweep that passes
 #     above_reference=True, so its tables carry the 3B rung by design.
 #     above_random_external_models.csv lists the public base models by those external buckets.
-EXEMPT = {10: ("custom_swissai_hf", "external", "rq10_size_generalisation", "above_random_external_models.csv"),
+#     The probe screen reads its candidates at utils.PROBE_SIZES (600M, 1B, 1.7B, 3B; probe.sh's
+#     --above-reference gate): rq00's "all considered" tables and probe_survivors carry a 3B
+#     column for the screened tasks once the 3B probe results land, the analysed ones never.
+EXEMPT = {10: ("custom_swissai_hf", "external", "rq10_size_generalisation", "above_random_external_models.csv",
+               "gate_pass_counts_all_considered.csv", "first_size_share_all_considered_paper.csv",
+               "gate_screened_verdicts_all_considered.csv", "probe_survivors.csv"),
           6: ("rq08_subset_selection", "rq07_external_frameworks"),
           2: ("rq06_language_transfer", "rq00_gate_and_curves"),
           7: ("rq00_gate_and_curves",),

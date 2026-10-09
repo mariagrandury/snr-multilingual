@@ -15,6 +15,11 @@ is trained, not the one that was planned when the text was written.
     benchmarks  block in app_03_evaluation.tex: the evaluated benchmarks
                 (configs/tasks.json `auto` group) with their language and
                 task counts on the sweep's trained languages
+    screened    block in app_03_evaluation.tex: the benchmarks screened at 600M, 1B
+                and 1.7B and not analysed (`auto_probe` outside `auto`, and the
+                `auto` benchmarks whose ladder evals have not landed) and those of
+                the `discarded` tasks, per benchmark: trained languages, candidate
+                and discarded tasks
     discarded   block in app_03_evaluation.tex: the screened probe tasks
                 dropped at the gate (configs/tasks.json `discarded` group),
                 per benchmark family
@@ -25,6 +30,9 @@ is trained, not the one that was planned when the text was written.
                                seeds included (the grid table's Total)
                 \\nrunsfinished grid runs at their target iteration in the
                                ladder report
+                \\nbenchanalysed, \\ntasksanalysed  the benchmarks table's rows and Total
+                \\nbenchscreened, \\ntasksscreened, \\ntasksdiscarded  the screened table's
+                \\nbenchconsidered, \\ntasksconsidered  the two together
                 \\ntasksKone ... \\ntasksKfifty  tasks a scheme-A cell is
                                evaluated on at K = 1, 2, 8, 15, 30, 50 (one
                                macro per LANG_SETTINGS entry, K spelled out)
@@ -288,9 +296,17 @@ def ladder_table(runs: list[dict]) -> str:
 
 # --- benchmarks -------------------------------------------------------------
 
+def pending() -> frozenset[str]:
+    """`auto` benchmarks whose ladder evals have not landed (analysis.utils.pending_benchmarks):
+    counted with the screened ones, never as analysed, until they have."""
+    sys.path.insert(0, str(REPO / "src" / "signal-and-noise"))
+    from analysis.utils import pending_benchmarks
+    return pending_benchmarks()
+
+
 def task_languages() -> tuple[dict, list[str]]:
     tasks = load_tasks()
-    auto = json.loads((REPO / "configs" / "tasks.json").read_text())["groups"]["auto"]
+    auto = [b for b in json.loads((REPO / "configs" / "tasks.json").read_text())["groups"]["auto"] if b not in pending()]
     return tasks, auto
 
 
@@ -354,7 +370,8 @@ def benchmark_table() -> tuple[str, dict]:
         lines.append(row(g, label, task, TWIN_FORMAT[prefix], cons))
     total = sum(n_tasks.values())
     lines += [r"\midrule", f"Total & & & & & {len(trained)} & {total} \\\\", r"\bottomrule", r"\end{tabular}", "}",
-              r"\caption{Benchmarks evaluated during pretraining. Langs is the number of languages that the harness "
+              r"\caption{The benchmarks we analyse, evaluated throughout pretraining. Table~\ref{tab:screened-benchmarks} "
+              r"lists the benchmarks we screened and did not adopt. Langs is the number of languages that the harness "
               r"registers for the benchmark. Trained is how many of them the sweep trains (English and the "
               r"FineWeb-2 languages of every trained build). Tasks is the number of language tasks evaluated on "
               r"those languages. A model is evaluated only on the tasks of the languages in its training "
@@ -388,6 +405,67 @@ def discarded_table() -> str:
               r"screen. Languages are ISO 639-1 codes.}",
               r"\label{tab:discarded-benchmarks}", r"\end{table}"]
     return "\n".join(lines)
+
+
+CONSIDERED_COUNTS = (REPO / "src" / "signal-and-noise" / "analysis" / "rq00_gate_and_curves" / "pretraining"
+                     / "predictivity" / "gate_pass_counts_all_considered.csv")
+
+
+def screened_sizes() -> str:
+    """The sizes the screened benchmarks were evaluated at, as the caption says
+    them ("600M, 1B and 1.7B", with 3B once the 3B probe jobs land), read off rq00's
+    "all considered" table (panels.considered_panels): the sizes with a verdict for a screened task."""
+    rows = list(csv.DictReader(CONSIDERED_COUNTS.open())) if CONSIDERED_COUNTS.is_file() else []
+    sizes = list(dict.fromkeys(r["size"] for r in rows if r["group"] in ("probe", "discarded") and r["gated"]))
+    return and_list(sizes or ["600M", "1B", "1.7B"])
+
+
+def screened_table() -> tuple[str, dict]:
+    """The benchmarks we screened and did not adopt (`auto_probe` outside `auto`)
+    and those of the `discarded` tasks, on the sweep's trained languages: per
+    benchmark its trained languages, its candidate tasks and its discarded ones.
+    The gate verdicts are rq00's "all considered" variant (Figure
+    app_rq00_chance_considered); this table reads the configs, and that
+    variant's table only for the sizes the caption names (`screened_sizes`)."""
+    sys.path.insert(0, str(REPO / "src" / "signal-and-noise"))
+    from analysis.grids import paper_name
+    groups = json.loads((REPO / "configs" / "tasks.json").read_text())["groups"]
+    analysed = [b for b in groups["auto"] if b not in pending()]   # a pending `auto` benchmark is still screened
+    probe, disc, trained = [b for b in groups["auto_probe"] if b not in analysed], set(groups["discarded"]), trained_languages()
+    langs, n_tasks, n_disc = {}, Counter(), Counter()
+    for name, e in load_tasks().items():
+        lang, b = canon(e.get("language")), e.get("benchmark", "")
+        g = owner(b, probe) or (b if name in disc else None)
+        if g is None or lang not in trained or "pretraining" not in e.get("stages", []):
+            continue
+        langs.setdefault(g, set()).add(lang)
+        (n_disc if name in disc else n_tasks)[g] += 1
+    rows = sorted(langs, key=lambda g: paper_name(g).lower())
+    def tab(part):
+        return "\n".join([r"\begin{adjustbox}{max width=\linewidth}", r"\begin{tabular}[t]{lrrr}", r"\toprule",
+                          r"\textbf{Benchmark} & \textbf{Langs} & \textbf{Tasks} & \textbf{Discarded} \\", r"\midrule",
+                          *(f"{esc(paper_name(g))} & {len(langs[g])} & {n_tasks[g] or '--'} & {n_disc[g] or '--'} \\\\" for g in part),
+                          r"\bottomrule", r"\end{tabular}", r"\end{adjustbox}"])
+    half = (len(rows) + 1) // 2
+    stats = {"benchmarks": len(rows), "candidates": sum(n_tasks.values()), "discarded": sum(n_disc.values()),
+             "languages": len(set().union(*langs.values()))}
+    lines = [r"\begin{table*}[p]", r"\centering", r"\footnotesize",
+             r"\begin{minipage}[t]{0.49\textwidth}\centering", tab(rows[:half]), r"\end{minipage}\hfill",
+             r"\begin{minipage}[t]{0.49\textwidth}\centering", tab(rows[half:]), r"\end{minipage}",
+             rf"\caption{{Benchmarks we screened and did not adopt ({stats['benchmarks']} benchmarks, "
+             rf"{stats['candidates'] + stats['discarded']:,} tasks in {stats['languages']} trained languages). We evaluated "
+             rf"them only on the final checkpoints of the {screened_sizes()} models. "
+             + (rf"{and_list(sorted(esc(paper_name(g)) for g in rows if g in pending()))} joined the analysed benchmarks after "
+                r"the screen and count here until their evaluation throughout pretraining is complete. "
+                if any(g in pending() for g in rows) else "")
+             + r"Langs is the number of trained languages a "
+             r"benchmark covers. Tasks counts its language tasks on those languages that stayed candidates, and "
+             r"Discarded the tasks we dropped because fewer than half of the runs that trained the language had a "
+             r"one-sided 95\% Wilson lower bound above chance, both at 1B and at 1.7B (Table~\ref{tab:discarded-benchmarks}). "
+             r"Figure~\ref{fig:app_rq00_chance_considered} gives the gate verdicts of every task. RF marks a reformulated "
+             r"variant that scores the answer strings instead of the option letters.}",
+             r"\label{tab:screened-benchmarks}", r"\end{table*}"]
+    return "\n".join(lines), stats
 
 
 # --- languages --------------------------------------------------------------
@@ -489,6 +567,8 @@ def main():
     replace_block(SECTIONS / "app_01_model_ladder.tex", "ladder", ladder_table(runs))
     body, stats = benchmark_table()
     replace_block(SECTIONS / "app_03_evaluation.tex", "benchmarks", body)
+    screened, sstats = screened_table()
+    replace_block(SECTIONS / "app_03_evaluation.tex", "screened", screened)
     replace_block(SECTIONS / "app_03_evaluation.tex", "discarded", discarded_table())
     # written in the same run as the tables they count, so text and tables cannot disagree
     per_K = tasks_per_K()
@@ -498,7 +578,15 @@ def main():
         f"\\newcommand{{\\nbenchmarks}}{{{stats['multilingual']} }}",
         f"\\newcommand{{\\nruns}}{{{len(runs)} }}",
         f"\\newcommand{{\\nrunsfinished}}{{{done if done >= 0 else '??'} }}",  # ?? = no ladder report
-        *(f"\\newcommand{{\\ntasksK{K_WORDS[L]}}}{{{n:,} }}" for L, n in per_K.items())]))
+        *(f"\\newcommand{{\\ntasksK{K_WORDS[L]}}}{{{n:,} }}" for L, n in per_K.items()),
+        # every benchmark considered: the analysed `auto` group, plus the screened ones and the discarded tasks
+        f"\\newcommand{{\\nbenchanalysed}}{{{stats['multilingual'] + stats['single'] + stats['twins']} }}",
+        f"\\newcommand{{\\ntasksanalysed}}{{{stats['tasks']:,} }}",
+        f"\\newcommand{{\\nbenchscreened}}{{{sstats['benchmarks']} }}",
+        f"\\newcommand{{\\ntasksscreened}}{{{sstats['candidates'] + sstats['discarded']:,} }}",
+        f"\\newcommand{{\\ntasksdiscarded}}{{{sstats['discarded']:,} }}",
+        f"\\newcommand{{\\nbenchconsidered}}{{{stats['multilingual'] + stats['single'] + stats['twins'] + sstats['benchmarks']} }}",
+        f"\\newcommand{{\\ntasksconsidered}}{{{stats['tasks'] + sstats['candidates'] + sstats['discarded']:,} }}"]))
     languages_table()
     by = Counter((r["build"], r["ladder"]) for r in runs)
     print(f"grid: {len(runs)} runs ({sum(r['seed'] == 1904 for r in runs)} at seed 1904, "
