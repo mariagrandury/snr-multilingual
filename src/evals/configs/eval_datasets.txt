@@ -147,6 +147,7 @@ haryoaw/COPAL
 EleutherAI/headqa
 HPAI-BSC/CareQA
 manu/french_boolq
+aps/super_glue@3de24cf8022e94f4ee4b9d55a6f539891524d646
 manu/fquad2_test
 manu/french_bench_hellaswag
 manu/topic_based_nli_test
