@@ -45,6 +45,7 @@ def no_byline(text: str) -> str:
 
 
 def dump(name: str, obj) -> None:
+    (OUT / f"{name}.json").parent.mkdir(parents=True, exist_ok=True)   # names may hold a subfolder
     (OUT / f"{name}.json").write_text(json.dumps(obj, separators=(",", ":")))
     print(f"{name}.json  {(OUT / f'{name}.json').stat().st_size // 1024} KB")
 
@@ -518,6 +519,15 @@ def main() -> None:
         if obj is None:
             print(f"{name}: skipped, its analysis folder is not in this checkout")
         else:
+            dump(name, obj)
+    # Per-page data of the additional views: every scripts/site_data/<page>.py
+    # defines build() -> {json name: object}, dumped like the tables above.
+    import importlib.util
+    for mod in sorted((REPO / "scripts/site_data").glob("*.py")):
+        spec = importlib.util.spec_from_file_location(f"site_data_{mod.stem}", mod)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        for name, obj in module.build().items():
             dump(name, obj)
 
 

@@ -12,24 +12,69 @@ any other question, we ask: for each benchmark in each language, from which
 model size are the scores above chance?
 
 **How we measure it.** We score every run of the [model ladder](../ladder.md)
-at the end of its training. A run *passes* when its score is above chance
-with 95 % confidence, which depends on how many questions the benchmark has
-(the last section explains the rule). A benchmark is *above chance at a size*
-when at least half of the runs of that size that trained on its language
-pass. Every later research question only uses the benchmarks and sizes that
-are above chance.
+at the end of its training: 187 runs from 90M to 1.7B parameters, on 841
+tasks (one benchmark in one language) from 40 benchmarks in the 50 languages
+the ladder trains. A run *passes* when its score is above chance with 95 %
+confidence, which depends on how many questions the benchmark has (the last
+section explains the rule). A benchmark is *above chance at a size* when at
+least half of the runs of that size that trained on its language pass. Every
+later research question only uses the benchmarks and sizes that are above
+chance.
 
 ## Which benchmarks are above chance?
 
 <div class="viz" data-viz="firstSize"></div>
 
-Most of the map is decided early or never. Reasoning-light tasks such as
-grammatical minimal pairs (MultiBLiMP), sentence completion (HellaSwag) and
-the reformatted reading test (Belebele RF) are above chance from small
-models in most languages. Knowledge tests posed with answer letters
-stay at chance in most languages even at 1.7B. Switch to *with rewritten
-versions* to see the same knowledge tests once their format is fixed
-(see [the format section](#how-does-the-format-affect-the-evaluation)).
+A large part of the evaluation is at chance on our ladder. Of the 841 tasks,
+311 (37 %) are above chance at 90M and 507 (60 %) at 1.7B. The count grows
+at every size step, but only 294 tasks pass at all six sizes, and 313 (37 %)
+never pass at any size.
+
+Most of the map is decided early or never. Twelve of the 40 benchmarks never
+pass in any trained language, among them MMLU and CommonsenseQA in their
+original letter format, TruthfulQA, BBH, ACP-Bench and CulturalBench. Seven
+pass from 90M in every language: HellaSwag, MultiBLiMP, MathQA, OpenBookQA
+and the reformatted MMLU, CommonsenseQA and rewritten Belebele. Knowledge
+tests posed with answer letters stay at chance in most languages even at
+1.7B. Switch to *with rewritten versions* to see the same knowledge tests
+once their format is fixed (see
+[the format section](#how-does-the-format-affect-the-evaluation)).
+
+*The same map with one bar per benchmark: read each bar from left to right,
+light segments are languages above chance from the smallest models, red ones
+never.*
+
+<div class="viz" data-viz="gateFirstShare"></div>
+
+### Every benchmark we considered
+
+The 40 benchmarks above are the ones we analyse. To choose them we
+considered 90 benchmarks with a chance level, 1,451 tasks in the trained
+languages (92 benchmarks and 1,485 tasks with those that have no chance
+level). The 37 benchmarks we screened but did not analyse (381 tasks) and
+the 229 tasks we discarded were scored only at the end of the 600M, 1B and
+1.7B runs.
+
+- **The screened benchmarks pass almost everywhere.** 84 % of their tasks
+  are above chance at 600M, 94 % at 1B and 98 % at 1.7B (partly by
+  construction: the screened tasks at chance at both 1B and 1.7B were moved
+  to the discarded group). We left them out for cost, or because an
+  analysed benchmark already covers them, not because they failed the test.
+- **The discarded tasks fail everywhere.** All 229 are at chance at 1B and
+  1.7B (that is the rule they were discarded by), and 227 at 600M too.
+  Thirteen of the screened or discarded benchmarks never pass at 1.7B;
+  eight of them are multiple-choice knowledge exams (ArabicMMLU, CareQA,
+  C-Eval, MMMLU, TurkishMMLU, HAE-RAE Bench and two Arabic exam sets),
+  while the reformatted versions of ArabicMMLU, CareQA and the Okapi MMLU
+  pass in every task.
+- **Over everything considered, 51 % of the tasks pass at 600M, 57 % at 1B
+  and 61 % at 1.7B**, against 50 %, 56 % and 60 % of the analysed ones.
+
+*Pick a group of tasks. Each bar is one model size; dark blue is the share
+above chance at that size, light blue the tasks at chance there but above
+chance at another size, red the tasks never above chance.*
+
+<div class="viz" data-viz="gateFunnel"></div>
 
 ## How does training data affect it?
 
@@ -39,19 +84,76 @@ that task's language the run had seen at that point.
 
 <div class="viz" data-viz="passTokens"></div>
 
-For a fixed model size, more tokens of a language means more of its
-benchmarks above chance; for a fixed number of tokens, larger models get
-there more often. A language with a small share of the training mixture can
-stay at chance even in a large model, which is why the same benchmark is
-above chance in one language and not in another.
+Outside English, the share of cells above chance is flat at about 40 % up to
+10⁸ tokens of the language and rises with every tenfold increase after, to
+62 % at 10¹⁰–10¹¹ tokens. Exposure is necessary but not sufficient: at
+10⁸–10⁹ tokens, 40 % of the 90M cells are above chance against 60 % of the
+1.7B cells. A language with a small share of the training mixture can stay
+at chance even in a large model, which is why the same benchmark is above
+chance in one language and not in another. The format matters here too:
+the letter-format INCLUDE stays at 5–11 % of its cells above chance from
+10⁷ tokens on, while its reformatted version reaches 99 %.
+
+**Token thresholds.** Per benchmark and format we read the token count of
+the language from which at least half (or 90 %) of its cells are above
+chance. Nine of the 27 benchmark formats never reach half, among them the
+letter-format Belebele, Global-MMLU and INCLUDE; their reformatted versions
+reach it at 2.2 × 10⁶ to 4.6 × 10⁸ tokens. The threshold also moves with the
+model size, by up to two orders of magnitude at the 90 % level: Belebele RF
+needs 2.2 × 10⁹ tokens at 90M and at most 4.6 × 10⁷ at 1.7B.
+
+*Drag the token count: each row is a benchmark format, its dot the
+threshold. A blue dot left of the black line has reached it; red means it
+never does. Switch the model size to see the thresholds move.*
+
+<div class="viz" data-viz="gateTokenSlider"></div>
+
+### Early passes come from a constant answer
+
+A few tasks are above chance at very few tokens of their language and at
+chance at intermediate ones: eight CulturalBench-easy countries, INCLUDE
+Georgian and PAWS-X Japanese. These are not early knowledge.
+
+- **The model gives one answer to almost everything.** Of the 149 runs that
+  pass with few tokens, 74 % pick the same option on at least 80 % of the
+  items, and in 97 % that option alone would clear chance, because the
+  answer keys of these small tasks (17 to 53 items for CulturalBench) are
+  unbalanced. The passes stop when the preferred option moves.
+- **Not the longest option, not a related language.** A preference for the
+  longest answer explains only PAWS-X Japanese. On the other nine tasks,
+  runs that never trained the language pass as often at the same size and
+  checkpoint (31–88 % against 30–79 %).
+
+*One row per task: the share of runs above chance with few tokens of the
+language (blue), with more tokens (grey) and without the language at all
+(orange). Blue and orange together mean the language is not what passes.*
+
+<div class="viz" data-viz="gateEarly"></div>
+
+### Does dropping the languages below the threshold help?
+
+A natural rule is to leave out of a benchmark's aggregate score every
+language below its token threshold. It does not help the decisions. Over
+the 18 benchmarks that keep an aggregate, the aggregate ranks pairs of
+training designs like the 1.7B model in 70–77 % of the cases without the
+excluded languages, against 75–83 % with every language (one design decision
+at a time). The aggregate's standard error also rises, from 0.0086 to 0.0110
+at 90M, since only 56 % of the cells are kept there. What the rule does
+remove is the nine benchmarks that never reach their threshold, whose
+aggregate ranks the designs at only 44–65 %.
+
+*Each line is how often a benchmark's aggregate at a small model ranks two
+designs like at 1.7B; higher is better. Switch to "per benchmark" to see
+where the exclusion costs most.*
+
+<div class="viz" data-viz="gateExclusion"></div>
 
 ## How does the format affect the evaluation?
 
-In our preliminary studies, knowledge benchmarks where the model has to
-predict a letter (A, B, C, D) instead of the answer itself (Madrid, Delhi,
-Cairo, Buenos Aires) almost never cleared chance at our model sizes. Small
-base models have not yet learned the multiple-choice convention, so the
-letter format measures the convention, not the knowledge. We therefore
+Most of the tasks at chance ask for the letter of the correct option (A, B,
+C, D) instead of the answer itself (Madrid, Delhi, Cairo, Buenos Aires).
+Small base models have not yet learned the multiple-choice convention, so
+the letter format measures the convention, not the knowledge. We therefore
 **reformatted the benchmarks mechanically (RF)**: the same question, but the
 model is scored on how likely it finds each full answer.
 
@@ -61,7 +163,8 @@ We also tried **rewriting the questions with a large language model
 (LLM-RF)**. Some questions do not read naturally once the answers are
 attached to them (for example "Which of the following is true?"). We asked
 an LLM to rewrite each question so that every answer is its natural
-continuation, keeping the answers unchanged. We did this for Belebele and INCLUDE.
+continuation, keeping the answers unchanged and without revealing the
+correct one. We did this for Belebele and INCLUDE.
 
 <div class="viz" data-viz="llmRewrite"></div>
 
@@ -71,20 +174,45 @@ benchmark is how many languages it covers.
 
 <div class="viz" data-viz="reformulation"></div>
 
+At 1.7B the reformatted version raises the languages above chance from 5 to
+86 of 105 for Belebele, from 1 to 35 of 37 for Global-MMLU and from 3 to 31
+of 43 for INCLUDE (in each case the languages where only the original
+passes are 0 or 1; McNemar p < 10⁻⁷). The rewritten Belebele passes in every
+trained language at every size; the rewritten INCLUDE in 32 of 43, with an
+accuracy gain over the original that widens from 0.015 at 175M to 0.075 at
+1.7B. The rewrite adds no length cue: the correct option is the single
+longest in 22.2 % of the original items and 21.9 % of the rewritten ones.
+Passing, however, is not ranking: the reformatted versions do not rank
+training designs better than the other benchmarks (decision accuracy 0.48 to
+0.55 from 90M to 1B, against 0.55 to 0.59).
+
+*The same comparison as a before-and-after per benchmark: the grey dot is
+the benchmark as published, the line runs to its reformatted (blue) or
+rewritten (orange) version. Pick a model size.*
+
+<div class="viz" data-viz="gateReformDumbbell"></div>
+
 !!! success "Key findings"
+    - Of the 841 analysed tasks, 37 % are above chance at 90M and 60 % at
+      1.7B, and 37 % never are. Over all 1,451 tasks we considered, 61 %
+      pass at 1.7B.
     - As published, the letter-format multilingual knowledge benchmarks
       (Belebele, INCLUDE, Global-MMLU) are above chance in almost no language
-      at any size up to 1.7B.
-    - Scored on the answer text, the same questions are above chance in most
-      languages from the smallest sizes, and the change is significant for
-      most sizes (stars).
-    - The LLM rewrite helps most where the question does not read as a
-      sentence to complete: it brings Belebele above chance in every language
-      from the smallest model, and INCLUDE further than the mechanical
+      at any size up to 1.7B: 5 of 105, 3 of 43 and 1 of 37 languages at 1.7B.
+    - Scored on the answer text, the same questions are above chance in 86,
+      31 and 35 of those languages at 1.7B, and the change is significant at
+      most sizes (stars). Tokens of the language do not rescue the letter
+      format: the letter-format INCLUDE stays at 5–11 % above chance however
+      much of the language the model has read.
+    - The LLM rewrite brings Belebele above chance in every language from the
+      smallest model, and INCLUDE slightly further than the mechanical
       reformat.
     - The English-only benchmarks (MMLU, CommonsenseQA: one language) were
       at chance as published and are above chance at every size once
       reformatted.
+    - The test is robust to its definition of chance: using the most
+      frequent answer instead of uniform guessing changes the share above
+      chance by less than two points wherever a constant answer is possible.
 
 ## Do larger public models pass this threshold?
 
@@ -95,11 +223,22 @@ parameters, scored on the same tasks with the same rule.
 
 <div class="viz" data-viz="floors"></div>
 
-Most of what our ladder cannot read is a **training-budget floor**, not a
-benchmark floor: public models of 1.7B or less read it, but they were trained
-on far more tokens than our ladder (100 tokens per parameter). The tasks that
-need much larger models, or that no model reads, are floors of the benchmark
-or of the language's data (hover to see which languages they are in).
+Of the 73 tasks both are scored on, 27 are at chance at every size of our
+ladder. Most of them are a **training-budget floor**, not a benchmark floor:
+public models of 1.7B or less read 24 of them, but they were trained on far
+more tokens than our ladder (100 tokens per parameter). Only Hindi ARC needs
+a model of 7B or more, and PAWS-X Japanese and Arabic XNLI are read by no
+model up to 70B: those are floors of the benchmark or of the language's data
+(hover to see which languages they are in). Many are near misses: on 24 of
+the 27, at least one of our 1.7B runs clears chance, but not half of them.
+The public models' verdicts still use an older, fixed-margin version of the
+test, so this comparison is provisional.
+
+*The same comparison per model family: each line is a family from its
+smallest to its largest model, at the share of the shared tasks it reads.
+At the same size the public models, trained much longer, read far more.*
+
+<div class="viz" data-viz="gateFloorsLines"></div>
 
 ## How do we decide a score is above chance?
 
@@ -138,10 +277,10 @@ the language pass, so one lucky run is not enough.
        open-ended generation) is never filtered.
 
     Two caveats. Chance is *uniform* guessing: a model that always picks the
-    most frequent correct letter can beat $1/m$ without knowing anything,
-    and the test does not catch it. And the runs of one size answer the same
-    questions, so they are not independent trials; the 50 % rule is a
-    majority vote, not a significance test.
+    most frequent correct letter can beat $1/m$ without knowing anything.
+    The section below measures how much that matters. And the runs of one
+    size answer the same questions, so they are not independent trials; the
+    50 % rule is a majority vote, not a significance test.
 
 Pick a benchmark and a language. Hover over any run to see its score and
 lower bound; click a run to draw its bound along training.
@@ -167,6 +306,47 @@ whether a run at 90 % of its training ranks them like at its end
 size *and* at 1.7B; a DA-ckpt cell needs it at that size. Cells marked
 *gated* are left out of every result on this site.
 
+**The item count sets the bar.** The margin a run needs above chance shrinks
+with the number of questions: a median 9.0 points for the non-parallel
+Global PIQA (100 items per language), 2.4 for Belebele (900), 0.7 for
+HellaSwag (about 9,000) and 0.6 for Global-MMLU (about 14,000), up to 15.7
+points for CulturalBench-easy (25 items). The bar alone does not decide:
+over the six sizes these benchmarks pass in 37.5 %, 1.1 %, 100 % and 4.1 %
+of their cells, and the reformatted Belebele and Global-MMLU, with the same
+items and so the same bar, in 75.4 % and 73.9 %. A benchmark with few items
+cannot detect small departures from chance; that does not make it
+unmeasurable.
+
+*Drag the item count to read the bar for any benchmark size; each dot is one
+of our tasks (blue: above chance at 1.7B).*
+
+<div class="viz" data-viz="gateMarginCalc"></div>
+
+### Does it matter that chance is uniform guessing?
+
+The test compares every task with uniform guessing (1/m). A model that always
+gives the same answer instead scores the share of the most frequent correct
+position, which can be higher. We reran the test with that **majority-class**
+chance level.
+
+- **Taken at face value, it removes two fifths of the passes.** The tasks
+  above chance fall from 311 to 132 at 90M and from 507 to 376 at 1.7B.
+- **Almost all of that is answer order a model cannot exploit.** 95 % of the
+  lost passes are on tasks whose answers change from item to item
+  (MultiBLiMP always lists the grammatical sentence first, for example). The
+  model scores each answer's text and never sees its position, so it cannot
+  answer "always the first one".
+- **Where a constant answer is possible, the test barely moves.** On the
+  tasks with fixed answer labels (letters, yes/no) the counts are 296 at 90M
+  and 498 at 1.7B against 311 and 507, under two points at every size, and
+  the later decision-accuracy results move by at most 0.006.
+
+*Each line counts the tasks above chance per model size under one chance
+level; the green line, the realistic one, sits on the blue one. Switch to
+"per benchmark" to see which benchmarks lose passes.*
+
+<div class="viz" data-viz="gateMajority"></div>
+
 ## What we find
 
 <!-- highlight: rq00_gate_and_curves -->
@@ -176,6 +356,8 @@ size *and* at 1.7B; a DA-ckpt cell needs it at that size. Cells marked
     languages, before using it. Grammatical minimal pairs, sentence
     completion and reformatted reading comprehension carry signal from the
     smallest models; letter-format knowledge tests need to be scored on the
-    answer text to be usable at these sizes.
+    answer text to be usable at these sizes, however much of the language
+    the model has read. And an early pass on a small task is worth a look at
+    the answers: it is often one option given every time.
 
 [Full analysis →](../signal-noise/gate_and_curves.md)

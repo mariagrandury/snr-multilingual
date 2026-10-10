@@ -23,7 +23,7 @@ under documents/paper/ are not part of the Overleaf project and are ignored,
 and a repo folder the export does not have at all (figures/ in a sources-only
 export) is summarised in one line.
 
-    python3 scripts/overleaf_diff.py                       # newest documents/overleaf/paper-overleaf-*
+    python3 scripts/overleaf_diff.py                       # newest folder under documents/overleaf/
     python3 scripts/overleaf_diff.py documents/overleaf/paper-overleaf-10-08-20h
     python3 scripts/overleaf_diff.py EXPORT --diff 04_analysis   # word diff in the terminal
     python3 scripts/overleaf_diff.py EXPORT --code               # VS Code diff tab per differing file
@@ -174,7 +174,7 @@ def porcelain_html(text):
 
 def export_dir(arg):
     if arg is None:
-        found = sorted((p for p in EXPORTS.glob("paper-overleaf-*") if p.is_dir()), key=lambda p: p.stat().st_mtime)
+        found = sorted((p for p in EXPORTS.iterdir() if p.is_dir()), key=lambda p: p.stat().st_mtime)
         if not found:
             sys.exit(f"no export under {EXPORTS}")
         return found[-1]

@@ -75,9 +75,17 @@ with `BUILD_SLIDES=1`. PNG figures under `repo/` are not scanned (text in an
 image cannot be redacted): check their titles and legends by eye.
 
 After the figures are regenerated, re-check the hand-written numbers (no
-data file feeds them yet): `index.md` cards (647 / 331 pairs, median
-R² ≥ 0.97, DA 0.97 vs 0.56, 6.6×), `recommend.md` ("27 of 46 languages"),
-and the "Key findings" admonition in `findings/gate.md`.
+data file feeds them yet): the `index.md` cards (218 runs, 40 of 92
+benchmarks, 37 % → 60 % above chance, median R² 0.88, DA 51–57 % against
+92–96 %, seed noise 1.75× checkpoint noise, transfer 4.4 % / 5.0 %),
+`recommend.md` ("27 of 46 languages"), the "Key findings" admonition in
+`findings/gate.md`, and the hand-written numbers of every findings page.
+
+Additional views of a page live in `interactive/views/<page>.js`, loaded
+after `app.js` by `mkdocs.yml`: each registers on `window.SNRSITE.VIEWS`
+with the helpers `app.js` exposes there. Their data comes from
+`scripts/site_data/<page>.py` (`build() -> {json name: object}`), which
+`build_site_data.py` runs after its own tables.
 
 ## Files
 

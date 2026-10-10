@@ -135,3 +135,6 @@
 .lk-table th:first-child, .lk-table td:first-child { text-align: left; position: sticky; left: 0; background: var(--md-default-bg-color); white-space: nowrap; }
 .lk-table thead th { position: sticky; top: 0; background: var(--md-default-bg-color); }
 .lk-table thead th:first-child { z-index: 1; }
+
+/* Plot tooltips follow the theme (white boxes in dark mode otherwise). */
+.viz { --plot-background: var(--viz-surface); }

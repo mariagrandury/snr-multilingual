@@ -157,7 +157,7 @@
           Plot.text(rows, { x: "size", y: "n", dy: -8, text: (d) => pct(d.share) }),
         ],
       }),
-      note("Most multilingual benchmark tasks are at chance on small models: half of the suite carries no signal for the ablation you run at 175M."),
+      note(`Most multilingual benchmark tasks are at chance on small models: at 175M, ${pct(1 - f.gate.per_size["175M"] / f.gate.gated_tasks)} of the suite carries no signal for the ablation you run.`),
     ]);
   };
 
@@ -616,12 +616,12 @@
         color: { domain: LADDER, range: sizeColors(LADDER), legend: true, label: "proxy size" },
         marks: [
           Plot.ruleY([0.5], { stroke: css("--viz-muted"), strokeDasharray: "4 3" }),
-          Plot.text([0.5], { x: 1, y: (v) => v, dy: 9, textAnchor: "end", text: () => "coin flip", fill: css("--viz-muted") }),
+          Plot.text([0.5], { x: 1, y: (v) => v, dy: 9, textAnchor: "end", text: () => "chance", fill: css("--viz-muted") }),
           Plot.line(rows, { x: "frac", y: "da", stroke: "proxy_size", strokeWidth: 2 }),
           Plot.dot(rows, { x: "frac", y: "da", fill: "proxy_size", r: 3.5, tip: true,
             title: (r) => `${r.proxy_size} at ${pct(r.frac)} of its run\nDA ${fmt(r.da)} over ${r.tasks} tasks` }),
         ],
-      }), note("Read a line left to right: how early a proxy of that size ranks the design variants the way the 1.7B model does at the end. Bits per byte reach high agreement from small, early checkpoints; the benchmark average stays near a coin flip.")];
+      }), note("Read a line left to right: how early a proxy of that size ranks the design variants the way the 1.7B model does at the end. Bits per byte reach high agreement from small, early checkpoints; the benchmark average stays near chance.")];
     });
   };
 
@@ -683,7 +683,7 @@
             Plot.tickX(means.map((m, i) => ({ m, recipe: `recipe ${i + 1}` })), { x: "m", y: "recipe", stroke: css("--viz-s2"), strokeWidth: 3 }),
           ],
         }),
-        note("Dots: ten late checkpoints of each recipe. Orange tick: its true quality. Shrink the gap or raise the noise: when the SNR falls towards 1, one checkpoint ranks the recipes little better than a coin flip."),
+        note("Dots: ten late checkpoints of each recipe. Orange tick: its true quality. Shrink the gap or raise the noise: when the SNR falls towards 1, one checkpoint ranks the recipes little better than chance."),
       ];
     });
     return render;
@@ -964,7 +964,7 @@
         const share = r.benchmark === "bpb" ? 1 : gateBy[r.task]?.[s.size];
         const logSnr = snrBy[`${r.task}|${s.size}`]?.log_snr;
         const verdict = share != null && share < 0.5 ? "avoid" : r.decision_acc == null ? null : r.decision_acc >= 0.75 ? "use" : r.decision_acc >= 0.6 ? "care" : "avoid";
-        const why = share != null && share < 0.5 ? "at chance at this size" : r.decision_acc >= 0.75 ? "ranks like the reference" : r.decision_acc >= 0.6 ? "often right, check with a second task" : "close to a coin flip";
+        const why = share != null && share < 0.5 ? "at chance at this size" : r.decision_acc >= 0.75 ? "ranks like the reference" : r.decision_acc >= 0.6 ? "often right, check with a second task" : "close to chance";
         return { ...r, share, logSnr, verdict, why, rank: { use: 3, care: 2, avoid: 1 }[verdict] ?? 0 };
       });
       if (!rows.length) return h("div", { class: "viz-empty" }, "No measurement for this language and comparison.");
@@ -1549,7 +1549,7 @@
           Plot.dot(rows, { x: "size", y: "mean_da_size", fill: "variant", r: 3.5, tip: true,
             title: (r) => `${r.variant} at ${r.size}\nmean DA ${fmt(r.mean_da_size)} over ${r.n_tasks} tasks of ${r.n_benchmarks} benchmarks\n${pct(r.reliable_share)} of the tasks reliable` }),
         ],
-      }), note(`One line per way of posing and scoring a benchmark. Green dashed line: the reliability threshold (${d.tau}); dotted: a coin flip (0.5).`)];
+      }), note(`One line per way of posing and scoring a benchmark. Green dashed line: the reliability threshold (${d.tau}); dotted: chance (0.5).`)];
     });
   };
 
@@ -1644,6 +1644,14 @@
       }), note("Above zero: the run trained only on English scores higher on the English benchmarks than the multilingual run of the same size.")];
     });
   };
+
+  // ---------- extension point ----------
+  // Per-page view files (docs/interactive/views/*.js, loaded after this one by
+  // mkdocs.yml) add views with SNRSITE.VIEWS.NAME = async (el) => {...}, using
+  // the same helpers; boot() runs at DOMContentLoaded, after they have loaded.
+  window.SNRSITE = { VIEWS, DATA, SIZES, PROXIES, LADDER, LS, ANON, REDRAW, css, series, dark, sizeRamp,
+    diverging, fmt, pct, sizeNum, byKey, uniq, h, expand, load, plot, mount, control, note, tiles, table,
+    languages, langName, fwName };
 
   // ---------- boot ----------
   function boot() {
