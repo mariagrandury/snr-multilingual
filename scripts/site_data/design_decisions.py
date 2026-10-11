@@ -1,15 +1,18 @@
-"""Data of the design-decisions page's additional views (rq05_design_decisions,
-plus rq02's per-axis table for the two axes rq05 does not read).
+"""Data of the design-decisions page's additional views (rq05_design_decisions).
 
 Per (decision, population, proxy size, checkpoint) the decision accuracy
 against the 1.7B final, mean over L: rq05's `intervention_da_all_mono_axis`
 re-keyed per data build by rq05's own `by_recipe` (so the final column is
-`rq4_da_size_by_intervention_mono_axis`), and the activation axis (xIELU vs
-SwiGLU, benchmarks only) from rq02's `early_small_da_goal_by_transformation`.
-The optimizer axis (Muon) has no 1.7B run, so it carries rq02's DA-ckpt (each
-proxy against its own final) instead. The effect at the reference in seed sds
-is `rq4_interventions.csv`, the median over L of the per-L medians, as rq05's
-README quotes it. Rows only filtered, averaged as rq05 does, and renamed."""
+`rq4_da_size_by_intervention_mono_axis`). It holds all six decisions, the
+activation (xIELU vs SwiGLU) and optimizer (AdEMAMix vs Muon) ones included
+since 2026-10-10. The optimizer has no 1.7B evaluation yet, so it has no row
+until a refresh brings one (rq05 lists it in `facts.json` as
+`pending_reference`), and meanwhile the page shows rq02's DA-ckpt for the
+activation and optimizer axes (each proxy against its own final,
+`early_small_da_ckpt_by_transformation_mono_axis`). The effect at the
+reference in seed sds is `rq4_interventions.csv`, the median over L of the
+per-L medians, as rq05's README quotes it. Rows only filtered, averaged as
+rq05 does, and renamed."""
 import sys
 from pathlib import Path
 
@@ -19,7 +22,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "src/signal-and-noise"))
 sys.path.insert(0, str(REPO / "src"))
 from analysis import paths  # noqa: E402
-from analysis.rq05_design_decisions.analyze import by_recipe  # noqa: E402
+from analysis.rq05_design_decisions.analyze import INTERVENTIONS, by_recipe  # noqa: E402
 
 ALL = "pretraining/predictivity_seeds"
 PRED = "pretraining/predictivity"
@@ -48,16 +51,12 @@ def build() -> dict:
            .agg(da=("decision_acc", "mean"), cells=("L", "nunique"), items=("n_items", "sum"),
                 size_matched=("size_matched", "all")))
     g["source"] = "rq05"
+    rows = g
+    names = {k: dict(short=SHORT[k], long=lab) for k, lab in zip(rows["intervention"], rows["label"])}
+    for k in ("activation", "optimizer"):      # listed even before their 1.7B evaluations land
+        names.setdefault(k, dict(short=SHORT[k], long=INTERVENTIONS[k][0]))
 
     d2 = paths.DECISION_ACCURACY / PRED
-    goal = pd.read_csv(d2 / "early_small_da_goal_by_transformation_mono_axis.csv")
-    act = goal[goal["axis"] == "activation (XIELU vs SwiGLU)"]
-    act = pd.DataFrame(dict(intervention="activation", label=act["axis"], population="benchmark",
-                            proxy_size=act["proxy_size"], frac=act["frac"], da=act["da"], cells=None,
-                            items=act["tasks"], size_matched=act["size_matched"], source="rq02"))
-    rows = pd.concat([g, act.dropna(subset=["da"])], ignore_index=True)
-    names = {k: dict(short=SHORT[k], long=lab) for k, lab in zip(rows["intervention"], rows["label"])}
-    names["optimizer"] = dict(short=SHORT["optimizer"], long="optimizer (AdEMAMix vs Muon)")
 
     ckpt = pd.read_csv(d2 / "early_small_da_ckpt_by_transformation_mono_axis.csv")
     ckpt = ckpt[ckpt["axis"].isin(RQ02_AXIS)].assign(intervention=lambda x: x["axis"].map(RQ02_AXIS))
@@ -74,7 +73,7 @@ def build() -> dict:
         names=names,
         rows=[dict(key=x.intervention, pop=x.population, size=x.proxy_size,
                    frac=r(x.frac), da=r(x.da), items=int(x.items), size_matched=bool(x.size_matched),
-                   source=x.source, **({"cells": int(x.cells)} if pd.notna(x.cells) else {}))
+                   source=x.source, cells=int(x.cells))
               for x in rows.itertuples()],
         ckpt=[dict(key=x.intervention, size=x.proxy_size, frac=r(x.frac), da=r(x.da), tasks=int(x.tasks))
               for x in ckpt.itertuples()],

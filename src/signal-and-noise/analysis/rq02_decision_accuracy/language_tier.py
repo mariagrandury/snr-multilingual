@@ -183,17 +183,21 @@ def generate_readme(pool: str, out_dir: Path, table: pd.DataFrame, per_lang: pd.
                                                  f"[{int(g['n_tasks'].iloc[0])}–{int(g['n_tasks'].iloc[-1])} tasks]")
         rows.append(rec)
     t = pd.DataFrame(rows)
-    rho = {s: g["share_L50"].corr(g["reliability"], method="spearman")
-           for s, g in per_lang.groupby("size") if s != TARGET_SIZE and len(g) >= 3}
+    by_size = dict(tuple(per_lang.groupby("size")))
+    rho = {s: by_size[s]["share_L50"].corr(by_size[s]["reliability"], method="spearman")
+           for s in size_order(by_size) if s != TARGET_SIZE and len(by_size[s]) >= 3}
     body = "\n\n".join([
         "## Decision reliability by language tier",
-        f"The pooled `all pairs` line of `scale_convergence.py` read over the gated tasks of one language TIER — the "
-        f"smallest scheme-A regime that trains the language (L8: the eight high-resource languages every regime trains; "
-        f"L50: the twenty only the L50 mixture trains). Reliability at the smallest → largest proxy [task count]. "
-        f"`reliability_da_size_vs_language_share_multi_axes.png` is the per-language version: reliability against the language's share of "
-        f"the L50 mixture, Spearman ρ over languages "
+        f"Each row reads the pooled `all pairs` line of `scale_convergence.py` over the gated tasks of one language "
+        f"TIER. A language's tier is the smallest scheme-A regime that trains it. L8 holds the eight high-resource "
+        f"languages that every regime from L8 up trains, and L50 holds the twenty languages that only the L50 mixture "
+        f"trains. Each cell gives the reliability at the smallest → largest proxy, with the task count in brackets. "
+        f"`reliability_da_size_vs_language_share_multi_axes.png` is the per-language version. It plots reliability "
+        f"against the language's share of the L50 mixture, with a Spearman ρ over languages of "
         + ", ".join(f"{s} {v:.2f}" for s, v in rho.items()) + ". "
-        f"Both are unfiltered; a tier also differs in benchmark mix. Regenerate with "
+        f"The `all gated tasks` column and the per-language figure are unfiltered. The `above_66_size` column keeps "
+        f"only the tasks whose median DA-size is ≥ 0.66. Tiers also differ in their benchmark mix, so a gap between "
+        f"tiers can be a gap between benchmark families. Regenerate with "
         f"`python analysis/rq02_decision_accuracy/language_tier.py --pool {pool}`.",
         md_table(list(t.columns), t.values.tolist()),
         f"![Reliability by language tier]({stage}/{pool}/reliability_da_size_by_language_tier_multi_axes.png)",
@@ -256,7 +260,8 @@ if __name__ == "__main__":
     per_lang.to_csv(out_dir / "reliability_da_size_vs_language_share_multi_axes.csv", index=False)
     if len(per_lang):
         figure_share(per_lang, out_dir / "reliability_da_size_vs_language_share_multi_axes.png", args.pool)
-        for s, g in per_lang.groupby("size"):
+        for s in size_order(per_lang["size"].unique()):
+            g = per_lang[per_lang["size"] == s]
             print(f"{s}: {len(g)} languages, Spearman ρ(share, reliability) = "
                   f"{g['share_L50'].corr(g['reliability'], method='spearman'):.3f}")
     if args.pool == CANONICAL_POOL:

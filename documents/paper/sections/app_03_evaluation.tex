@@ -1,18 +1,11 @@
 \section{Evaluation Protocol}
 \label{app:evaluation-protocol}
 
-\textbf{Bits-per-byte implementation.} We measure the negative log-likelihood of held-out text in bits, normalized by its UTF-8 byte count.
-For language $\ell$, let $x_1,\ldots,x_{m_\ell}$ be the evaluated token sequence, $c_t$ the context preceding token $x_t$ within the scoring block, and $b_\ell$ the number of bytes in the evaluated text. We compute
-\begin{equation}
-\mathrm{BPB}_\ell = \frac{-\sum_{t=2}^{m_\ell}\log_2 p(x_t \mid c_t)}{b_\ell}.
-\label{eq:bpb}
-\end{equation}
+This appendix lists the benchmarks we evaluate and the tasks each model is evaluated on. It then gives the harness settings and the two likelihood measures that complement accuracy, bits-per-byte on held-out text and benchmark bits-per-byte.
 
-We concatenate validation documents without end-of-document separators. We score them in blocks of 4,096 input tokens, with a one-token overlap between successive blocks. Each token except the first of the stream is scored once, and the context resets at block boundaries. We select a deterministic prefix that ends at the document boundary that reaches 1M tokens, or the full stream if it is shorter. We measure the denominator by decoding the entire selected prefix and counting its UTF-8 bytes, including the initial conditioning token. Thus, the implementation omits the likelihood of the first token but keeps its bytes. We also compute token-level perplexity from the same forward passes.
+\textbf{Benchmark selection.} We considered \nbenchconsidered benchmarks, with \ntasksconsidered language tasks on the trained languages. We evaluate \nbenchanalysed of them throughout training and analyse them (\ntasksanalysed tasks, Table~\ref{tab:benchmark-families}). We screened the other \nbenchscreened benchmarks on the final checkpoints of the 600M, 1B and 1.7B models only, and do not analyse them (Table~\ref{tab:screened-benchmarks}). That table also lists the KoBEST and NorEval tasks that we discarded before we adopted these benchmarks, \ntasksscreened tasks in all. Among the screened tasks, we discarded the \ntasksdiscarded that stayed at chance at both 1B and 1.7B (Table~\ref{tab:discarded-benchmarks}). Table~\ref{tab:app_rq00_pass_counts_considered} gives the above-chance counts of all three groups. It counts only the tasks with a gate verdict. Its 887 analysed tasks are the \ntasksanalysed of Table~\ref{tab:benchmark-families} without the five LAMBADA tasks, which have no chance level, and its screened group leaves out 29 tasks that have no verdict. The gate of Appendix~\ref{app:rq00_gate_and_curves} reads 933 trained tasks. These are the 887 analysed tasks and the 46 tasks of MMLU (Okapi) RF, MMMLU RF and TokSuite, which joined the suite after the screen and which we count as screened until their evaluation throughout training is complete.
 
-% The original draft reports a standard error of about 0.003 bits for this
-% prefix. Add the estimation procedure before presenting it as uncertainty.
-
+% TODO (Overleaf): change X-way for X-option
 % BEGIN generated: benchmarks (make_appendix_tables.py)
 \begin{table*}[t]
 \centering
@@ -42,6 +35,8 @@ LAMBADA multilingual & last-word prediction & completion & MT & 5 & 5 & 5 \\
 TruthfulQA-Multi (mc1) & truthfulness & MC & HT & 3 & 2 & 2 \\
 TruthfulQA (mc2) & truthfulness & MC, probability mass & native + MT & 3 & 3 & 3 \\
 BLEnD (sample) & everyday cultural knowledge & MC & native & 4 & 4 & 5 \\
+MultiBLiMP (extra languages) & grammatical acceptability & minimal pairs & auto (UD, UniMorph) & 3 & 3 & 3 \\
+toksuite &  &  &  & 5 & 5 & 5 \\
 \midrule
 \multicolumn{7}{l}{\textit{English text}} \\
 INCLUDE v2 (English) & regional knowledge & 4-way completion & native, translated to en & 42 & 42 & 77 \\
@@ -56,6 +51,16 @@ BBH (letter subtasks) & reasoning & letter MC & native & 1 & 1 & 17 \\
 BBH (two-way subtasks) & reasoning & 2-way completion & native & 1 & 1 & 6 \\
 ACP-Bench (MC) & planning & 4-way letter MC & auto (PDDL) & 1 & 1 & 7 \\
 ACP-Bench (boolean) & planning & yes/no completion & auto (PDDL) & 1 & 1 & 7 \\
+BoolQ & reading comprehension & yes/no & native & 1 & 1 & 1 \\
+PIQA & physical commonsense & 2-way completion & native & 1 & 1 & 1 \\
+WinoGrande & coreference & Winograd schemas & native & 1 & 1 & 1 \\
+toksuite\_math &  &  &  & 1 & 1 & 1 \\
+toksuite\_stem &  &  &  & 1 & 1 & 1 \\
+\midrule
+\multicolumn{7}{l}{\textit{one language other than English}} \\
+KoBEST & Korean understanding & 2- and 4-way & native & 1 & 1 & 3 \\
+NorEval & Norwegian commonsense, reading, grammar & 2- to 5-way & native, HT & 1 & 1 & 7 \\
+NorEval (extra) & Norwegian science QA, quiz, truthfulness, sentiment & 2- and 4-way & native, HT & 1 & 1 & 30 \\
 \midrule
 \multicolumn{7}{l}{\textit{reformulated variants}} \\
 Belebele (RF) & reading comprehension & cloze completion & HT (FLORES) & 94 & 49 & 59 \\
@@ -68,17 +73,17 @@ MMLU (RF) & world knowledge & cloze completion & native & 1 & 1 & 1 \\
 CommonsenseQA (RF) & commonsense & cloze completion & native & 1 & 1 & 1 \\
 BBH (letter subtasks) (RF) & reasoning & cloze completion & native & 1 & 1 & 17 \\
 ACP-Bench (MC) (RF) & planning & cloze completion & auto (PDDL) & 1 & 1 & 7 \\
+m\_mmlu (RF) &  & cloze completion &  & 27 & 27 & 27 \\
+mmmlu (RF) &  & cloze completion &  & 12 & 12 & 12 \\
 \midrule
-Total & & & & & 50 & 846 \\
+Total & & & & & 50 & 938 \\
 \bottomrule
 \end{tabular}
 }
-\caption{The benchmarks we analyse, evaluated throughout pretraining. Table~\ref{tab:screened-benchmarks} lists the benchmarks we screened and did not adopt. Langs is the number of languages that the harness registers for the benchmark. Trained is how many of them the sweep trains (English and the FineWeb-2 languages of every trained build). Tasks is the number of language tasks evaluated on those languages. A model is evaluated only on the tasks of the languages in its training mixture. The reformulated variants pose the same items as their original. RF scores the answer strings instead of the option letters. LLM-RF rewrites each item into a statement stem with short continuations. MC = multiple choice, QA = question answering, UD = Universal Dependencies. Construction: HT = human or professional translation, MT = machine translation, native = written in the language, auto = automatically generated.}
+\caption{\textbf{The benchmarks we analyse}, evaluated throughout pretraining. Table~\ref{tab:screened-benchmarks} lists the benchmarks we screened and do not analyse. Langs is the number of languages that the harness registers for the benchmark. Trained is the number of them that the sweep trains (English and the FineWeb-2 languages of every trained build). Tasks is the number of language tasks evaluated on those languages. A model is evaluated only on the tasks of the languages in its training mixture. The reformulated variants pose the same items as their original. RF scores the answer strings instead of the option letters. LLM-RF rewrites each item into a statement stem with short continuations. MC = multiple choice, QA = question answering, UD = Universal Dependencies. Construction: HT = human or professional translation, MT = machine translation, native = written in the language, auto = generated automatically.}
 \label{tab:benchmark-families}
 \end{table*}
 % END generated: benchmarks
-
-We considered \nbenchconsidered benchmarks (\ntasksconsidered language tasks on the trained languages). Table~\ref{tab:benchmark-families} lists the \nbenchanalysed that we evaluate throughout training and analyse (\ntasksanalysed tasks). Table~\ref{tab:screened-benchmarks} lists the other \nbenchscreened benchmarks, which we screened on the final checkpoints of the 600M, 1B and 1.7B models and do not analyse (\ntasksscreened tasks). Table~\ref{tab:discarded-benchmarks} lists the \ntasksdiscarded screened tasks that we discarded because they stayed at chance at both 1B and 1.7B. Table~\ref{tab:app_rq00_pass_counts_considered} gives the above-chance counts of all three groups.
 
 % BEGIN generated: screened (make_appendix_tables.py)
 \begin{table*}[p]
@@ -113,9 +118,6 @@ EVALITA-LLM (extra) & 1 & 14 & 4 \\
 FrenchBench & 1 & 4 & 1 \\
 FrenchBench (extra) & 1 & 1 & 3 \\
 FrenchBench (extra) RF & 1 & -- & 1 \\
-HAE-RAE Bench & 1 & -- & 5 \\
-HEAD-QA & 1 & 1 & -- \\
-KMMLU & 1 & 26 & 19 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -126,23 +128,20 @@ KMMLU & 1 & 26 & 19 \\
 \toprule
 \textbf{Benchmark} & \textbf{Langs} & \textbf{Tasks} & \textbf{Discarded} \\
 \midrule
-KoBEST & 1 & 3 & 2 \\
+HAE-RAE Bench & 1 & -- & 5 \\
+HEAD-QA & 1 & 1 & -- \\
+KMMLU & 1 & 26 & 19 \\
+KoBEST & 1 & -- & 2 \\
 MELA & 9 & 9 & -- \\
 MMLU (Okapi) & 27 & 1 & 26 \\
-MMLU (Okapi) RF & 27 & 27 & -- \\
 MMMLU & 12 & -- & 12 \\
-MMMLU RF & 12 & 12 & -- \\
-MultiBLiMP (extra) & 3 & 3 & -- \\
 NLI (IberoBench) & 2 & 3 & -- \\
-NorEval & 1 & 7 & 9 \\
-NorEval (extra) & 1 & 30 & 10 \\
+NorEval & 1 & -- & 9 \\
+NorEval (extra) & 1 & -- & 10 \\
 OpenBookQA (IberoBench) & 2 & 2 & -- \\
 Paraphrase (IberoBench) & 1 & 1 & -- \\
 PIQA (IberoBench) & 1 & 1 & -- \\
 SIQA (IberoBench) & 1 & 1 & -- \\
-TokSuite & 5 & 5 & -- \\
-TokSuite math & 1 & 1 & -- \\
-TokSuite STEM & 1 & 1 & -- \\
 TruthfulQA (IberoBench) & 1 & 1 & -- \\
 TruthfulQA (mc1) & 1 & -- & 1 \\
 TruthfulQA mc1 (Okapi) & 26 & 21 & 5 \\
@@ -156,7 +155,7 @@ ZhoBLiMP & 1 & 108 & 10 \\
 \end{tabular}
 \end{adjustbox}
 \end{minipage}
-\caption{Benchmarks we screened and did not adopt (52 benchmarks, 639 tasks in 34 trained languages). We evaluated them only on the final checkpoints of the 1B and 1.7B models. KoBEST, MMLU (Okapi) RF, MMMLU RF, MultiBLiMP (extra), NorEval and TokSuite joined the analysed benchmarks after the screen and count here until their evaluation throughout pretraining is complete. Langs is the number of trained languages a benchmark covers. Tasks counts its language tasks on those languages that stayed candidates, and Discarded the tasks we dropped because fewer than half of the runs that trained the language had a one-sided 95\% Wilson lower bound above chance, both at 1B and at 1.7B (Table~\ref{tab:discarded-benchmarks}). Figure~\ref{fig:app_rq00_chance_considered} gives the gate verdicts of every task. RF marks a reformulated variant that scores the answer strings instead of the option letters.}
+\caption{\textbf{Benchmarks we screened and do not analyse} (46 benchmarks, 550 tasks in 31 trained languages). We evaluated them only on the final checkpoints of the 600M, 1B and 1.7B models. Langs is the number of trained languages a benchmark covers. Tasks counts its language tasks on those languages that stayed candidates. Discarded counts the tasks we dropped because, both at 1B and at 1.7B, fewer than half of the runs that trained the language had a one-sided 95\% Wilson lower bound above chance (Table~\ref{tab:discarded-benchmarks}). Figure~\ref{fig:app_rq00_chance_considered} gives the gate verdicts of every task. RF marks a reformulated variant that scores the answer strings instead of the option letters.}
 \label{tab:screened-benchmarks}
 \end{table*}
 % END generated: screened
@@ -205,15 +204,29 @@ Total & & 229 & \\
 \bottomrule
 \end{tabular}
 }
-\caption{Screened benchmark tasks that we discarded. A task is discarded when fewer than half of the runs that trained its language have a one-sided 95\% Wilson lower bound above chance, both at 1B and at 1.7B. Tasks counts the discarded tasks of the benchmark. Its other tasks stay in the screen. Languages are ISO 639-1 codes.}
+\caption{\textbf{Screened benchmark tasks that we discarded.} A task is discarded when, both at 1B and at 1.7B, fewer than half of the runs that trained its language have a one-sided 95\% Wilson lower bound above chance. Tasks counts the discarded tasks of the benchmark, whose other tasks stay in the screen. Languages are ISO 639-1 codes.}
 \label{tab:discarded-benchmarks}
 \end{table}
 % END generated: discarded
 
-\textbf{Task selection.} We select the registered tasks whose language is in the training mixture. Task counts can exceed family counts. For the resource-ranked lists, the number of tasks grows with $K$: \ntasksKone at $K=1$, \ntasksKtwo at $K=2$, \ntasksKeight at $K=8$, \ntasksKfifteen at $K=15$, \ntasksKthirty at $K=30$, and \ntasksKfifty at $K=50$. These counts cover the whole evaluated group of Table~\ref{tab:benchmark-families}, that is, the multilingual families, the reformulated variants of the letter-format families (\S\ref{subsec:rq1}) and the English-text benchmarks. Every trained language is covered by at least one family. For the seed-1904 deep cells of scheme A at every $K$ and of scheme B at $K=8$, we also run every task in every language, independent of the training mixture. This lets us read cross-lingual transfer on the benchmarks as well as on bits-per-byte. 
+\textbf{Task selection.} A model is evaluated on the registered tasks whose language is in its training mixture, except the discarded tasks of Table~\ref{tab:discarded-benchmarks}. A family can have several tasks per language, so there can be more tasks than families. For the scheme-A lists, the number of tasks grows with $K$: \ntasksKone at $K=1$, \ntasksKtwo at $K=2$, \ntasksKeight at $K=8$, \ntasksKfifteen at $K=15$, \ntasksKthirty at $K=30$, and \ntasksKfifty at $K=50$. These counts cover every group of Table~\ref{tab:benchmark-families}: the multilingual families, the English-text benchmarks, the Korean and Norwegian benchmarks and the reformulated variants of the letter-format families (\S\ref{subsec:rq0}). Some runs are also evaluated on every task in every language, regardless of their training mixture. These are the deep seed-1904 runs of data build A at every $K$, of ZH and ES at $K=2$ and of B at $K=8$. They let us measure cross-lingual transfer on the benchmarks as well as on bits-per-byte.
 
-\textbf{Language coverage.} Every trained language is covered by at least one benchmark family. English is covered by 14 of the multilingual families plus 11 of the English-text benchmarks. Of the 100 languages of Table~\ref{tab:app-languages}, eighteen have exactly one family and fourteen have two. The languages with a single family are covered by Belebele (12), MultiBLiMP (4) or Global PIQA (2) alone. For those languages, the per-language benchmark read rests on one task. Counting tasks instead of families, a cell is evaluated on \ntasksKone tasks at $K=1$, \ntasksKtwo at $K=2$, \ntasksKeight at $K=8$, \ntasksKfifteen at $K=15$, \ntasksKthirty at $K=30$ and \ntasksKfifty at $K=50$, including the reformulated variants and the English-only benchmarks. Two IrokoBench families (AfriXNLI and AfriMMLU) are wired but disabled because of a loading defect in the pinned harness. Enabling them again would add a second or third human-translated family for Amharic, Igbo, Kinyarwanda, Southern Sotho, Xhosa and Zulu.
+\textbf{Language coverage.} Every trained language is covered by at least one benchmark family. English is covered by 14 of the multilingual families and by the 15 English-text benchmarks. Table~\ref{tab:app-languages} gives English 28 families, because it files INCLUDE v2 (English) under the language of each exam. Coverage is thin among the languages that enter only the validation set. Of the 100 languages of Table~\ref{tab:app-languages}, fifteen have exactly one family, nine have two and eight have none. The languages with a single family are covered by Belebele (9), MultiBLiMP (4) or Global PIQA (2) alone, so every benchmark result for them rests on one benchmark. Only two of the languages with one or two families are trained. Bosnian has Global PIQA alone, and Standard Latvian has Belebele and the extra MultiBLiMP languages. Two IrokoBench families, AfriXNLI and AfriMMLU, are implemented but disabled, because they fail to load in the pinned harness. Of their languages, only Amharic and Swahili are in Table~\ref{tab:app-languages}, and they already have four and six families.
 
+\textbf{Harness settings.} All benchmarks run through a fork of the LM Evaluation Harness \citep{gao_framework_2021}. We install it from a pinned shared checkout, and each evaluation job records the source commit. We use the vLLM backend \citep{kwon_efficient_2023}, a maximum context of 4,096 tokens, a beginning-of-sequence token before every prompt, no chat template, and the default prompt and number of in-context examples of each task. We report accuracy for multiple-choice and completion tasks and exact match for the generative ones. Tasks whose options are answer strings, scored as continuations of the prompt, use length-normalised accuracy instead. These are the cloze-format originals (ARC, HellaSwag, OpenBookQA, MathQA and Global PIQA) and the reformulated variants. We aggregate sub-tasks, for example the MMLU subjects, to their family with the harness's own grouping. Base models at these sizes are at chance on several families, so the above-chance threshold of Appendix~\ref{app:chance-threshold} decides, per task and size, whether a result enters the analysis.
 
-\textbf{Harness settings.} All benchmarks run through a fork of the LM Evaluation Harness \citep{gao_framework_2021}. We install it from a pinned shared checkout, and each evaluation job records the source commit. We use the vLLM backend \citep{kwon_efficient_2023}, a maximum context of 4,096 tokens, a beginning-of-sequence token before every prompt, no chat template, and the default prompt and number of in-context examples of each task. We report accuracy for multiple-choice and completion tasks and exact match for the generative ones. The exception is the tasks whose options are answer strings scored as continuations, that is, the cloze-format originals (ARC, HellaSwag, OpenBookQA, MathQA and Global PIQA) and the reformulated variants, which we score with length-normalised accuracy. We aggregate sub-tasks (for example the MMLU subjects) to their family with the harness's own grouping. Base models at these sizes are at chance on several families. The above-chance threshold of Appendix~\ref{app:chance-threshold} decides, per task and size, whether such a cell enters the analysis.
+\textbf{Bits-per-byte.} Bits-per-byte (BPB) is the negative log-likelihood of held-out text in bits, divided by the UTF-8 byte count of the text. Lower is better. For language $\ell$, let $x_1,\ldots,x_{m_\ell}$ be the evaluated token sequence, $c_t$ the context preceding token $x_t$ within its scoring block, and $b_\ell$ the number of bytes in the evaluated text. We compute
+\begin{equation}
+\mathrm{BPB}_\ell = \frac{-\sum_{t=2}^{m_\ell}\log_2 p(x_t \mid c_t)}{b_\ell}.
+\label{eq:bpb}
+\end{equation}
+The evaluated text comes from the shared validation set of Appendix~\ref{app:data-mixtures}. We concatenate its documents for language $\ell$ without end-of-document separators and keep a deterministic prefix of this stream, which ends at the first document boundary once 1M tokens are reached, or the full stream if it is shorter. We score the prefix in blocks of 4,096 input tokens, with a one-token overlap between successive blocks, so the context resets at every block boundary. Each token except the first of the stream is scored once. The denominator $b_\ell$ is the UTF-8 byte count of the whole decoded prefix, including the first token, which only serves as context. The implementation thus omits the likelihood of the first token but keeps its bytes. We also compute token-level perplexity from the same forward passes.
 
+% The original draft reports a standard error of about 0.003 bits for this
+% prefix. Add the estimation procedure before presenting it as uncertainty.
+
+\textbf{Benchmark BPB.} Benchmark bits-per-byte (bBPB) scores a benchmark by the likelihood of its gold answers instead of by accuracy. It uses the per-item log-likelihoods that the harness records for the accuracy evaluation, so it needs no extra forward pass. For an item $x$ with gold answer $a^{*}$, the harness gives the log-likelihood $\log p(a^{*} \mid x)$ of the gold continuation in nats. Over the $n$ items of a task,
+\[
+\mathrm{bBPB}_{b_\ell} = \frac{1}{n} \sum_{x} \frac{-\log p(a^{*} \mid x)}{\ln 2 \cdot |a^{*}|},
+\]
+where $|a^{*}|$ is the length of the gold continuation in UTF-8 bytes. This is the \texttt{correct\_bpb} measure of OLMES\citeneeded{olmes}, which \citet{heineman_signal_2025} also use. Tasks whose target is not an option index have no bBPB: XWinograd, whose options change the context rather than the continuation, and LAMBADA, which has a single continuation. On a letter-format task the gold continuation is the option letter, so its bBPB measures how surprising the letter is, not the answer text. We mark the tasks whose mean gold length is at most 2.5 bytes as letter tasks and summarise them apart from the others. bBPB has no chance level, so the above-chance gate does not apply to it.

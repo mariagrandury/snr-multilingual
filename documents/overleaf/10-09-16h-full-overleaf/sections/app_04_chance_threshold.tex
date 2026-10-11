@@ -1,0 +1,71 @@
+\clearpage
+\section{Above chance threshold}
+\label{app:chance-threshold}
+
+\subsection{Threshold definition}
+
+For each language task $b_\ell$ and model size $N$, we test whether the observed accuracy is distinguishable from random guessing.
+For a task with $m_b$ answer options, chance accuracy is $1/m_b$. We read the option count from the evaluated samples where available, and from the benchmark's specification otherwise. Where the option count varies across items, chance is the mean of $1/m$ over the items (TruthfulQA mc1, 0.2253). TruthfulQA mc2 scores probability mass instead of a single pick, so its chance level is the mean share of true options (0.449).
+For every model of size $N$, we take its final-checkpoint accuracy $\hat{p}$ over the $n$ scored items of the task. We recover the count of correct answers as $\operatorname{round}(\hat{p}\,n)$ and compute the one-sided 95\% Wilson lower confidence bound on the proportion.
+The model is above chance when
+
+\[
+\operatorname{LCB}_{95}(\hat{p}) > \frac{1}{m_b}.
+\]
+
+We then aggregate these decisions over the models of the same size, that is, every ladder and every data build at seed 1904.
+A $(b_\ell, N)$ cell is retained if at least 50\% of these models are above chance.
+When models trained on the benchmark language are available, only those models enter the decision. Otherwise, all evaluated models of that size enter it.
+The resulting mask is the gate that every analysis reads. A gated cell keeps its place in every grid and table but carries no value. A scaling fit uses only the sizes where the task passes. A ranking against the reference also requires the task to pass at the reference size.
+Measurements without a meaningful chance baseline, such as bits per byte and training loss, are not filtered by this procedure.
+
+\textbf{Per-benchmark threshold.} The Wilson bound accounts for the number of evaluation examples, so the amount by which accuracy must exceed chance varies across tasks.
+Smaller evaluation sets require a larger margin above chance, while larger sets can support smaller but more reliable departures from chance.
+For example, the median required margins are 9.00 percentage points for nonparallel Global PIQA (100 items per language), 2.44 for Belebele (900), 0.74 for HellaSwag (about 9,000), and 0.60 for Global-MMLU (about 14,000).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{figures/app_rq00_chance_share.png}
+\caption{Share of language tasks that pass the chance threshold per benchmark. The number in parentheses is the total number of language tasks available per benchmark.}
+    \label{fig:app_chance_share}
+\end{figure}
+
+\clearpage
+
+\subsection{Task reformulation}
+
+\textbf{The formulation effect.}
+The corresponding fractions of benchmark-language-size cells that pass the filter over the six sizes from 90M to 1.7B are 25.0\%, 1.1\%, 79.0\% and 4.1\%, respectively. The reformulated variants of Belebele and Global-MMLU pass in 75.4\% and 73.4\% of their cells.
+
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{figures/app_rq00_chance_reformulation.png}
+\caption{Share of language tasks that pass the chance threshold per benchmark, depending on the evaluation format.}
+    \label{fig:app_chance_reformulation}
+\end{figure}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\linewidth]{figures/app_rq00_chance_full.png}
+\caption{Language tasks that pass the chance threshold per benchmark.}
+    \label{fig:app_chance_full}
+\end{figure*}
+
+
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\linewidth,height=0.9\textheight,keepaspectratio]{figures/app_rq00_benchmark_size_curves.png}
+% source: src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_size_curves_paper.png
+\caption{Benchmark accuracy against model size. For each benchmark family, we plot the final-checkpoint accuracy of every design against non-embedding parameters. This accuracy is the mean over the tasks in the languages the design trains on. There is one line per (number of languages, ladder, data build, seed), 90M--1.7B, for every seed and data build. Colour gives the number of trained languages, line width the ladder and line style the data build. The dotted red line is chance. The curves are not gated, so a family at chance stays visible.}
+\label{fig:app_size_scaling}
+\end{figure*}
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.9\textheight,keepaspectratio]{figures/app_rq00_benchmark_curves.png}
+% source: src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_curves_paper.png
+\caption{Benchmark accuracy along training. For each benchmark family, we plot the accuracy of every run at the ten evaluated tenths of the run. This accuracy is the mean over the tasks in the languages the run trains on. Training progress is given in Chinchilla multiples of the run's token budget. The figure covers every seed and data build, 90M--1.7B. Colour gives the model size, line width the ladder and line style the data build. The dotted red line is chance. The curves are not gated.}
+\label{fig:app_training_scaling}
+\end{figure*}

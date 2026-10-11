@@ -1,35 +1,47 @@
-\begin{tabular}{llllllrrr}
+\begin{tabular}{llllllllrrr}
 \toprule
-Benchmark & Domain & Curation & Source & Format & Options & Passage & Context & Option \\
+Benchmark & Domain & Skill & Curation & Source & Format & Options & Passage & Items & Context & Option \\
 \midrule
-ACP-Bench (MCQ) RF & reasoning & template & English & cloze & 4 & yes & -- & -- \\
-ARC & knowledge & MT & translated & cloze & 4 & no & 122 & 28 \\
-ARC (MT) & knowledge & MT & translated & cloze & 4 & no & -- & -- \\
-BBH (MCQ) RF & reasoning & unknown & English & cloze & 2--8 & unknown & -- & -- \\
-Belebele & reading comprehension & human transl. & translated & MCQ + passage & 4 & yes & 558 & 21 \\
-Belebele LLM-RF & reading comprehension & human transl. & translated & statement (LLM-RF) & 4 & yes & -- & -- \\
-Belebele RF & reading comprehension & human transl. & translated & cloze & 4 & yes & -- & -- \\
-CommonsenseQA RF & commonsense & English & English & cloze & 5 & no & -- & -- \\
-CulturalBench-easy RF & culture & English & English & cloze & 4 & no & -- & -- \\
-Global PIQA (non-parallel) & commonsense & native & native & completion & 2 & no & -- & -- \\
-Global PIQA (parallel) & commonsense & MT + post-edit & translated & completion & 4 & no & -- & -- \\
-Global-MMLU & knowledge & MT + post-edit & translated & MCQ & 4 & no & 120 & 11 \\
-Global-MMLU RF & knowledge & MT + post-edit & translated & cloze & 4 & no & -- & -- \\
-HellaSwag & commonsense & MT & translated & completion & 4 & yes & 118 & 61 \\
-INCLUDE & knowledge & native & native & MCQ & 4 & no & -- & -- \\
-INCLUDE LLM-RF & knowledge & native & native & statement (LLM-RF) & 4 & no & -- & -- \\
-INCLUDE RF & knowledge & native & native & cloze & 4 & no & -- & -- \\
-INCLUDE v2 (EN) & knowledge & transl. (unknown) & native & cloze & 4 & no & -- & -- \\
-INCLUDE v2 (OG) & knowledge & native & native & cloze & 4 & no & -- & -- \\
-LAMBADA & language modelling & MT & translated & last word & -- & yes & -- & -- \\
-MMLU RF & knowledge & English & English & cloze & 4 & no & -- & -- \\
-MathQA & math & English & English & cloze & 5 & no & -- & -- \\
-MultiBLiMP & grammaticality & template & native & minimal pair & 2 & no & 46 & 119 \\
-OpenBookQA & knowledge & English & English & completion & 4 & no & -- & -- \\
-PAWS-X & paraphrase & human transl. & translated & classification & 2 & no & 224 & 2 \\
-XCOPA & commonsense & human transl. & translated & completion & 2 & no & 37 & 31 \\
-XNLI & NLI & human transl. & translated & classification & 3 & no & 127 & 10 \\
-XStoryCloze & commonsense & human transl. & translated & completion & 2 & yes & 189 & 38 \\
-XWinograd & commonsense & native & native & completion & 2 & no & 74 & 6 \\
+ACP-Bench (MCQ) RF & reasoning & knowledge etc. & template & English & cloze & 4 & yes & 130 & -- & -- \\
+ARC & knowledge & knowledge etc. & MT & translated & cloze & 4 & no & 1169 & 122 & 28 \\
+ARC (MT) & knowledge & knowledge etc. & MT & translated & cloze & 4 & no & 1172 & -- & -- \\
+BBH (MCQ) RF & reasoning & knowledge etc. & unknown & English & cloze & 2--8 & unknown & 250 & -- & -- \\
+Belebele & reading comprehension & knowledge etc. & human transl. & translated & MCQ + passage & 4 & yes & 900 & 558 & 21 \\
+Belebele LLM-RF & reading comprehension & knowledge etc. & human transl. & translated & statement (LLM-RF) & 4 & yes & 898 & -- & -- \\
+Belebele RF & reading comprehension & knowledge etc. & human transl. & translated & cloze & 4 & yes & 900 & -- & -- \\
+BoolQ & reading comprehension & knowledge etc. & English & English & classification & 2 & yes & 3270 & -- & -- \\
+CommonsenseQA RF & commonsense & LM-like & English & English & cloze & 5 & no & 1221 & -- & -- \\
+CulturalBench-easy RF & culture & knowledge etc. & English & English & cloze & 4 & no & 25 & -- & -- \\
+Global PIQA (non-parallel) & commonsense & LM-like & native & native & completion & 2 & no & 100 & -- & -- \\
+Global PIQA (parallel) & commonsense & LM-like & MT + post-edit & translated & completion & 4 & no & 103 & -- & -- \\
+Global-MMLU & knowledge & knowledge etc. & MT + post-edit & translated & MCQ & 4 & no & 14042 & 120 & 11 \\
+Global-MMLU RF & knowledge & knowledge etc. & MT + post-edit & translated & cloze & 4 & no & 14042 & -- & -- \\
+HellaSwag & commonsense & LM-like & MT & translated & completion & 4 & yes & 9255 & 118 & 61 \\
+INCLUDE & knowledge & knowledge etc. & native & native & MCQ & 4 & no & 548 & -- & -- \\
+INCLUDE LLM-RF & knowledge & knowledge etc. & native & native & statement (LLM-RF) & 4 & no & 545 & -- & -- \\
+INCLUDE RF & knowledge & knowledge etc. & native & native & cloze & 4 & no & 548 & -- & -- \\
+INCLUDE v2 (EN) & knowledge & knowledge etc. & transl. (unknown) & native & cloze & 4 & no & 886 & -- & -- \\
+INCLUDE v2 (OG) & knowledge & knowledge etc. & native & native & cloze & 4 & no & 886 & -- & -- \\
+KoBEST & mixed & mixed & native & native & mixed & 2--4 & mixed & 500 & -- & -- \\
+LAMBADA & language modelling & LM-like & MT & translated & last word & -- & yes & 5153 & -- & -- \\
+MMLU (Okapi) RF & knowledge & knowledge etc. & MT & translated & cloze & 4 & no & 13101 & -- & -- \\
+MMLU RF & knowledge & knowledge etc. & English & English & cloze & 4 & no & 14042 & -- & -- \\
+MMMLU RF & knowledge & knowledge etc. & human transl. & translated & cloze & 4 & no & 14042 & -- & -- \\
+MathQA & math & knowledge etc. & English & English & cloze & 5 & no & 2985 & -- & -- \\
+MultiBLiMP & grammaticality & LM-like & template & native & minimal pair & 2 & no & 1415 & 46 & 119 \\
+MultiBLiMP (extra) & grammaticality & LM-like & template & native & minimal pair & 2 & no & 3032 & -- & -- \\
+NorEval & mixed & mixed & mixed & mixed & mixed & 2--5 & mixed & 900 & -- & -- \\
+NorEval (extra) & mixed & knowledge etc. & mixed & mixed & mixed & 2--4 & mixed & 536 & -- & -- \\
+OpenBookQA & knowledge & knowledge etc. & English & English & completion & 4 & no & 500 & -- & -- \\
+PAWS-X & paraphrase & knowledge etc. & human transl. & translated & classification & 2 & no & 2000 & 224 & 2 \\
+PIQA & commonsense & LM-like & English & English & completion & 2 & no & 1838 & -- & -- \\
+TokSuite & knowledge & knowledge etc. & human transl. & translated & completion & 4 & no & 40 & -- & -- \\
+TokSuite STEM & knowledge & knowledge etc. & English & English & completion & 4 & no & 613 & -- & -- \\
+TokSuite math & math & knowledge etc. & English & English & completion & 4 & no & 189 & -- & -- \\
+WinoGrande & commonsense & LM-like & English & English & completion & 2 & no & 1267 & -- & -- \\
+XCOPA & commonsense & LM-like & human transl. & translated & completion & 2 & no & 500 & 37 & 31 \\
+XNLI & NLI & knowledge etc. & human transl. & translated & classification & 3 & no & 2490 & 127 & 10 \\
+XStoryCloze & commonsense & LM-like & human transl. & translated & completion & 2 & yes & 1511 & 189 & 38 \\
+XWinograd & commonsense & LM-like & native & native & completion & 2 & no & 410 & 74 & 6 \\
 \bottomrule
 \end{tabular}

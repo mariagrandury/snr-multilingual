@@ -32,8 +32,9 @@ afford, and the question you want the proxy to answer.
        training; compare several checkpoints before you stop a run
        ([RQ2](findings/decision-accuracy.md)).
     5. **Pick per language.** The most reliable benchmark changes from one
-       language to the next; MultiBLiMP is the most reliable above-chance
-       benchmark in 27 of 46 languages ([RQ4](findings/surrogates.md)).
+       language to the next. INCLUDE has the highest SNR in 15 of 50
+       languages, HellaSwag in 13 and MultiBLiMP in 7
+       ([RQ4](findings/surrogates.md)).
 
 ## 2. Which evaluations can your proxy read? A look-up table
 

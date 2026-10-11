@@ -37,7 +37,8 @@ def _rows(df: pd.DataFrame) -> list[dict]:
 
 def _label(r) -> str:
     act = " · SwiGLU" if r["activation"] == "swiglu" else ""
-    return f"L{r['L']} · {r['arch']}{act} · {DATA.get(r['data'], r['data'])}"
+    opt = " · Muon" if r.get("optimizer") == "muon" else ""
+    return f"L{r['L']} · {r['arch']}{act}{opt} · {DATA.get(r['data'], r['data'])}"
 
 
 def pairs() -> dict:

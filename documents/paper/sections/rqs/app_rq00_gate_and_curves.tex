@@ -1,8 +1,6 @@
 \clearpage
 \twocolumn[{%
-\section{Detailed Analyses}
-\label{app:analyses}
-
+\rqparent
 \subsection{The above-chance gate}
 \label{app:rq00_gate_and_curves}
 
@@ -10,18 +8,18 @@
 \vspace{0pt}
 \paragraph{Research Question.} \emph{Which benchmarks clear chance at which size of the ladder, and which separate the language settings most?}
 
-\paragraph{Setup.} Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B. A run clears chance on a task when the one-sided 95\% Wilson lower bound of its accuracy over the task's items is above the chance level. A (task, size) cell is above chance when at least half of the runs of that size that train the task's language clear it. Tasks without a chance level (bits per byte) are not gated.
+\paragraph{Setup.} We measure whether a benchmark task is above chance at a model size. We read the final checkpoints of the seed-1904 runs of every language setting, ladder and data build, 90M--1.7B. The tasks are every benchmark task with a chance level, in the languages the sweep trains. Per-language BPB and the bBPB twins have no chance level and are never gated. A run clears chance on a task when the one-sided 95 \% Wilson lower bound of its accuracy over the task's items is above the chance level. A (task, size) cell is above chance when at least half of the runs of that size that train the task's language clear it. We also apply the same rule to the benchmarks we screened, which were evaluated only on the final checkpoints of the larger models (Figure~\ref{fig:app_rq00_chance_considered} and Table~\ref{tab:app_rq00_pass_counts_considered}). On the tasks that clear chance at very small token counts of their language, we check which option the runs pick (Table~\ref{tab:app_rq00_early_passes}).
 \end{minipage}\hfill
 \begin{minipage}[t]{0.485\textwidth}
 \vspace{0pt}
 \begin{rqfinding}
-\textbf{1. The gate removes most of the evaluation somewhere on the ladder.} On the 841 trained tasks, 311 (37 \%) are above chance at 90M and 507 (60 \%) at 1.7B. 547 (65 \%) are at chance at one size or more, 313 (37 \%) at every size. (Figure~\ref{fig:app_rq00_gate_and_curves}.)
+\textbf{1. The gate removes most of the evaluation somewhere on the ladder.} On the 933 trained tasks, 377 (40 \%) are above chance at 90M and 599 (64 \%) at 1.7B. (Figure~\ref{fig:app_rq00_gate_and_curves}.)
 \\
 \\
-\textbf{2. Over all 1,679 chance-level tasks the picture is the same.} 565 of 1,433 scored (39 \%) pass at 90M and 954 of 1,663 (57 \%) at 1.7B. 682 (41 \%) never pass, 16 of them never scored.
+\textbf{2. The picture is the same over all 1,696 tasks with a chance level.} Of the 1,511 scored at 90M, 619 (41 \%) pass, and 946 of 1,667 (57 \%) pass at 1.7B. 710 (42 \%) never pass, 29 of them because they are never scored.
 \\
 \\
-\textbf{3. It is an answer-format effect, not an option-count one.} On the trained languages at 1.7B the letter-answer families nearly vanish while their cloze twins pass: \texttt{belebele} 3 / 59 tasks against 57 / 59, \texttt{global\_mmlu\_full} 1 / 29 against 29 / 29, \texttt{include\_base\_44} 3 / 36 against 29 / 36.
+\textbf{3. The answer format, more than the option count, decides the gate.} On the trained languages at 1.7B the letter-answer families nearly vanish while their cloze twins pass: \texttt{belebele} 3 / 59 tasks against 57 / 59, \texttt{global\_mmlu\_full} 1 / 29 against 29 / 29, \texttt{include\_base\_44} 3 / 36 against 29 / 36.
 \end{rqfinding}
 \end{minipage}
 
@@ -33,14 +31,34 @@
 \captionof{figure}{\textbf{The gate removes most of the evaluation somewhere on the ladder.} One bar per benchmark gives the share of its language tasks that clear the above-chance gate, split by the smallest model size from which the gate holds (a darker blue is a larger size). Red marks the tasks that stay at chance up to 1.7B. The number in parentheses is the benchmark's number of language tasks. The benchmarks are ordered from the most to the fewest tasks above chance.}
 \label{fig:app_rq00_gate_and_curves}
 \end{minipage}
-\vspace{\baselineskip}
 }]
 
 \begin{table*}[p]
 \centering
 \small
-\caption{\textbf{The tasks that pass at very small token counts answer with one option.} The ten tasks above chance in at least half of their cells below $10^{8}$ tokens of their language and in fewer than half of their cells at $10^{8}$--$10^{10}$ tokens. We read the deep runs with the baseline data at seed 1904, at every evaluated tenth, from their stored option log-likelihoods. Share of runs above chance: trained runs below $10^{8}$ tokens of the language (Low), trained runs at $10^{8}$--$10^{10}$ tokens (Mid), and runs that never trained the language nor a language of its subfamily, at the sizes and checkpoints of the Low runs (Untrained). Over the Low runs above chance: their number, the median share of items answered with the option the run picks most often (One option), and the share of these runs in which that option alone would clear chance (Constant passes). Longest option: the median share of picks on the single longest option and the share of gold answers on it. CulturalBench-easy asks in English about a country and is placed at the tokens of the country's language.}
-\label{tab:app_rq00_early_passes}
+\begin{adjustbox}{max width=\textwidth}
 \input{tables/app_rq00_early_passes}
+\end{adjustbox}
 % source: src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/early_passes.tex
+\caption{\textbf{The tasks that pass at very small token counts answer with one option.} The ten tasks above chance in at least half of their cells below $10^{8}$ tokens of their language and in fewer than half of their cells at $10^{8}$--$10^{10}$ tokens. We read the deep runs with the baseline data at seed 1904, at every evaluated tenth, from their stored option log-likelihoods. Share of runs above chance: trained runs below $10^{8}$ tokens of the language (Low), trained runs at $10^{8}$--$10^{10}$ tokens (Mid), and runs that never trained the language nor any language of its subfamily, at the sizes and checkpoints of the Low runs (Untrained). Over the Low runs above chance: their number, the median share of items answered with the option the run picks most often (One option), and the share of these runs in which that option alone would clear chance (Constant passes). Longest option: the median share of picks on the single longest option and the share of gold answers on it. CulturalBench-easy asks in English about a country and is placed at the tokens of the country's language.}
+\label{tab:app_rq00_early_passes}
+\end{table*}
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq00_chance_considered.png}
+% source: src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/first_size_share_all_considered_paper.png
+\caption{\textbf{Most of the benchmarks we screened and do not analyse clear chance by 1.7B.} Left: the analysed benchmarks of Figure~\ref{fig:app_rq00_gate_and_curves}, here split by task. Right: the benchmarks we evaluated only on the final checkpoints of the 600M, 1B and 1.7B models and do not analyse, with the discarded tasks. Each bar splits a benchmark's tasks by the smallest model size from which they stay above chance (a darker blue is a larger size). On the right only 600M, 1B and 1.7B are evaluated, so 600M means above chance at every evaluated size. Red marks the tasks at chance at 1.7B. The number in parentheses is the benchmark's number of tasks with a chance level. We read the seed-1904 runs that train the task's language.}
+\label{fig:app_rq00_chance_considered}
+\end{figure*}
+
+\begin{table*}[p]
+\centering
+\small
+\begin{adjustbox}{max width=\textwidth}
+\input{tables/app_rq00_pass_counts_considered}
+\end{adjustbox}
+% source: src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/gate_pass_counts_all_considered.tex
+\caption{\textbf{Over the 93 benchmarks with a chance level that we considered, 881 of 1,454 tasks are above chance at 1.7B, and 286 of the 292 screened tasks pass although we do not analyse them.} Each cell gives the tasks above chance over the tasks with a verdict, per group, answer format and model size, on the trained languages. Analysed is the group of benchmarks that every other analysis uses. Screened, not analysed are the benchmarks we evaluated only on the final checkpoints of the 600M, 1B and 1.7B models. Discarded are the 228 screened tasks at chance at both 1B and 1.7B. Original is the benchmark as published, RF scores the answer strings instead of the option letters, and LLM-RF is the LLM rewrite into statements. A cell is above chance when at least half of the seed-1904 runs of that size that train the task's language clear chance. Tasks without a chance level have no verdict.}
+\label{tab:app_rq00_pass_counts_considered}
 \end{table*}

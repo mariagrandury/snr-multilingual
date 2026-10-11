@@ -6,7 +6,7 @@ Benchmark & Format & Lang. & 50\% & 90\% & 50\% & 90\% & 50\% & 90\% & Margin & 
 \midrule
 ARC & Original & 27 & $10^{9}$ & $2.2\times10^{10}$ & never & never & $4.6\times10^{8}$ & $10^{9}$ & 0.021 & 1{,}169 \\
 \addlinespace
-ARC (MT) & Original & 11 & $10^{9}$ & never & never & never & $\leq 2.2\times10^{8}$ & $4.6\times10^{8}$ & 0.021 & 1{,}172 \\
+ARC (MT) & Original & 11 & $10^{9}$ & never & never & never & $\leq 2.2\times10^{8}$ & $10^{9}$ & 0.021 & 1{,}172 \\
 \addlinespace
 Belebele & Original & 49 & never & never & never & never & never & never & 0.024 & 900 \\
  & RF & 49 & $\leq 2.2\times10^{6}$ & $2.2\times10^{8}$ & $\leq 2.2\times10^{6}$ & $2.2\times10^{9}$ & $\leq 4.6\times10^{7}$ & $\leq 4.6\times10^{7}$ & 0.024 & 900 \\
@@ -36,9 +36,17 @@ INCLUDE v2 (EN) & Original & 42 & $\leq 2.2\times10^{6}$ & never & $4.6\times10^
 \addlinespace
 INCLUDE v2 (OG) & Original & 42 & $4.6\times10^{8}$ & never & $10^{9}$ & never & $2.2\times10^{8}$ & never & 0.024 & 886 \\
 \addlinespace
+MMLU (Okapi) & RF & 27 & $\leq 2.2\times10^{6}$ & $4.6\times10^{8}$ & $\leq 2.2\times10^{6}$ & never & $\leq 4.6\times10^{7}$ & $4.6\times10^{8}$ & 0.006 & 13{,}101 \\
+\addlinespace
+MMMLU & RF & 12 & $4.6\times10^{7}$ & $4.6\times10^{8}$ & $4.6\times10^{7}$ & $2.2\times10^{8}$ & $\leq 2.2\times10^{8}$ & $4.6\times10^{8}$ & 0.006 & 14{,}042 \\
+\addlinespace
 MultiBLiMP & Original & 34 & $\leq 2.2\times10^{6}$ & $\leq 2.2\times10^{6}$ & $\leq 2.2\times10^{6}$ & $\leq 2.2\times10^{6}$ & $\leq 4.6\times10^{7}$ & $\leq 4.6\times10^{7}$ & 0.017 & 2{,}291 \\
 \addlinespace
+MultiBLiMP (extra) & Original & 3 & $\leq 10^{7}$ & $\leq 10^{7}$ & -- & -- & -- & -- & 0.015 & 3{,}032 \\
+\addlinespace
 PAWS-X & Original & 8 & $2.2\times10^{10}$ & $4.6\times10^{10}$ & never & never & $2.2\times10^{10}$ & $4.6\times10^{10}$ & 0.018 & 2{,}000 \\
+\addlinespace
+TokSuite & Original & 5 & $\leq 2.2\times10^{7}$ & $\leq 2.2\times10^{7}$ & $\leq 2.2\times10^{7}$ & $\leq 2.2\times10^{7}$ & $\leq 4.6\times10^{8}$ & $\leq 4.6\times10^{8}$ & 0.125 & 40 \\
 \addlinespace
 TruthfulQA (mc2) & Original & 3 & never & never & never & never & never & never & 0.030 & 788 \\
 \addlinespace

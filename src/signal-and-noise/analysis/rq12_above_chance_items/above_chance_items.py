@@ -118,8 +118,8 @@ AXES = PAIR_AXES[:2]                       # the design pair sets; the seed null
 KEYS = ["model", "step", "task"]
 ROW_BUDGET = 50_000_000                     # store rows read at a time (~1 GB): a full store is every checkpoint
 KEPT_BINS, KEPT_LABELS = [0, 30, 100, 300, 1000, np.inf], ["1-30", "31-100", "101-300", "301-1000", "> 1000"]
-IN_SAMPLE = (f"the items are chosen on the pool's {TARGET_SIZE} runs that train the task's language and DA is scored against the "
-             f"{TARGET_SIZE} reference: the selection reads the reference by design, and the numbers measure "
+IN_SAMPLE = (f"the items are chosen on the pool's {TARGET_SIZE} runs that train the task's language, and DA is scored against the "
+             f"{TARGET_SIZE} reference. The selection uses the reference by design, and the numbers measure "
              "how much that inflates DA and SNR")
 mpl.rcParams.update(S.RC)
 
@@ -693,7 +693,7 @@ def write_readme(pool: str, store_pool: str, ckpts: bool, checks: str, sel: pd.D
     r = r5[["n_cells", "n_tasks"]].drop_duplicates()
     emptied = ("no cell has fewer" if r5.empty else
                f"{r.n_cells.iloc[0]} cells over {r.n_tasks.iloc[0]} tasks have fewer in each ordering and pair set" if len(r) == 1 else
-               "; ".join(f"{ORDERINGS[x.ordering]} {x.axes}: {x.n_cells} cells over {x.n_tasks} tasks" for x in r5.itertuples())
+               ", ".join(f"{ORDERINGS[x.ordering]} {x.axes}: {x.n_cells} cells over {x.n_tasks} tasks" for x in r5.itertuples())
                + " have fewer")
     nr = sel.loc[sel["n_kept"].notna(), "n_reference_runs"]
     runs = (f"The runs that select a task's items are its {TARGET_SIZE} finals in the cells that train its language "
@@ -721,8 +721,8 @@ def write_readme(pool: str, store_pool: str, ckpts: bool, checks: str, sel: pd.D
                        [[ORDERINGS[r.ordering], r.n_fits, fmt(r.r2_median), fmt(r.rho_median), sign(r.r2_gain_median),
                          "" if pd.isna(r.n_paired) else int(r.n_paired)] for r in scaling.itertuples()])
     skipped = ("DA-ckpt and the checkpoint SNR are in `above_chance_items_da_ckpt_*` and the `*_ckpt` columns of the SNR table."
-               if ckpts else "**Skipped: DA-ckpt and the checkpoint SNR** — the store holds each run's final checkpoint only; "
-               "they fill in, without a code change, once the store is built over every checkpoint.")
+               if ckpts else "**Skipped: DA-ckpt and the checkpoint SNR.** The store holds each run's final checkpoint only. "
+               "They fill in, without a code change, once the store is built over every checkpoint.")
     body = "\n\n".join([
         "## Results",
         f"Pool `{pool}` ({', '.join(sizes)}), per-item store `{store_pool}`, ladder report of {snap}. "
@@ -732,23 +732,23 @@ def write_readme(pool: str, store_pool: str, ckpts: bool, checks: str, sel: pd.D
         f"`python analysis/rq12_above_chance_items/above_chance_items.py --pool {pool} --store-pool {store_pool}`.",
         runs,
         "**What survives each step** (items kept = items above chance at the reference, over the tasks of the row):", tab_surv,
-        "**The gate's pass share** per size (tasks passing, over every task with a chance level and a reference run; "
-        "gate, then items reads the committed gate and coincides with the full benchmark):", tab_share,
-        f"**DA-size** against the {TARGET_SIZE} final, pooled over the tasks, its 90 % leave-one-family-out jackknife band "
-        f"and the task count; rule 1 at the proxy and at {TARGET_SIZE}, ≥ {MIN_PAIRS} pairs (rule 5: {emptied} and are "
-        "NaN); the task count moves along a row and between the orderings (rule 13):", tab_da,
-        "**The DA-size gain**: the paired difference over the full benchmark averaged over the (task, proxy) cells both "
-        "readings have, the difference of the pooled lines (which weight a task by its pairs), and the cells items, then "
-        "gate admits that the committed gate blanks on the full benchmark. Items, then gate − full equals gate, then "
-        f"items − full on {same} paired (task, pair set, proxy) cells (the same sub-scores wherever both have a value), "
-        f"so only the latter is shown; both are in `{NAME}_da_size_both_axes.csv`:", tab_gain,
+        "**The gate's pass share** per size: the tasks passing, over every task with a chance level and a reference run. "
+        "Gate, then items uses the committed gate, so it coincides with the full benchmark:", tab_share,
+        f"**DA-size** against the {TARGET_SIZE} final, pooled over the tasks, with its 90 % leave-one-family-out jackknife "
+        f"band and the task count. Rule 1 applies at the proxy and at {TARGET_SIZE}, with ≥ {MIN_PAIRS} pairs (rule 5, "
+        f"cells with fewer pairs are NaN: {emptied}). The task count moves along a row and between the orderings (rule 13):", tab_da,
+        "**The DA-size gain**, read three ways: the paired difference from the full benchmark, averaged over the (task, "
+        "proxy) cells both readings have, the difference of the pooled lines (which weight a task by its pairs), and the "
+        "DA on the cells that items, then gate admits but the committed gate blanks on the full benchmark. Items, then "
+        f"gate − full equals gate, then items − full on {same} paired (task, pair set, proxy) cells (the same sub-scores "
+        f"wherever both have a value), so only the latter is shown. Both are in `{NAME}_da_size_both_axes.csv`:", tab_gain,
         "The admitted cells by the number of items their task keeps (mean DA-size over every proxy, cells):", tab_bins,
-        "**Tied sub-benchmarks.** Where the models answer a two-option task by a constant bias, the items above chance are "
-        "the ones whose gold matches it, and every design variant scores alike on them; a pair tied at the proxy and at the "
-        f"reference counts as agreeing (decision accuracy's tie convention), so such a cell reads DA-size 1. Cells where every "
+        "**Tied sub-benchmarks.** Where the models answer a two-option task with a constant bias, the items above chance are "
+        "the ones whose gold matches the bias, and every design variant scores alike on them. A pair tied at the proxy and at "
+        f"the reference counts as agreeing (decision accuracy's tie convention), so such a cell has a DA-size of 1. Cells where every "
         f"variant ties at the proxy or at {TARGET_SIZE} (`tied` in the per-task table):", tab_tied,
-        "**SNR** at the final checkpoint (rel_std signal over the relative k-fold noise of the task's items; tasks above "
-        "chance at the size) and its gain on the paired cells:", tab_snr,
+        "**SNR** at the final checkpoint (rel_std signal over the relative k-fold noise of the task's items, on the tasks "
+        "above chance at the size) and its gain on the paired cells:", tab_snr,
         "**Does SNR track DA-size?** Spearman ρ(SNR, DA-size multi-axis) over the tasks at each proxy (tasks):", tab_rho,
         "**Scaling predictability**: the log-N fit of the final scores per (task, L) on the deep data-A cells at the grid "
         "seed, over the rungs the ordering's gate passes:", tab_fit])

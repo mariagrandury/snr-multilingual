@@ -1,5 +1,6 @@
 \clearpage
 \twocolumn[{%
+\rqparent
 \subsection{Size generalisation to 3B}
 \label{app:rq10_size_generalisation}
 
@@ -7,18 +8,18 @@
 \vspace{0pt}
 \paragraph{Research Question.} \emph{Does a ranking that holds at 1.7B still hold one rung above it, at 3B?}
 
-\paragraph{Setup.} The deep cells trained at 3B (seed 1904) and the same families at 1.7B. Each (family, task) is scored at both rungs. Left: for each benchmark, the share of its tasks above chance at 1.7B and at 3B. We show the benchmarks with at least five tasks whose share moves. Right: DA-size from the final checkpoints of 90M--1B to the 3B final checkpoint and to the 1.7B final checkpoint, on the same single-axis decisions. Benchmark accuracy (tasks above chance at the proxy, at 1.7B and at 3B) and per-language bits per byte are pooled separately. The bands are 90\% leave-one-family-out jackknife bands.
+\paragraph{Setup.} We test whether the conclusions hold with a 3B reference. We compare the share of tasks above chance at 1.7B and at 3B, and DA-size against the 3B and the 1.7B final checkpoints on the same decisions. We use the six deep configurations trained to 3B at seed 1904 (scheme A at K $\in$ \{8, 15, 30, 50\}, scheme B at K $\in$ \{8, 15\}) and the same configurations at 90M--1.7B. Benchmark accuracy covers the tasks above chance at the proxy, at 1.7B and at 3B, the bBPB twins included (they exist for five of the six 3B models, all but K = 30). The share panel recomputes the Wilson rule at 1.7B and at 3B on the six configurations alone, over the runs that train the task's language (one to six runs per task). The DA panel gates the proxies and 1.7B with the gate of every seed-1904 run and 3B with the rule on the six 3B runs. Per-language BPB (14 languages, DCLM English and the mixture macro-average) is pooled separately. We pool the matching pairs over the tasks, with at least three pairs per task. The bands are 90 \% leave-one-family-out jackknife bands. The share panel shows the 15 benchmarks that have at least five tasks and whose share changes. We also change the reference, first to each of the three seeds of the 1B models, then to the 3B model at K = 30 on its decisions against the other five (Table~\ref{tab:app_rq10_reference_choice}).
 \end{minipage}\hfill
 \begin{minipage}[t]{0.485\textwidth}
 \vspace{0pt}
 \begin{rqfinding}
-\textbf{1. The 3B rung measures more than the reference but decides no differently.} On the same six families it lifts the above-chance count from 522 to 687 of 841 tasks (+32 \%), while mono-axis DA-size on identical decisions stays at 0.49--0.54 in benchmark accuracy (bBPB twins pooled) to either reference and at 0.81--0.96 in per-language BPB. (Figure~\ref{fig:app_rq10_size_generalisation}.)
+\textbf{1. The 3B rung measures more than the reference but decides no differently.} On the same six families, it lifts the above-chance count from 607 to 772 of 927 tasks (+27 \%). On identical mono-axis decisions, DA-size stays at 0.49--0.54 in benchmark accuracy (bBPB twins pooled) and at 0.78--0.91 in per-language BPB, whichever the reference. (Figure~\ref{fig:app_rq10_size_generalisation}.)
 \\
 \\
-\textbf{2. In benchmark accuracy no proxy predicts the 3B decision, the 1.7B reference included.} On the six families' gated benchmark tasks (the bBPB twins left out), DA-size $\rightarrow$ 3B is 0.47--0.52 mono-axis over 164--258 tasks and 0.48--0.53 multi-axis over 189--303.
+\textbf{2. In benchmark accuracy no proxy predicts the 3B decision, the 1.7B reference included.} On the six families' gated benchmark tasks (the bBPB twins left out), DA-size $\rightarrow$ 3B is 0.48--0.53 mono-axis over 184--281 tasks and 0.48--0.53 multi-axis over 209--326.
 \\
 \\
-\textbf{3. The ``same families'' column is not benchmark-only, and neither is the 3B column.} Its 0.52--0.53 mono-axis and 0.53--0.54 multi-axis pool the bBPB twins, which exist at 1.7B on all six families and at 3B on five (panel (a)'s dashed lines rest on a median of 622 and 728 tasks against 501 and 556 to 3B).
+\textbf{3. Without the bBPB twins the two references still agree.} On identical decisions without the twins, DA-size is 0.48--0.53 to 1.7B and 0.48--0.53 to 3B, mono-axis (per-task table of ).
 \end{rqfinding}
 \end{minipage}
 
@@ -30,14 +31,15 @@
 \captionof{figure}{\textbf{The 3B rung measures more than the reference but decides no differently.} Left: for each benchmark with at least five tasks whose share moves, the share of its tasks above chance at 1.7B (open circles) and at 3B (filled circles). Right: DA-size of the proxies 90M--1B against the 3B final checkpoint (solid) and against the 1.7B final checkpoint (dashed), on benchmark accuracy (black) and on per-language bits per byte (orange). The bands are 90\% leave-one-family-out jackknife bands and the dotted line marks 0.5.}
 \label{fig:app_rq10_size_generalisation}
 \end{minipage}
-\vspace{\baselineskip}
 }]
 
 \begin{table*}[p]
 \centering
 \small
-\caption{\textbf{Neither the seed of the reference nor a 3B reference at $K=30$ lifts benchmark accuracy far above a coin flip.} DA-size of benchmark accuracy (with the bBPB twins) from the final checkpoint of each proxy. Top: against the 1B final checkpoint of each of its three seeds, on the four designs trained with three seeds at 1B (deep, $K \in \{1, 2, 30\}$ with scheme A and $K=30$ with scheme B), and against the 1.7B final checkpoint on the same designs. Bottom: against the 3B final checkpoint, on the decisions between the one 3B model at $K=30$ and the five other 3B models. Then the same decisions against 1.7B, and every decision among the six 3B models. Within a block a task counts only where every column scores it. A task is above chance at the proxy and at the reference and has at least three pairs.}
-\label{tab:app_rq10_reference_choice}
+\begin{adjustbox}{max width=\textwidth}
 \input{tables/app_rq10_reference_choice}
+\end{adjustbox}
 % source: src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_choice_da_size_both_axes.tex
+\caption{\textbf{Neither the seed of the reference nor a 3B reference at $K=30$ lifts benchmark accuracy far above chance.} DA-size of benchmark accuracy from the final checkpoint of each proxy, pooled over decisions (top block: three quarters of the tasks are bBPB twins of English tasks, since $K=1$ trains English only, bottom block: no bBPB twins, which the 3B model at $K=30$ lacks). Top: against the 1B final checkpoint of each of its three seeds, on the four designs trained with three seeds at 1B (deep, $K \in \{1, 2, 30\}$ with scheme A and $K=30$ with scheme B), and against the 1.7B final checkpoint on the same designs. Bottom: against the 3B final checkpoint, on the decisions between the one 3B model at $K=30$ and the five other 3B models, then the same decisions against 1.7B, and every decision among the six 3B models. Within a block a task counts only where every column scores it. A task is above chance at the proxy and at the reference and has at least three pairs.}
+\label{tab:app_rq10_reference_choice}
 \end{table*}

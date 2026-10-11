@@ -74,7 +74,7 @@ PAPER_NAMES = {
     "commonsense_qa": "CommonsenseQA", "bbh_mcq": "BBH (MCQ)", "bbh_cloze": "BBH (cloze)",
     "acp_bench_mcq": "ACP-Bench (MCQ)", "acp_bench_cloze": "ACP-Bench (cloze)", "cultural_bench_easy": "CulturalBench-easy",
     "cultural_bench_hard": "CulturalBench-hard", "blend_sample": "BLEnD", "mathqa": "MathQA", "openbookqa": "OpenBookQA",
-    "toxigen": "ToxiGen", "bbq": "BBQ", "bpb": "BPB", "loss": "training loss",
+    "toxigen": "ToxiGen", "piqa": "PIQA", "winogrande": "WinoGrande", "boolq": "BoolQ", "bbq": "BBQ", "social_iqa": "Social IQa", "bpb": "BPB", "loss": "training loss",
     # the screened benchmarks (`auto_probe` outside `auto`, and `discarded`): rq00's "all considered" variant
     "arabicmmlu": "ArabicMMLU", "bangla": "Bangla", "blimp_nl": "BLiMP-NL", "careqa": "CareQA", "ceval": "C-Eval",
     "copal_id": "COPAL-ID", "evalita_llm": "EVALITA-LLM", "evalita_llm_extra": "EVALITA-LLM (extra)",

@@ -13,10 +13,11 @@ import pandas as pd
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "src/signal-and-noise"))
 from analysis import paths  # noqa: E402
+from analysis.utils import PROBE_SIZES  # noqa: E402
 
 SIZES = ["90M", "175M", "350M", "600M", "1B", "1.7B"]
-PROBE_SIZES = ["600M", "1B", "1.7B"]
-UNRELEASED = r"apertus3|a06|from8b|distill"   # internal checkpoints never reach the site
+# internal checkpoints never reach the site (the same guard as build_site_data.UNRELEASED)
+UNRELEASED = r"apertus3|a06|from8b|distill"
 
 
 def _rows(df: pd.DataFrame) -> list[dict]:
@@ -47,7 +48,7 @@ def build() -> dict:
     g = paths.GATE_AND_CURVES / "pretraining/predictivity"
     tok = paths.CHANCE_VS_TRAIN_TOKENS / "pretraining"
 
-    # the 841 trained tasks: read on runs that train the language at every size
+    # the trained tasks: read on runs that train the language at every size
     share = pd.read_csv(g / "above_random_share.csv")
     trained = (share[[f"{s}__population" for s in SIZES]] == "trained").all(axis=1)
     mask = pd.read_csv(g / "above_random_mask.csv").set_index("task")
@@ -59,10 +60,15 @@ def build() -> dict:
         population[label] = _funnel(m[m["fmt"] == f], SIZES)
 
     v = pd.read_csv(g / "gate_screened_verdicts_all_considered.csv")
-    v = v.rename(columns={f"above_{s}": s for s in PROBE_SIZES})
-    population["Screened, not analysed"] = _funnel(v[v["group"] == "probe"], PROBE_SIZES)
-    population["Discarded"] = _funnel(v[v["group"] == "discarded"], PROBE_SIZES)
-    population["All considered"] = _funnel(pd.concat([m[PROBE_SIZES], v[PROBE_SIZES]]), PROBE_SIZES)
+    # utils.PROBE_SIZES, less a size with no probe verdict in this snapshot (3B until its probe jobs land)
+    probe = [s for s in PROBE_SIZES if f"above_{s}" in v.columns and s in m.columns]
+    v = v.rename(columns={f"above_{s}": s for s in probe})
+    population["Screened, not analysed"] = _funnel(v[v["group"] == "probe"], probe)
+    population["Discarded"] = _funnel(v[v["group"] == "discarded"], probe)
+    # the pending benchmarks (utils.pending_benchmarks) are in the trained gate and in the screened
+    # group at once: count them once, as screened, so the total is the considered table's 1,454
+    population["All considered"] = _funnel(pd.concat([m.loc[~m.index.isin(v["task"]), probe],
+                                                      v.set_index("task")[probe]]), probe)
 
     # the score a run needs on each trained task (above_random_example.needed_score)
     def needed(n: int, chance: float):
@@ -101,6 +107,7 @@ def build() -> dict:
     keys = set(m["family"]) | set(maj_b["family"]) | set(fam["benchmark"]) | set(thr["benchmark"])
     return {"gate_extra": dict(
         sizes=SIZES, names={k: paper_name(k) for k in sorted(keys)},
+        analysed=dict(tasks=len(m), benchmarks=int(m["family"].nunique()), languages=int(m["language"].nunique())),
         population=population, margin=margin,
         majority=_rows(maj), majority_by_benchmark=_rows(maj_b),
         early=_rows(early),

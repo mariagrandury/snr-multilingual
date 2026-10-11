@@ -1,7 +1,7 @@
-"""The new RQ6 result: benchmarks can be scored now, and they read as a coin flip.
+"""The new RQ6 result: benchmarks can be scored now, and they rank at chance.
 
-Left, how often a 175M proxy picks the same data scheme as the 600M reference,
-for the benchmark suite against per-language bits per byte. Right, how many
+Left, how often a 175M or 350M proxy picks the same data scheme as the 1.7B
+reference, for the benchmark suite against per-language bits per byte. Right, how many
 measurements of each kind ever reach a proxy size that agrees and keeps
 agreeing. Both from the same intervention run.
 """
@@ -57,7 +57,7 @@ def agreement(ax):
             ax.annotate("no\ndata", (i + off, 0.02), ha="center", va="bottom",
                         fontsize=7.5, color=S.MUTED)
     ax.axhline(.5, color=S.MUTED, ls="--", lw=1)
-    ax.annotate("coin flip", (len(Ls) - .45, .5), xytext=(0, 4), ha="right",
+    ax.annotate("chance (0.5)", (len(Ls) - .45, .5), xytext=(0, 4), ha="right",
                 textcoords="offset points", fontsize=8, color=S.MUTED)
     ax.set_xticks(x)
     n_bench = b["n_items"].to_dict()
@@ -65,7 +65,8 @@ def agreement(ax):
                         for L in Ls], fontsize=9)
     ax.set_ylim(0, 1.2); ax.set_yticks([0, .25, .5, .75, 1])
     ax.set_xlim(-.6, len(Ls) - .4)
-    ax.set_ylabel("agrees with the 600M reference", fontsize=9, color=S.MUTED)
+    ref = "/".join(sorted(iv.reference_size.dropna().unique()))
+    ax.set_ylabel(f"agrees with the {ref} reference", fontsize=9, color=S.MUTED)
     ax.set_title("Does the proxy pick the same data scheme?", fontsize=10.5,
                  color=S.INK, pad=8)
     ax.grid(axis="y", color=S.GRID, lw=.8); ax.set_axisbelow(True)
@@ -105,5 +106,5 @@ if __name__ == "__main__":
     agreement(a0)
     ever_predictive(a1)
     fig.subplots_adjust(wspace=.32)
-    S.title(fig, "The benchmark suite can now be scored on the proxy question, and it reads as a coin flip", y=1.04)
+    S.title(fig, "The benchmark suite can now be scored on the proxy question, and it ranks at chance", y=1.04)
     S.save(fig, OUT / "benchmark_predictivity.png")

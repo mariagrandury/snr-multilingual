@@ -10,8 +10,10 @@
 #   bash scripts/refresh_analysis.sh              # fetch the report, then rebuild
 #   bash scripts/refresh_analysis.sh --no-fetch   # rebuild from the local copy
 #   bash scripts/refresh_analysis.sh --no-deck    # skip the slidev build
-#   bash scripts/refresh_analysis.sh --curves     # also redraw rq00's ~140
-#                                                 # acc-vs-FLOPs grids (+1 h)
+#   bash scripts/refresh_analysis.sh --curves     # also redraw rq00's ~150
+#                                                 # acc-vs-FLOPs grids (~11 h on
+#                                                 # 2026-10-10: the nightly runs
+#                                                 # them as two jobs instead)
 #   bash scripts/refresh_analysis.sh --no-report  # skip the deck figures, the
 #                                                 # report PDF, the compendium
 #                                                 # and their figure check

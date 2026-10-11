@@ -41,8 +41,8 @@
           ],
         }),
         note(s.kind === "bpb"
-          ? "Six configurations reach 3B, five with a BPB final there, so this rests on 10–12 BPB tasks (the languages every such configuration trains, English and the macro average). Per-language BPB keeps its ranking from 1.7B to 3B, and the proxies agree with either reference."
-          : `Benchmark tasks above chance at the proxy, at 1.7B and at 3B. The two dots of a row are the same decisions, so the gap between them is the reference alone: ${s.kind === "accuracy" ? `accuracy reads ${s.axes === "mono-axis" ? "0.47–0.52" : "0.47–0.53"} against either one` : "the bBPB twins move by a few points either way"}, and the 1.7B model itself orders the 3B decisions no better than chance.`),
+          ? `Six configurations reach 3B, so this rests on ${d3.min(rows, (r) => r.n_tasks)}–${d3.max(rows, (r) => r.n_tasks)} BPB tasks (the languages every such configuration trains, English and the macro average). Per-language BPB keeps its ranking from 1.7B to 3B, and the proxies agree with either reference.`
+          : `Benchmark tasks above chance at the proxy, at 1.7B and at 3B. The two dots of a row are the same decisions, so the gap between them is the reference alone: ${s.kind === "accuracy" ? `accuracy reads ${fmt(d3.min(rows, (r) => r.da))}–${fmt(d3.max(rows, (r) => r.da))} against either one` : "the bBPB twins move by a few points either way"}, and the 1.7B model itself orders the 3B decisions no better than chance.`),
       ];
     });
   };

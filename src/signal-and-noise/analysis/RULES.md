@@ -133,9 +133,10 @@ an `rf_` twin has one as well (`belebele-rf-bbpb`). What a reader has to be told
   `--finals-only`) and holds all checkpoints of every seed-1904 ladder cell,
   so a twin enters DA-size, DA-ckpt, DA-goal at every fraction, the
   checkpoint noise and the SNR (`with_bbpb_twins` is an inner join on
-  `bench_bpb.csv`). It does not hold the seed replicates (64/313, 28/1797)
-  nor the 3B cells, so the seed noise, the seed holdout and the 3B reads have
-  no twin. The nightly only reduces the store (`--bench-bpb`) and extracts
+  `bench_bpb.csv`). It also holds the seed replicates of the deep L1/L2/L50
+  cells at 175M and 600M (64/313) and of L1/L2/L30/L30-B at 1B (28/1797), and
+  five of the six 3B cells (not A-L30, 2026-10-10), so rq10's 3B reads and the
+  1B-seed references carry twins on those cells only. The nightly only reduces the store (`--bench-bpb`) and extracts
   nothing, so a cell evaluated after the last `build_per_item_store.sbatch`
   run has no twin until the sbatch is re-submitted (it resumes); the loader
   prints those models, and a bBPB DA over them runs over fewer families than

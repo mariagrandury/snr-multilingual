@@ -11,7 +11,7 @@ the signal-to-noise ratio, decision accuracy and the above-chance test
 improve, and does it matter whether we filter the benchmarks
 ([RQ0](gate.md)) before or after choosing the questions?
 
-**How we measure it.** For every benchmark in every trained language (841
+**How we measure it.** For every benchmark in every trained language (846
 tasks), a question is kept when the 1.7B final runs that trained on its
 language answer it above chance on average (4 to 29 runs per task). We
 compare three readings: the **full benchmark**; **gate, then items** (the
@@ -69,7 +69,7 @@ accuracy changed (down to up).
   +0.003 to +0.023 at 175M–1B, inside the full benchmark's band; the tasks
   the recomputed gate admits rank at or below chance (0.47–0.50).
 - **The held-out version gains about as much.** The questions half of the
-  1.7B runs solve, chosen on other runs ([RQ8](subsets.md)), gain +0.013 to
+  1.7B runs solve, chosen on other runs ([RQ8](subsets.md)), gain +0.015 to
   +0.033 at 90M–600M.
 
 !!! success "Takeaway"

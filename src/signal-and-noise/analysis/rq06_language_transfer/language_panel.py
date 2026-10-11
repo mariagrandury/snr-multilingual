@@ -224,9 +224,9 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, panels: dict) -> 
         f"Per benchmark family, decision accuracy of a proxy size against the {TARGET_SIZE} MACRO ranking of the "
         f"design variants (mean over the L8 panel languages above chance at {TARGET_SIZE}), when the proxy reads one "
         f"language, English, or its own macro over the languages readable at that size. Grid-seed pairs of every "
-        f"data build (multi-axis), ≥ {MIN_PAIRS} pairs, gate `{pool}`. A macro above every single language says the "
-        f"languages' errors are independent and the panel is worth evaluating; a single language at the macro says "
-        f"it suffices. Regenerate with `python analysis/rq06_language_transfer/language_panel.py --pool {pool}`.",
+        f"data build (multi-axis), ≥ {MIN_PAIRS} pairs, gate `{pool}`. A macro above every single language says that the "
+        f"languages' errors are independent and that the panel is worth evaluating. A single language as good as the "
+        f"macro says that this language suffices. Regenerate with `python analysis/rq06_language_transfer/language_panel.py --pool {pool}`.",
         md_table(list(tab.columns), tab.values.tolist()),
         f"![The minimal language panel]({stage}/{pool}/language_panel.png)"])
     replace_block(OUT_ROOT / "README.md", "language-panel", body, f"language_panel.py --pool {pool}")

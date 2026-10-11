@@ -165,7 +165,9 @@ next run that progresses without failing a held task ends its streak — but a
 checkpoint whose remaining tasks are **all** held leaves `pending` entirely,
 so no job is ever submitted for it again and nothing can reset it. After you
 fix a root cause, `auto_evals_cscs.py --retry-held` gives every held task one
-more chance (first pass only, even under `--watch`).
+more chance (first pass only, even under `--watch`). It is a real pass, so it
+takes the watcher's lock and refuses while the watcher runs: `--stop` the
+watcher first, then start it again as `--watch 1800 --retry-held`.
 
 **Reformulated twins** (2026-09-18). `scripts/make_rf_tasks.py` writes
 `tasks/rf/<family>/rf_<task>.yaml` for belebele / global_mmlu_full /

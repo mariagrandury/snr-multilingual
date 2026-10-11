@@ -23,11 +23,11 @@ cd Projects/snr-multilingual/src/ && conda activate snr
 
 ✅ eval new ckpts:
 bash evals/scripts/launch_bpb.sh
-SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --watch 1800
+SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --watch 1800 --optimizer muon
 SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --retry-held
 
 ✅ probe new benchmarks:
-SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --group auto_probe --size 90M,175M,350M,600M,1B,1.7B --seed 1904 --final-only
+SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --group auto_probe --size 600M,1B,1.7B --seed 1904 --final-only
 
 ✅ compare probe benchmarks and decide which to keep:
 bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/signal-and-noise/analysis/rq00_task_reformulation/probe.sh
@@ -501,3 +501,83 @@ The order I suggest:
 - intro
 - methodology
 - appendix: D onward
+
+
+# acc vs acc_norm
+
+acc vs acc_norm (just an assessment, no changes):
+
+Fine: per-task analyses. Every model is scored on a task with the same metric, so DA, SNR and the above-chance test compare like with like. That covers almost everything in the paper.
+
+Mixed now:
+
+Original vs twin comparisons. HellaSwag, ARC, OBQA and the Okapi translations now use acc_norm, but their rf_ / rfgm_ twins stay on acc. So the rq00 reformulation figure (original vs RF pass rates) and rq11's "original vs RF vs LLM-RF" lines compare a length-normalised original with a raw-accuracy twin. For RF twins with single-letter answers the two metrics are almost the same, so the effect is likely small. It's still a confound worth one sentence or a check.
+Cross-benchmark averages of the accuracy level. Examples are the mean accuracy curves, or the "accuracy, every format" line in rq11's Overall row. These now mix acc_norm benchmarks with acc-only ones (XCOPA, XStoryCloze, XNLI, …). Rank-based quantities (DA) and per-task tests are unaffected. Raw accuracy levels averaged across benchmarks are not.
+
+
+# Paper review
+
+QUICK REVIEW: check for broken references, typos and incoherencies (e.g. different numbers), no use of AI lingo, expressions or punctuation, all citations exist and are correct
+
+REVIEW REPORT: add it to the overleaf folder. Actually, design a claude skill for you to review each version of the paper i share with you. it should have different levels, the first is the quick review i described, if the reviewer finds many issues there, stops, if not, it continues to the next step (e.g. methodology and analysis logical consistency, how solid the arguments are, etc), then next step (story consistent from abstract to conclusions, the contributions from the intro are backed up by the paper), appendix, style of paper, wording and figures (clarity, colors, captions), etc.
+Show less
+Bash Locate overleaf export and skill folders
+IN
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual && ls -d overleaf/* 2>/dev/null | head; ls overleaf/paper-overleaf-10-08-20h 2>/dev/null | head -20; git check-ignore -v overleaf 2>/dev/null; ls .claude-shared/skills .claude/skills 2>/dev/null
+
+OUT
+.claude-shared/skills:
+draft
+review-snr
+
+.claude/skills:
+draft
+review-snr
+Bash Find the overleaf export folder
+IN
+cd /iopsstor/scratch/cscs/mariagrandury && find . -maxdepth 4 -type d -name "paper-overleaf-10-08*" 2>/dev/null | head
+
+OUT
+(Bash completed with no output)
+Bash Find overleaf-named folders in repo
+IN
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual && find . -maxdepth 3 -type d -iname "*overleaf*" -not -path "./.git/*" 2>/dev/null | head
+
+OUT
+./documents/overleaf
+./documents/overleaf/paper-overleaf-10-08-20h
+
+
+
+Everything from your last message is committed (nothing pushed):
+
+| Step | Commit(s) | Result |
+|---|---|---|
+| Analysis section | `57b3a650`, `06347628`, `f7dbe6a4`, `e5486313`, `b8848217` | Your answers are applied: bBPB defined in the evaluation part of §3, the token-threshold table in the appendix and referenced from §4, `app_rq02_bbpb` referenced. Review fixes: six wording errors, dashes, a stale docstring |
+| Files | `d9e9556e` | All generated pages are in `sections/rqs/` (22 rq pages + fixed populations + language table). Generated tables are in `tables/`, matching the layout you'd started on Overleaf. Hand-written files stay in `sections/` |
+| SNR | `481091a0` | `app_snr.tex` is now the single section "Signal, Noise and Surrogates of Decision Accuracy", with every label kept. `app_snr_new.tex` is no longer included but is still on disk. Deleting it is your call |
+| Statements | `8ef86ed3` | `07_responsible_nlp_research.tex` now answers each question with refs. 12 `\TODO{}` flags mark what's missing: Limitations still in note form, licenses, intended use, PII, splits, software versions, hyperparameter search, and the reformulation LLM in the AI statement. New bullets went into `06_statements` |
+| Overleaf diff | `8ab037d5` | See below |
+| Analyses 6/7 | `1eda57eb`, `06ffd6a6` | Reported in my previous message |
+
+**Comparing with Overleaf.** Use this each time you export:
+```bash
+python3 scripts/overleaf_diff.py                 # newest export in documents/overleaf/, or pass a folder/.zip
+python3 scripts/overleaf_diff.py --diff 04_analysis   # word diff of one file
+python3 scripts/overleaf_diff.py --code 04_analysis   # open side by side in VS Code
+python3 scripts/overleaf_diff.py --html               # full report next to the export
+```
+Today's report: `documents/overleaf/paper-overleaf-10-08-20h-diff.html`. Out of 35 file pairs, 1 is identical, 5 changed only in the repo, and the rest have diverged.
+
+**To merge by hand into Overleaf:**
+- **`03_methodology`:** your Overleaf version has its own "Benchmark BPB" bullet, which overlaps the new bBPB definition in the repo. Merge the two.
+- **`app_04_chance_threshold`:** Overleaf says 25.0 / 1.1 / 79.0 / 4.1%, the repo says 37.5 / 1.1 / 100.0 / 4.1%. The repo values come from today's data.
+- **Generated rq pages edited on Overleaf** (figure placement, `figure*`, `\section`): a regeneration overwrites those edits. Tell me which layout to keep and I'll put it in the generator.
+- **Label names:** Overleaf renamed `subsec:methodology-snr` to `app:methodology-snr`. Pick one.
+- **Includes:** the repo's `main.tex` doesn't include `06_statements` (which holds Limitations), `07_responsible_nlp_research` or the model card. Overleaf's does include `06_statements` and the model card.
+
+**Your export is incomplete:**
+- No figures, tables or `.bib` files.
+- Its `main.tex` uses `01_introduction_restructure` and `04_analysis_restructure`, which aren't in the folder.
+
+For the full review, please export the complete project from Overleaf (Menu → Download → Source, the .zip) into `documents/overleaf/`. I'll then run the `review-paper` skill on it and put `REVIEW.md` in that folder.

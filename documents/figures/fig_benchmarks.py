@@ -25,9 +25,9 @@ def first_clearing_size(out):
     m = m[m["n_options"].notna()]
     m["lang"] = m["task"].map(assign_language)
     m["fam"] = m["task"].map(benchmark_family)
-    # 90M is excluded: one cell survives the divergence filter and it is off
-    # trend, so "clears chance at 90M" would rest on a single broken run.
-    sizes = [s for s in S.SIZES if s in m.columns and s != "90M"]
+    # Every rung from 90M: the diverged batch-504 90M runs were replaced by the
+    # 2026-09-23 retrain at batch 84, and the loader keeps only the new runs.
+    sizes = [s for s in S.SIZES if s in m.columns]
     langs = [l for l in data.TRAINED_LANGS if l in set(m["lang"])]
 
     grid = np.full((0, len(langs)), np.nan)
@@ -53,7 +53,9 @@ def first_clearing_size(out):
     # carries it alone and the figure grows with the column count instead.
     ncols = grid.shape[1]
     annotate = ncols <= 20
-    fig, ax = plt.subplots(figsize=(max(9.2, 0.26 * ncols + 2.6), 0.42 * len(fams) + 1.8))
+    h = 0.42 * len(fams) + 1.8
+    fig, ax = plt.subplots(figsize=(max(9.2, 0.26 * ncols + 2.6), h))
+    fig.subplots_adjust(top=1 - 1.0 / h)   # default 12 % top margin is inches of blank here
     colors = [S.SIZE_COLOR[s] for s in sizes]
     for i in range(grid.shape[0]):
         for j in range(grid.shape[1]):
@@ -64,7 +66,7 @@ def first_clearing_size(out):
             ax.add_patch(plt.Rectangle((j, i), 1, 1, facecolor=face, edgecolor="white", lw=1.2))
             if annotate and v >= 0:
                 ax.text(j + .5, i + .5, sizes[int(v)], ha="center", va="center",
-                        fontsize=7.2, color="white" if v >= 2 else S.INK)
+                        fontsize=7.2, color="white" if v >= sizes.index("600M") else S.INK)
     ax.set_xlim(0, grid.shape[1]); ax.set_ylim(grid.shape[0], 0)
     ax.set_xticks(np.arange(grid.shape[1]) + .5); ax.set_xticklabels(langs, fontsize=9)
     ax.set_yticks(np.arange(grid.shape[0]) + .5); ax.set_yticklabels(fams, fontsize=9)
@@ -76,7 +78,7 @@ def first_clearing_size(out):
     ax.legend(handles=handles, frameon=False, fontsize=8, labelcolor=S.MUTED, ncol=len(handles),
               loc="upper center", bbox_to_anchor=(0.5, -0.02 - 0.5 / len(fams)))
     S.title(fig, "Smallest model that beats chance, per benchmark and language",
-            y=0.99)
+            y=1 - 0.3 / h)
     S.save(fig, OUT / "first_clearing_size.png")
 
 

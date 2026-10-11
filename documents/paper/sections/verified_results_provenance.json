@@ -1,10 +1,10 @@
 {
-  "benchmark_tasks": 1699,
+  "benchmark_tasks": 1702,
   "compute_charged": {
-    "as_of": "2026-10-09",
-    "gpu_hours": 205600,
-    "other_node_hours": 9600,
-    "pretrain_node_hours": 41800
+    "as_of": "2026-10-11",
+    "gpu_hours": 215600,
+    "other_node_hours": 11000,
+    "pretrain_node_hours": 42900
   },
   "constants": {
     "ANALYSIS_SIZES": [
@@ -19,26 +19,26 @@
     "MIN_PAIRS": 3,
     "TARGET_SIZE": "1.7B"
   },
-  "da_rows": 202252,
-  "evaluated_checkpoints": 4292,
+  "da_rows": 223728,
+  "evaluated_checkpoints": 4412,
   "generated_by": "documents/paper/sections/verify_paper_results.py (reshape, no re-derivation)",
-  "grid_seed1904_runs": 187,
-  "headline_seed1904_A_B_runs": 139,
-  "healthy_175M_to_1_7B": 207,
+  "grid_seed1904_runs": 193,
+  "headline_seed1904_A_B_runs": 145,
+  "healthy_175M_to_1_7B": 213,
   "sizes": {
-    "1.7B": 29,
+    "1.7B": 32,
     "175M": 38,
-    "1B": 37,
+    "1B": 40,
     "350M": 32,
     "600M": 38,
     "90M": 33
   },
   "sources": {
-    "plan/compute-costs.json": "7913f03666cd4b8d768b3db43addeaf48d8f3ee0c0caf588fad13dc71a5d8123",
-    "src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv": "eb36aa00b459f7e4a7a701ad1a53268e574d1e61fd064941777a029a4063a72f",
-    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_ckpt_by_family_multi_axes.csv": "ee545634c9af6bb86fe5ff1f77ea464105a00ee83a83d819259cec0531a31357",
-    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_size_by_family_multi_axes.csv": "7bc16e4f15b6056869d8fe5612b75e8e28e62d1245abe7117bd0011f89e83f98",
-    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_all_pooled_per_task_multi_axes.csv": "e63e2146e4c22072517cb99d2c6666d277107155f15e0061747d5eb7b3073cb4",
-    "src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr_variants_per_task.csv": "e7bd01fe7d5c1be381119e95c520d637b108491904d84ec884b215ebb489ea81"
+    "plan/compute-costs.json": "9d28932f8a1c199ffd9b52c8e957107b424d676d8db9abc97e5e7116dd621a0e",
+    "src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv": "f0bcb4f90fc8b7cee5449964ecf4614725a5fcd8f1cfeeac195d279543bf0f8a",
+    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_ckpt_by_family_multi_axes.csv": "a76af2edbf811e7d9db0c523402e50400ced53001ce3b72ade86032eabd909cc",
+    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_size_by_family_multi_axes.csv": "b6e7bdee8053cd62e6b284d017ccbeb1a72976db8d03fe801c7cce9959de491f",
+    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_all_pooled_per_task_multi_axes.csv": "ea7e5107ee92b5481e4354ff3b2d95bae5329d93bb2c1fabfd376132515a3302",
+    "src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr_variants_per_task.csv": "3c6f52f77acc0a7366ae126b7de6610f8dac4b5bedb1df6755ab3046ecaa6f0c"
   }
 }

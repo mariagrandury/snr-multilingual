@@ -412,34 +412,37 @@ def generate_readme(pool: str, out_dir: Path, pairs: pd.DataFrame) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     body = "\n\n".join([
         "## Per language count",
-        f"**Pairs per L** — the design variants the grid plans at seed {GRID_SEED}, and per proxy size the pairs usable "
-        f"against {TARGET_SIZE} (both members planned at that size and at {TARGET_SIZE}): planned / with data today on "
-        f"BPB / on the benchmarks / on the training loss. ZH and ES run to {TARGET_SIZE} and are the second and third L2 "
-        "families. A cell below MIN_PAIRS (3) families is left empty (rule 5), "
-        "so a thin L shows blanks rather than a 0/1 reading.",
+        f"**Pairs per L.** The table lists the design variants the grid plans at seed {GRID_SEED}. For each proxy "
+        f"size it gives the pairs usable against {TARGET_SIZE}, meaning both members are planned at that size and at "
+        f"{TARGET_SIZE}. Each cell reads planned / with data today on BPB / on the benchmarks / on the training loss. "
+        f"ZH and ES also run to {TARGET_SIZE}, as the second and third L2 data builds. In the figures below, an L "
+        "with fewer than MIN_PAIRS (3) pairs is left out (rule 5), so a thin L shows no line instead of a reading "
+        "on one or two pairs.",
         md_table(list(pairs.columns), pairs.values.tolist()),
-        f"The early-and-small reading one L at a time: pairs of design variants that share the L (seed {GRID_SEED} of every "
-        f"data build, `{L_POOL}`), against the {TARGET_SIZE} final ranking, on the ten evaluated checkpoints of every run; a cell "
-        f"needs ≥ {MIN_PAIRS} pairs (rq02's rule), which today leaves out every L with one pair (the table above); the "
-        f"first panel pools every pair at that seed, every data build included (`da_all_pooled_per_task{m}.csv`). "
-        f"`da_all_by_L_per_task{m}.csv` also carries each size's DA-ckpt within the L (`da_own`); rq04 reads both tables. "
-        f"The `_mono_axis` twins of every table and figure are the same over the one-axis pairs (rule 15). "
+        f"These figures repeat the early-and-small reading one L at a time. Each panel uses the pairs of design "
+        f"variants that share the L (seed {GRID_SEED} of every data build, `{L_POOL}`) and compares them with the "
+        f"{TARGET_SIZE} final ranking at the ten evaluated checkpoints of every run. A cell needs ≥ {MIN_PAIRS} pairs "
+        f"(rule 5). The first panel pools every pair at that seed, across all data builds "
+        f"(`da_all_pooled_per_task{m}.csv`). `da_all_by_L_per_task{m}.csv` also carries each size's DA-ckpt within "
+        f"the L (`da_own`). rq04 reads both tables. The `_mono_axis` twins of every table and figure repeat the "
+        f"analysis over the one-axis pairs (rule 15). "
         f"Regenerate with `python analysis/rq02_decision_accuracy/by_L.py --pool {pool} [--axes mono-axis]`.",
-        f"Two of rq02's three decision accuracies have a checkpoint axis and so a figure here. **DA-goal** ranks the "
-        f"proxy at any checkpoint against the {TARGET_SIZE} final checkpoint; **DA-ckpt** ranks it against its own "
-        f"size's final checkpoint, so the 175M line asks what 175M would have decided early and what it misses is the "
-        f"checkpoint alone. The distance between the two is what the proxy *size* costs, and the {TARGET_SIZE} line is "
-        f"the same curve in both — at the reference the definitions coincide. DA-ckpt has no 5C column: a run's final "
-        f"checkpoint is its own reference. The third, **DA-size**, is DA-goal read at 5C alone and lives in "
-        f"`da_all_per_task_both_axes.csv`. Each figure comes in a benchmarks-only version and a `_with_bpb` one that adds the solid "
-        f"per-size BPB lines; all four share the y axis, so any two overlay.",
+        f"rq02 has three decision accuracies, and two of them have a checkpoint axis, so they get a figure here. "
+        f"**DA-goal** ranks the proxy at any checkpoint against the {TARGET_SIZE} final checkpoint. **DA-ckpt** ranks "
+        f"it against its own size's final checkpoint. The 175M DA-ckpt line therefore asks what 175M would have "
+        f"decided early, and anything it misses is due to the checkpoint alone. The gap between the two is what the "
+        f"proxy *size* costs. The {TARGET_SIZE} line is the same curve in both, because at the reference the two "
+        f"definitions coincide. DA-ckpt has no 5C column, since a run's final checkpoint is its own reference. The "
+        f"third, **DA-size**, is DA-goal read at 5C alone and lives in `da_all_per_task_both_axes.csv`. Each figure "
+        f"comes in a benchmarks-only version and a `_with_bpb` version that adds solid per-size BPB lines. All four "
+        f"share the y axis, so any two can be overlaid.",
         f"![DA-goal per L]({stage}/{pool}/early_small_da_goal_by_L{m}.png)",
         f"![DA-goal per L, with BPB]({stage}/{pool}/early_small_da_goal_by_L_with_bpb{m}.png)",
         f"![DA-ckpt per L]({stage}/{pool}/early_small_da_ckpt_by_L{m}.png)",
         f"![DA-ckpt per L, with BPB]({stage}/{pool}/early_small_da_ckpt_by_L_with_bpb{m}.png)",
-        "A third variant of each restricts the mean to the (benchmark, language) cells that rank reliably on BOTH "
-        "axes (DA-size and DA-ckpt each ≥ 0.8, `reliable_tasks.py`): the plain panels average over every gated "
-        "benchmark, these average over the benchmarks that work.",
+        "A third variant of each averages only over the (benchmark, language) cells that rank reliably on BOTH "
+        "axes (DA-size and DA-ckpt each ≥ 0.8 at the `late` cell, `reliable_tasks.py`). The plain panels average "
+        "over every gated benchmark. These average only over the benchmarks that work.",
         f"![DA-goal per L, reliable cells only]({stage}/{pool}/early_small_da_goal_by_L_above_80{m}.png)",
         f"![DA-ckpt per L, reliable cells only]({stage}/{pool}/early_small_da_ckpt_by_L_above_80{m}.png)"])
     replace_block(OUT_ROOT / "README.md", "by-L", body, f"by_L.py --pool {pool}")
@@ -482,30 +485,36 @@ def generate_readme_transformation(pool: str, out_dir: Path, summaries: dict) ->
     axes_ = [a for a in PANEL_AXES if a in set(summaries[("ckpt", "")]["axis"])]
     body = "\n\n".join([
         "## Early and small per design axis",
-        f"The per-L reading above pools every design axis inside an L; this one splits the MONO-AXIS pairs at seed {GRID_SEED} "
-        f"(`{L_POOL}`, every data build) by the one axis each pair moves — {', '.join(axes_)} — one panel per axis and a first panel "
-        f"over every mono-axis pair (median pairs per cell up to {int(summaries[('ckpt', '')]['median_pairs'].max())}). Same gate (rule 1), "
-        f"pair minimum (rule 5) and filter variants as the per-L figures; the `above_66_ckpt` twin filters the DA-ckpt figure and "
-        f"`above_66_either` both, all on the mono-axis reliability (rule 15). Task counts sit at the end of every line "
-        f"and the populations differ between panels and sizes (rule 13). Regenerate with "
+        f"The per-L reading above pools every design axis inside an L. This section instead splits the MONO-AXIS "
+        f"pairs at seed {GRID_SEED} (`{L_POOL}`, every data build) by the one axis each pair changes: "
+        f"{', '.join(axes_)}. Each axis gets one panel, and a first panel covers every mono-axis pair (the median "
+        f"number of pairs per cell is at most {int(summaries[('ckpt', '')]['median_pairs'].max())}). The gate (rule 1), pair "
+        f"minimum (rule 5) and filter variants are the same as in the per-L figures. The `above_66_ckpt` twin filters "
+        f"the DA-ckpt figure and `above_66_either` filters both, all on mono-axis reliability (rule 15). The task "
+        f"count sits at the end of every line, and the populations differ between panels and sizes (rule 13). "
+        f"Regenerate with "
         f"`python analysis/rq02_decision_accuracy/by_L.py --pool {pool} --by transformation`.",
         f"![DA-ckpt per design axis]({rel}/{stem('ckpt', '')}.png)",
-        f"**DA-ckpt** (against the proxy size's own final; cell = mean DA at the first → last drawn checkpoint, tasks behind the line in brackets):",
+        f"**DA-ckpt**, against the proxy size's own final checkpoint. Each cell gives the mean DA at the first → last "
+        f"drawn checkpoint, with the tasks behind the line in brackets:",
         table("ckpt", ""),
         "Key findings:",
-        "\n".join([f"- At {SMALL_SIZES[0]} the DA-ckpt line clears {SAFE_DA} and stays there — " + "; ".join(early("ckpt")) + ".",
-                    f"- At {TARGET_SIZE} — " + "; ".join(f"{a}: {cell(summaries[('ckpt', '')], a, TARGET_SIZE)}" for a in axes_) + "."]),
+        "\n".join([f"- **Earliest safe checkpoint at {SMALL_SIZES[0]} (DA-ckpt).** The checkpoint from which the line "
+                    f"stays ≥ {SAFE_DA}, per axis: " + ", ".join(early("ckpt")) + ".",
+                    f"- **DA-ckpt at {TARGET_SIZE}.** Mean DA at the first → last checkpoint per axis, task counts in brackets: "
+                    + ", ".join(f"{a}: {cell(summaries[('ckpt', '')], a, TARGET_SIZE)}" for a in axes_) + "."]),
         "Follow-ups:",
         "\n".join(["- A `_with_bpb` variant per axis, to see whether BPB decides the temperature and the data scheme earlier than the benchmarks do.",
                     "- The same panels on the L8 languages only (`scale_convergence.py --langs L8` does it for DA-size), so the language-count panel is read on one task set.",
                     "- Once BT3 trains, the temperature panel gains the B-vs-BT3 pairs and the scheme panel AT3-vs-BT3 with no code change."]),
         f"![DA-goal per design axis]({rel}/{stem('goal', '')}.png)",
-        f"**DA-goal** (against the {TARGET_SIZE} final):",
+        f"**DA-goal**, against the {TARGET_SIZE} final checkpoint:",
         table("goal", ""),
         "Key findings:",
-        "\n".join([f"- At {SMALL_SIZES[0]} the DA-goal line clears {SAFE_DA} and stays there — " + "; ".join(early("goal")) + ".",
-                    f"- The distance between the DA-goal and DA-ckpt cell of an axis at a proxy size is what the size costs; the "
-                    f"{TARGET_SIZE} column is the same line in both."]),
+        "\n".join([f"- **Earliest safe checkpoint at {SMALL_SIZES[0]} (DA-goal).** The checkpoint from which the line "
+                    f"stays ≥ {SAFE_DA}, per axis: " + ", ".join(early("goal")) + ".",
+                    f"- **The gap between the tables is the cost of size.** The difference between an axis's DA-goal and "
+                    f"DA-ckpt cells at a proxy size is what that size costs. The {TARGET_SIZE} column is the same line in both."]),
         "Follow-ups:",
         "\n".join(["- The size axis of the same split is `scale_convergence_da_size_transformation_panels_multi_axes.png` (DA-size pooled over decisions).",
                     "- A jackknife band per axis line (leave one family out), as the scale-convergence panels carry."]),

@@ -4,17 +4,19 @@ configs the launcher and the eval watcher read, so it describes the grid that
 is trained, not the one that was planned when the text was written.
 
     languages   sections/rqs/app_02_table_languages.tex (whole file, \\input by
-                app_02_data_mixtures.tex): the FineWeb-2 languages, the
-                smallest trained setting of each scheme that contains them,
-                and the benchmark families the harness offers for them
+                app_02_data_mixtures.tex): the FineWeb-2 languages of the
+                validation set (VALIDATION_MANIFEST), the smallest trained
+                setting of each scheme that contains them, and the benchmark
+                families the harness offers for them
     grid        block in app_01_model_ladder.tex: the data builds x ladders,
                 read from launch_trainings.DATA_SCHEMES / LADDERS / seeds_for
     seeds       block in app_01_model_ladder.tex: seeds per (size, L) cell
     ladder      block in app_01_model_ladder.tex: the per-ladder, per-size
                 hyperparameters (hyperparams_*.json, at each rung's own batch)
     benchmarks  block in app_03_evaluation.tex: the evaluated benchmarks
-                (configs/tasks.json `auto` group) with their language and
-                task counts on the sweep's trained languages
+                (configs/tasks.json `auto` group, `analysed_benchmarks`) with
+                their language and task counts on the sweep's trained
+                languages, the `discarded` tasks left out
     screened    block in app_03_evaluation.tex: the benchmarks screened at 600M, 1B
                 and 1.7B and not analysed (`auto_probe` outside `auto`, and the
                 `auto` benchmarks whose ladder evals have not landed) and those of
@@ -32,6 +34,8 @@ is trained, not the one that was planned when the text was written.
                                ladder report
                 \\nbenchanalysed, \\ntasksanalysed  the benchmarks table's rows and Total
                 \\nbenchscreened, \\ntasksscreened, \\ntasksdiscarded  the screened table's
+                               benchmarks that are not analysed, its tasks and
+                               the discarded ones among them
                 \\nbenchconsidered, \\ntasksconsidered  the two together
                 \\ntasksKone ... \\ntasksKfifty  tasks a scheme-A cell is
                                evaluated on at K = 1, 2, 8, 15, 30, 50 (one
@@ -61,6 +65,11 @@ DATA = REPO / "src" / "pretrain" / "data"
 LADDER_REPORT = REPO / "src" / "signal-and-noise" / "data" / "ladder-report" / "ladder_report.csv"
 SCRIPT = Path(__file__).name
 OUT_LANGUAGES = SECTIONS / "rqs" / "app_02_table_languages.tex"
+# The per-language validation set score_bpb.py scores (its --manifest default): the languages
+# the val column lists. It was built from the original 100-language list, before the K = 100
+# swap-ins of language_sets_schemeA.json's FW_L100, so it is not that list.
+VALIDATION_MANIFEST = Path("/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/"
+                           "predictivity-data/validation.manifest.json")
 
 # What each data build is, for a reader. A build missing here is printed under
 # its own name, so a new scheme shows up in the table instead of vanishing.
@@ -110,11 +119,22 @@ BENCH_META = {
     "bbh_cloze": ("BBH (two-way subtasks)", "reasoning", "2-way completion", "native"),
     "acp_bench_mcq": ("ACP-Bench (MC)", "planning", "4-way letter MC", "auto (PDDL)"),
     "acp_bench_cloze": ("ACP-Bench (boolean)", "planning", "yes/no completion", "auto (PDDL)"),
+    "social_iqa": ("Social IQa", "social commonsense", "3-way completion", "crowd-sourced (English)"),
+    "boolq": ("BoolQ", "reading comprehension", "yes/no", "native"),
+    "piqa": ("PIQA", "physical commonsense", "2-way completion", "native"),
+    "winogrande": ("WinoGrande", "coreference", "Winograd schemas", "native"),
+    "multiblimp-extra": ("MultiBLiMP (extra languages)", "grammatical acceptability", "minimal pairs",
+                         "auto (UD, UniMorph)"),
+    "kobest": ("KoBEST", "Korean understanding", "2- and 4-way", "native"),
+    "noreval": ("NorEval", "Norwegian commonsense, reading, grammar", "2- to 5-way", "native, HT"),
+    "noreval_extra": ("NorEval (extra)", "Norwegian science QA, quiz, truthfulness, sentiment", "2- and 4-way",
+                      "native, HT"),
 }
 TWIN_FORMAT = {"rf_": "cloze completion", "rfgm_": "statement continuation"}
 # Tagged with several languages in the harness, but the text is English (the
 # country or the source item's language is the tag), so not a multilingual row.
 ENGLISH_TEXT = {"cultural_bench_easy", "cultural_bench_hard", "include_v2_en"}
+SCREENED = frozenset(json.loads((REPO / "configs" / "tasks.json").read_text())["groups"]["auto_probe"])
 
 
 def esc(s):
@@ -218,10 +238,11 @@ def grid_table(runs: list[dict], done: int, missing: list[str]) -> str:
         *rows, r"\midrule",
         f"Total & & & & & & & {total} & {total_rep} \\\\", r"\bottomrule", r"\end{tabular}}",
         r"\caption{\textbf{Training grid.} One row per data build and ladder. $M$ is the data scheme of the "
-        r"build at its $K$. A is the baseline recipe, and B and C are the alternatives at that $K$. $T$ is the "
-        r"sampling temperature of the build. These are the two design axes that a build sets. The ladders are "
-        r"deep (the baseline), shallow (about twice the width-to-depth ratio) and deep + SwiGLU (the activation "
-        r"axis). All three use AdEMAMix. Runs counts the runs of every seed. Repl.\ counts the replicate-seed "
+        r"build at its $K$: A is the baseline recipe, and B and C are the alternatives at that $K$. $T$ is the "
+        r"sampling temperature of the build. $M$ and $T$ are the two design axes that a build sets. The ladders are "
+        r"deep (the baseline), shallow (about twice the width-to-depth ratio), deep + SwiGLU (the activation "
+        r"axis) and deep + Muon (the optimizer axis). The Muon ladder trains with Muon and the other three with "
+        r"AdEMAMix. Runs counts the runs of every seed, and Repl.\ the replicate-seed "
         r"runs among them (Table~\ref{tab:grid})." + status + "}",
         r"\label{tab:schemes}", r"\end{table*}"])
 
@@ -241,15 +262,13 @@ def seeds_table(runs: list[dict]) -> str:
     for s, (seeds, _) in lt.SEED_TRIPLES.items():
         by_triple.setdefault(tuple(seeds), []).append(s)
     seeds_txt = and_list([f"{and_list(seeds)} at {' and '.join(ss)}" for seeds, ss in by_triple.items()], ", and ")
-    other = sorted({(r["build"], r["size"], r["L"]) for r in runs
-                    if r["seed"] != 1904 and r["build"] != "A"}, key=lambda x: (x[0], lt.LADDER.index(x[1]), x[2]))
-    other_txt = "".join(f" The scheme-{b} $K={L}$ cell at {s} also trains the {s} replicate seeds." for b, s, L in other)
     n_a = sum(r["build"] == "A" and r["ladder"] == "deep" for r in runs)
+    # the authors' shorter caption (Overleaf, 2026-10-09): the ladders and builds that
+    # train seed 1904 alone, and the scheme-B replicates, are told in the app_01 prose
     lines += [r"\bottomrule", r"\end{tabular}", r"\end{adjustbox}",
               r"\caption{\textbf{Random seeds.} Number of seeds per $(N, K)$ cell of the deep scheme-A grid "
               rf"({n_a} runs). The replicate seeds are "
-              rf"{seeds_txt}. Each seed changes both the initialization and the data order. Replicate seeds exist "
-              r"only in the deep ladder. Every other ladder and data build trains seed 1904 alone." + other_txt + "}",
+              rf"{seeds_txt}. Each seed changes both the initialization and the data order.}}",
               r"\label{tab:grid}", r"\end{table}"]
     return "\n".join(lines)
 
@@ -262,32 +281,39 @@ def ladder_table(runs: list[dict]) -> str:
              r"Ladder & Size & Layers & $d_{\mathrm{model}}$ & $d_{\mathrm{model}}/n_{\mathrm{layers}}$ & FFN & "
              r"FFN$/d_{\mathrm{model}}$ & Heads & $N$ (M) & $D$ (B) & Batch & Steps & LR ($10^{-3}$) & Ckpts \\",
              r"\midrule"]
-    first = True
+    rows = {}
     for ladder, path in lt.HYPERPARAMS.items():
         cfgs = json.loads(path.read_text())["configs"]
-        if not first:
-            lines.append(r"\midrule")
-        first = False
+        rows[ladder] = {}
         for size in [s for s in lt.LADDER if (ladder, s) in trained]:
             c = cfgs[size]
-            gbs = lt.cell_gbs(size)
             iters = lt.cell_schedule(c, size)[0]
-            N = c["n_non_emb_params"]
-            lines.append(" & ".join([
-                LADDER_DESC.get(ladder, ladder), size, str(c["n_layers"]), f"{c['hidden_size']:,}",
+            rows[ladder][size] = [
+                str(c["n_layers"]), f"{c['hidden_size']:,}",
                 f"{c['hidden_size'] / c['n_layers']:.0f}", f"{c['ffn_hidden_size']:,}",
                 f"{c['ffn_hidden_size'] / c['hidden_size']:.2f}",
                 f"{c['num_attention_heads']}/{c['num_query_groups']}",
-                f"{N / 1e6:,.1f}", f"{c['predictivity']['train_tokens'] / 1e9:,.1f}",
-                str(gbs), f"{iters:,}", f"{c['lr'] * 1e3:.2f}", str(lt.n_checkpoints(iters))]) + r" \\")
+                f"{c['n_non_emb_params'] / 1e6:,.1f}", f"{c['predictivity']['train_tokens'] / 1e9:,.1f}",
+                str(lt.cell_gbs(size)), f"{iters:,}", f"{c['lr'] * 1e3:.2f}", str(lt.n_checkpoints(iters))]
+    # a ladder whose every row equals deep's (muon: same shapes and schedule, only the
+    # optimizer differs) is named in the caption instead of repeating deep's rows
+    same = [lad for lad in rows if lad != "deep"
+            and all(rows["deep"].get(s) == r for s, r in rows[lad].items())]
+    for i, ladder in enumerate(lad for lad in rows if lad not in same):
+        if i:
+            lines.append(r"\midrule")
+        lines += [" & ".join([LADDER_DESC.get(ladder, ladder), size, *r]) + r" \\"
+                  for size, r in rows[ladder].items()]
+    same_txt = "".join(f" The {LADDER_DESC[lad].removeprefix('deep + ')} ladder has the same values as the deep one."
+                       for lad in same)
     lines += [r"\bottomrule", r"\end{tabular}}",
               r"\caption{\textbf{Pretraining hyperparameters per ladder and model size}, for the rungs that each "
               r"ladder trains. $N$ counts non-embedding parameters. The tied embedding adds "
               r"$d_{\mathrm{model}} \times 131{,}072$. $D = 100N$ is the token budget. Heads gives the query and "
               r"key-value head counts (grouped-query attention, four query heads per key-value head, head dimension "
               r"64). FFN is the feed-forward hidden dimension. The SwiGLU ladder keeps the deep shape and narrows the "
-              r"FFN so that its three projections match the deep non-embedding count. Batch is the global batch in "
-              r"sequences of 4,096 tokens. The two smallest rungs train at their own batch and take proportionally "
+              r"FFN so that its three projections match the deep non-embedding count." + same_txt
+              + r" Batch is the global batch in sequences of 4,096 tokens. The two smallest rungs train at their own batch and take proportionally "
               r"more steps for the same $D$. LR is the peak learning rate from the compute-based law at the run's "
               r"own budget. Ckpts is the number of saved checkpoints.}",
               r"\label{tab:ladder}", r"\end{table*}"]
@@ -304,15 +330,30 @@ def pending() -> frozenset[str]:
     return pending_benchmarks()
 
 
+def analysed_benchmarks() -> list[str]:
+    """The `auto` benchmarks less the `pending` ones, plus the screened benchmarks
+    one of them pulls in by prefix (`tasks_for_benchmarks` matches `<benchmark>_…`):
+    the watcher evaluates `noreval_extra` along every run with `noreval`, and the
+    analysis reads it (`utils.considered_tasks`), so it is analysed, in a row of its own."""
+    groups = json.loads((REPO / "configs" / "tasks.json").read_text())["groups"]
+    auto = [b for b in groups["auto"] if b not in pending()]
+    return auto + [b for b in groups["auto_probe"] if b not in auto and any(b.startswith(g + "_") for g in auto)]
+
+
 def task_languages() -> tuple[dict, list[str]]:
-    tasks = load_tasks()
-    auto = [b for b in json.loads((REPO / "configs" / "tasks.json").read_text())["groups"]["auto"] if b not in pending()]
-    return tasks, auto
+    """The registered tasks less the `discarded` ones, which `tasks_for_benchmarks`
+    skips, so no run is evaluated on them, and the analysed benchmarks."""
+    disc = set(json.loads((REPO / "configs" / "tasks.json").read_text())["groups"]["discarded"])
+    return {n: e for n, e in load_tasks().items() if n not in disc}, analysed_benchmarks()
 
 
 def owner(bench: str, auto: list[str]):
     """The `auto` entry a task's benchmark belongs to: the longest matching key,
-    so `arc_mt` is its own row rather than part of `arc`."""
+    so `arc_mt` is its own row rather than part of `arc`. A benchmark screened
+    under its own name (`auto_probe`) is never folded into a prefix of it:
+    `noreval_extra` is not part of `noreval` (`analysed_benchmarks` lists it)."""
+    if bench not in auto and bench in SCREENED:
+        return None
     keys = [g for g in auto if bench == g or bench.startswith(g + "_")]
     return max(keys, key=len) if keys else None
 
@@ -348,6 +389,7 @@ def benchmark_table() -> tuple[str, dict]:
     originals = [g for g in auto if not g.startswith(tuple(TWIN_FORMAT))]
     multi = [g for g in originals if len(langs_tr.get(g, ())) > 1 and g not in ENGLISH_TEXT]
     mono = [g for g in originals if g not in multi]
+    english = [g for g in mono if g in ENGLISH_TEXT or (langs_tr.get(g) or langs.get(g, set())) <= {"en"}]
     twins = [g for g in auto if g not in originals]
     order = list(BENCH_META)
     key = lambda g: (order.index(g) if g in order else len(order), g)  # noqa: E731
@@ -355,7 +397,10 @@ def benchmark_table() -> tuple[str, dict]:
              r"\resizebox{\textwidth}{!}{", r"\begin{tabular}{llllrrr}", r"\toprule",
              r"\textbf{Benchmark} & \textbf{Task} & \textbf{Format} & \textbf{Construction} & "
              r"\textbf{Langs} & \textbf{Trained} & \textbf{Tasks} \\", r"\midrule"]
-    for block, gs in (("multilingual", multi), ("English text", mono)):
+    for block, gs in (("multilingual", multi), ("English text", english),
+                      ("one language other than English", [g for g in mono if g not in english])):
+        if not gs:
+            continue
         lines.append(rf"\multicolumn{{7}}{{l}}{{\textit{{{block}}}}} \\")
         for g in sorted(gs, key=key):
             lines.append(row(g, *BENCH_META.get(g, (g, "", "", ""))))
@@ -370,16 +415,16 @@ def benchmark_table() -> tuple[str, dict]:
         lines.append(row(g, label, task, TWIN_FORMAT[prefix], cons))
     total = sum(n_tasks.values())
     lines += [r"\midrule", f"Total & & & & & {len(trained)} & {total} \\\\", r"\bottomrule", r"\end{tabular}", "}",
-              r"\caption{The benchmarks we analyse, evaluated throughout pretraining. Table~\ref{tab:screened-benchmarks} "
-              r"lists the benchmarks we screened and did not adopt. Langs is the number of languages that the harness "
-              r"registers for the benchmark. Trained is how many of them the sweep trains (English and the "
+              r"\caption{\textbf{The benchmarks we analyse}, evaluated throughout pretraining. Table~\ref{tab:screened-benchmarks} "
+              r"lists the benchmarks we screened and do not analyse. Langs is the number of languages that the harness "
+              r"registers for the benchmark. Trained is the number of them that the sweep trains (English and the "
               r"FineWeb-2 languages of every trained build). Tasks is the number of language tasks evaluated on "
               r"those languages. A model is evaluated only on the tasks of the languages in its training "
               r"mixture. The reformulated variants pose the same items as their original. RF scores the answer "
               r"strings instead of the option letters. LLM-RF rewrites each item into a statement stem with "
               r"short continuations. MC = multiple choice, QA = question answering, UD = Universal "
               r"Dependencies. Construction: HT = human or professional translation, MT = machine translation, "
-              r"native = written in the language, auto = automatically generated.}",
+              r"native = written in the language, auto = generated automatically.}",
               r"\label{tab:benchmark-families}", r"\end{table*}"]
     stats = {"multilingual": len(multi), "single": len(mono), "twins": len(twins), "tasks": total}
     return "\n".join(lines), stats
@@ -399,9 +444,9 @@ def discarded_table() -> str:
         name = re.sub(r" \(.*\)$", "", cfg["benchmarks"].get(b, {}).get("name", b))   # "C-Eval (Chinese)"
         lines.append(f"{esc(name)} & {fmt_list(sorted(set(langs)))} & {len(langs)} & not above chance at 1B and 1.7B \\\\")
     lines += [r"\midrule", f"Total & & {sum(map(len, by.values()))} & \\\\", r"\bottomrule", r"\end{tabular}", "}",
-              r"\caption{Screened benchmark tasks that we discarded. A task is discarded when fewer than half of "
-              r"the runs that trained its language have a one-sided 95\% Wilson lower bound above chance, both at "
-              r"1B and at 1.7B. Tasks counts the discarded tasks of the benchmark. Its other tasks stay in the "
+              r"\caption{\textbf{Screened benchmark tasks that we discarded.} A task is discarded when, both at 1B and "
+              r"at 1.7B, fewer than half of the runs that trained its language have a one-sided 95\% Wilson lower "
+              r"bound above chance. Tasks counts the discarded tasks of the benchmark, whose other tasks stay in the "
               r"screen. Languages are ISO 639-1 codes.}",
               r"\label{tab:discarded-benchmarks}", r"\end{table}"]
     return "\n".join(lines)
@@ -430,7 +475,7 @@ def screened_table() -> tuple[str, dict]:
     sys.path.insert(0, str(REPO / "src" / "signal-and-noise"))
     from analysis.grids import paper_name
     groups = json.loads((REPO / "configs" / "tasks.json").read_text())["groups"]
-    analysed = [b for b in groups["auto"] if b not in pending()]   # a pending `auto` benchmark is still screened
+    analysed = analysed_benchmarks()   # a pending `auto` benchmark is still screened
     probe, disc, trained = [b for b in groups["auto_probe"] if b not in analysed], set(groups["discarded"]), trained_languages()
     langs, n_tasks, n_disc = {}, Counter(), Counter()
     for name, e in load_tasks().items():
@@ -448,20 +493,22 @@ def screened_table() -> tuple[str, dict]:
                           r"\bottomrule", r"\end{tabular}", r"\end{adjustbox}"])
     half = (len(rows) + 1) // 2
     stats = {"benchmarks": len(rows), "candidates": sum(n_tasks.values()), "discarded": sum(n_disc.values()),
-             "languages": len(set().union(*langs.values()))}
+             "languages": len(set().union(*langs.values())),
+             # KoBEST and NorEval are analysed; only their discarded tasks are listed here
+             "not_analysed": sum(g not in analysed for g in rows)}
     lines = [r"\begin{table*}[p]", r"\centering", r"\footnotesize",
              r"\begin{minipage}[t]{0.49\textwidth}\centering", tab(rows[:half]), r"\end{minipage}\hfill",
              r"\begin{minipage}[t]{0.49\textwidth}\centering", tab(rows[half:]), r"\end{minipage}",
-             rf"\caption{{Benchmarks we screened and did not adopt ({stats['benchmarks']} benchmarks, "
+             rf"\caption{{\textbf{{Benchmarks we screened and do not analyse}} ({stats['benchmarks']} benchmarks, "
              rf"{stats['candidates'] + stats['discarded']:,} tasks in {stats['languages']} trained languages). We evaluated "
              rf"them only on the final checkpoints of the {screened_sizes()} models. "
              + (rf"{and_list(sorted(esc(paper_name(g)) for g in rows if g in pending()))} joined the analysed benchmarks after "
                 r"the screen and count here until their evaluation throughout pretraining is complete. "
                 if any(g in pending() for g in rows) else "")
              + r"Langs is the number of trained languages a "
-             r"benchmark covers. Tasks counts its language tasks on those languages that stayed candidates, and "
-             r"Discarded the tasks we dropped because fewer than half of the runs that trained the language had a "
-             r"one-sided 95\% Wilson lower bound above chance, both at 1B and at 1.7B (Table~\ref{tab:discarded-benchmarks}). "
+             r"benchmark covers. Tasks counts its language tasks on those languages that stayed candidates. Discarded "
+             r"counts the tasks we dropped because, both at 1B and at 1.7B, fewer than half of the runs that trained the "
+             r"language had a one-sided 95\% Wilson lower bound above chance (Table~\ref{tab:discarded-benchmarks}). "
              r"Figure~\ref{fig:app_rq00_chance_considered} gives the gate verdicts of every task. RF marks a reformulated "
              r"variant that scores the answer strings instead of the option letters.}",
              r"\label{tab:screened-benchmarks}", r"\end{table*}"]
@@ -473,7 +520,8 @@ def screened_table() -> tuple[str, dict]:
 def languages_table() -> None:
     meta = {r["subset"]: r for r in csv.DictReader(open(DATA / "fineweb2-language-distribution.csv"))
             if r["split"] == "train"}
-    full = json.loads((DATA / "language_sets_schemeA.json").read_text())["sets"]["FW_L100"]
+    # every validation language (the FW_L100 list was swapped after the validation set was built)
+    full = [k.removeprefix("fineweb_") for k in json.loads(VALIDATION_MANIFEST.read_text()) if k != "dclm"]
     iso2 = json.loads((REPO / "configs" / "languages.json").read_text())["fineweb_iso2"]
     tasks, auto = task_languages()
     originals = [g for g in auto if not g.startswith(tuple(TWIN_FORMAT))]
@@ -526,12 +574,12 @@ def languages_table() -> None:
         r"\begin{table*}[p]", r"\centering", r"\tiny", r"\setlength{\tabcolsep}{2.5pt}",
         r"\begin{minipage}[t]{0.49\textwidth}\centering", tab(rows[:half]), r"\end{minipage}\hfill",
         r"\begin{minipage}[t]{0.49\textwidth}\centering", tab(rows[half:]), r"\end{minipage}",
-        r"\caption{The languages of the sweep. $K_A$ gives the smallest language setting whose scheme-A "
+        r"\caption{\textbf{The languages of the sweep.} $K_A$ gives the smallest language setting whose scheme-A "
         r"(resource-ranked) list contains the subset. $K_B$ gives the smallest trained setting of a scheme-B "
         r"build that contains it (the Chinese swap at $K=2$, the diversity-first lists at $K \in \{8, 15, 30\}$)."
         + c_builds + r" The lists are "
         r"nested, so a language is also trained at every larger setting of its scheme. "
-        rf"The {n_val} languages marked val are in no training mixture. They enter only the shared validation "
+        rf"The {n_val} languages marked val are in no training mixture and enter only the shared validation "
         r"set. Fam.\ counts the benchmark families of the pretraining suite (reformulated variants excluded) "
         r"that the harness offers for the language. English is the DCLM half of every mixture. Family names "
         r"are shortened to their top-level group.}",
@@ -582,10 +630,10 @@ def main():
         # every benchmark considered: the analysed `auto` group, plus the screened ones and the discarded tasks
         f"\\newcommand{{\\nbenchanalysed}}{{{stats['multilingual'] + stats['single'] + stats['twins']} }}",
         f"\\newcommand{{\\ntasksanalysed}}{{{stats['tasks']:,} }}",
-        f"\\newcommand{{\\nbenchscreened}}{{{sstats['benchmarks']} }}",
+        f"\\newcommand{{\\nbenchscreened}}{{{sstats['not_analysed']} }}",
         f"\\newcommand{{\\ntasksscreened}}{{{sstats['candidates'] + sstats['discarded']:,} }}",
         f"\\newcommand{{\\ntasksdiscarded}}{{{sstats['discarded']:,} }}",
-        f"\\newcommand{{\\nbenchconsidered}}{{{stats['multilingual'] + stats['single'] + stats['twins'] + sstats['benchmarks']} }}",
+        f"\\newcommand{{\\nbenchconsidered}}{{{stats['multilingual'] + stats['single'] + stats['twins'] + sstats['not_analysed']} }}",
         f"\\newcommand{{\\ntasksconsidered}}{{{stats['tasks'] + sstats['candidates'] + sstats['discarded']:,} }}"]))
     languages_table()
     by = Counter((r["build"], r["ladder"]) for r in runs)

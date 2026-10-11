@@ -97,7 +97,7 @@ Computed on the ≤ 600M ladder before this pipeline existed
   against the seed noise.
 - **Decision accuracy from the recipe ranking**: HellaSwag is the most
   decision-reliable family (mean 0.72, 0.91 deciding from 350M);
-  chance-level knowledge benchmarks are coin flips.
+  chance-level knowledge benchmarks decide pairs no better than chance.
 
 Everything else — the SNR-variant ranking, the per-language anchors, the
 proxy-size grid — is produced by the pipeline from the published ladder

@@ -42,10 +42,10 @@ English-only model, the thin lines the multilingual ones of the same size.
 ## Which English benchmarks scale?
 
 We repeat the [scaling analysis](scaling.md) on the three English-only models,
-one per English corpus, under the same filter and the same fits. In each
-corpus 16 of the 33 English accuracy tasks above chance (48 %) are predictable
-along both size and training. That half includes the benchmarks used most in
-model development: ARC (easy and challenge), HellaSwag and OpenBookQA scale in
+one per English corpus, under the same filter and the same fits. On the 33
+English accuracy tasks above chance in all three corpora, each corpus has 16
+(48 %) predictable along both size and training. That half includes the
+benchmarks used most in model development: ARC (easy and challenge), HellaSwag and OpenBookQA scale in
 all three corpora, together with the reformulated (cloze) versions of MMLU,
 Global-MMLU, Belebele and CommonsenseQA, whose original letter format never
 leaves chance. Global PIQA is the only widely used benchmark above chance that
@@ -62,26 +62,26 @@ words how that benchmark scales there; click a row to see its scores per size.
 - **The English-only models are better at English, by a small margin.** The
   deep English-only model wins more than half of the English accuracy tasks
   against every other L at every size drawn (25 of 25 comparisons), but the
-  mean gap at 1.7B is 1.3 points; the shallow one wins 30 of 30, by 0.9 points
+  mean gap at 1.7B is 1.1 points. The shallow one wins 30 of 30, by 0.8 points
   at 1.7B.
 - **English bits per byte separates them most cleanly.** The English-only
   model is lower in all 30 comparisons at both depths: 0.782 against 0.810 at
   1.7B (deep).
 - **Part of the lead is beyond seed noise.** The deep English-only model is
-  ahead by more than two seed standard deviations in 45–55 % of the
-  comparisons, and behind by as much in 2–7 %.
+  ahead by more than two seed standard deviations in 43–50 % of the
+  comparisons, and behind by as much in 3–7 %.
 - **Clearing chance earlier holds per task, not per share.** It clears chance
-  at a smaller size on 98 (task, L) pairs and at a larger one on 30, but its
+  at a smaller size on 99 (task, L) pairs and at a larger one on 30, but its
   share of English tasks above chance is ahead in only 15 of 25 comparisons.
 - **Scaling is about as regular.** The 1.7B English BPB forecast from
-  90M–1B misses by 1.0 % at L1 against 1.1–1.4 % elsewhere; the median R² of
-  the English accuracy fits is 0.86 against 0.81–0.93.
+  90M–1B misses by 1.0 % at L1 against 1.1–1.6 % elsewhere. The median R² of
+  the English accuracy fits is 0.88 against 0.83–0.93.
 - **Popular benchmarks either scale or never leave chance.** ARC, HellaSwag,
   OpenBookQA and the reformulated MMLU scale in every corpus; letter-format
   MMLU stays at chance; Global PIQA is above chance but does not scale.
 - **Decisions are more accurate at L1, but they are different decisions.**
   With four model families per L, a small L1 model ranks them like 1.7B does
-  in 0.58–0.63 of the pairs against 0.44–0.53 at L = 2, 15 and 30; on the one
+  in 0.58–0.63 of the pairs against 0.45–0.53 at L = 2, 15 and 30; on the one
   decision every L shares (deep against shallow), 0.51 against 0.44–0.47.
 - **Next to DataDecide.** L1's ranking agreement is below, inside and above
   DataDecide's range in 5, 6 and 2 of 13 format-matched (task, size) cells,
@@ -89,7 +89,7 @@ words how that benchmark scales there; click a row to see its scores per size.
 
 !!! success "Takeaway"
     The ladder passes its sanity check: English-only models score higher on
-    English, by a point or two at 1.7B, and their English BPB is lower
+    English, by about one point at 1.7B, and their English BPB is lower
     everywhere. The widely used English benchmarks behave as expected once
     the gate is applied: they scale in every corpus in their cloze form, and
     the letter-format originals stay at chance at these sizes.

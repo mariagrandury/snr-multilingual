@@ -186,9 +186,9 @@ def generate_readme(pool: str, pooled: pd.DataFrame, paper: pd.DataFrame) -> Non
         f"family, the aggregate is the mean of the family's per-language tasks over the languages the run trains: every "
         f"cell (`all`), the cells at or above the family's pooled {LEVEL:.0%} token threshold (`tokens`), or the cells "
         f"above chance at the size and at {TARGET_SIZE} (`gate`). A family that never reaches the threshold has no "
-        f"`tokens` aggregate and is left out of every pooled row (rule 13). `reference` says whether the {TARGET_SIZE} "
-        f"aggregate takes the same policy or every cell. The `all` policy keeps at-chance cells on purpose (rule 1): it "
-        f"is the counterfactual. Regenerate with "
+        f"`tokens` aggregate and is left out of every pooled row (rule 13). The `reference` column says whether the {TARGET_SIZE} "
+        f"aggregate uses the same policy or every cell. The `all` policy keeps the at-chance cells on purpose, as the "
+        f"counterfactual to rule 1. Regenerate with "
         f"`python analysis/rq00_chance_vs_train_tokens/token_exclusion.py --pool {pool}`.",
         md_table(["reference", "axes", "proxy", "DA all", "DA tokens", "DA gate", "pairs (min)"], rows),
         md_table(["size", "median SE all", "median SE tokens", "median SE gate", "cells kept by tokens"], se_rows),

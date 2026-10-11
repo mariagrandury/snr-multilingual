@@ -314,7 +314,6 @@ Third, the SNR of \citet{heineman_signal_2025} (relative dispersion over the rel
 Fourth, the benchmark noise is largely a function of the item count, and the item count alone correlates at 0.37, \checknum{about half the best ratio (0.79)}. \texttt{dispersion\_shifted} is constant, so its ratios are the inverse noise.
 Fifth, the pooled correlation hides large differences between strata (Table~\ref{tab:sur-corr-strata}). The relative-standard-deviation SNR reaches $\rho = 0.79$ over all clusters but 0.51--0.67 within one proxy size, 0.81 within HellaSwag and 0.27 on the per-language bits per byte.
 
-% BEGIN generated: surrogate-tables (make_surrogate_tables.py)
 \begin{table}[h]
 \centering
 \scriptsize
@@ -471,4 +470,3 @@ per-language BPB & 50 & 0.27 & \texttt{mad} / \texttt{ckpt\_rel} & \textbf{0.62}
 \caption{Spearman $\rho$ of a surrogate with DA-size within one stratum of the benchmark tasks: one proxy size, one language-count tier (the tasks in the languages that first enter the scheme-A lists at that $K$), one benchmark, or the per-language bits per byte. \emph{SNR} is the relative standard deviation over the relative checkpoint noise. The next columns give the strongest of the 132 signal $\times$ noise ratios and the strongest statistic of the whole catalogue in the stratum. The population and conventions are those of Table~\ref{tab:sur-corr-catalogue}: one point per (benchmark, language) cluster, every pair of variants, the proxies 90M--1B pooled except in the proxy rows. Strata with fewer than 10 clusters are not shown. A best-of-many $\rho$ in a small stratum is optimistic, so the SNR column is the like-for-like comparison across rows. Bold marks Benjamini-Hochberg $q < 0.05$.}
 \label{tab:sur-corr-strata}
 \end{table*}
-% END generated: surrogate-tables

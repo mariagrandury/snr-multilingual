@@ -21,6 +21,7 @@ Writes, next to this file:
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -107,12 +108,18 @@ def main() -> None:
             cells.append(", ".join(names) if names else "—")
         lang.append(f"| {l} | " + " | ".join(cells) + " |")
     n_b, n_l = tab["base"].nunique(), tab["language"].nunique()
+    # the committed gate counts only `auto` as trained (`ladder_report._trained_tasks`), so a candidate outside it
+    # is read on every cell there; probe.sh's gate counts the probe group as trained too
+    gate = (f"the `{POOL}` gate re-run by probe.sh with the probe counted as trained, read on the cells that trained "
+            "the language" if os.environ.get("SNR_GATE_DIR")
+            else f"the committed `{POOL}` gate mask, which reads a benchmark in `auto` on the cells that trained the "
+                 "language and a candidate outside `auto` on every cell")
     lines = [f"Probe survivors: which of the {n_b} candidate benchmarks in `auto_probe` clear the above-random gate "
-             f"(rule 1, the `{POOL}` gate re-run by probe.sh with the probe counted as trained, cells that trained the language), over {n_l} languages. "
-             "A cell counts languages (original | rf twin where one exists) — the population differs per cell "
-             "(rule 13) — and the second table names the surviving benchmarks per language, the twin as `-rf`. "
-             "Same items as `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance; this "
-             "table is only the gate.", ""] + bench + [""] + lang
+             f"(rule 1, {gate}), over {n_l} languages. "
+             "A cell counts languages (original | rf twin where one exists), so the population differs per cell "
+             "(rule 13). The second table names the surviving benchmarks per language, with the twin as `-rf`. "
+             "The items are those of `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance "
+             "they land. This table is only the gate.", ""] + bench + [""] + lang
     replace_block(HERE / "README.md", "probe-survivors", "\n".join(lines),
                   "analysis/rq00_task_reformulation/probe_survivors.py")
     print("\n".join(lines))

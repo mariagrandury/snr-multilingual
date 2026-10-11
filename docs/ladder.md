@@ -104,9 +104,9 @@ it finds each answer option as the continuation, and the most likely option is
 its answer. The score is the share of items answered correctly. Guessing at
 random gives the **chance** level: one over the number of options.
 
-We considered 92 benchmarks (1,485 benchmark-language tasks in the trained
-languages). The analysis follows 40 of them (846 tasks) through training,
-together with the per-language bits per byte. The other 52 were screened on
+We considered 95 benchmarks (1,488 benchmark-language tasks in the trained
+languages). The analysis follows 47 of them (892 tasks) through training,
+together with the per-language bits per byte. The other 48 were screened on
 the final checkpoints of the 600M, 1B and 1.7B models only, and 229 of their
 tasks, at chance at both 1B and 1.7B, were discarded. Several benchmarks are
 also scored in a reformulated version, with the answer text in place of an
@@ -127,7 +127,7 @@ passages are cut at the start).
 
 | What | Where |
 |---|---|
-| Checkpoints (Hugging Face format) | *{{ anonymity_notice }}* — one repository per run, named like the run (`lm-<size>-L<L>[-<data build>][-b<batch>]-<deep|shallow|swiglu|muon>-seed<seed>`); 207 models from 90M to 1.7B and 4,292 intermediate checkpoints |
+| Checkpoints (Hugging Face format) | *{{ anonymity_notice }}* — one repository per run, named like the run (`lm-<size>-L<L>[-<data build>][-b<batch>]-<deep|shallow|swiglu|muon>-seed<seed>`); 212 models from 90M to 1.7B and 4,392 intermediate checkpoints |
 | Per-checkpoint measurements | the ladder report (*{{ anonymity_notice }}*) |
 | Training logs | W&B project (*{{ anonymity_notice }}*) |
 | How the runs were trained | [Pretraining docs](pretraining.md), `plan/` (*{{ anonymity_notice }}*) |

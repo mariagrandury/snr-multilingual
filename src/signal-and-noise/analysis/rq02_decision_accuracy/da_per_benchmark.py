@@ -168,12 +168,13 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
         med_n = int(npairs[col].reindex(bench.index).median()) if npairs is not None and len(bench) else 0
         rows.append([f"{b} → {TARGET_SIZE}", fmt(bench.mean()), len(bench), med_n, fmt(bpb.mean()), len(bpb)])
     if rows:
-        bullets.append("- **DA-size, proxy → " + TARGET_SIZE + "** (mean over the above-random benchmark tasks / over the "
-                       "per-language BPB tasks): " + "; ".join(f"{r[0]} {r[1]} / {r[4]}" for r in rows) + ".")
+        bullets.append("- **DA-size, proxy → " + TARGET_SIZE + "**, as the mean over the above-random benchmark tasks (their "
+                       "bBPB twins included) / the mean over the per-language BPB tasks: "
+                       + ", ".join(f"{r[0]} {r[1]} / {r[4]}" for r in rows) + ".")
         for agg in ("bpb_macro", "train_loss"):
             if agg in df.index:
-                bullets.append(f"- **DA-size of `{agg}`** (one task, kept out of the means above): "
-                               + "; ".join(f"{b} {fmt(df.at[agg, f'decision_acc_size_{b}'])}" for b in sizes) + ".")
+                bullets.append(f"- **DA-size of `{agg}`**, a single task kept out of the means above: "
+                               + ", ".join(f"{b} {fmt(df.at[agg, f'decision_acc_size_{b}'])}" for b in sizes) + ".")
     ckpt = [c for c in df.columns if c.startswith("decision_acc_ckpt_")]
     ck_rows = []
     if ckpt:
@@ -187,11 +188,13 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
         fracs = sorted({k[1] for k in piv}, key=lambda f: int(f[1:]))
         ck_rows = [[b] + [fmt(piv.get((b, f), float("nan"))) for f in fracs] for b in buckets]
         best = max(piv.items(), key=lambda kv: kv[1] if np.isfinite(kv[1]) else -1)
-        bullets.append(f"- **DA-ckpt** (early checkpoint vs final, above-random benchmark tasks): highest at "
-                       f"{best[0][0]} {int(best[0][1][1:])} % ({fmt(best[1])}).")
+        bullets.append(f"- **DA-ckpt**, an early checkpoint against the final of the same size (above-random benchmark "
+                       f"tasks, bBPB twins included): highest at {best[0][0]} and {int(best[0][1][1:])} % of the run "
+                       f"({fmt(best[1])}).")
     blocks = []
     if rows:
-        blocks += ["**DA-size by proxy size** (`n` tasks; median pairs per cell):",
+        blocks += ["**DA-size by proxy size.** The benchmark column includes the bBPB twins. Each `n` is the number of "
+                   "tasks behind the column to its left, and `pairs` is the median number of pairs per cell.",
                    md_tbl(["comparison", "benchmarks", "n", "pairs", "BPB", "n"], rows)]
         # family x proxy heatmap over the above-random tasks
         fams = sorted(fam[is_bench].unique())
@@ -222,14 +225,15 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
             S.save(fig, out_dir / "da_size_by_family_multi_axes.png", dpi=150)
             blocks.append(f"![DA-size by family]({stage}/{pool}/da_size_by_family_multi_axes.png)")
     if ck_rows:
-        blocks += ["**DA-ckpt by bucket and fraction of the run** (mean over the above-random benchmark tasks):",
+        blocks += ["**DA-ckpt by bucket and fraction of the run**, as the mean over the above-random benchmark tasks "
+                   "(bBPB twins included):",
                    md_tbl(["bucket"] + [f"{int(f[1:])} %" for f in fracs], ck_rows)]
     readme = DECISION_ACCURACY / "README.md"
     gen = f"da_per_benchmark.py --pool {pool}"
     replace_block(readme, "highlight", "## Highlighted result\n\n" + "\n".join(bullets), gen)
     replace_block(readme, "results", "## Results\n\n"
-                  + f"Numbers from the `{pool}` pool (`da_all_per_task_both_axes.csv`, pairs from `da_all_n_pairs_per_task_both_axes.csv`, "
-                  f"gate from rq00). Regenerate with `python analysis/rq02_decision_accuracy/da_per_benchmark.py --pool {pool}`.\n\n"
+                  + f"The numbers come from the `{pool}` pool: DA from `da_all_per_task_both_axes.csv`, pair counts from "
+                  f"`da_all_n_pairs_per_task_both_axes.csv` and the above-chance gate from rq00. Regenerate with `python analysis/rq02_decision_accuracy/da_per_benchmark.py --pool {pool}`.\n\n"
                   + "\n\n".join(blocks), gen)
     print(f"Wrote auto README blocks → {readme}")
 

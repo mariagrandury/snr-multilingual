@@ -399,10 +399,188 @@ FAMILY_META: dict[str, dict] = {
         "domain": "truthfulness",
         "format": "mcq_question_only", "n_options": 4, "passage": False,
     },
+    # --- `auto` families that had an SNR / DA-size but no entry until 2026-10-10 (the figure review):
+    # provenance from configs/tasks.json `benchmarks`, configs/multilingual_benchmarks.csv and the
+    # original papers. The suites (KoBEST, NorEval, NorEval extras) mix subtasks of different
+    # formats, option counts and domains: those characteristics are None at the family level (the
+    # table prints "mixed"), and SUBTASK_DOMAIN gives each subtask its domain.
+    "kobest": {
+        "data_source": "KoBEST (Kim et al. 2022): BoolQ, COPA, HellaSwag, SentiNeg, WiC",
+        "curation_process": "designed and written in Korean by professional linguists",
+        "curation_category": "originally_multilingual",
+        "source_origin": "originally_multilingual",
+        "domain": None, "mixed": True,
+        "format": None, "n_options": None, "n_options_range": "2--4", "passage": None,
+    },
+    "noreval": {
+        "data_source": "NorEval (Mikhailov et al. 2025): NCB, NorBelebele, NorCommonsenseQA",
+        # NCB is written in Norwegian, NorBelebele translated, NorCommonsenseQA adapted from English by people
+        "curation_process": "native and human-adapted subtasks mixed",
+        "curation_category": None,
+        "source_origin": None,
+        "domain": None, "mixed": True,
+        "format": None, "n_options": None, "n_options_range": "2--5", "passage": None,
+    },
+    "noreval_extra": {
+        "data_source": "NorEval: NorOpenBookQA, NRK-Quiz-QA, NorTruthfulQA-MC, NoReC",
+        # NRK-Quiz-QA and NoReC are native, NorOpenBookQA and NorTruthfulQA human-adapted from English
+        "curation_process": "native and human-adapted subtasks mixed",
+        "curation_category": None,
+        "source_origin": None,
+        "domain": None, "mixed": True,
+        "format": None, "n_options": None, "n_options_range": "2--4", "passage": None,
+    },
+    "toksuite": {
+        "data_source": "TokSuite (Altintas et al. 2025), the 40 canonical questions per language",
+        # simple general-knowledge completions ("The capital of France is"), written in English and
+        # translated into fa, it, tr, zh by native speakers (the paper, Section 3)
+        "curation_process": "written in English, translated by native speakers",
+        "curation_category": "human_translation",
+        "source_origin": "english_translated",
+        "domain": "knowledge",
+        "format": "completion", "n_options": 4, "passage": False,
+    },
+    "toksuite_math": {
+        "data_source": "TokSuite math, the English canonical questions",
+        "curation_process": "written in English",
+        "curation_category": "english_original",
+        "source_origin": "english_original",
+        "domain": "math",
+        "format": "completion", "n_options": 4, "passage": False,
+    },
+    "toksuite_stem": {
+        "data_source": "TokSuite STEM, the English canonical questions",
+        "curation_process": "written in English",
+        "curation_category": "english_original",
+        "source_origin": "english_original",
+        "domain": "knowledge",
+        "format": "completion", "n_options": 4, "passage": False,
+    },
+    "multiblimp-extra": {
+        "data_source": "Universal Dependencies + UniMorph (Jumelet 2025), the trained languages missing from multiblimp",
+        "curation_process": "template-based automatic generation from UD/UniMorph",
+        "curation_category": "template_generated",
+        "source_origin": "originally_multilingual",
+        "domain": "grammaticality",
+        "format": "minimal_pair", "n_options": 2, "passage": False,
+    },
+    "rf_m_mmlu": {
+        "data_source": "Okapi m_MMLU (alexandrainst/m_mmlu)",
+        "curation_process": "machine translation by ChatGPT",
+        "curation_category": "machine_translation",
+        "source_origin": "english_translated",
+        "domain": "knowledge",
+        "format": "cloze_completion", "n_options": 4, "passage": False,
+    },
+    "rf_mmmlu": {
+        "data_source": "OpenAI MMMLU",
+        "curation_process": "professional human translation",
+        "curation_category": "human_translation",
+        "source_origin": "english_translated",
+        "domain": "knowledge",
+        "format": "cloze_completion", "n_options": 4, "passage": False,
+    },
+    "boolq": {
+        "data_source": "BoolQ (Clark et al. 2019)",
+        "curation_process": "naturally occurring English questions over Wikipedia passages",
+        "curation_category": "english_original",
+        "source_origin": "english_original",
+        "domain": "reading comprehension",
+        "format": "classification", "n_options": 2, "passage": True,
+    },
+    "piqa": {
+        "data_source": "PIQA (Bisk et al. 2020)",
+        "curation_process": "crowdsourced in English",
+        "curation_category": "english_original",
+        "source_origin": "english_original",
+        "domain": "commonsense",
+        "format": "completion", "n_options": 2, "passage": False,
+    },
+    "winogrande": {
+        "data_source": "WinoGrande (Sakaguchi et al. 2020)",
+        "curation_process": "crowdsourced in English",
+        "curation_category": "english_original",
+        "source_origin": "english_original",
+        "domain": "commonsense",
+        "format": "completion", "n_options": 2, "passage": False,
+    },
 }
 # Derived: random baseline = 1 / n_options
 for _f, _meta in FAMILY_META.items():
     _meta["random_baseline"] = round(1.0 / _meta["n_options"], 3) if _meta["n_options"] else None
+
+# The domain taxonomy, its coarse skill grouping and the basis of each domain: the one place they
+# are defined (design_da.py reads them, its README block prints them). LM-like domains are scored
+# like language modelling (a plausible continuation or a well-formed sentence), the rest need a
+# fact, a passage, a chain of steps or a cultural fact.
+LM_LIKE, KNOWLEDGE_ETC = "LM-like", "knowledge, reading, reasoning"
+DOMAINS: dict[str, tuple[str, str]] = {
+    "commonsense": (LM_LIKE, "a plausible continuation, cause or referent (HellaSwag, COPA, Winograd schemas, PIQA, "
+                             "CommonsenseQA, KoBEST COPA and HellaSwag, NorCommonsenseQA)"),
+    "grammaticality": (LM_LIKE, "minimal pairs of a grammatical and an ungrammatical sentence (MultiBLiMP, NCB)"),
+    "language modelling": (LM_LIKE, "the last word of a passage (LAMBADA)"),
+    "knowledge": (KNOWLEDGE_ETC, "exam, quiz or science questions (MMLU and its translations, INCLUDE, ARC, OpenBookQA, "
+                                 "NRK-Quiz-QA) and TokSuite's general-knowledge completions"),
+    "reading comprehension": (KNOWLEDGE_ETC, "a question about a passage (Belebele, BoolQ, KoBEST BoolQ)"),
+    "NLI": (KNOWLEDGE_ETC, "entailment between two sentences (XNLI, AfriXNLI)"),
+    "paraphrase": (KNOWLEDGE_ETC, "whether two sentences mean the same (PAWS-X)"),
+    "word sense": (KNOWLEDGE_ETC, "whether a word has one sense in two sentences (KoBEST WiC)"),
+    "sentiment": (KNOWLEDGE_ETC, "the polarity of a review or sentence (KoBEST SentiNeg, NoReC)"),
+    "reasoning": (KNOWLEDGE_ETC, "planning and multi-step reasoning (ACPBench, BBH)"),
+    "math": (KNOWLEDGE_ETC, "math word problems and arithmetic (MathQA, TokSuite math)"),
+    "culture": (KNOWLEDGE_ETC, "cultural knowledge of a region (CulturalBench)"),
+    "truthfulness": (KNOWLEDGE_ETC, "imitative falsehoods (TruthfulQA, NorTruthfulQA)"),
+}
+# a suite's subtasks, by task-name prefix (configs/multilingual_benchmarks.csv `categories` and the papers)
+SUBTASK_DOMAIN: dict[str, str] = {
+    "kobest_boolq": "reading comprehension", "kobest_copa": "commonsense", "kobest_hellaswag": "commonsense",
+    "kobest_sentineg": "sentiment", "kobest_wic": "word sense",
+    "ncb": "grammaticality", "norbelebele": "reading comprehension", "norcommonsenseqa": "commonsense",
+    "noropenbookqa": "knowledge", "nrk_quiz_qa": "knowledge", "nortruthfulqa": "truthfulness", "norec": "sentiment",
+}
+
+
+def task_domain(task: str, family: str) -> str | None:
+    """A task's domain: its family's, or, in a suite, its subtask's."""
+    return FAMILY_META.get(family, {}).get("domain") or next(
+        (d for p, d in SUBTASK_DOMAIN.items() if task.startswith(p)), None)
+
+
+def family_skill(family: str) -> str | None:
+    """The skill group of a family: its domain's, or, in a suite, the one its subtasks share (None when they
+    differ: KoBEST and NorEval mix LM-like and other subtasks)."""
+    d = FAMILY_META.get(family, {}).get("domain")
+    if d:
+        return DOMAINS[d][0]
+    from analysis.utils import auto_tasks
+    skills = {DOMAINS[task_domain(t, family)][0] for t in auto_tasks()
+              if benchmark_family(t) == family and task_domain(t, family)}
+    return skills.pop() if len(skills) == 1 else None
+
+
+# When each family entered the `auto` group (configs/tasks.json history), for the robustness split
+# of the original benchmarks against the later ones. `global_mmlu` and `global_piqa` are prefixes
+# that cover the families below them; ARC (MT) entered through the `arc` prefix when its tasks were
+# registered (0f9781ad) and was named on 2026-10-04 (fec28cfb).
+ORIGINAL = "original (2026-09-07)"
+WAVES: dict[str, list[str]] = {
+    ORIGINAL: [  # auto as first fixed for the sweep: e0c0a159, 2026-09-07
+        "arc", "belebele", "global_mmlu_full", "global_piqa_parallel_cloze", "global_piqa_nonparallel_cloze",
+        "hellaswag", "include_base_44", "lambada_openai_mt", "multiblimp", "paws", "truthfulqa-multi_mc1", "xcopa",
+        "xnli", "xstorycloze", "xwinograd"],
+    "promoted 2026-09-23": [  # b30800c5 (twenty screened benchmarks), 0f9781ad (arc_mt)
+        "acp_bench_cloze", "acp_bench_mcq", "bbh_cloze", "bbh_mcq", "blend_sample", "commonsense_qa",
+        "cultural_bench_easy", "cultural_bench_hard", "include_v2_en", "include_v2_og", "mathqa", "mmlu", "openbookqa",
+        "toxigen", "truthfulqa_mc2", "arc_mt"],
+    "reformulated twins": [  # c9bc4af2 (2026-09-22), b30800c5 and 0f9781ad (09-23), c3657e9b (10-09)
+        "rf_belebele", "rf_global_mmlu_full", "rf_include_base_44", "rfgm_include_base_44", "rf_acp_bench_mcq",
+        "rf_bbh_mcq", "rf_commonsense_qa", "rf_cultural_bench_easy", "rf_mmlu", "rfgm_belebele", "rf_m_mmlu",
+        "rf_mmmlu"],
+    "probes promoted 2026-10-09": [  # c3657e9b
+        "kobest", "noreval", "noreval_extra", "toksuite", "toksuite_math", "toksuite_stem", "multiblimp-extra",
+        "piqa", "winogrande", "boolq"],
+}
+WAVE = {f: w for w, fams in WAVES.items() for f in fams}
 
 # Per-task overrides: (family, lang) → curation_category. Used when an `_eu`
 # subset comes from a different paper with a different curation method than
@@ -425,12 +603,25 @@ CATEGORY_ORDER = [
 ORIGIN_ORDER = ["originally_multilingual", "english_translated", "english_original"]
 
 
+def untagged(df: pd.DataFrame, value: str) -> None:
+    """Say which benchmark families have a value but no FAMILY_META entry, and so are left out
+    (RULES.md, "Where a rule cannot be followed"); the bBPB twins, BPB and the loss are out by design."""
+    agg = np.array([_is_language_aggregate(t, f) for t, f in zip(df["task"], df["family"])], dtype=bool)
+    d = df[agg & df[value].notna().to_numpy()]
+    d = d[~d["family"].isin(FAMILY_META) & ~d["family"].str.startswith("bbpb_") & ~d["family"].isin(["bpb", "loss"])]
+    if len(d):
+        n = d.groupby("family")["task"].nunique()
+        print(f"!!! RULE 13: rq09 leaves out {len(n)} families with a {value} ({int(n.sum())} tasks), "
+              "no FAMILY_META entry: " + ", ".join(f"{f} ({k})" for f, k in n.items()))
+
+
 def load_per_task_snr(snr_csv: Path) -> pd.DataFrame:
     global SNR_COL
     SNR_COL = snr_col(snr_csv)
     df = pd.read_csv(snr_csv, usecols=["task", SNR_COL])
     df["family"] = df["task"].map(benchmark_family)
     df["language"] = df["task"].map(assign_language)
+    untagged(df, SNR_COL)
     keep = [
         _is_language_aggregate(t, f) and f in FAMILY_META
         for t, f in zip(df["task"], df["family"])
@@ -683,6 +874,8 @@ def ranked_bar_paper(per_family: pd.DataFrame, out_path: Path, horizontal: bool 
     if horizontal:
         fig, ax = plt.subplots(figsize=(7.1, 3.0))
         ax.bar(x, df["snr_median"], color=colours, width=0.7)
+        for xi, (v, n) in enumerate(zip(df["snr_median"], df["n_tasks"])):      # rule 12: the tasks behind each median
+            ax.text(xi, v * 1.03, str(int(n)), ha="center", va="bottom", fontsize=5, color=S.INK)
         ax.set_xticks(x); ax.set_xticklabels(names, fontsize=6.5, rotation=55, ha="right", rotation_mode="anchor")
         ax.set_xlim(-0.6, len(df) - 0.4)
         axis = ax.yaxis
@@ -754,7 +947,7 @@ def generate_readme(stage: str, pool: str) -> None:
         ("- **Among survivors, only " + " and ".join(fam_views[v] for v in strong) + " separates the families** "
          if strong else "- **Among survivors, no family-level design axis separates the families convincingly** ")
         + "(five Kruskal–Wallis tests on the same families, uncorrected): "
-        + "; ".join(f"{fam_views[v]} H = {fmt(r['H'])}, p = {fmt(r['p'], 3)}" for v, r in tested.items())
+        + ", ".join(f"{fam_views[v]} (H = {fmt(r['H'])}, p = {fmt(r['p'], 3)})" for v, r in tested.items())
         + (f". {', '.join(fam_views[v] for v in strong).capitalize()} stays under 0.05 after a Bonferroni correction "
            "for the five" if strong else
            f". {', '.join(fam_views[v] for v in sig).capitalize()} {'is' if len(sig) == 1 else 'are'} under 0.05, "
@@ -763,8 +956,8 @@ def generate_readme(stage: str, pool: str) -> None:
         f"- **Per-task curation test** (tasks as observations, {n_tasks} tasks of which "
         f"{int(top_fam['n_tasks'])} are `{top_fam['family']}`): H = {fmt(per_task['H'])}, "
         f"p = {fmt(per_task['p'], 3)}"
-        + (" — nominally significant, but the tasks of one family are not independent "
-           "observations, so it says which family dominates, not which curation works."
+        + (". This is nominally significant, but the tasks of one family are not independent "
+           "observations, so the test says which family dominates, not which curation works."
            if per_task["p"] < 0.05 else ".")
     ] if per_task is not None else []))
 
@@ -789,12 +982,12 @@ def generate_readme(stage: str, pool: str) -> None:
     results = "\n\n".join([
         f"Headline numbers from the `{pool}` pool. Regenerate with "
         f"`python analysis/rq09_benchmark_design/analyze.py --pool {pool}`.",
-        f"**Per-family SNR ranking** — median `{SNR_COL}` over each family's "
+        f"**Per-family SNR ranking.** The median `{SNR_COL}` over each family's "
         "per-language tasks, above-random survivors only:",
         t_rank,
         f"![Per-family SNR ranking]({stage}/{pool}/snr_per_family_ranked.png)",
-        "**Significance of each design axis** — family-level Kruskal–Wallis "
-        "over the survivors (high-option families already removed by the gate):",
+        "**Significance of each design axis.** A family-level Kruskal–Wallis test "
+        "over the survivors (the families the gate removed are not tested):",
         t_sig,
     ])
 

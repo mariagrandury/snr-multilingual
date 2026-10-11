@@ -12,7 +12,7 @@ effect reads `effect_vs_noise.csv` of `predictivity_seeds`, the pool with seed
 replicates, gated cells included and drawn grey: 0 means the depth effect
 equals the seed noise (zero effects have no log and are left out). The effect
 figures are written next to their source, in `predictivity_seeds`, whatever
-`--pool` is. The size axis is EVAL_SIZES (175M–1.7B, rule 10), never a column
+`--pool` is. The size axis is EVAL_SIZES (90M–1.7B, rule 10), never a column
 the table happens to carry.
 
     python analysis/rq03_noise_and_snr/panels.py --pool predictivity
@@ -54,7 +54,7 @@ def main(pool: str) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     out_dir = OUT_ROOT / stage / pool
     t = pd.read_csv(out_dir / "snr_variants_per_task.csv")
-    sizes = [b for b in EVAL_SIZES if f"snr_{VARIANT}_{b}" in t.columns]   # rule 10: never 90M
+    sizes = [b for b in EVAL_SIZES if f"snr_{VARIANT}_{b}" in t.columns]   # rule 10: the ladder up to the reference
     long = t.melt(id_vars="task", value_vars=[f"snr_{VARIANT}_{b}" for b in sizes], var_name="size", value_name="snr")
     long["size"] = long["size"].str.replace(f"snr_{VARIANT}_", "", regex=False)
     long["log_snr"] = np.log10(long["snr"].where(long["snr"] > 0))
@@ -100,7 +100,7 @@ def main(pool: str) -> None:
         return
     body = "\n\n".join([
         "## Per benchmark and per language",
-        f"Regenerate with `python analysis/rq03_noise_and_snr/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\" (at chance at that size, rule 1); each figure's table sits next to it under the same name; sizes are 175M–1.7B (rule 10). SNR noise is the residual std around a line through the 80/85/90/95/100 % checkpoints (rule 4).",
+        f"Regenerate with `python analysis/rq03_noise_and_snr/panels.py --pool {pool}`. In every grid white means \"no value\" and grey \"filtered out by the gate\" (at chance at that size, rule 1). Each figure's table sits next to it under the same name. The SNR grids span {sizes[0]}–{sizes[-1]} (rule 10), and the depth-over-seed grids the sizes with seed replicates. The SNR noise is the residual std around a line through the 80/85/90/95/100 % checkpoints (rule 4).",
         f"![rq03 in one figure]({stage}/{pool}/highlights.png)",
         f"![SNR per benchmark]({stage}/{pool}/snr_by_benchmark.png)",
         f"![SNR per language]({stage}/{pool}/snr_by_language.png)",

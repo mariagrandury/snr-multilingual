@@ -175,12 +175,13 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, agg: pd.DataFrame
                 continue
             k1, kmax = g.iloc[0], g.iloc[-1]
             bullets.append(
-                f"- **{lab} languages ({int(k1.n)} (L, language) cases)** — one {LADDER_SIZES[1]} rung plus the "
-                f"pooled exponent predicts the reference within {fmt(100 * k1.transfer, 1)} % (median); "
-                f"with every proxy rung, transferred {fmt(100 * kmax.transfer, 1)} % vs own fit "
-                f"{fmt(100 * kmax.own, 1)} % vs largest proxy as is {fmt(100 * kmax.last, 1)} %.")
+                f"- **{lab[:1].upper()}{lab[1:]} languages ({int(k1.n)} (L, language) cases).** One {LADDER_SIZES[1]} rung "
+                f"plus the pooled exponent predicts the reference within {fmt(100 * k1.transfer, 1)} % (median). "
+                f"With every proxy rung, the median error is {fmt(100 * kmax.transfer, 1)} % for the transferred "
+                f"exponent, {fmt(100 * kmax.own, 1)} % for the language's own fit and {fmt(100 * kmax.last, 1)} % for "
+                "the largest proxy's BPB taken as is.")
         ap = t.groupby("L")["alpha_pooled"].first()
-        bullets.append("- **Pooled exponent α by L**: " + ", ".join(f"L{L} {fmt(v, 3)}" for L, v in ap.items()) + ".")
+        bullets.append("- **Pooled exponent α by L.** " + ", ".join(f"L{L} {fmt(v, 3)}" for L, v in ap.items()) + ".")
         rows = [[("trained" if r.trained else "never trained"), int(r.k), fmt(r.transfer, 3), fmt(r.own, 3),
                  fmt(r.last, 3), int(r.n)] for r in agg.itertuples()]
         blocks += ["**Median |relative error| of the reference's BPB** (k = rungs measured for the held-out language):",
@@ -190,7 +191,7 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, agg: pd.DataFrame
         rows = [[r.group, r.proxy_size, fmt(r.da), int(r.cells)] for r in dd.itertuples()]
         blocks += ["**Decision transfer** (DA-size of rq05's interventions on per-language BPB: the share of a group's "
                    "languages on which the proxy's final ranking of the two levels matches the reference's, mean over "
-                   "interventions and L; the group says what the two levels' lists do with the language):",
+                   "interventions and L. The group says what the two levels' lists do with the language):",
                    md_table(["language group", "proxy", "DA-size", "cells"], rows)]
     blocks.append(f"![BPB curves]({stage}/{pool}/bpb_curves.png)")
     readme = OUT_ROOT / "README.md"

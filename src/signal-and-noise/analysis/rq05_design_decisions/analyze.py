@@ -9,14 +9,20 @@ rq00–rq04 ask which *benchmarks* carry reliable signal; this RQ asks which
   intervention DA   — per (intervention, L, population, proxy size, fraction of
                       the proxy's run): the share of population items on which
                       the proxy and the reference (final checkpoint) prefer the
-                      same level. Four two-level interventions on the design
+                      same level. Six two-level interventions on the design
                       axes (analysis/RULES.md, Definitions), each read with the
                       other axes at their baseline: depth (deep vs shallow, at
                       scheme A, T=1), data scheme A vs B and A vs C (deep, T=1;
                       read per L, since the recipe a letter names depends on the
                       L: B is DCLMP at L1, ZH at L2 and the diversity-first list
                       at L8-L30, C is FWEB at L1 and ES at L2) and temperature
-                      (T=1 vs T=3, deep, scheme A). Populations:
+                      (T=1 vs T=3, deep, scheme A), activation (deep vs
+                      swiglu: xIELU vs SwiGLU) and optimizer (deep vs muon:
+                      AdEMAMix vs Muon), both at scheme A, T=1, L8-L30. Each
+                      is checked to be one of rq02's mono-axis pairs
+                      (`mono_axis`, utils.moved_axes). A setting whose 1.7B
+                      result has not landed is listed by
+                      `pending_references` and reads "not yet". Populations:
                       per-language BPB on the languages both levels train
                       (`bpb_trained`; the languages neither trains are rq06's
                       measurement, RULES.md rule 2), the benchmark
@@ -73,9 +79,9 @@ from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.utils import (CKPT_DA_EARLY_FRACS,  # noqa: E402
-    GRID_SEED, RELIABLE_DA, TARGET_SIZE, at_fraction, data_build, finals, ladder_frame, lower_is_better, passes_gate,
-    size_match_note, size_matched, size_order, trained_bpb_tasks)
-from pretrain.launch_trainings import DATA_SCHEMES  # noqa: E402
+    GRID_SEED, RELIABLE_DA, TARGET_SIZE, at_fraction, data_build, design_axes, finals, ladder_frame, lower_is_better,
+    moved_axes, passes_gate, size_match_note, size_matched, size_order, trained_bpb_tasks)
+from pretrain.launch_trainings import DATA_SCHEMES, ladders_for  # noqa: E402
 
 OUT_ROOT = DESIGN_DECISIONS
 CANONICAL = "predictivity_seeds"        # every cell: all seeds and data builds
@@ -106,6 +112,12 @@ INTERVENTIONS = {
     "scheme_B":    ("data scheme (A vs B)",     "scheme", ("A", "B"),          {"ladder": "deep", "T": 1}),
     "scheme_C":    ("data scheme (A vs C)",     "scheme", ("A", "C"),          {"ladder": "deep", "T": 1}),
     "temperature": ("temperature (T=1 vs T=3)", "T",      (1, 3),              {"ladder": "deep", "scheme": "A"}),
+    # the swiglu and muon ladders differ from deep on one design axis each
+    # (launch_trainings.LADDERS), at L8, L15 and L30 of scheme A: rq02's
+    # mono-axis activation and optimizer pairs (utils.moved_axes), read here
+    # against the 1.7B reference like the four above
+    "activation":  ("activation (xIELU vs SwiGLU)",  "ladder", ("deep", "swiglu"), {"scheme": "A", "T": 1}),
+    "optimizer":   ("optimizer (AdEMAMix vs Muon)",  "ladder", ("deep", "muon"),   {"scheme": "A", "T": 1}),
 }
 
 
@@ -120,6 +132,62 @@ def _builds(rows: pd.DataFrame, axis: str, levels: tuple) -> list[str]:
     return sorted(set(rows.loc[rows[axis].isin(levels), "data"]))
 
 
+def mono_axis(rows: pd.DataFrame, axis: str, levels: tuple) -> str | None:
+    """The one design axis the two levels' families in `rows` (one L, one
+    seed) move, by rq02's pair rule (`utils.moved_axes`, RULES.md rule 15):
+    an intervention is a mono-axis pair or it is a bug. None when a level has
+    no family here."""
+    fams = [rows.loc[rows[axis] == lv, "family"].unique() for lv in levels]
+    if any(len(f) == 0 for f in fams):
+        return None
+    attrs = design_axes(rows[rows["family"].isin(np.concatenate(fams))])
+    moved = {tuple(moved_axes(attrs.loc[a], attrs.loc[b])) for a in fams[0] for b in fams[1]}
+    if len(moved) != 1 or len(next(iter(moved))) != 1:
+        raise ValueError(f"{axis} {levels}: the two levels move {sorted(moved)}, not one design axis")
+    return next(iter(moved))[0]
+
+
+def _planned(key: str, L: int, level) -> bool:
+    """Whether the launcher plans the TARGET_SIZE cell of one level of
+    intervention `key` at L (`launch_trainings.ladders_for`)."""
+    _, axis, _, held = INTERVENTIONS[key]
+    at = {"ladder": "deep", "scheme": "A", "T": 1, **held, axis: level}
+    build = data_build(int(L), at["scheme"], int(at["T"]))
+    return build is not None and at["ladder"] in ladders_for(build, TARGET_SIZE, int(L))
+
+
+def pending_references(fin: pd.DataFrame) -> pd.DataFrame:
+    """The (intervention, L, population) settings whose reference the
+    launcher plans but whose TARGET_SIZE result has not landed at both levels
+    (the loader drops a run, or a task's series, until its final save is
+    scored): rule 9 leaves their DA-size and effect cells empty, and the
+    tables and figures say "not yet" there. `proxies` = the sizes both levels
+    already have."""
+    grid = fin[fin["seed"] == GRID_SEED]
+    rows = []
+    for key, (label, axis, levels, held) in INTERVENTIONS.items():
+        for L, g in at_baseline(grid, held).groupby("L"):
+            if not all(_planned(key, L, lv) for lv in levels):
+                continue
+            for pop in CELL_POPULATIONS:
+                piv = _pivot(_population(g, pop, int(L), levels, axis), axis, levels)
+                sizes = [] if piv is None else size_order(piv.index.get_level_values("size"))
+                if TARGET_SIZE not in sizes:
+                    rows.append({"intervention": key, "label": label, "L": int(L), "population": pop,
+                                 "proxies": ",".join(sizes)})
+    return pd.DataFrame(rows, columns=["intervention", "label", "L", "population", "proxies"])
+
+
+def pending_note(pending: pd.DataFrame) -> str:
+    """One sentence naming the settings `pending_references` lists; empty when none."""
+    if pending.empty:
+        return ""
+    words = [f"{lab} on {pop} at " + ", ".join(f"L{L}" for L in g["L"])
+             for (lab, pop), g in pending.groupby(["label", "population"], sort=False)]
+    return (f" These settings have no {TARGET_SIZE} result at both levels yet, so they have no DA-size or "
+            "effect cell: " + " and ".join([", ".join(words[:-1]), words[-1]] if len(words) > 1 else words) + ".")
+
+
 # `bpb_untrained` and `bpb_all` are not rq05's: a score on a language the
 # mixture does not train is rq06's measurement (RULES.md rule 2), and the
 # loader does not deliver those rows here. rq06 passes `populations=("bpb_all",)`
@@ -127,7 +195,7 @@ def _builds(rows: pd.DataFrame, axis: str, levels: tuple) -> list[str]:
 POPULATIONS = ("bpb_trained", "benchmark", "bpb_macro", "loss")
 SINGLE = {"bpb_macro": "bpb_macro", "loss": "train_loss"}   # one-task populations: the aggregates
 CELL_POPULATIONS = ("bpb_trained", "benchmark")   # the items behind the per-benchmark / per-language tables
-COLOUR = dict(zip(INTERVENTIONS, [S.RAMP[3], S.RAMP[1], S.SERIES[2], S.SERIES[1], "#8c1d18"]))
+COLOUR = dict(zip(INTERVENTIONS, [S.RAMP[3], S.RAMP[1], S.SERIES[2], S.SERIES[1], "#8c1d18", S.OKABE_ITO["purple"]]))
 mpl.rcParams.update(S.RC)
 
 
@@ -236,6 +304,7 @@ def intervention_da(df: pd.DataFrame, fracs: list = FRACS, mask: pd.DataFrame | 
     for key, (label, axis, levels, held) in INTERVENTIONS.items():
         sub_fin = at_baseline(fin, held)
         for L in sorted(sub_fin["L"].unique()):
+            mono_axis(sub_fin[sub_fin["L"] == L], axis, levels)      # raises unless rq02's mono-axis pair
             for pop in populations:
                 min_items = 1 if pop in SINGLE else MIN_ITEMS
                 ref_piv = _pivot(_population(sub_fin[sub_fin["L"] == L], pop, int(L), levels, axis), axis, levels)
@@ -352,10 +421,18 @@ def effect_at_reference(fin: pd.DataFrame, mask: pd.DataFrame | None) -> pd.Data
 
 # --- figures ----------------------------------------------------------------
 
-def plot_da_grid(da: pd.DataFrame, path: Path) -> None:
+def not_yet(ax, text: str = f"not yet: no {TARGET_SIZE} result") -> None:
+    """An empty panel that says why it is empty (a reference still in flight)."""
+    ax.text(.5, .5, text, ha="center", va="center", fontsize=7.5, color=S.MUTED, transform=ax.transAxes)
+    ax.set_xticks([]); ax.set_yticks([]); S.clean(ax, spines=())
+
+
+def plot_da_grid(da: pd.DataFrame, path: Path, pending: pd.DataFrame | None = None) -> None:
     da = da[da["frac"] == 1.0]
     pops = [p for p in ("bpb_trained", "benchmark", "bpb_all") if p in set(da["population"])]
-    keys = [k for k in INTERVENTIONS if k in set(da["intervention"])]
+    pending = pending if pending is not None else pd.DataFrame(columns=["intervention", "population", "L"])
+    waiting = set(zip(pending["intervention"], pending["population"]))
+    keys = [k for k in INTERVENTIONS if k in set(da["intervention"]) | {k for k, _ in waiting}]
     if not pops or not keys:
         return
     fig, axes = plt.subplots(len(keys), len(pops), figsize=(4.2 * len(pops), 3.0 * len(keys)), squeeze=False)
@@ -365,14 +442,21 @@ def plot_da_grid(da: pd.DataFrame, path: Path) -> None:
             ax = axes[i][j]
             sub = da[(da["intervention"] == k) & (da["population"] == pop)]
             if sub.empty:
-                ax.set_visible(False)
+                if (k, pop) in waiting:
+                    not_yet(ax); ax.set_title(f"{INTERVENTIONS[k][0]} — {pop}", loc="left", fontsize=8)
+                else:
+                    ax.set_visible(False)
                 continue
-            Ls = sorted(sub["L"].unique())
+            late = set(pending.loc[(pending["intervention"] == k) & (pending["population"] == pop), "L"])
+            Ls = sorted(set(sub["L"]) | late)
             sizes = size_order(sub["proxy_size"])
             mat = np.full((len(sizes), len(Ls)), np.nan)
             for _, r in sub.iterrows():
                 mat[sizes.index(r["proxy_size"]), Ls.index(r["L"])] = r["decision_acc"]
             im = ax.imshow(mat, vmin=0, vmax=1, cmap=S.SEQ, aspect="auto")
+            for L in late:                          # white column: the reference has not landed
+                ax.text(Ls.index(L), (len(sizes) - 1) / 2, f"not yet\n(no {TARGET_SIZE})", ha="center", va="center",
+                        fontsize=6, color=S.MUTED)
             for a in range(len(sizes)):
                 for b in range(len(Ls)):
                     if np.isfinite(mat[a, b]):
@@ -390,42 +474,48 @@ def plot_da_grid(da: pd.DataFrame, path: Path) -> None:
     S.save(fig, path, dpi=140)
 
 
-def plot_interventions(ev: pd.DataFrame, dag: pd.DataFrame, out_dir: Path) -> None:
+def plot_interventions(ev: pd.DataFrame, dag: pd.DataFrame, out_dir: Path, pending: pd.DataFrame | None = None) -> None:
     """The paper's RQ4 figure: (a) |effect| at the reference in seed sds per
     intervention; (b) final-checkpoint agreement by proxy size per intervention.
     Both average over L, so both read `by_recipe` keys: a scheme decision per build."""
-    keys = [k for k in RECIPES if k in set(ev["intervention"]) | set(dag["intervention"])]
+    late = set() if pending is None else set(zip(pending["intervention"], pending["population"]))
+    keys = [k for k in RECIPES if k in set(ev["intervention"]) | set(dag["intervention"]) | {k for k, _ in late}]
     names = [RECIPES[k][0] for k in keys]
     fig, (a0, a1) = plt.subplots(1, 2, figsize=(9.6, 3.7), gridspec_kw={"width_ratios": [1, 1.15]})
     y = np.arange(len(keys))
-    for j, (pop, col) in enumerate((("bits per byte", S.RAMP[3]), ("benchmarks", S.SERIES[1]))):
+    for j, (pop, cell_pop, col) in enumerate((("bits per byte", "bpb_trained", S.RAMP[3]), ("benchmarks", "benchmark", S.SERIES[1]))):
         g = (ev[ev["population"] == pop].groupby("intervention")["median_effect_over_seed_sd"].median()
              .reindex(keys))
         a0.barh(y + (j - .5) * .36, g.values, .34, color=col, label=pop)
-        for yi, val in zip(y, g.values):
+        for k, yi, val in zip(keys, y, g.values):
             if np.isfinite(val):
                 a0.annotate(f"{val:.1f}×", (val, yi + (j - .5) * .36), xytext=(4, 0), va="center",
                             textcoords="offset points", fontsize=7, color=S.INK)
+            elif (k, cell_pop) in late:          # the reference has not landed: say so, not a zero
+                a0.annotate(f"{pop}: not yet (no {TARGET_SIZE})", (1, yi + (j - .5) * .36), xytext=(4, 0), va="center",
+                            textcoords="offset points", fontsize=6.5, color=S.MUTED)
     a0.axvline(1, color=S.MUTED, ls="--", lw=1); a0.axvline(2, color=S.GRID, lw=.8)
-    a0.set_yticks(y); a0.set_yticklabels(names, fontsize=7.5); a0.invert_yaxis()
+    a0.set_yticks(y); a0.set_yticklabels(names, fontsize=7.5); a0.set_ylim(len(keys) - .4, -.6)   # inverted, room for the "not yet" notes
     a0.set_xscale("log"); a0.set_xlabel("|effect| at the reference, in seed standard deviations (median)")
     a0.set_title("(a) is there a decision to make?", loc="left")
     a0.legend(frameon=False, loc="upper right"); a0.grid(axis="x", color=S.GRID, lw=.6); a0.set_axisbelow(True)
     S.clean(a0); a0.tick_params(length=0)
     styles = {"bpb_trained": "-", "benchmark": "--"}       # the marker is the recipe's (RECIPES)
     order = size_order(dag["proxy_size"])
+    plotted = []                     # (a) says "not yet" for a pending key; (b) lists only the lines it draws
     for k in keys:
         for pop, ls in styles.items():
             g = dag[(dag["intervention"] == k) & (dag["population"] == pop)]
             if g.empty:
                 continue
             g = g.set_index("proxy_size").reindex(order)
+            plotted += [k] if k not in plotted else []
             a1.plot(range(len(order)), g["decision_acc"], ls=ls, marker=RECIPES[k][2], ms=4.5, lw=1.6, color=RECIPES[k][1])
     a1.axhline(.5, color=S.MUTED, ls=":", lw=1)
     a1.set_xticks(range(len(order))); a1.set_xticklabels(order)
     a1.set_ylim(0, 1.05); a1.set_xlabel("proxy size"); a1.set_ylabel("agreement with the reference (mean over L)")
     a1.set_title("(b) does the proxy agree, per intervention", loc="left")
-    h = [Line2D([], [], color=RECIPES[k][1], marker=RECIPES[k][2], ms=4, lw=1.6, label=RECIPES[k][0]) for k in keys]
+    h = [Line2D([], [], color=RECIPES[k][1], marker=RECIPES[k][2], ms=4, lw=1.6, label=RECIPES[k][0]) for k in plotted]
     h += [Line2D([], [], color=S.INK, ls="-", label="per-language bits per byte"),
           Line2D([], [], color=S.INK, ls="--", label="benchmark tasks")]
     a1.legend(handles=h, frameon=False, loc="upper left", bbox_to_anchor=(1.02, 1.0), ncol=1, fontsize=6.8)   # one entry per recipe: outside the lines
@@ -438,7 +528,7 @@ def plot_interventions(ev: pd.DataFrame, dag: pd.DataFrame, out_dir: Path) -> No
 # --- README ------------------------------------------------------------------
 
 def generate_readme(pool: str, out_dir: Path, da: pd.DataFrame, ev: pd.DataFrame,
-                    dag: pd.DataFrame) -> None:
+                    dag: pd.DataFrame, pending: pd.DataFrame) -> None:
     if pool != CANONICAL:
         return
     stage = load_pools()[pool].get("stage", "pretraining")
@@ -449,22 +539,32 @@ def generate_readme(pool: str, out_dir: Path, da: pd.DataFrame, ev: pd.DataFrame
         for pop, title in (("bpb_trained", "per-language BPB"), ("benchmark", "benchmarks")):
             for k in INTERVENTIONS:
                 core = fin[(fin["intervention"] == k) & (fin["population"] == pop)]
+                late = sorted(pending.loc[(pending["intervention"] == k) & (pending["population"] == pop), "L"])
                 if core.empty:
+                    if late:          # rule 9: the reference has not landed, the cell is empty, never filled
+                        blocks.append(f"**{INTERVENTIONS[k][0]}, {title}**: not yet, since there is no {TARGET_SIZE} "
+                                      "result at both levels (" + ", ".join(f"L{L}" for L in late) + ").")
                     continue
                 grid = core.pivot_table(index="proxy_size", columns="L", values="decision_acc")
                 grid = grid.reindex(size_order(grid.index))
-                first = {L: next((s for s in grid.index if grid.loc[s, L] >= RELIABLE_DA), "—") for L in grid.columns}
+                # the smallest proxy from which every larger proxy stays at >= RELIABLE_DA (G.smallest_safe), not the
+                # first that touches it: at L8 depth 90M reads 1.00 but 350M 0.25 and 600M 0.00
+                safe = G.smallest_safe((grid >= RELIABLE_DA).astype(float).where(grid.notna()).T)
+                first = {L: grid.index[int(i)] if i == i and i >= 0 else "—" for L, i in safe.items()}
                 if pop == "bpb_trained":
-                    bullets.append(f"- **{INTERVENTIONS[k][0]} on {title}** — smallest proxy reaching DA ≥ {RELIABLE_DA:g} "
-                                   "against the reference: " + ", ".join(f"L{L}: {s}" for L, s in first.items()) + ".")
-                rows = [[s] + [fmt(grid.loc[s, L]) for L in grid.columns] for s in grid.index]
+                    bullets.append(f"- **{INTERVENTIONS[k][0][:1].upper()}{INTERVENTIONS[k][0][1:]} on {title}.** Smallest proxy from which every larger proxy keeps DA ≥ {RELIABLE_DA:g} "
+                                   "against the reference: " + ", ".join(f"L{L}: {s}" for L, s in first.items())
+                                   + "".join(f", L{L}: not yet" for L in late) + ".")
+                cols = sorted(set(grid.columns) | set(late))
+                rows = [[s] + [fmt(grid.loc[s, L]) if L in grid.columns else "not yet" for L in cols] for s in grid.index]
                 refs = ", ".join(f"L{L} → {r}" for L, r in core.groupby("L")["reference_size"].first().items())
-                blocks += [f"**{INTERVENTIONS[k][0]}, {title}** (rows: proxy size; columns: L; reference {refs}):",
-                           md_table(["proxy"] + [f"L{L}" for L in grid.columns], rows)]
+                blocks += [f"**{INTERVENTIONS[k][0]}, {title}** (rows: proxy size, columns: L, reference {refs}"
+                           + (f", not yet = no {TARGET_SIZE} result at both levels" if late else "") + "):",
+                           md_table(["proxy"] + [f"L{L}" for L in cols], rows)]
         bench = fin[(fin["intervention"] == "arch") & (fin["population"] == "benchmark")]
         if not bench.empty:
             m = bench.groupby("proxy_size")["decision_acc"].mean()
-            bullets.append("- **Depth decision on benchmarks** — mean DA over L by proxy: "
+            bullets.append("- **Depth decision on benchmarks.** Mean DA over L by proxy: "
                            + ", ".join(f"{s} {fmt(m[s])}" for s in size_order(m.index)) + "."
                            + size_match_note([("arch", s) for s in m.index]))
         blocks.append(f"![Intervention DA grid]({rel}/intervention_da_all_mono_axis.png)")
@@ -472,14 +572,16 @@ def generate_readme(pool: str, out_dir: Path, da: pd.DataFrame, ev: pd.DataFrame
         med = (by_recipe(ev).groupby(["intervention", "population"])["median_effect_over_seed_sd"].median()
                .unstack("population"))
         med = med.reindex([k for k in RECIPES if k in med.index])
-        bullets.append("- **Is there a decision to make?** median |Δ| at the reference in seed sds — "
-                       + "; ".join(f"{RECIPES[k][0]}: " + ", ".join(f"{p} {fmt(v, 1)}×" for p, v in r.items() if np.isfinite(v))
+        bullets.append("- **Is there a decision to make?** Median |Δ| at the reference, in seed sds. "
+                       + ". ".join(f"{RECIPES[k][0][:1].upper()}{RECIPES[k][0][1:]}: " + ", ".join(f"{p} {fmt(v, 1)}×" for p, v in r.items() if np.isfinite(v))
                                    for k, r in med.iterrows()) + ".")
-        blocks += ["**Effect at the reference in seed standard deviations** (median over items and L; a scheme "
-                   "decision per recipe, since the letter names a different build at each L):",
+        blocks += ["**Effect at the reference in seed standard deviations** (median over items and L, one scheme "
+                   "decision per recipe, since a letter names a different build at each L):",
                    md_table(["intervention"] + list(med.columns),
                             [[RECIPES[k][0]] + [fmt(med.loc[k, c], 1) for c in med.columns] for k in med.index]),
                    f"![Interventions]({rel}/rq4_interventions.png)"]
+    if not pending.empty:
+        bullets.append("- **Pending the 1.7B results.**" + pending_note(pending))
     readme = OUT_ROOT / "README.md"
     gen = f"analyze.py --pool {pool}"
     replace_block(readme, "highlight", "## Highlighted result\n\n" + "\n".join(bullets), gen)
@@ -500,6 +602,10 @@ def main(pool: str, out_dir: Path) -> None:
           f"seeds {sorted(df['seed'].unique())}, data builds {sorted(df['data'].unique())}")
 
     da, items, _ = intervention_da(df, mask=gate_mask(pool))
+    pending = pending_references(fin)
+    for r in pending.itertuples():
+        print(f"!!! RULE 9: {r.label}, {r.population}, L{r.L}: no {TARGET_SIZE} result at both levels yet "
+              f"(proxies {r.proxies or 'none'}); its DA-size and effect cells stay empty")
     if not da.empty:                     # the 600M depth pairs are not size-matched: kept, flagged
         da["size_matched"] = [size_matched(k, s) for k, s in zip(da["intervention"], da["proxy_size"])]
     da.to_csv(out_dir / "intervention_da_all_mono_axis.csv", index=False)
@@ -514,7 +620,7 @@ def main(pool: str, out_dir: Path) -> None:
     print(f"Wrote → {out_dir / 'intervention_da_all_mono_axis.csv'} ({len(da)} cells)")
     dag = pd.DataFrame()
     if not da.empty:
-        plot_da_grid(da, out_dir / "intervention_da_all_mono_axis.png")
+        plot_da_grid(da, out_dir / "intervention_da_all_mono_axis.png", pending)
         rec = by_recipe(da)                  # averaged over L: a scheme decision per recipe
         dag = (rec[rec["frac"] == 1.0].groupby(["intervention", "label", "population", "proxy_size"])
                .agg(decision_acc=("decision_acc", "mean"), cells=("decision_acc", "size"),
@@ -525,19 +631,20 @@ def main(pool: str, out_dir: Path) -> None:
     ev = effect_at_reference(fin, gate_mask(pool))
     ev.to_csv(out_dir / "rq4_effect_vs_seed.csv", index=False)
     if not ev.empty or not dag.empty:
-        plot_interventions(by_recipe(ev), dag, out_dir)
+        plot_interventions(by_recipe(ev), dag, out_dir, pending)
 
     (out_dir / "facts.json").write_text(json.dumps(
-        {"rq4": {"effect": ev.round(3).to_dict("records"), "da": dag.round(3).to_dict("records")}},
+        {"rq4": {"effect": ev.round(3).to_dict("records"), "da": dag.round(3).to_dict("records"),
+                 "pending_reference": pending.to_dict("records")}},
         indent=1, default=str))
-    generate_readme(pool, out_dir, da, ev, dag)
+    generate_readme(pool, out_dir, da, ev, dag, pending)
 
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL,
                    help=f"Ladder pool from configs/models.json (default: {CANONICAL}; every seed and "
-                        "data build is needed for the four interventions and the seed-noise column).")
+                        "data build is needed for the six interventions and the seed-noise column).")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; available: {sorted(load_pools().keys())}")

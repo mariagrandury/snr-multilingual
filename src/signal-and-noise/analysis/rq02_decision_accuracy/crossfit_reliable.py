@@ -274,17 +274,18 @@ def generate_readme(pool: str, rq2: pd.DataFrame, twin: pd.DataFrame, out_dir: P
               for r in ("every task", "in-sample", "in-sample (half)", "cross-fitted")]
     body = "\n\n".join([
         "### The reliable tasks chosen out of sample",
-        f"`{VARIANT}` decided on one half of the pairs and read on the other ({SPLITS} random splits stratified by the "
-        "design axes a pair moves, both directions; the value is the mean over the 40 readings, the band its 5-95 % range). "
-        "`in-sample` is the same code with the verdict and the figure on every pair, i.e. the committed figures' "
-        "numbers; `in-sample (half)` decides and reads on the same half, so it differs from the cross-fitted reading "
-        "by the selection alone (the figures draw it dashed). "
+        f"Here `{VARIANT}` picks its reliable tasks on one half of the pairs and is read on the other half. There are "
+        f"{SPLITS} random splits, stratified by the design axes a pair moves, each used in both directions. The value "
+        "is the mean over the 40 readings, and the band is their 5-95 % range. `in-sample` runs the same code with the "
+        "verdict and the figure on every pair, so it gives the committed figures' numbers. `in-sample (half)` decides "
+        "and reads on the same half. It differs from the cross-fitted reading by the selection alone, and the figures "
+        "draw it dashed. "
         f"Regenerate with `python analysis/rq02_decision_accuracy/crossfit_reliable.py --pool {pool}`.",
         f"![rq2 cross-fitted]({stage}/{pool}/rq2_da_all_{VARIANT}_crossfit_transformation_mono_axis.png)",
-        "DA-size over every mono-axis pair, mean over the reliable tasks (mean number of tasks):",
+        "DA-size over every mono-axis pair, as the mean over the reliable tasks (mean number of tasks):",
         md_table(["reading", *SMALL_SIZES], rows),
         f"![DA-size, reliable twin]({stage}/{pool}/scale_convergence_da_size_{VARIANT}_crossfit_multi_axes_paper.png)",
-        "Pooled DA-size over the multi-axis pairs, benchmarks (tasks):",
+        "Pooled DA-size over the multi-axis pairs, benchmark tasks only, as DA (tasks):",
         md_table(["reading", *SMALL_SIZES], rows_t)])
     replace_block(DECISION_ACCURACY / "README.md", "crossfit-reliable", body, f"crossfit_reliable.py --pool {pool}")
 

@@ -22,11 +22,10 @@ measure how large each decision's effect is at the reference, in units of
 seed noise (the spread of three seeds of the same recipe). Every seed of
 every ladder and data build is in the pool.
 
-The design-decision tables cover depth, data scheme and temperature. The
-SwiGLU ladder is trained at L8–L30 from 90M to 1.7B and is read here from the
-decision-accuracy analysis's per-axis table (benchmarks only: it has no
-per-language BPB pair at 1.7B yet). The Muon ladder (L8–L30) is evaluated from
-90M to 600M in this snapshot and has no 1.7B run, so no proxy can be read
+The design-decision tables cover depth, data scheme, temperature and
+activation. The SwiGLU ladder is trained at L8–L30 from 90M to 1.7B and is
+read on both populations. The Muon ladder (L8–L30) is evaluated from 90M to
+600M in this snapshot and has no 1.7B evaluation, so no proxy can be read
 against the reference for the optimizer yet.
 
 The 600M depth pair is not size-matched: shallow 600M (14 layers × 2048) has
@@ -73,12 +72,12 @@ The last column is the reference's own run against its final.
   temperature at 0.95–0.99 (mean over L15–L50) and the language lists at
   0.77–1.00 (L8–L30). On the benchmarks every intervention sits at 0.45–0.63,
   and only the two L1 English-data swaps come near 0.75 (DCLM without the edu
-  filter 0.51–0.79, FineWeb 0.57–0.75), on 14–130 tasks.
+  filter 0.52–0.79, FineWeb 0.57–0.75), on 14–133 tasks.
 - **Only temperature on BPB is far outside seed noise at the reference.** Its
   effect is 5.4 seed sds on per-language BPB, against 1.3 for depth and 1.6
   for the language lists; on the benchmarks every decision sits at 1.1–2.1.
   Keeping only the items the reference decides outside seed noise raises the
-  benchmark DA from 0.54 to 0.62, still short of 0.75.
+  benchmark DA from 0.54 to 0.60, still short of 0.75.
 - **Depth is a vanishing advantage, not a crossover.** Deep beats shallow by
   1.9–2.1 standard deviations of the two-run difference at 90M and 1.1–1.6 at
   175M, and from 350M on the two are within 2 of each other at every size, so the depth DA on BPB (0.97 at
@@ -87,12 +86,14 @@ The last column is the reference's own run against its final.
 - **On BPB the smallest proxy is enough, and early is enough.** 90M reads the
   depth decision at 0.93–0.98 and the list decision at 0.96–1.00 from 0.5C
   on. Larger proxies are not safer: the 1B list read falls from 0.91 at 1C
-  to 0.72–0.77 from 4C on. On the benchmarks no proxy at any checkpoint
-  reaches 0.75; the reference's own checkpoints reach 0.76 at 4.5C.
-- **SwiGLU and Muon follow the benchmark pattern.** The activation decision
-  is read at 0.45–0.51 on the benchmarks by every proxy, and 0.68 by the
-  reference's own run at 4.5C; the Muon proxies agree with their own final
-  at 0.66–0.81 by 4.5C, with no 1.7B run to read them against.
+  to 0.72–0.77 from 4C on. On the benchmarks no proxy reaches 0.75 on these
+  two decisions at any checkpoint. The reference's own checkpoints reach 0.76
+  at 4.5C.
+- **SwiGLU follows the same pattern, and Muon has no reference yet.** The
+  activation decision is read at 0.48–0.56 on the benchmarks by every proxy,
+  and 0.74 by the reference's own run at 4.5C. On per-language BPB the proxies read it at
+  0.90–0.98, except 600M (0.34). The Muon proxies agree with their own final
+  at 0.66–0.81 by 4.5C, with no 1.7B evaluation to read them against.
 
 !!! success "Takeaway"
     Before an ablation, ask whether its effect will be larger than seed

@@ -82,7 +82,7 @@ def main(pool: str) -> None:
         return
     body = "\n\n".join([
         "## Per benchmark and per language",
-        f"Every swept cell in one grid (`{pool}` pool). Regenerate with `python analysis/rq08_subset_selection/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\"; each figure's table sits next to it under the same name.",
+        f"Every swept cell in one grid (`{pool}` pool). Regenerate with `python analysis/rq08_subset_selection/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\". Each figure's table sits next to it under the same name.",
         f"![rq08 in one figure]({stage}/{pool}/highlights.png)"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('Gain over the null', 'gain_over_null.png')]])
     replace_block(OUT_ROOT / "README.md", "panels", body, f"panels.py --pool {pool}")

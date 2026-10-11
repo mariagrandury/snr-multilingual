@@ -217,6 +217,19 @@ def sweep_cells(ladder: str, scheme: str = "A") -> list[tuple[str, int]]:
     ]
 
 
+PURGED = "checkpoints purged, converted copies on capstor"
+
+
+def purged_but_converted(name: str, target: int) -> bool:
+    """True when scratch's ~30-day purge emptied a finished run's Megatron
+    dirs but its final HF snapshot on capstor is complete — all an eval
+    reads, and what the watcher falls back to (auto_evals_cscs.one_cell).
+    Status and plots only: --cell-action still reports the run corrupt, so
+    no launcher or chain ever treats a purged dir as resumable."""
+    from auto_evals_cscs import DEFAULT_STAGING, hf_staged  # lazy: it imports this module
+    return hf_staged(name, target, Path(DEFAULT_STAGING))
+
+
 def emit_actions(ladder: str, scheme: str, root: Path = CKPT_ROOT,
                  filter_substr: str | None = None) -> None:
     for name, target in sweep_cells(ladder, scheme):
@@ -227,6 +240,8 @@ def emit_actions(ladder: str, scheme: str, root: Path = CKPT_ROOT,
             print(f"{name}\tdone")
         elif action == "fresh":
             print(f"{name}\tfresh\t{a}")
+        elif action == "corrupt" and purged_but_converted(name, target):
+            print(f"{name}\tdone\t{PURGED}")
         elif action == "corrupt":
             print(f"{name}\tcorrupt\t{a}")
         else:
@@ -265,6 +280,7 @@ def scan_runs(root: Path) -> list[dict]:
         ladder = m["ladder"]
         target = targets[(ladder, m["size"])]
         _, max_valid = model_progress(entry)
+        purged = max_valid is None and purged_but_converted(entry.name, target)
         runs.append({
             "name": entry.name,
             "size": m["size"],
@@ -273,7 +289,8 @@ def scan_runs(root: Path) -> list[dict]:
             "ladder": ladder,
             "scheme": SCHEME_OF_LABEL[m["scheme"] or ""],
             "tokenizer": "v1",
-            "done": (max_valid or 0) >= target,
+            "done": (max_valid or 0) >= target or purged,
+            "purged": purged,
         })
     return runs
 
@@ -322,7 +339,14 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
     import matplotlib.pyplot as plt
     from matplotlib.colors import ListedColormap
 
-    runs = scan_runs(root)
+    # Only the runs the grid plans: a dir on disk outside it (a test run, a
+    # replicate no seed triple covers) is not progress, and counting it made
+    # the title read 218/221 against a 218-run plan.
+    grid = {exp_name(c["size"], c["L"], a, c["seed"], c["scheme"])
+            for a in HYPERPARAMS for c in predictivity_cells(ladder=a)
+            if a in ladders_for(c["scheme"], c["size"], c["L"])}
+    on_disk = scan_runs(root)
+    runs = [r for r in on_disk if r["name"] in grid]
     done = [r for r in runs if r["done"]]
 
     # --- simple: count of finished models per (size, L), all variants -------
@@ -332,8 +356,13 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
     _draw_grid(ax, matrix, plt.get_cmap("Blues").copy(), vmax)
     ax.set_xlabel("model size (non-embedding)")
     ax.set_ylabel("number of languages")
-    ax.set_title(f"Finished models per grid cell — all variants "
-                 f"({len(done)}/{len(runs)} runs done)")
+    extra = len(on_disk) - len(runs)
+    purged = sum(r["purged"] for r in done)
+    ax.set_title(f"Finished models per grid cell, all variants\n"
+                 f"{len(done)} of {len(grid)} planned runs done"
+                 + (f" ({purged} with {PURGED})" if purged else "")
+                 + (f"\n{extra} run dirs outside the plan not counted" if extra else ""),
+                 fontsize=10)
     fig.tight_layout()
     simple_path = out_dir / "pretrain_progress_simple.png"
     fig.savefig(simple_path, dpi=150, bbox_inches="tight")

@@ -28,7 +28,7 @@ P = "pretraining/predictivity"
 OUT = REPO / "documents" / "public" / "ladder"
 from analysis.utils import TARGET_SIZE as REF  # noqa: E402  (the reference size, 1.7B)
 NPARAMS = {"90M": 9.0e7, "175M": 1.75e8, "350M": 3.5e8, "600M": 6.0e8, "1B": 1.0e9, "1.7B": 1.7e9}
-SIZES = ["175M", "350M", "600M", "1B", "1.7B"]  # 90M is off the ladder, see Finding 2
+SIZES = list(NPARAMS)  # 90M to the 1.7B reference (RULES.md rule 10)
 
 
 def _scores():
@@ -70,7 +70,9 @@ def a1_scaling(out):
                                 n=("task", "size"))
     g = g[g["n"] >= 2].sort_values("r2")
 
-    fig, ax = plt.subplots(figsize=(8.6, 0.34 * len(g) + 2.0))
+    h = 0.34 * len(g) + 2.0
+    fig, ax = plt.subplots(figsize=(8.6, h))
+    fig.subplots_adjust(top=1 - .9 / h, bottom=.8 / h)   # margins in inches: the figure is tall
     y = np.arange(len(g))
     ax.hlines(y, 0, g["r2"], color=S.GRID, lw=1.4, zorder=1)
     ax.scatter(g["r2"], y, s=64, color=S.RAMP[2], zorder=3, label="R² of the fit")
@@ -79,16 +81,17 @@ def a1_scaling(out):
     ax.axvline(0, color=S.MUTED, lw=1)
     ax.set_yticks(y); ax.set_yticklabels([f"{i}  ({int(n)})" for i, n in zip(g.index, g["n"])],
                                          fontsize=9)
-    ax.set_xlim(-1.05, 1.05)
+    ax.set_xlim(-1.05, 1.05); ax.set_ylim(-.8, len(g) - .2)
     ax.set_xlabel("median across the family's tasks", fontsize=9.5, color=S.MUTED)
     ax.annotate("bits per byte and loss fall as models grow, so ρ = −1 is their ideal",
-                (.5, -.11), xycoords="axes fraction", ha="center", fontsize=8.5,
+                (.5, 0), xycoords="axes fraction", xytext=(0, -42), textcoords="offset points",
+                ha="center", fontsize=8.5,
                 color=S.MUTED)
     ax.grid(axis="x", color=S.GRID, lw=.8); ax.set_axisbelow(True)
     S.clean(ax); ax.tick_params(length=0)
     ax.legend(frameon=False, fontsize=8.5, labelcolor=S.MUTED, loc="upper left",
-              bbox_to_anchor=(0, 1.06), ncol=2)
-    S.title(fig, f"Which benchmarks scale predictably, 175M to {REF}", y=1.02)
+              bbox_to_anchor=(0, 1 + .45 / (h - 1.7)), ncol=2)
+    S.title(fig, f"Which benchmarks scale predictably, {SIZES[0]} to {REF}", y=1 - .15 / h)
     S.save(fig, out / "rq_a1_scaling.png")
     return f
 
@@ -245,7 +248,7 @@ def b1_early(out):
             label=f"bits per byte ({int(g['n'].max())} tasks)")
 
     ax.axhline(.5, color=S.MUTED, ls="--", lw=1)
-    ax.annotate("coin flip", (81, .5), xytext=(0, 5), textcoords="offset points",
+    ax.annotate("chance", (81, .5), xytext=(0, 5), textcoords="offset points",
                 fontsize=8, color=S.MUTED, ha="right")
     ax.set_xticks([20, 40, 60, 80])
     ax.set_xticklabels(["20 %", "40 %", "60 %", "80 %"], fontsize=9)
@@ -341,14 +344,14 @@ def b3_surrogate(out):
     d = d.assign(kind=d["task"].map(kind))
     g = d.groupby("kind").agg(works=("min_size", lambda s: s.notna().mean()),
                               n=("min_size", "size"))
-    small = d[d["min_size"] == "175M"].groupby("kind").size()
+    small = d[d["min_size"].isin(["90M", "175M"])].groupby("kind").size()
     g["at175"] = [small.get(k, 0) / n for k, n in zip(g.index, g["n"])]
     g = g.sort_values("works")
 
     fig, ax = plt.subplots(figsize=(9.0, 3.4))
     y = np.arange(len(g))
     ax.barh(y, g["works"], .5, color=S.RAMP[2], label="some proxy size works")
-    ax.barh(y, g["at175"], .5, color=S.RAMP[0], label="175M is already enough")
+    ax.barh(y, g["at175"], .5, color=S.RAMP[0], label="175M or smaller is already enough")
     for i, (w, n) in enumerate(zip(g["works"], g["n"])):
         ax.annotate(f"{w:.0%}  of {int(n):,}", (w, i), xytext=(7, 0), va="center",
                     textcoords="offset points", fontsize=9, color=S.INK)

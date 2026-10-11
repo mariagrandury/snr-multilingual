@@ -482,14 +482,15 @@ def generate_readme(pool: str, out_dir: Path, out: pd.DataFrame) -> None:
         rows.append([s, len(g), f"{g['pass_mono'].mean():.0%}", f"{g['pass_snr'].mean():.0%}", f"{g['pass_nonrandom'].mean():.0%}",
                      f"{g['pass_finetasks'].mean():.0%}", f"{g['gate'].mean():.0%}",
                      f"{p.mean():.2f} [{len(p)}] vs {f.mean():.2f} [{len(f)}]" if len(p) and len(f) else "—",
-                     " / ".join(f"{rho[st]:+.2f}" for st in STATS)])
+                     " / ".join("—" if pd.isna(rho[st]) else f"{rho[st]:+.2f}" for st in STATS)])
     body = "\n\n".join([
         "## FineTasks' criteria on the ladder",
         f"FineTasks selects tasks with four statistics computed on single-seed runs at one size (monotonicity, a "
-        f"cross-run SNR, a non-random margin, consecutive-step ordering). Computed here per (task, size) on the "
-        f"`{pool}` variants and judged by DA-size against {TARGET_SIZE}, which the criteria never see. Columns: share "
-        f"passing each criterion, all three, and our gate; mean DA-size of passers vs failers; Spearman of each "
-        f"statistic with DA-size (monotonicity / SNR / non-random / ordering). Regenerate with "
+        f"cross-run SNR, a non-random margin, consecutive-step ordering). We compute them per (task, size) on the "
+        f"`{pool}` variants and judge them by DA-size against {TARGET_SIZE}, which the criteria never see. The columns "
+        f"give the share of tasks passing each criterion, all three, and our gate, then the mean DA-size of passers vs "
+        f"failers, then the Spearman ρ of each statistic with DA-size (monotonicity / SNR / non-random / ordering). "
+        f"Regenerate with "
         f"`python analysis/rq04_surrogates/finetasks_criteria.py --pool {pool}`.",
         md_table(["size", "tasks", "monotone", "SNR > 20", "non-random", "all three", "our gate",
                   "DA-size pass vs fail", "ρ with DA-size"], rows),

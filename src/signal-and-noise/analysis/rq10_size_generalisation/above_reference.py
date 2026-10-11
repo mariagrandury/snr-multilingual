@@ -77,9 +77,10 @@ REFERENCE = next((s for s in EVAL_SIZES if NON_EMB[s] > NON_EMB[TARGET_SIZE]), T
 FRACS = [*CKPT_DA_EARLY_FRACS, 1.0]
 # The design set of a rung: which families it trains. `3B` is the six deep
 # cells of plan/3b_models.md: L8/L15 in A and B, plus A-L30 and A-L50 (added
-# 2026-09-30); `all` is every family.
+# 2026-09-30), all AdEMAMix (the muon ladder is deep + xielu too, so without the
+# optimizer its A-L8/15/30 finals would join the set); `all` is every family.
 DESIGNS = {"all": lambda a: pd.Series(True, index=a.index),
-           "3B": lambda a: (a["arch"] == "deep") & (a["activation"] == "xielu")
+           "3B": lambda a: (a["arch"] == "deep") & (a["activation"] == "xielu") & (a["optimizer"] == "ademamix")
                            & ((a["data"].eq("A") & a["L"].isin([8, 15, 30, 50])) | (a["data"].eq("B") & a["L"].isin([8, 15])))}
 mpl.rcParams.update(S.RC)
 
@@ -156,7 +157,7 @@ def pooled(pt: pd.DataFrame, channel: str = "benchmarks") -> pd.DataFrame:
     included, and the BPB half was filtered out before it could say otherwise.
     """
     k = pt[~pt["gated"] & pt["da"].notna()]
-    k = k[k["family"] == "bpb"] if channel == "bpb" else k[k["family"] != "bpb"]
+    k = k[k["family"] == "bpb"] if channel == "bpb" else k[~k["family"].isin(["bpb", "loss"])]   # train_loss is no benchmark
     out = (k.groupby(["axes", "size", "frac"]).agg(n_matching=("n_matching", "sum"), n_pairs=("n_pairs", "sum"),
                                                    n_tasks=("task", "nunique"), da_macro=("da", "mean")).reset_index())
     out["da"] = out["n_matching"] / out["n_pairs"]
@@ -297,10 +298,10 @@ def generate_readme(pool: str, reference: str, design: str, stem: str, tables: d
         table = ""
     else:
         g = pooled_[pooled_["frac"] == 1.0]
-        status = (f"**Population.** {len(fams)} families with a final at {reference} ({', '.join(fams)}); DA-size pooled over the gated "
-                  f"benchmark tasks with ≥ {MIN_PAIRS} pairs, and separately over the per-language BPB tasks "
-                  f"(never gated — no chance level; only the languages every paired family scores clear {MIN_PAIRS} pairs, "
-                  f"which is why the BPB column rests on far fewer tasks).")
+        status = (f"**Population.** {len(fams)} families with a final at {reference} ({', '.join(fams)}). DA-size is pooled over the gated "
+                  f"benchmark tasks with ≥ {MIN_PAIRS} pairs, and separately over the per-language BPB tasks. BPB has no "
+                  f"chance level, so it is never gated, and only the languages that every paired family scores reach "
+                  f"{MIN_PAIRS} pairs. That is why the BPB column rests on far fewer tasks.")
         def _cell(key: str, r) -> tuple:
             """The same (axes, proxy) row of another pooled table, or dashes."""
             q = tables[key]
@@ -314,7 +315,7 @@ def generate_readme(pool: str, reference: str, design: str, stem: str, tables: d
                            _cell("pooled_1.7B", r)[0], *_cell("pooled_bpb", r)]
                           for _, r in g.iterrows() if r["size"] != reference])
     body = "\n\n".join(filter(None, [
-        f"## The {reference} rung as the reference" + (f" — preview on the `{design}` design set" if design != "all" else ""),
+        f"## The {reference} rung as the reference" + (f": preview on the `{design}` design set" if design != "all" else ""),
         f"**DA-size and DA-goal · reference {reference} · multi-axis and mono-axis pairs at the grid seed · gate `{pool}` at the proxy, "
         f"the Wilson rule on the {reference} runs at the reference · no filter.** "
         f"Regenerate with `python analysis/rq10_size_generalisation/above_reference.py --pool {pool} --reference {reference}"

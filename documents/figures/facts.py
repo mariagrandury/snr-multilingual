@@ -87,9 +87,13 @@ def collect():
     d["is_bpb"] = d.task.str.startswith("bpb_")
     r1 = d[(d["rank"] == 1) & (d.language != "multi")]
     bench = d[~d.is_bpb & (d.language != "multi")]
+    # The CSV keeps each language's top 5 only, so a language whose BPB fell out
+    # of its top 5 has no BPB row: a benchmark beats BPB there by construction
+    # (comparing against the NaN max would count it as a loss).
     wins = 0
     for lang, gg in bench.groupby("language"):
-        wins += gg.snr.max() > d[(d.language == lang) & d.is_bpb].snr.max()
+        bpb_lang = d[(d.language == lang) & d.is_bpb].snr
+        wins += bpb_lang.empty or gg.snr.max() > bpb_lang.max()
     bpb_best = d[d.is_bpb & (d.language != "multi")].groupby("language")["snr"].max()
     f["snr"] = {
         "best_variant": str(best["variant"]),
@@ -113,6 +117,7 @@ def collect():
     ev = pd.read_csv(ANALYSIS / f"rq03_noise_and_snr/{PS}/effect_vs_noise.csv")
     ratio = (ev.seed_noise / ev.ckpt_noise_detrended).replace([np.inf, -np.inf], np.nan).dropna()
     arch = ev.effect_arch_over_seed.dropna()
+    scheme = iv[(iv.intervention == "scheme_B") & (iv.frac == 1.0) & iv.L.isin([8, 15, 30])]
     f["rq6"] = {
         "intervention_cells": int(len(iv)),
         "reference_sizes": sorted(iv.reference_size.dropna().unique().tolist()),
@@ -125,11 +130,15 @@ def collect():
         "depth_over_seed_median": _r(arch.median(), 2),
         "depth_over_seed_above2_share": _r((arch > 2).mean(), 2),
         "depth_over_seed_n": int(len(arch)),
+        # The deck's scheme-decision rows: scheme A vs B at the L's where B is the
+        # diversity-first list (8, 15, 30), read at the proxy's final checkpoint.
+        # Without this filter every intervention and run fraction lands on the
+        # same "L@proxy" key and the last row read wins.
         "benchmark_population": [
             {"L": int(r.L), "proxy": r.proxy_size, "n": int(r.n_items), "da": _r(r.decision_acc)}
-            for r in iv[iv.population == "benchmark"].itertuples()],
+            for r in scheme[scheme.population == "benchmark"].itertuples()],
         "bpb_trained_scheme": {f"L{int(r.L)}@{r.proxy_size}": _r(r.decision_acc)
-                               for r in iv[iv.population == "bpb_trained"].itertuples()},
+                               for r in scheme[scheme.population == "bpb_trained"].itertuples()},
     }
 
     from predictivity import min_predictive_size, kind

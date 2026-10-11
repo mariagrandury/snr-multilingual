@@ -8,8 +8,8 @@
 #
 # Idempotent: the per-task DA and SNR tables are computed once per pool and
 # reused, until the ladder report is newer than them (FORCE=1 recomputes them).
-# CURVES=1 also redraws rq00's ~140 acc-vs-FLOPs grids, which nothing reads
-# and which cost about an hour; the default leaves the ones on disk. Output layout:
+# CURVES=1 also redraws rq00's ~150 acc-vs-FLOPs grids, which nothing reads
+# and which cost ~11 h (2026-10-10); the default leaves the ones on disk. Output layout:
 # analysis/<rqNN_name>/pretraining/<pool>/
 #
 # The passes run IN RESEARCH-QUESTION ORDER, so rq00's tables and figures are
@@ -81,8 +81,9 @@ BENCH_BPB_CSV=analysis/rq08_subset_selection/bench_bpb.csv
 # a change to the kernel, the gate or the loader, which the mtime cannot see.
 fresh() { [ "${FORCE:-0}" != 1 ] && [ -f "$1" ] && [ ! "$LADDER_CSV" -nt "$1" ] \
             && { [ ! -f "$BENCH_BPB_CSV" ] || [ ! "$BENCH_BPB_CSV" -nt "$1" ]; }; }
-# The acc-vs-FLOPs grids (rq00) are ~140 figures nothing else reads and about
-# an hour of this script; CURVES=1 redraws them. Every table, CSV and README
+# The acc-vs-FLOPs grids (rq00) are ~150 figures nothing else reads and ~11 h
+# of drawing (2026-10-10; the nightly splits them over two jobs with
+# run_apertus.py --only); CURVES=1 redraws them. Every table, CSV and README
 # block is written either way, so the default is a complete refresh of the
 # numbers with a stale set of viewer figures.
 CURVES=${CURVES:-0}
@@ -292,6 +293,8 @@ done
 # surrogates read the headline pool's rq03 table, rq00's scores, rq01's fits and rq02's by_L
 lane rq04 rq04snr rq02 rq00 rq01
 run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
+# the same on the mono-axis pairs (rq02's DA columns, written to mono_axis/): the paper's app_rq04_surrogates_mono_axis
+run $PY analysis/rq04_surrogates/analyze.py --pool predictivity --axes mono-axis
 run $PY analysis/rq04_surrogates/panels.py --pool predictivity
 # FineTasks' four selection criteria on the ladder, judged by DA-size, plus every surrogate against DA-size
 run $PY analysis/rq04_surrogates/finetasks_criteria.py --pool predictivity
@@ -379,8 +382,10 @@ for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq09_benchmark_design/analyze.py --pool "$t"
 done
 run $PY analysis/rq09_benchmark_design/panels.py --pool predictivity
-# the same characteristics against rq02's per-task DA-size (reads rq09's per_family_snr.csv and rq02's reliable tasks)
-lane rq09da rq09 rq02
+# the same characteristics against rq02's per-task DA-size (reads rq09's per_family_snr.csv and rq02's reliable tasks);
+# also the item-count and skill axes (item_count_da_all_mono_axis, with rq01's scaling_regimes.csv R²) and the
+# original-vs-later-added robustness table (wave_robustness_da_size_mono_axis), both copied into the paper
+lane rq09da rq09 rq02 rq01
 run $PY analysis/rq09_benchmark_design/design_da.py --pool predictivity
 
 pass "rq10 — size generalisation (the 3B rung as the reference)"

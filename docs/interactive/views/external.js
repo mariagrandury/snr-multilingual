@@ -52,7 +52,7 @@
         tiles([[n, "shared tasks above chance"], [fmt(rr?.r), "Pearson r of log SNR"], [fmt(rho), "Spearman ρ of the order"], [fmt(d3.median(links, (l) => l.s2 / l.s1), 1) + "×", "DataDecide SNR ÷ ours (median)"]]),
         chart,
         note(`${n - moved} of ${n} tasks keep their rank. ${byRank ? "Top = the highest SNR on that corpus; the numbers next to the names are the SNR values." : (links.every((l) => l.s2 > l.s1) ? "On one log axis every line rises: DataDecide's SNR is larger for every task, " : "On one log axis the levels differ by corpus, ") + "so compare the orders, not the levels."}`
-          + (n < 6 ? " At this size ARC Challenge is at chance on our side and leaves the comparison." : "")),
+          + (n < tasks.length ? ` At this size ${tasks.filter((t) => !rows.some((x) => x.task === t)).map((t) => d.names[t]).join(" and ")} ${tasks.length - n > 1 ? "are" : "is"} at chance on our side and leave${tasks.length - n > 1 ? "" : "s"} the comparison.` : "")),
       ];
     });
   };

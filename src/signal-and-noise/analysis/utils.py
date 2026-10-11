@@ -115,7 +115,7 @@ _TRAILING_OK = {
 # family beside the original and its `rf_` twins. Not `bpb_`: that prefix is
 # the per-language BPB of the validation sets.
 BBPB = "bbpb_"
-BENCH_BPB = SUBSET_SELECTION / "bench_bpb.csv"      # model, step, task, bbpb
+BENCH_BPB = SUBSET_SELECTION / "bench_bpb.csv"      # model, step, task, bbpb, bbpb_sd, n_items
 
 
 # A benchmark task is one evaluation VARIANT of a benchmark: a `format` (how
@@ -886,7 +886,7 @@ def with_bbpb_twins(df: pd.DataFrame) -> pd.DataFrame:
     originals'."""
     if not BENCH_BPB.is_file():
         return df
-    t = pd.read_csv(BENCH_BPB)
+    t = pd.read_csv(BENCH_BPB, usecols=["model", "step", "task", "bbpb"])
     bench = df[df["kind"] == "benchmark"]
     covered = bench["task"].isin(set(t["task"]))       # families with no bBPB anywhere are not a gap
     absent = sorted(set(bench.loc[covered, "model"]) - set(t["model"]))
@@ -896,6 +896,22 @@ def with_bbpb_twins(df: pd.DataFrame) -> pd.DataFrame:
     twin = bench.merge(t, on=["model", "step", "task"])
     twin = twin.assign(task=BBPB + twin["task"], primary_score=twin["bbpb"]).drop(columns="bbpb")
     return pd.concat([df, twin], ignore_index=True)
+
+
+@lru_cache(maxsize=1)
+def bbpb_item_stats() -> pd.DataFrame:
+    """Per (model, step, twin) of `BENCH_BPB`: the item count (`n_items`) and
+    the standard deviation of the item bits per byte (`bbpb_sd`, ddof 0) behind
+    the twin's score, which give its k-fold noise as `n_items` and the binomial
+    variance give an accuracy's (`catalogue.kfold_noise`). Empty, and printed,
+    for a table written before the store reduction kept them."""
+    cols = ["model", "step", "task", "bbpb_sd", "n_items"]
+    if not BENCH_BPB.is_file() or not set(cols) <= set(pd.read_csv(BENCH_BPB, nrows=0).columns):
+        print(f"bBPB twins: {BENCH_BPB.name} has no item spread (rerun build_per_item_store.py --bench-bpb), "
+              "so the twins have no k-fold noise")
+        return pd.DataFrame(columns=cols).set_index(["model", "step", "task"])
+    t = pd.read_csv(BENCH_BPB, usecols=cols)
+    return t.assign(task=BBPB + t["task"]).set_index(["model", "step", "task"])
 
 
 def with_variant_columns(df: pd.DataFrame) -> pd.DataFrame:

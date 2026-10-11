@@ -14,10 +14,11 @@ Cells: the L1, L2 and L8 settings of the deep ladder, every data build the
 launcher has there (`DATA_SCHEMES`: L1 A / DCLMP / FWEB, L2 A / ZH / ES, L8 A /
 B). A cell's trained languages are `launch_trainings.cell_languages`; every
 other language is untrained. Only the cells evaluated beyond their own
-languages have untrained-language results: the scheme-A deep seed-1904 cells
-(`auto_evals_cscs.ALL_LANGUAGES_RUNS`, every size but the L1 350M cell, whose
-evaluation is incomplete) and the scheme-B L8 deep cell at 350M, 600M and 1B. The
-DCLMP, FWEB, ZH and ES cells have none, so they are named and not drawn.
+languages have untrained-language results (`auto_evals_cscs.ALL_LANGUAGES_RUNS`
+and the all-languages backlog); the README's generated block lists, per cell,
+the sizes that have them. A cell with none (DCLMP, FWEB so far) is named and
+not drawn. Each drawn cell keeps one Okabe-Ito colour (`CELL_COLOUR`), whichever
+cells have results.
 
 A language is in the trained languages' family when `configs/languages.json`
 gives it the family of a trained NON-English language of the cell, at two
@@ -32,7 +33,7 @@ per size, split by family. Benchmarks differ between the two groups, so each
 panel also draws the English-only L1 cell on exactly the same tasks: the gap to
 that line is what training the family's language adds.
 
-    above_chance_untrained_by_family.png / .csv   (+ _paper) a row per cell (L2 A, L8 A, L8 B),
+    above_chance_untrained_by_family.png / .csv   (+ _paper) a row per cell (L2 A, L2 ZH, L2 ES, L8 A, L8 B),
                                                   a column per family level
     above_chance_untrained_lift_by_subfamily.png / .csv (+ _paper) per subfamily and cell, the share above
                                                   chance minus the L1 A cell's on the same (task, size), over the
@@ -75,6 +76,12 @@ SETTINGS = (1, 2, 8)
 BASELINE = (1, "A")                 # English only, evaluated on every language
 LEVELS = {"top": "Top-level family", "sub": "Subfamily"}
 MIN_VERDICTS = 20                   # a (cell, subfamily) lift on fewer verdicts stays in the CSV, not in the figure
+# Every L1/L2/L8 cell the launcher has but the L1 A baseline, in DATA_SCHEMES order (L2 A, L8 A, L8 B, L2 ZH,
+# L2 ES, L1 DCLMP, L1 FWEB), each with its own
+# Okabe-Ito colour, fixed whichever cells have untrained-language results (S.SERIES has three slots only).
+CELLS = [f"L{L} {d}" for d, v in DATA_SCHEMES.items() for L in SETTINGS
+         if L in v["langs"] and v["temp"] == 1 and (L, d) != BASELINE]
+CELL_COLOUR = dict(zip(CELLS, [S.OKABE_ITO[k] for k in ("blue", "orange", "green", "purple", "sky", "vermillion", "black")]))
 LANGS = json.loads((_SRC.parent / "configs" / "languages.json").read_text())["languages"]
 mpl.rcParams.update(S.RC)
 
@@ -139,13 +146,13 @@ def shares(v: pd.DataFrame) -> pd.DataFrame:
 
 
 def cell_label(cell: str, paper: bool) -> str:
-    """`L8 A` as the README writes it, `K = 8, scheme A` in a paper figure (the paper's K)."""
+    """`L2 ZH` as the README writes it, `K = 2, scheme B` in a paper figure (the paper's K and scheme letter)."""
     L, data = cell.split()
-    return f"K = {L[1:]}, scheme {data}" if paper else cell
+    return f"K = {L[1:]}, scheme {DATA_SCHEMES[data]['letter']}" if paper else cell
 
 
 def figure(t: pd.DataFrame, path: Path, empty: list, paper: bool) -> None:
-    cells = sorted(t["cell"].unique(), key=lambda c: (int(c.split()[0][1:]), c))
+    cells = sorted(t["cell"].unique(), key=lambda c: (int(c.split()[0][1:]), CELLS.index(c)))
     sizes = [s for s in ANALYSIS_SIZES if s in set(t["size"])]
     fig, axes = plt.subplots(len(cells), 2, figsize=(6.6, 1.9 * len(cells) + 0.6), sharex=True, sharey=True, squeeze=False)
     colours = {"same family": S.SERIES[0], "other family": S.SERIES[1]}
@@ -205,10 +212,12 @@ def figure_lift(t: pd.DataFrame, path: Path, paper: bool) -> None:
     only the (cell, subfamily) lifts on at least MIN_VERDICTS verdicts."""
     t = t[t["n_verdicts"] >= MIN_VERDICTS]
     order = t.groupby("family_sub")["lift"].mean().sort_values().index.tolist()
-    cells = sorted(t["cell"].unique(), key=lambda c: (int(c.split()[0][1:]), c))
-    colours = dict(zip(cells, S.SERIES))
-    fig, ax = plt.subplots(figsize=(4.6, 0.24 * len(order) + 1.0))
-    off = dict(zip(cells, np.linspace(-0.22, 0.22, len(cells))))
+    cells = sorted(t["cell"].unique(), key=lambda c: (int(c.split()[0][1:]), CELLS.index(c)))
+    colours = {c: CELL_COLOUR[c] for c in cells}
+    spread = 0.22 if len(cells) <= 3 else 0.32   # a row's dots stay ~0.05 in apart whatever the cell count
+    row = 0.24 if len(cells) <= 3 else 0.30
+    fig, ax = plt.subplots(figsize=(4.6, row * len(order) + 0.13 * len(cells) + 0.6))
+    off = dict(zip(cells, np.linspace(-spread, spread, len(cells))))
     for c in cells:
         g = t[t["cell"] == c].set_index("family_sub").reindex(order)
         y = np.arange(len(order)) + off[c]
@@ -241,23 +250,31 @@ def generate_readme(pool: str, t: pd.DataFrame, v: pd.DataFrame, empty: list) ->
         return
     stage = load_pools()[pool].get("stage", "pretraining")
     nofam = sorted(set(v.loc[v["family_top"].isna(), "language"]))
+    groups = ["same family", "other family"]
+    fmt = lambda x, spec: "n/a" if pd.isna(x) else format(x, spec)    # a group the cell has no untrained language in
     lines = []
     for (cell, level), g in t.groupby(["cell", "level"]):
-        p = g.pivot(index="size", columns="group", values="lift").reindex([s for s in ANALYSIS_SIZES if s in set(g["size"])])
-        s = g.pivot(index="size", columns="group", values="share_above").reindex(p.index)
-        lines.append(f"- **{cell}, {LEVELS[level].lower()}**: share above chance, same family "
-                     + ", ".join(f"{z} {s.at[z, 'same family']:.2f}" for z in p.index)
-                     + "; other family " + ", ".join(f"{z} {s.at[z, 'other family']:.2f}" for z in p.index)
-                     + ". Lift over L1 A on the same tasks: same family " + ", ".join(f"{p.at[z, 'same family']:+.2f}" for z in p.index)
-                     + ", other family " + ", ".join(f"{p.at[z, 'other family']:+.2f}" for z in p.index) + ".")
+        p = (g.pivot(index="size", columns="group", values="lift")
+             .reindex(index=[s for s in ANALYSIS_SIZES if s in set(g["size"])], columns=groups))
+        s = g.pivot(index="size", columns="group", values="share_above").reindex(index=p.index, columns=groups)
+        lines.append(f"- **{cell}, {LEVELS[level].lower()}.** Share above chance, same family "
+                     + ", ".join(f"{z} {fmt(s.at[z, 'same family'], '.2f')}" for z in p.index)
+                     + ". Other family " + ", ".join(f"{z} {fmt(s.at[z, 'other family'], '.2f')}" for z in p.index)
+                     + ". Lift over L1 A on the same tasks: same family "
+                     + ", ".join(fmt(p.at[z, 'same family'], '+.2f') for z in p.index)
+                     + ", other family " + ", ".join(fmt(p.at[z, 'other family'], '+.2f') for z in p.index) + ".")
+    has = v.groupby("cell")["size"].agg(lambda x: [z for z in ANALYSIS_SIZES if z in set(x)])
+    order = [f"L{BASELINE[0]} {BASELINE[1]}"] + [c for c in CELLS if c in has.index]
+    cover = ", ".join(f"{c} " + ("every size" if has[c] == ANALYSIS_SIZES else
+                                 "every size but " + ", ".join(z for z in ANALYSIS_SIZES if z not in has[c])
+                                 if len(has[c]) > len(ANALYSIS_SIZES) / 2 else ", ".join(has[c])) for c in order)
     body = "\n\n".join([
         "## Above chance on untrained languages, by language family",
         f"Pool `{pool}`, the gate's run-level verdicts (rule 1) at the final checkpoint, deep seed-{GRID_SEED} cells at "
         "L1, L2 and L8, accuracy-scored parent tasks of `auto` benchmarks (no probe candidates, `utils.auto_tasks`) in "
-        "languages the cell does not train; same family = the language "
+        "languages the cell does not train. Same family means that the language "
         "shares the top-level family or the subfamily (`configs/languages.json` `family`) of a trained non-English "
-        "language. Untrained-language results exist for the scheme-A cells (every size but L1 350M) and the L8 scheme-B "
-        f"cell (350M–1B) only: none for {', '.join(empty)}. Left out: {len(nofam)} languages without a family in "
+        f"language. Untrained-language results exist for {cover}, and for none of {', '.join(empty) or 'no other cell'}. Left out: {len(nofam)} languages without a family in "
         f"languages.json. Regenerate with `python analysis/rq06_language_transfer/family_transfer.py --pool {pool}`.",
         f"![Above chance on untrained languages by family]({stage}/{pool}/above_chance_untrained_by_family.png)",
         f"![Lift over English only by subfamily]({stage}/{pool}/above_chance_untrained_lift_by_subfamily.png)",

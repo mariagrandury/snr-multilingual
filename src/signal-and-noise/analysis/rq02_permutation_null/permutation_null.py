@@ -182,13 +182,14 @@ def generate_readme(pool: str, cells: pd.DataFrame, pooled: pd.DataFrame, out_di
                                                for r in g.itertuples()]])
     body = "\n\n".join([
         "## Results",
-        f"Pool `{pool}`; per cell (task, proxy size, pair set) {PERMUTATIONS} shuffles of the proxy's final scores across "
-        f"the cell's families, scored by the pipeline's sign rule against the unchanged {TARGET_SIZE} ranking. Cells are "
-        f"gated at the proxy and at {TARGET_SIZE} (rule 1) and need {MIN_PAIRS} pairs (rule 5). Regenerate with "
+        f"Pool `{pool}`. For each cell (task, proxy size, pair set) we shuffle the proxy's final scores across the "
+        f"cell's families {PERMUTATIONS} times and score each shuffle against the unchanged {TARGET_SIZE} ranking with "
+        f"the pipeline's sign rule. Cells are gated at the proxy and at {TARGET_SIZE} (rule 1) and need {MIN_PAIRS} "
+        f"pairs (rule 5). Regenerate with "
         f"`python analysis/rq02_permutation_null/permutation_null.py --pool {pool}`.",
         f"![DA-size against its null]({stage}/{pool}/{NAME}_both_axes.png)",
-        "Per cell: observed pooled DA-size / pooled null mean [2.5 %, 97.5 %] / share of cells above their own null at "
-        f"BH q < {Q:g} (tasks):",
+        "Each entry reads: observed pooled DA-size / pooled null mean [2.5 %, 97.5 %] / share of cells above their own "
+        f"null at BH q < {Q:g} (number of tasks).",
         md_table(["pairs", "population", *SMALL_SIZES], rows),
         f"Tables: `{NAME}_per_task_both_axes.csv` (every cell's DA, null mean, null p95, p and q) and "
         f"`{NAME}_both_axes.csv` (the pooled lines)."])

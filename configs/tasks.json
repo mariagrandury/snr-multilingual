@@ -3755,7 +3755,8 @@
       "n_options": 2,
       "metric": "acc_norm",
       "n_items": 1838,
-      "source": "baber/piqa (validation)"
+      "source": "baber/piqa (validation)",
+      "majority": 0.5049
     },
     "polyglotoxicitypromptsllama_small_english": {
       "language": "en",
@@ -3805,7 +3806,9 @@
       "stages": [
         "pretraining"
       ],
-      "n_options": 3
+      "n_options": 3,
+      "n_items": 1954,
+      "source": "lighteval/siqa (validation)"
     },
     "squadv2": {
       "language": "en",
@@ -4130,7 +4133,8 @@
       ],
       "n_options": 2,
       "n_items": 1267,
-      "source": "allenai/winogrande (winogrande_xl, validation)"
+      "source": "allenai/winogrande (winogrande_xl, validation)",
+      "majority": 0.5043
     },
     "xcopa": {
       "language": "multi",
@@ -11908,7 +11912,8 @@
       ],
       "n_options": 2,
       "n_items": 3270,
-      "source": "aps/super_glue (boolq, validation)"
+      "source": "aps/super_glue (boolq, validation)",
+      "majority": 0.6217
     },
     "medmcqa": {
       "language": "en",

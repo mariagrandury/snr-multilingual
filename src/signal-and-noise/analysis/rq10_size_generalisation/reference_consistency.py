@@ -311,7 +311,7 @@ def figure_paper(by_bench: pd.DataFrame, pool_: pd.DataFrame, path: Path, min_ta
         g = g.sort_values("non_emb")
         ax_r.plot(g["non_emb"], g["da"], color=CHANNEL_COLOR[ch], marker="o" if ch == "benchmarks" else "s", ms=4, **STYLE[ref],
                   label=f"{'Benchmark accuracy' if ch == 'benchmarks' else 'BPB'} to {ref}")
-        ax_r.fill_between(g["non_emb"], g["lo"], g["hi"], color=CHANNEL_COLOR[ch], alpha=.10, lw=0)
+        ax_r.fill_between(g["non_emb"], g["lo"].clip(0, 1), g["hi"].clip(0, 1), color=CHANNEL_COLOR[ch], alpha=.10, lw=0)
     sizes = size_order(p["size"].unique())
     ax_r.axhline(.5, color=S.MUTED, lw=.8, ls=":")
     ax_r.set_xscale("log"); ax_r.set_xticks([NON_EMB[s] for s in sizes]); ax_r.set_xticklabels(sizes); ax_r.minorticks_off()
@@ -387,10 +387,10 @@ def generate_readme(pool: str, fams: list, n_pairs: dict, pool_: pd.DataFrame, c
         f"`python analysis/rq10_size_generalisation/reference_consistency.py --pool {pool}`.",
         f"**Population.** {n_pairs['multi-axis']} multi-axis and {n_pairs['mono-axis']} mono-axis pairs over the "
         f"{len(fams)} families (fewer on a task whose language not every family trains, rule 2). "
-        f"A DA cell is a (task, pair set, proxy) whose decisions both references score, the task above chance at "
-        f"the proxy, at {TARGET_SIZE} and at {REFERENCE}; {len(few)} cells over {few['task'].nunique()} tasks have fewer than "
-        f"{MIN_PAIRS} pairs and are NaN (rule 5, pair counts in the per-task table). Bands are the 90 % leave-one-family-out "
-        f"jackknife.",
+        f"A DA cell is a (task, pair set, proxy) whose decisions both references score, with the task above chance at "
+        f"the proxy, at {TARGET_SIZE} and at {REFERENCE}. {len(few)} cells over {few['task'].nunique()} tasks have fewer than "
+        f"{MIN_PAIRS} pairs and are NaN (rule 5, pair counts in the per-task table). The bands are 90 % leave-one-family-out "
+        f"jackknife bands.",
         f"![DA-size to two references, multi-axis]({rel}/reference_consistency_da_size_multi_axes.png)",
         f"![DA-size to two references, mono-axis]({rel}/reference_consistency_da_size_mono_axis.png)",
         "Benchmark accuracy, pooled DA-size [90 % band]:",

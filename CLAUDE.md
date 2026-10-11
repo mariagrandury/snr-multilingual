@@ -176,8 +176,11 @@ python3.11 src/pretrain/ladder_report.py --plot --publish --push-hf --push-git
 #     included (~2 h; the refresh does the fetch itself)
 FORCE=1 bash scripts/refresh_analysis.sh
 
-# 2b. the same, also redrawing rq00's grids (+1 h, so submit it). A compute
-#     node has no network: fetch here first, and build the deck afterwards.
+# 2b. the same in a Slurm job. A compute node has no network: fetch here
+#     first, and build the deck afterwards. rq00's grids are NOT redrawn here:
+#     they take ~11 h on the 2026-10-10 report (--curves would push the job
+#     past the normal partition's 12 h wall); the nightly draws them in two
+#     jobs of their own (scripts/nightly.sh, run_apertus.py --only).
 git fetch origin data/ladder-report && git archive origin/data/ladder-report \
   | tar -x -C src/signal-and-noise/data/ladder-report
 sbatch --account=infra01 --partition=normal --nodes=1 --time=06:00:00 \
@@ -186,7 +189,7 @@ sbatch --account=infra01 --partition=normal --nodes=1 --time=06:00:00 \
   --wrap='source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr \
     && cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual \
     && FORCE=1 HF_HUB_OFFLINE=1 OPENBLAS_NUM_THREADS=4 \
-       bash scripts/refresh_analysis.sh --curves --no-fetch --no-deck'
+       bash scripts/refresh_analysis.sh --no-fetch --no-deck'
 cd documents && npx slidev build                # the deck the job skipped
 
 # 2c. only analysis/ — no figures, PDF, compendium or deck. It does NOT fetch,
@@ -225,8 +228,12 @@ watcher's own cross-node lock (`auto_evals_cscs.py --stop`, then a fresh
 watchers on ln001 submitted the same 231 evals
 (`src/pretrain/CLAUDE.md` #15). Start or stop a watcher by hand the same way;
 a second one refuses to start. `ladder` (04:00) publishes,
-installs, then submits the analysis plus a separate `afterany` job for the
-`--curves` grids, so the hour they cost does not lengthen the main refresh.
+installs, then submits the analysis plus two `afterany` jobs for the
+`--curves` grids (per-benchmark and per-language, `run_apertus.py --only`,
+10 h each), so the hours they cost do not lengthen the main refresh. One 4 h
+curves job timed out on 2026-10-09 and 10-10: at 1.86M rows a per-benchmark
+grid takes ~3.4 min, ~11 h for both kinds, against the 12 h MaxTime of the
+`normal` partition.
 While the analysis code is mid-change, `touch
 /iopsstor/scratch/cscs/$USER/logs/nightly/PAUSE_REFRESH`: `ladder` still
 publishes but submits nothing (remove the file to resume).
@@ -256,8 +263,9 @@ Three things it cannot guess:
   the heavy part; the fetch and the deck build need network, which a compute
   node lacks, so fetch on the login node and submit the rest with
   `--no-fetch --no-deck`.
-- **`--curves`.** rq00's ~140 acc-vs-FLOPs grids are a viewer that nothing
-  reads and about an hour of the run. They are skipped by default and the
+- **`--curves`.** rq00's ~150 acc-vs-FLOPs grids are a viewer that nothing
+  reads and ~11 h of drawing on the 2026-10-10 report (an hour in September;
+  the cost grows with the rows). They are skipped by default and the
   previous figures stay on disk; pass `--curves` to redraw them.
 
 System Python on the login nodes is 3.6 — use `python3.11`.

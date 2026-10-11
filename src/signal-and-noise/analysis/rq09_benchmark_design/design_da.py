@@ -61,6 +61,17 @@ This reads the same characteristics against DA-size instead of SNR:
                                                 proxy size, on every gated task
     design_da_size_quadrant_per_task_above_66_either_mono_axis.png/.csv (+ _paper)
                                                 the same on the above_66_either tasks
+    item_count_per_task_da_all_mono_axis.csv   per task: item count, DA-size, DA-ckpt, log10 SNR and R² (`task_table`)
+    item_count_da_all_mono_axis.csv / .tex     per metric (DA-size, DA-ckpt, SNR, R²): the family-level rho of item count
+                                                and of skill, the slope on log10 items within benchmarks (family fixed
+                                                effect, clustered by family) and a family-level fit on both
+    wave_robustness_da_size_mono_axis.csv / .tex
+                                                the original benchmarks (auto on 2026-09-07) against each later wave
+                                                (`analyze.WAVES`): family medians with a bootstrap CI over families,
+                                                a Mann-Whitney test and the later-wave coefficient after log10 items
+    Item count is the median `n_items` (configs/tasks.json) over a benchmark's per-language tasks, a continuous
+    characteristic; skill is the group of its domain (`analyze.DOMAINS`), LM-like (commonsense, grammaticality,
+    language modelling) against the rest, None for a suite whose subtasks fall in both.
     The quadrant figures colour a dot by its proxy size (the per-benchmark one draws one dot per
     benchmark and proxy, at the median over its tasks). The by-level figures group the levels under
     a header row per characteristic.
@@ -92,8 +103,11 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, replace_block  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq02_decision_accuracy.reliable_tasks import load_reliable, long_da  # noqa: E402
-from analysis.rq09_benchmark_design.analyze import FAMILY_META  # noqa: E402
-from analysis.utils import SMALL_SIZES, _is_language_aggregate, size_order  # noqa: E402
+from analysis.paths import SCALING_PREDICTABILITY  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import task_n_items  # noqa: E402
+from analysis.rq09_benchmark_design.analyze import (  # noqa: E402
+    DOMAINS, FAMILY_META, KNOWLEDGE_ETC, LM_LIKE, ORIGINAL, SUBTASK_DOMAIN, WAVE, WAVES, family_skill, untagged)
+from analysis.utils import SMALL_SIZES, _is_language_aggregate, auto_tasks, benchmark_family, size_order  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 AXES = "mono-axis"
@@ -103,6 +117,8 @@ CHANCE = 0.5
 # characteristic -> (label, kind, the FAMILY_META / length column, the level order). Ordinal and
 # binary levels are listed low to high: the code is the level's rank, centred at 0.
 CHARACTERISTICS = {
+    "items": ("Item count", "continuous", None),
+    "skill": ("Skill", "binary", [KNOWLEDGE_ETC, LM_LIKE]),
     "curation": ("Curation", "binary", ["translated", "native"]),
     "source": ("Source", "binary", ["english_translated", "original"]),
     "format_type": ("Task format", "binary", ["continuation", "lettered MCQ"]),
@@ -127,7 +143,7 @@ LEVEL_NAMES = {"translated": "translated", "native": "native", "continuation": "
                "mcq_question_only": "question with options", "mrc_passage": "passage with options",
                "statement_continuation": "statement (LLM-RF)",
                2: "2 options", 3: "3 options", 4: "4 options", False: "no passage", True: "passage",
-               "knowledge": "knowledge", "other": "other domains"}
+               "knowledge": "knowledge", "other": "other domains", LM_LIKE: LM_LIKE, KNOWLEDGE_ETC: KNOWLEDGE_ETC}
 LENGTH_CSV = HERE / "length_features.csv"
 mpl.rcParams.update(S.RC)
 
@@ -146,21 +162,40 @@ def features() -> pd.DataFrame:
     # an unknown method (BBH) is still untranslated when the benchmark is an English original
     meta["curation"] = np.select([cat.isin(NATIVE_CURATION), cat.isin(TRANSLATED_CURATION),
                                   meta["source_origin"] == "english_original"], ["native", "translated", "native"], None)
+    # a suite's mixed characteristic (None) stays unknown in its binary code too
     meta["source"] = np.where(meta["source_origin"] == "english_translated", "english_translated", "original")
     meta["format_type"] = np.where(meta["format"].isin(LETTERED_FORMATS), "lettered MCQ", "continuation")
     meta["domain_group"] = np.where(meta["domain"] == "knowledge", "knowledge", "other")
+    for col, src in (("source", "source_origin"), ("format_type", "format"), ("domain_group", "domain")):
+        meta[col] = meta[col].where(meta[src].notna(), None)
+    meta["skill"] = [family_skill(f) for f in meta.index]
+    meta["n_items"] = item_counts()
+    meta["items"] = np.log10(meta["n_items"])
     lf = pd.read_csv(LENGTH_CSV).set_index("family")
     return meta.join(lf[["context_len_chars_median", "option_len_chars_median"]])
 
 
-def per_task(out_dir: Path, pool: str) -> pd.DataFrame:
-    """(population, family, task, proxy) -> the task's DA-size at that proxy."""
+def item_counts() -> pd.Series:
+    """A benchmark's item count: the median `n_items` (configs/tasks.json) over its per-language tasks in the
+    trained set."""
+    t = pd.DataFrame({"task": sorted(auto_tasks())})
+    t["family"] = t["task"].map(benchmark_family)
+    t = t[[f in FAMILY_META and _is_language_aggregate(a, f) for a, f in zip(t["task"], t["family"])]]
+    return t.assign(n=t["task"].map(task_n_items)).groupby("family")["n"].median()
+
+
+def per_task(out_dir: Path, pool: str) -> tuple[pd.DataFrame, pd.Series]:
+    """(population, family, task, proxy) -> the task's DA-size at that proxy, and per task its DA-ckpt: the
+    median over its DA-ckpt cells (every early checkpoint of every size, gated at that size), the reduction
+    rq02's reliability filter reads."""
     l = long_da(out_dir, pool, axes=AXES)
-    l = l[(l["kind"] == "size") & l["size"].isin(SMALL_SIZES)]
+    untagged(l[(l["kind"] == "size") & l["size"].isin(SMALL_SIZES)], "da")
     l = l[[f in FAMILY_META and _is_language_aggregate(t, f) for t, f in zip(l["task"], l["family"])]]
+    ckpt = l[l["kind"] == "ckpt"].groupby("task")["da"].median().rename("da_ckpt")
+    l = l[(l["kind"] == "size") & l["size"].isin(SMALL_SIZES)]
     rel = load_reliable(out_dir, FILTER, axes=AXES)
     parts = [l.assign(population="unfiltered"), l[l["task"].isin(set(rel["task"]))].assign(population=FILTER)]
-    return pd.concat(parts)[["population", "family", "task", "language", "size", "da", "n_pairs"]]
+    return pd.concat(parts)[["population", "family", "task", "language", "size", "da", "n_pairs"]], ckpt
 
 
 def per_family(tasks: pd.DataFrame) -> pd.DataFrame:
@@ -175,10 +210,29 @@ def task_means(tasks: pd.DataFrame) -> pd.DataFrame:
             .agg(da_size=("da", "mean"), n_proxies=("size", "nunique")).reset_index())
 
 
-def benchmark_values(fam: pd.DataFrame, snr: pd.DataFrame, tm: pd.DataFrame) -> dict[str, pd.Series]:
+def task_table(tm: pd.DataFrame, ckpt: pd.Series, out_dir: Path, stage: str) -> pd.DataFrame:
+    """One row per task of a tagged family with any value: its item count (configs/tasks.json), DA-size (the
+    mean over the proxies, every gated task), DA-ckpt (`per_task`), log10 SNR at 1.7B (`per_task_snr.csv`,
+    the tasks of the SNR ranking) and the R² of rq01's fit of score against size (`scaling_regimes.csv`, pool
+    predictivity_seeds, the fit over the sizes above chance)."""
+    snr = pd.read_csv(out_dir / "per_task_snr.csv")
+    col = next(c for c in snr.columns if c.startswith("snr_"))
+    r2 = pd.read_csv(SCALING_PREDICTABILITY / stage / "predictivity_seeds" / "scaling_regimes.csv")
+    t = (tm[tm["population"] == "unfiltered"].set_index("task")["da_size"].to_frame()
+         .join([ckpt, np.log10(snr.set_index("task")[col].where(lambda v: v > 0)).rename("log_snr"),
+                r2.set_index("task")["r2_size"].rename("r2")], how="outer"))
+    t = t.rename_axis("task").reset_index()
+    t["family"] = t["task"].map(benchmark_family)
+    t = t[[f in FAMILY_META and _is_language_aggregate(a, f) for a, f in zip(t["task"], t["family"])]]
+    t["n_items"] = t["task"].map(task_n_items)
+    return t.assign(log_items=np.log10(t["n_items"]))
+
+
+def benchmark_values(fam: pd.DataFrame, snr: pd.DataFrame, tm: pd.DataFrame, tt: pd.DataFrame) -> dict[str, pd.Series]:
     """Each reading's value per benchmark: mean DA-size over the proxies (both populations), each
-    proxy's DA-size (`size:<s>`, filtered population) and the SNR median; then per task (`task:<pop>`,
-    indexed by the task's benchmark, so the index repeats) the task's mean DA-size over the proxies."""
+    proxy's DA-size (`size:<s>`, filtered population), the SNR median and the median DA-ckpt and R² over
+    its tasks (`task_table`); then per task (`task:<pop>`, indexed by the task's benchmark, so the index
+    repeats) the task's mean DA-size over the proxies."""
     out = {}
     for pop in (FILTER, "unfiltered"):
         out[pop] = fam[fam["population"] == pop].groupby("family")["da_size"].mean()
@@ -186,6 +240,8 @@ def benchmark_values(fam: pd.DataFrame, snr: pd.DataFrame, tm: pd.DataFrame) -> 
     for s in size_order(f["size"].unique()):
         out[f"size:{s}"] = f[f["size"] == s].set_index("family")["da_size"]
     out["snr"] = snr.set_index("family")["snr_median"]
+    for m in ("da_ckpt", "r2"):                      # the family median over its tasks
+        out[m] = tt.dropna(subset=[m]).groupby("family")[m].median()
     for pop in (FILTER, "unfiltered"):
         out[f"task:{pop}"] = tm[tm["population"] == pop].set_index("family")["da_size"]
     return out
@@ -455,16 +511,127 @@ def fig_quadrant(t: pd.DataFrame, pop: str, path: Path, paper: bool) -> pd.DataF
     return pd.DataFrame(counts)
 
 
+# the readings the item-count and wave tables report: (reading in `values`, task_table column, label)
+METRICS = (("unfiltered", "da_size", "DA-size"), ("da_ckpt", "da_ckpt", "DA-ckpt"),
+           ("snr", "log_snr", "SNR at 1.7B"), ("r2", "r2", "R² over size"))
+
+
+def _ols(y: pd.Series, X: pd.DataFrame, groups=None):
+    """OLS of y on X with a constant: cluster-robust by `groups`, else HC1."""
+    import statsmodels.api as sm
+    m = sm.OLS(y.to_numpy(float), sm.add_constant(X.astype(float)))
+    return m.fit(cov_type="cluster", cov_kwds={"groups": groups}) if groups is not None else m.fit(cov_type="HC1")
+
+
+def item_count(values: dict, tt: pd.DataFrame, c: pd.DataFrame, feat: pd.DataFrame) -> pd.DataFrame:
+    """Per metric: the family-level Spearman rho of item count and of skill (`correlations`), the slope
+    against log10 items within families (task-level OLS with a family fixed effect, standard errors
+    clustered by family, so only the families whose tasks differ in item count inform it), and a
+    family-level fit on both (HC1), the skill coded 1 for LM-like."""
+    rows = []
+    for reading, col, label in METRICS:
+        g = c[c["reading"] == reading].set_index("characteristic")
+        d = tt.dropna(subset=[col, "log_items"])
+        varies = d.groupby("family")["log_items"].transform("nunique") > 1
+        fe = pd.get_dummies(d["family"], drop_first=True, dtype=float)
+        w = _ols(d[col], pd.concat([d[["log_items"]], fe], axis=1), pd.factorize(d["family"])[0])
+        y = values[reading].dropna()
+        if reading == "snr":
+            y = np.log10(y)
+        f = feat.loc[y.index, ["items", "skill"]].dropna()
+        j = _ols(y[f.index], f.assign(skill=(f["skill"] == LM_LIKE).astype(float)))
+        ci, cj = w.conf_int(), j.conf_int()
+        rows.append({
+            "metric": label, "reading": reading, "n_benchmarks": int(g.loc["items", "n_benchmarks"]),
+            **{f"rho_{k}{s}": g.loc[k, v] for k in ("items", "skill") for s, v in (("", "value"), ("_low", "ci_low"),
+                                                                                 ("_high", "ci_high"))},
+            "n_benchmarks_skill": int(g.loc["skill", "n_benchmarks"]),
+            "within_slope": w.params["log_items"], "within_low": ci.loc["log_items", 0],
+            "within_high": ci.loc["log_items", 1], "within_p": w.pvalues["log_items"], "within_n_tasks": len(d),
+            "within_n_varying": int(d.loc[varies, "family"].nunique()),
+            "joint_items": j.params["items"], "joint_items_low": cj.loc["items", 0], "joint_items_high": cj.loc["items", 1],
+            "joint_skill": j.params["skill"], "joint_skill_low": cj.loc["skill", 0], "joint_skill_high": cj.loc["skill", 1],
+            "joint_n": len(f)})
+    return pd.DataFrame(rows)
+
+
+def waves(values: dict, feat: pd.DataFrame) -> pd.DataFrame:
+    """The robustness split: per metric and wave (analyze.WAVES), the median over the benchmark families with a
+    value (each family counts once) with a 95 % bootstrap interval over the families; the original benchmarks
+    against every later one by a two-sided Mann-Whitney test and by the later-wave coefficient of a
+    family-level fit on log10 items (HC1)."""
+    rng = np.random.default_rng(0)
+    rows = []
+    for reading, _, label in METRICS[:1] + METRICS[2:]:
+        v = values[reading].dropna()
+        wave = v.index.map(WAVE)
+        later = v[wave != ORIGINAL]
+        f = feat.loc[v.index, ["items"]].assign(later=(wave != ORIGINAL).astype(float)).dropna()
+        y = np.log10(v[f.index]) if reading == "snr" else v[f.index]
+        fit = _ols(y, f)
+        for group, x in [(ORIGINAL, v[wave == ORIGINAL]), ("later, all", later)] + [
+                (w, v[wave == w]) for w in WAVES if w != ORIGINAL]:
+            boot = [np.median(rng.choice(x.to_numpy(), len(x))) for _ in range(N_BOOT)] if len(x) > 1 else [np.nan]
+            rows.append({"metric": label, "reading": reading, "group": group, "n_benchmarks": len(x),
+                         "median": x.median() if len(x) else np.nan, "ci_low": np.nanpercentile(boot, 2.5),
+                         "ci_high": np.nanpercentile(boot, 97.5),
+                         "median_items": feat.loc[x.index, "n_items"].median() if len(x) else np.nan,
+                         "mannwhitney_p": stats.mannwhitneyu(v[wave == ORIGINAL], later).pvalue
+                         if group == "later, all" else np.nan,
+                         "items_adjusted_later": fit.params["later"] if group == "later, all" else np.nan,
+                         "items_adjusted_p": fit.pvalues["later"] if group == "later, all" else np.nan})
+    return pd.DataFrame(rows)
+
+
+def write_tex(rows: list[list[str]], head: list[str], align: str, path: Path) -> None:
+    """A booktabs tabular the paper inputs (\\midrule where a row is None)."""
+    lines = [f"\\begin{{tabular}}{{{align}}}", "\\toprule", " & ".join(head) + " \\\\", "\\midrule"]
+    lines += ["\\midrule" if r is None else " & ".join(r) + " \\\\" for r in rows]
+    path.write_text("\n".join(lines + ["\\bottomrule", "\\end{tabular}", ""]))
+
+
+def _ci(v, lo, hi, f="+.2f"):
+    return "--" if not np.isfinite(v) else f"${v:{f}}$" + (f" [${lo:{f}}$, ${hi:{f}}$]" if np.isfinite(lo) else "")
+
+
+def item_count_tex(t: pd.DataFrame, path: Path) -> None:
+    rows = [[r.metric.replace("²", "$^2$"), str(r.n_benchmarks), _ci(r.rho_items, r.rho_items_low, r.rho_items_high),
+             _ci(r.within_slope, r.within_low, r.within_high) + f" ({r.within_n_tasks}, {r.within_n_varying})",
+             _ci(r.rho_skill, r.rho_skill_low, r.rho_skill_high),
+             _ci(r.joint_items, r.joint_items_low, r.joint_items_high),
+             _ci(r.joint_skill, r.joint_skill_low, r.joint_skill_high)] for r in t.itertuples()]
+    write_tex(rows, ["Metric", "Benchmarks", "$\\rho$ items", "Within benchmarks", "$\\rho$ LM-like",
+                     "Joint: items", "Joint: LM-like"], "lrlllll", path)
+
+
+def waves_tex(t: pd.DataFrame, path: Path) -> None:
+    rows = []
+    for m, g in t.groupby("metric", sort=False):
+        rows += [None] if rows else []
+        for r in g.itertuples():
+            sub = r.group not in (ORIGINAL, "later, all")
+            rows.append([m.replace("²", "$^2$") if r.group == ORIGINAL else "",
+                         ("\\quad " if sub else "") + r.group[0].upper() + r.group[1:], str(r.n_benchmarks),
+                         "--" if not r.n_benchmarks else f"{r.median_items:.0f}",
+                         _ci(r.median, r.ci_low, r.ci_high, ".2f"),
+                         f"{r.mannwhitney_p:.2f}" if np.isfinite(r.mannwhitney_p) else "",
+                         f"${r.items_adjusted_later:+.2f}$ ({r.items_adjusted_p:.2f})" if np.isfinite(r.items_adjusted_p) else ""])
+    write_tex(rows, ["Metric", "Benchmarks added", "Benchmarks", "Items", "Median [95\\% CI]", "Rank test $p$",
+                     "After items ($p$)"], "llrrlrl", path)
+
+
 # the table's short level names (the figures use LEVEL_NAMES)
 TABLE_NAMES = {"originally_multilingual": "native", "human_translation": "human transl.", "template_generated": "template",
                "mt_post_edited": "MT + post-edit", "machine_translation": "MT", "english_translated": "translated",
                "minimal_pair": "minimal pair", "completion": "completion", "classification": "classification",
                "mcq_question_only": "MCQ", "mrc_passage": "MCQ + passage", "cloze_completion": "cloze",
                "statement_continuation": "statement (LLM-RF)", "last_word": "last word",
-               "english_original": "English", "translation_unknown": "transl. (unknown)", False: "no", True: "yes"}
-TABLE_HEAD = {"domain": "Domain", "curation_category": "Curation", "source_origin": "Source", "format": "Format", "n_options": "Options",
-              "passage": "Passage", "context_len_chars_median": "Context", "option_len_chars_median": "Option"}
-LENGTHS = ("context_len_chars_median", "option_len_chars_median")
+               "english_original": "English", "translation_unknown": "transl. (unknown)", False: "no", True: "yes",
+               KNOWLEDGE_ETC: "knowledge etc."}
+TABLE_HEAD = {"domain": "Domain", "skill": "Skill", "curation_category": "Curation", "source_origin": "Source", "format": "Format", "n_options": "Options",
+              "passage": "Passage", "n_items": "Items", "context_len_chars_median": "Context",
+              "option_len_chars_median": "Option"}
+LENGTHS = ("n_items", "context_len_chars_median", "option_len_chars_median")
 
 
 def characteristics_table(families: list, feat: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
@@ -473,7 +640,7 @@ def characteristics_table(families: list, feat: pd.DataFrame, out_dir: Path) -> 
     where none were sampled; options -- where none are scored, LAMBADA, or the range where the
     subtasks differ; `unknown` where no source settles a characteristic)."""
     t = feat.loc[families, list(TABLE_HEAD) + ["curation", "source", "format_type", "n_options_range",
-                                                "data_source", "curation_process"]].copy()
+                                                "data_source", "curation_process", "mixed"]].copy()
     t.insert(0, "benchmark", [G.paper_name(f) for f in families])
     t = t.sort_values("benchmark")
     t.to_csv(out_dir / "benchmark_characteristics.csv", index_label="family")
@@ -481,9 +648,9 @@ def characteristics_table(families: list, feat: pd.DataFrame, out_dir: Path) -> 
         if c == "n_options":
             return f"{v:.0f}" if pd.notna(v) else r["n_options_range"] if pd.notna(r["n_options_range"]) else "--"
         if pd.isna(v):
-            return "--" if c in LENGTHS else "unknown"
+            return "--" if c in LENGTHS else "mixed" if r["mixed"] == True else "unknown"
         return f"{v:.0f}" if c in LENGTHS else TABLE_NAMES.get(v, v)
-    lines = ["\\begin{tabular}{llllllrrr}", "\\toprule",
+    lines = ["\\begin{tabular}{llllllllrrr}", "\\toprule",
              " & ".join(["Benchmark"] + list(TABLE_HEAD.values())) + " \\\\", "\\midrule"]
     lines += [" & ".join([r["benchmark"]] + [cell(c, r[c], r) for c in TABLE_HEAD]) + " \\\\" for _, r in t.iterrows()]
     lines += ["\\bottomrule", "\\end{tabular}", ""]
@@ -502,7 +669,7 @@ def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, tm: pd.DataFr
     def line(reading):
         g = c[c["reading"] == reading].set_index("characteristic")
         task = reading.startswith("task:")
-        return "; ".join(f"{r.label} ρ = {r.value:+.2f}"
+        return ", ".join(f"{r.label} ρ = {r.value:+.2f}"
                          + (f" [{r.ci_low:+.2f}, {r.ci_high:+.2f}]" if np.isfinite(r.ci_low) else "")
                          + (f" (n = {r.n_tasks} tasks of {r.n_benchmarks}"
                             + (f", Kruskal–Wallis p = {r.kruskal_p:.3f}" if np.isfinite(r.kruskal_p) else "") + ")" if task
@@ -515,7 +682,7 @@ def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, tm: pd.DataFr
         f = lambda x, w: (f"{w} median {x.median():+.2f} (IQR {x.quantile(.25):+.2f} to {x.quantile(.75):+.2f}, range "
                           f"{x.min():+.2f} to {x.max():+.2f}), {(x.abs() < .05).mean():.0%} within 0.05 of chance and "
                           f"{(x >= .16).mean():.0%} at DA-size ≥ 0.66")
-        return f"{f(b, f'{len(b)} benchmarks')}; {f(t, f'{len(t)} tasks')}"
+        return f"{f(b, f'{len(b)} benchmarks')}. {f(t, f'{len(t)} tasks')}"
     sizes = [r for r in dict.fromkeys(c["reading"]) if r.startswith("size:")]
     opt = c[(c["characteristic"] == "n_options") & c["reading"].isin(sizes)].set_index("reading")["value"]
     meta = features()
@@ -531,19 +698,22 @@ def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, tm: pd.DataFr
         "## Benchmark characteristics against DA-size",
         f"Pool `{pool}`: rq02's per-task DA-size (mono-axis pairs, each proxy's final checkpoint against the 1.7B final, gated "
         f"at the proxy and at 1.7B, ≥ 3 pairs) over the paper's `{FILTER}` tasks ({n_fam} families, up to {n_tasks} tasks), "
-        "with the unfiltered reading (every gated task) beside it; a benchmark's DA-size is the median over its tasks at a "
-        "proxy and the mean of those medians over 90M–1B, a task's the mean over the proxies that have one. Statistic: "
+        "with the unfiltered reading (every gated task) beside it. A benchmark's DA-size is the median over its tasks at a "
+        "proxy, averaged over 90M–1B, and a task's DA-size is its mean over the proxies that have one. Statistic: "
         "Spearman ρ against the centred code of an ordinal or "
-        "binary characteristic (options 2 → 5, no passage → passage) or a length; curation, source, task format and domain "
-        "are binarised, translated → native (written in the language, English originals included, or generated from "
+        "binary characteristic (options 2 → 5, no passage → passage) or against a continuous one (the item count, the median "
+        "`n_items` over a benchmark's languages, and the two lengths). Skill is knowledge, reading, reasoning → LM-like "
+        "(`analyze.DOMAINS`), None for a suite whose subtasks fall in both groups. Curation, source, task format and "
+        "domain are binarised: translated → native (written in the language, English originals included, or generated from "
         "treebanks or planning problems), translated from English → not, continuation → lettered MCQ, and every other "
-        "domain → knowledge (the most populous of the eleven domains, chosen by its count); a "
-        "characteristic no source settles (`FAMILY_META` None: BBH's curation method, option count and passage, "
-        "LAMBADA's option count) leaves that benchmark out of that row; 95 % bootstrap over the families, which for the "
-        "per-task readings resamples each benchmark with all of its tasks. The by-level figures group each "
-        "characteristic's levels under a header row; the quadrant figures draw one dot per proxy, coloured by its size, "
-        "each size in a band of its own with its median marked. The quadrant figures read every task above chance, so "
-        "benchmarks fall on both sides of chance agreement; their "
+        "domain → knowledge (the most populous of the eleven domains, chosen by its count). A "
+        "characteristic that no source settles (`FAMILY_META` None: BBH's option count and passage, LAMBADA's option "
+        "count) leaves that benchmark out of that row. BBH's curation method is unknown too, but its items were written "
+        "in English, so the binary curation codes it native (`features`). The interval is a 95 % bootstrap over the families, "
+        "which for the per-task readings resamples each benchmark with all of its tasks. The by-level figures group each "
+        "characteristic's levels under a header row. The quadrant figures draw one dot per proxy, coloured by its size, "
+        "with each size in a band of its own and its median marked. They read every task above chance, so "
+        "benchmarks fall on both sides of chance agreement. Their "
         f"`{FILTER}` twins, where {n_fam - below} of the {n_fam} benchmarks sit right of 0.5, stay as analysis figures. "
         f"Regenerate with `python analysis/rq09_benchmark_design/design_da.py --pool {pool}`.",
         f"![Characteristics against DA-size]({stage}/{pool}/{files[0]}.png)",
@@ -567,7 +737,8 @@ def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, tm: pd.DataFr
                    "- **Domain levels** (SNR median over the families at 1.7B, then the median task DA-size on every gated "
                    "task): " + ", ".join(
                        f"{d} {r['median']:.2f} ({int(r['size'])} {'family' if r['size'] == 1 else 'families'}"
-                       + (f", task DA-size {dom.loc[('unfiltered', d), 'da']:.2f} over {dom.loc[('unfiltered', d), 'n']} tasks)"
+                       + (f", task DA-size {dom.loc[('unfiltered', d), 'da']:.2f} over {dom.loc[('unfiltered', d), 'n']} "
+                          f"task{'' if dom.loc[('unfiltered', d), 'n'] == 1 else 's'})"
                           if ("unfiltered", d) in dom.index else ", no gated task)")
                        for d, r in snr_dom.iterrows()) + "."]),
         "GitHub: " + " · ".join(
@@ -579,17 +750,80 @@ def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, tm: pd.DataFr
     replace_block(HERE / "README.md", "design-da", body, f"design_da.py --pool {pool}")
 
 
+def readme_items(pool: str, items: pd.DataFrame, w: pd.DataFrame, feat: pd.DataFrame, tt: pd.DataFrame) -> None:
+    """The README block of the item-count and skill axes and of the wave split, and the taxonomy table
+    (analyze.DOMAINS, the one place it is defined)."""
+    if pool != CANONICAL_POOL:
+        return
+    stage = load_pools()[pool].get("stage", "pretraining")
+    fams = sorted(set(tt["family"]))
+    by_domain = {d: [] for d in DOMAINS}
+    for f in fams:                                   # a suite is listed under each of its subtasks' domains
+        tasks = tt.loc[tt["family"] == f, "task"]
+        if FAMILY_META[f].get("domain"):
+            by_domain[FAMILY_META[f]["domain"]].append(G.paper_name(f))
+        for p, d in SUBTASK_DOMAIN.items():
+            if FAMILY_META[f].get("domain") is None and tasks.str.startswith(p).any():
+                by_domain[d].append(f"{G.paper_name(f)} `{p}`")
+    table = "\n".join(["| domain | skill | benchmarks with a value | basis |", "|---|---|---|---|"]
+                       + [f"| {d} | {sk} | {', '.join(by_domain[d]) or 'none'} | {basis} |"
+                          for d, (sk, basis) in DOMAINS.items()])
+    ci = lambda v, lo, hi: f"{v:+.2f} [{lo:+.2f}, {hi:+.2f}]"
+    lines = [f"- **{r.metric}** ({r.n_benchmarks} benchmarks): items ρ = {ci(r.rho_items, r.rho_items_low, r.rho_items_high)}, "
+             f"LM-like ρ = {ci(r.rho_skill, r.rho_skill_low, r.rho_skill_high)} ({r.n_benchmarks_skill} benchmarks with one "
+             f"skill). Within benchmarks {r.within_slope:+.3f} per tenfold items [{r.within_low:+.3f}, {r.within_high:+.3f}], "
+             f"p = {r.within_p:.3g} ({r.within_n_tasks} tasks, {r.within_n_varying} benchmarks whose tasks differ in item "
+             f"count). Joint fit over {r.joint_n} benchmarks: items {ci(r.joint_items, r.joint_items_low, r.joint_items_high)}, "
+             f"LM-like {ci(r.joint_skill, r.joint_skill_low, r.joint_skill_high)}." for r in items.itertuples()]
+    wl = []
+    for m, g in w.groupby("metric", sort=False):
+        g = g.set_index("group")
+        a = g.loc["later, all"]
+        wl.append(f"- **{m}**: " + ", ".join(f"{k} {r['median']:.2f} [{r['ci_low']:.2f}, {r['ci_high']:.2f}] "
+                                            f"({int(r['n_benchmarks'])} benchmarks, median {r['median_items']:.0f} items)"
+                                            for k, r in g.iterrows() if r["n_benchmarks"])
+                  + f". Original against later: Mann–Whitney p = {a['mannwhitney_p']:.2f}. After log10 items the later "
+                  f"benchmarks differ by {a['items_adjusted_later']:+.2f} (p = {a['items_adjusted_p']:.2f}).")
+    names = ["item_count_da_all_mono_axis", "wave_robustness_da_size_mono_axis"]
+    body = "\n\n".join([
+        "## Item count and skill",
+        f"Pool `{pool}`. A benchmark's item count is the median `n_items` (configs/tasks.json) over its per-language "
+        "tasks, and its skill is the group of its domain (the table below): LM-like for commonsense, grammaticality and "
+        "language modelling, against every other domain. A suite whose subtasks fall in both groups (KoBEST, NorEval) "
+        "has no skill. Per metric, a benchmark's value is its DA-size on every gated task (as in the hollow dots above), "
+        "the median over its tasks of DA-ckpt (each task's median over its DA-ckpt cells) and of the R² of rq01's "
+        "power-law fit over size (pool `predictivity_seeds`), and its median SNR at 1.7B (log10 in the fits). The ρ "
+        "are the Spearman correlations of the figure above with their bootstrap intervals over the benchmarks. "
+        "Within benchmarks: an OLS of the task values on log10 items with a fixed effect per benchmark, the interval "
+        "clustered by benchmark, so only the benchmarks whose tasks differ in item count inform it. Joint fit: a "
+        "family-level OLS on log10 items and LM-like (HC1 interval). Regenerate with "
+        f"`python analysis/rq09_benchmark_design/design_da.py --pool {pool}`.",
+        table,
+        "Item count and skill (generated, `item_count_da_all_mono_axis.csv`):",
+        "\n".join(lines),
+        "Original against later-added benchmarks (generated, `wave_robustness_da_size_mono_axis.csv`; a benchmark "
+        "counts once, its value as above; `analyze.WAVES` dates each family from configs/tasks.json):",
+        "\n".join(wl),
+        "GitHub: " + " · ".join(
+            f"[{n}](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/"
+            f"rq09_benchmark_design/{stage}/{pool}/{n})"
+            for n in [f"{f}.{e}" for f in names for e in ("csv", "tex")] + ["item_count_per_task_da_all_mono_axis.csv"])])
+    replace_block(HERE / "README.md", "item-count", body, f"design_da.py --pool {pool}")
+
+
 def main(pool: str) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     out_dir = HERE / stage / pool
-    tasks = per_task(DECISION_ACCURACY / stage / pool, pool)
+    tasks, ckpt = per_task(DECISION_ACCURACY / stage / pool, pool)
     tasks.to_csv(out_dir / "design_da_size_per_task_mono_axis.csv", index=False)
     fam = per_family(tasks)
     fam.to_csv(out_dir / "design_da_size_per_family_mono_axis.csv", index=False)
     tm = task_means(tasks)
     snr = pd.read_csv(out_dir / "per_family_snr.csv")
     feat = features()
-    values = benchmark_values(fam, snr, tm)
+    tt = task_table(tm, ckpt, out_dir, stage)
+    tt.to_csv(out_dir / "item_count_per_task_da_all_mono_axis.csv", index=False)
+    values = benchmark_values(fam, snr, tm, tt)
     c = correlations(values, feat)
     stem = f"design_da_size_correlation_{FILTER}_mono_axis"
     for paper in (False, True):
@@ -616,8 +850,16 @@ def main(pool: str) -> None:
                            counts.assign(row="quadrant count")]).to_csv(q.with_suffix(".csv"), index=False)
     families = sorted(set(snr["family"]) | set(fam["family"]))
     characteristics_table(families, feat, out_dir)
+    items = item_count(values, tt, c, feat)
+    items.to_csv(out_dir / "item_count_da_all_mono_axis.csv", index=False)
+    item_count_tex(items, out_dir / "item_count_da_all_mono_axis.tex")
+    w = waves(values, feat)
+    w.to_csv(out_dir / "wave_robustness_da_size_mono_axis.csv", index=False)
+    waves_tex(w, out_dir / "wave_robustness_da_size_mono_axis.tex")
+    print(items.round(3).to_string(index=False)); print(w.round(3).to_string(index=False))
     print(c[c["reading"].isin([FILTER, "unfiltered", "snr", f"task:{FILTER}", "task:unfiltered"])].round(3).to_string(index=False))
     generate_readme(pool, c, fam, tm)
+    readme_items(pool, items, w, feat, tt)
 
 
 if __name__ == "__main__":

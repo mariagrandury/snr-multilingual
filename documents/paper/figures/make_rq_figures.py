@@ -21,7 +21,7 @@ comes from). The .tex carries the source path as a comment next to the
     rq2  decision accuracy<- rq02_decision_accuracy/paper_rq2.py     (pool predictivity, --axes mono-axis)
                              rq2_da_all_above_66_either_transformation_mono_axis.png
     rq3  surrogates       <- rq04_surrogates/analyze.py              (pool predictivity)
-                             rq3_surrogates_paper.png
+                             rq3_surrogates_heatmap_paper.png
     app_rq00_chance_share      <- rq00_gate_and_curves/panels.py --paper    first_size_share_paper
     app_rq00_chance_share_horizontal <- the same, first_size_share_paper_horizontal (its bars along the x axis)
     app_rq00_chance_full       <- the same                                  first_size_above_random_paper
@@ -53,7 +53,9 @@ comes from). The .tex carries the source path as a comment next to the
     app_rq09_design_da_quadrant    <- the same                       design_da_size_quadrant_per_task_mono_axis_paper (every task above chance)
                              (these two: one dot per (benchmark, language) task; the per-benchmark twins stay in the analysis)
     app_rq09_benchmark_characteristics <- the same                   benchmark_characteristics.tex (a LaTeX table)
-                             (these four: the extra float pages of the benchmark-design appendix page)
+    app_rq09_item_count            <- the same                       item_count_da_all_mono_axis.tex (a LaTeX table)
+    app_rq09_wave_robustness       <- the same                       wave_robustness_da_size_mono_axis.tex (a LaTeX table)
+                             (these six: the extra float pages of the benchmark-design appendix page)
     app_rq00_token_exclusion <- rq00_chance_vs_train_tokens/token_exclusion.py  token_exclusion_da_size_mono_axis.tex
     app_rq00_early_passes      <- rq00_gate_and_curves/early_passes.py           early_passes.tex
     app_rq00_pass_counts_considered <- rq00_gate_and_curves/panels.py --paper  gate_pass_counts_all_considered.tex
@@ -76,6 +78,12 @@ comes from). The .tex carries the source path as a comment next to the
     app_rq03_flip_attribution  <- rq03_noise_and_snr/flip_attribution.py  flip_attribution_da_size_by_axis_both_axes.tex
                              (a LaTeX table, the extra float of the noise-and-SNR appendix page)
     app_rq04_surrogates        <- rq04_surrogates/snr_definition_postprocess.py --pool predictivity --paper  top_variants_overall_paper
+    app_rq04_surrogates_by_scoring <- rq04_surrogates/analyze.py (pool predictivity)  rq3_surrogates_by_scoring_paper
+                             (rq3 split into accuracy, the bBPB twins and the per-language bits per byte: the extra
+                             figure of the surrogates appendix page)
+    app_rq04_surrogates_mono_axis <- rq04_surrogates/analyze.py --axes mono-axis (pool predictivity)
+                             mono_axis/rq3_surrogates_heatmap_paper (rq3 on the single-axis pairs: the second extra
+                             figure of the surrogates appendix page)
     app_rq12_above_chance_items <- rq12_above_chance_items/above_chance_items.py --paper  above_chance_items_snr_paper
     app_rq13_english_only      <- rq13_english_only/english_only.py --paper      english_only_scores_paper
                              (these five: the main figure of an appendix page of make_rq_appendix.py)
@@ -137,7 +145,7 @@ FIGURES = {
     "rq1": (RQ01 / "scaling_regimes_outliers_paper", ("png",)),
     "rq2": (ANALYSIS / "rq02_decision_accuracy" / "pretraining" / "predictivity"
             / "rq2_da_all_above_66_either_transformation_mono_axis", ("png",)),
-    "rq3": (ANALYSIS.joinpath("rq04_surrogates", *PRED, "rq3_surrogates_paper"), ("png",)),
+    "rq3": (ANALYSIS.joinpath("rq04_surrogates", *PRED, "rq3_surrogates_heatmap_paper"), ("png",)),
     "app_rq00_chance_share": (GATE / "first_size_share_paper", ("png",)),
     "app_rq00_chance_share_horizontal": (GATE / "first_size_share_paper_horizontal", ("png",)),
     "app_rq00_chance_full": (GATE / "first_size_above_random_paper", ("png",)),
@@ -173,6 +181,9 @@ FIGURES = {
                                                        "design_da_size_quadrant_per_task_mono_axis_paper"), ("png",)),
     "app_rq09_benchmark_characteristics": (ANALYSIS.joinpath("rq09_benchmark_design", *PRED, "benchmark_characteristics"),
                                            ("tex",)),
+    "app_rq09_item_count": (ANALYSIS.joinpath("rq09_benchmark_design", *PRED, "item_count_da_all_mono_axis"), ("tex",)),
+    "app_rq09_wave_robustness": (ANALYSIS.joinpath("rq09_benchmark_design", *PRED, "wave_robustness_da_size_mono_axis"),
+                                 ("tex",)),
     "app_rq10_size_generalisation": (ANALYSIS.joinpath("rq10_size_generalisation", *PRED, "gate_share_and_da_size_mono_axis_paper"),
                                 ("png",)),
     "app_rq11_evaluation_recipe": (ANALYSIS.joinpath("rq11_evaluation_recipe", *PRED, "recipe_da_size_variants_multi_axes_paper"),
@@ -195,6 +206,10 @@ FIGURES = {
     "app_rq03_flip_attribution": (ANALYSIS.joinpath("rq03_noise_and_snr", *PRED, "flip_attribution_da_size_by_axis_both_axes"),
                                   ("tex",)),
     "app_rq04_surrogates": (ANALYSIS.joinpath("rq04_surrogates", *PRED, "top_variants_overall_paper"), ("png",)),
+    "app_rq04_surrogates_by_scoring": (ANALYSIS.joinpath("rq04_surrogates", *PRED, "rq3_surrogates_by_scoring_paper"),
+                                       ("png",)),
+    "app_rq04_surrogates_mono_axis": (ANALYSIS.joinpath("rq04_surrogates", *PRED, "mono_axis", "rq3_surrogates_heatmap_paper"),
+                                      ("png",)),
     "app_rq12_above_chance_items": (ANALYSIS.joinpath("rq12_above_chance_items", *PRED, "above_chance_items_snr_paper"),
                                ("png",)),
     "app_rq13_english_only": (ANALYSIS.joinpath("rq13_english_only", *PRED, "english_only_scores_paper"), ("png",)),

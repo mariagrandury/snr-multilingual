@@ -40,25 +40,25 @@ size reach.
 <!-- highlight: rq08_subset_selection -->
 
 - **Without the null the lever looks universal.** The best prefix beats the
-  full set in 190 of the 216 swept (benchmark, size) cells, by a median of
-  +0.77 SNR.
+  full set in 221 of the 254 swept (benchmark, size) cells, by a median of
+  +0.80 SNR.
 - **Against random subsets, a chosen subset wins in a minority of cells:**
-  80 of the 216 language-subset cells, by more than 0.25 SNR in 59 (the
+  94 of the 254 language-subset cells, by more than 0.25 SNR in 66 (the
   block above also counts the MMLU-subject cells, which have not been
-  rerun on the current runs). HellaSwag (median +1.06 over
-  six sizes), ARC (+0.91), MultiBLiMP (+0.64) and Global-MMLU RF (+0.59)
+  rerun on the current runs). HellaSwag (median +1.12 over
+  six sizes), ARC (+0.97 over four), MultiBLiMP (+0.65) and Global-MMLU RF (+0.61)
   lead; XStoryCloze, LAMBADA, XWinograd and the per-language BPB never beat
   the null, and PAWS-X sits below it.
 - **The share of benchmarks that beat the null does not grow with size**
-  (0.32 to 0.42 from 90M to 1.7B), and the accuracy benchmarks and their bBPB
-  twins beat it about equally often (53 of 120 cells against 27 of 70).
+  (0.33 to 0.43 across 90M–1.7B), and the accuracy benchmarks and their bBPB
+  twins beat it about equally often (67 of 151 cells against 27 of 70).
 - **Item subsets win SNR on a handful of items but read the 1.7B model
   worse than random items.** The best item prefix beats its null in 97–99 %
   of the tasks, on a median of 4–8 items; held out, its decision accuracy is
   0.32–0.37 against 0.53–0.57 for the full set and 0.35–0.39 for random items.
 - **The items the 1.7B model solves are the exception.** Chosen on half of
   the runs and scored on the other half, they raise decision accuracy by
-  +0.02 to +0.03 at 90M–600M and by nothing at 1B (see also
+  +0.015 to +0.033 at 90M–600M and by nothing at 1B (see also
   [RQ12](above-chance-items.md), the in-sample version).
 
 !!! success "Takeaway"

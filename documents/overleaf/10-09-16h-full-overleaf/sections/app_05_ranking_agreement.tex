@@ -1,0 +1,27 @@
+\clearpage
+
+\section{Ranking Agreement}
+\label{app:ranking-agreement}
+
+We quantify ranking agreement using three complementary metrics. Spearman's rank correlation $\rho$ measures agreement between the complete proxy and reference rankings.
+Kendall's $\tau_a = (C-D)/n$ counts the concordant ($C$) minus the discordant ($D$) pairs among the $n$ pairs of variants.
+Decision accuracy (DA; \citealp{heineman_signal_2025}) measures the fraction of pairwise preferences that agree between them.
+
+\textbf{Decision Accuracy.} For a language task $b_\ell$, a proxy point $(N,f)$ and a set $\mathcal{P}$ of pairs of model configurations,
+\begin{equation}
+\mathrm{DA}_{b_\ell}(N,f)
+=
+\frac{1}{|\mathcal{P}|}
+\sum_{(\theta_a,\theta_b)\in\mathcal{P}}
+\mathbb{1}
+\left[
+\operatorname{sign}\!\left(Y_{b_\ell}(\theta_a,f)-Y_{b_\ell}(\theta_b,f)\right)
+=
+\operatorname{sign}\!\left(Y_{b_\ell}(\theta_a^{\mathrm{ref}},1)-Y_{b_\ell}(\theta_b^{\mathrm{ref}},1)\right)
+\right],
+\label{eq:decision-accuracy}
+\end{equation}
+where $\theta_a$ has size $N$, $\theta_a^{\mathrm{ref}}$ is the same configuration at $N_{\mathrm{ref}}$. A pair tied on both sides counts as agreement and a pair tied on one side as disagreement. DA equals one when every pairwise preference transfers and equals $0.5$ in expectation under random, tie-free rankings. 
+% DA and Kendall's $\tau$ differ only in how they treat ties: $2\,\mathrm{DA}-1 = \tau_a + (T_{\mathrm{both}}-T_{\mathrm{one}})/n$, where $T_{\mathrm{both}}$ and $T_{\mathrm{one}}$ count the pairs tied on both sides and on one side. A cell $(b_\ell, N, f)$ is reported if it has at least three pairs.
+A cell $(b_\ell, N, f)$ is reported if it has at least three pairs.
+Where we restrict to reliably ranking tasks, we keep those whose median DA over the proxy cells reaches 0.66 for RA-size or for RA-checkpoint.

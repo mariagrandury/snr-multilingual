@@ -497,16 +497,16 @@ def generate_readme(train_pool: str, test_pool: str, out_dir: Path, agreements: 
     body = "\n\n".join([
         "## Seed holdout",
         f"Regenerate with `python analysis/rq03_noise_and_snr/compare_seed_splits.py --train-pool {train_pool} "
-        f"--test-pool {test_pool}`; the tables are under `{stage}/{out_dir.name}/`.",
+        f"--test-pool {test_pool}`. The tables are under `{stage}/{out_dir.name}/`.",
         f"`{train_pool}` (seeds {', '.join(map(str, seeds_train))}) and `{test_pool}` (seeds "
         f"{', '.join(map(str, seeds_test))}) hold {'the same' if same else '**different**'} {len(cells_train)} cells: "
-        f"{_cells(cells_train)}." + ("" if same else f" Train only: {_cells(cells_train - cells_test)}; test only: "
+        f"{_cells(cells_train)}." + ("" if same else f" Train only: {_cells(cells_train - cells_test)}. Test only: "
                                                      f"{_cells(cells_test - cells_train)}."),
         f"A language's r is rq04's Pearson r over its tasks' (log10 SNR, DA) points and needs at least "
-        f"{MIN_LANG_TASKS} distinct tasks with a value (rule 8); `multi` and `??` are never a language (rule 7). "
-        f"DA-size on the holdout is {da_size_label} (the pools stop at 600M, so the 1.7B reference never enters; "
-        f"rule 9); DA-ckpt is the within-size early → final ranking. Agreement is counted over the languages with "
-        f"a best variant on both splits.",
+        f"{MIN_LANG_TASKS} distinct tasks with a value (rule 8). `multi` and `??` are never a language (rule 7). "
+        f"DA-size on the holdout is {da_size_label}. The pools hold no 1.7B run, so the reference never "
+        f"enters (rule 9). DA-ckpt is the within-size early → final ranking. Agreement is counted over the languages "
+        f"with a best variant on both splits.",
         "| DA | languages | same variant | same family | Spearman ρ of the variant ranking |\n"
         "|---|---|---|---|---|\n" + "\n".join(rows)])
     readme = OUT_ROOT / "README.md"

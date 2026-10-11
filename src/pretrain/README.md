@@ -557,8 +557,12 @@ shared filesystem, `/iopsstor/scratch/cscs/$USER/logs/auto_evals/watcher.lock`
 (per `--group`; `AUTO_EVALS_LOCK_DIR` overrides the directory), and refuses
 to start while a live pass holds it, on this login node or any other.
 `--dry-run` takes no lock. `--stop` stops the holder from any node — SIGTERM
-on its own node, a stop file it reads within a minute elsewhere — and waits
-for the lock to go; a holder that died is taken over on the next start. As a
+on its own node, elsewhere a stop file it reads at its next heartbeat: within
+a minute while it sleeps, after the current cell or post-pass step while it
+works — and waits for the lock to go; if that times out, the request is
+withdrawn and the holder keeps running. A holder that died is taken over on
+the next start, and one that only stalled past its ttl exits at its next beat
+once it sees the lock is no longer its own. As a
 second guard, each sbatch is preceded by `squeue -h -n <job>`.
 
 - **CSCS** — [`auto_evals_cscs.py`](auto_evals_cscs.py) scans the checkpoint
@@ -577,6 +581,9 @@ second guard, each sbatch is preceded by `squeue -h -n <job>`.
   python3.11 auto_evals_cscs.py --dry-run       # preview one pass
   python3.11 -u auto_evals_cscs.py --watch 1800 # a pass every 30 min, one per user
   python3.11 auto_evals_cscs.py --stop          # stop it, from any login node
+  # The one-shot passes below take the same lock, so they REFUSE while a
+  # watcher holds it: `--stop` it first, and restart it afterwards (or run
+  # the flag as the watcher itself: `-u ... --watch 1800 --retry-held`).
   python3.11 auto_evals_cscs.py --retry-held    # after fixing a root cause
   # every auto language, not only the trained ones — always filter it:
   # unfiltered, one pass submits ~1,300 eval jobs (2026-09-13)

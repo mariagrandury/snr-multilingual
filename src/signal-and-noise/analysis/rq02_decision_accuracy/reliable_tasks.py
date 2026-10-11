@@ -221,7 +221,7 @@ def per_language(tasks: pd.DataFrame, red: str, thresh: float) -> pd.DataFrame:
     return out.assign(threshold=thresh, reduction=red)
 
 
-def figure(tasks: pd.DataFrame, path: Path, red: str, thresh: float) -> pd.DataFrame:
+def figure(tasks: pd.DataFrame, path: Path, red: str, thresh: float, da_pool: str = DA_POOL) -> pd.DataFrame:
     by_lang = per_language(tasks, red, thresh)
     langs = list(by_lang["language"])
     both = by_lang["both"].to_numpy()
@@ -260,7 +260,7 @@ def figure(tasks: pd.DataFrame, path: Path, red: str, thresh: float) -> pd.DataF
                     f"earlier checkpoint with the same size's final. Each is the {red} over that task's cells with "
                     f"≥ {MIN_PAIRS} pairs (rule 5) that the above-random gate keeps (rule 1); a benchmark at chance can "
                     f"never pass. Benchmarks only — BPB and the loss have no chance level. Decisions from the "
-                    f"`{DA_POOL}` pool over its {DEFAULT_AXES} pairs (rule 15); the gate is the figure's own pool. "
+                    f"`{da_pool}` pool over its {DEFAULT_AXES} pairs (rule 15); the gate is the figure's own pool. "
                     f"Values in `da_all_reliable_tasks_both_axes.csv`, which carries every pair set; this figure is one "
                     f"(threshold, reduction) view of it.")
     fig.tight_layout(rect=(0, 0, 1, top))
@@ -268,7 +268,8 @@ def figure(tasks: pd.DataFrame, path: Path, red: str, thresh: float) -> pd.DataF
     return by_lang
 
 
-def generate_readme(pool: str, out_dir: Path, tasks: pd.DataFrame, by_lang: pd.DataFrame) -> None:
+def generate_readme(pool: str, out_dir: Path, tasks: pd.DataFrame, by_lang: pd.DataFrame,
+                    da_pool: str = DA_POOL) -> None:
     if pool != CANONICAL_POOL:
         return
     stage = load_pools()[pool].get("stage", "pretraining")
@@ -279,17 +280,18 @@ def generate_readme(pool: str, out_dir: Path, tasks: pd.DataFrame, by_lang: pd.D
              for th in THRESHOLDS for red in REDUCTIONS for p in [passes(tasks, red, th)]]
     body = "\n\n".join([
         "## Which benchmark-language cells rank reliably",
-        f"Per language, how many benchmarks clear DA ≥ {THRESH:g} on DA-size (a proxy size's final ranking vs the "
-        f"reference's) and on DA-ckpt (an earlier checkpoint vs the same size's final), reducing each task's cells "
-        f"with `{DEFAULT_REDUCTION}` (one fixed cell per axis, so no cell is chosen by its value). Cells need ≥ "
-        f"{MIN_PAIRS} pairs (rule 5) and must survive the above-random gate (rule 1). The decisions come from the "
-        f"`{DA_POOL}` pool — every data build at the grid seed, which is the population `by_L` and "
-        f"`scale_convergence` pair over — while the gate and this folder stay with `{pool}`; the table carries one "
-        f"row per pair set (rule 15) and the figures show `{DEFAULT_AXES}`. "
-        f"`da_all_reliable_tasks_both_axes.csv` holds the per-task values for every reduction and is threshold-free — each figure "
-        f"is one view of it. Regenerate with `python analysis/rq02_decision_accuracy/reliable_tasks.py --pool {pool}`.",
+        f"The table counts, per language, the benchmarks that reach DA ≥ {THRESH:g} on DA-size (a proxy size's final "
+        f"ranking against the reference's) and on DA-ckpt (an earlier checkpoint against the same size's final "
+        f"ranking). Each task's cells are reduced with `{DEFAULT_REDUCTION}`, which keeps one fixed cell per axis, so "
+        f"no cell is picked for its value. A cell counts only if it has ≥ {MIN_PAIRS} pairs (rule 5) and survives "
+        f"the above-random gate (rule 1). The decisions come from the `{da_pool}` pool, which holds every data build "
+        f"at the grid seed (the same population that `by_L` and `scale_convergence` pair over). The gate and this "
+        f"folder use the `{pool}` pool. The table and figures show the `{DEFAULT_AXES}` pair set, and "
+        f"`da_all_reliable_tasks_both_axes.csv` carries every pair set (rule 15). That CSV holds the per-task values "
+        f"for every reduction and does not depend on the cut, so each figure is one view of it. "
+        f"Regenerate with `python analysis/rq02_decision_accuracy/reliable_tasks.py --pool {pool}`.",
         md_table(list(t.columns), t.values.tolist()),
-        "**How many cells pass, by cut and reduction** — the cut is a choice, and this is its whole sensitivity:",
+        "**How many cells pass, by cut and reduction.** The cut is a choice. This table shows how the count changes with it:",
         md_table(["threshold", "reduction", "tasks passing both", "languages", "benchmarks"], sweep),
         f"![Reliable benchmark-language cells]({stage}/{pool}/da_size_vs_da_ckpt_reliable_tasks_{pct(THRESH)}_{DEFAULT_REDUCTION}_multi_axes.png)"])
     replace_block(OUT_ROOT / "README.md", "reliable-tasks", body, f"reliable_tasks.py --pool {pool}")
@@ -307,7 +309,8 @@ def run(pool: str, out_dir: Path, da_dir: Path | None = None) -> pd.DataFrame:
     default one only: the figures are a view of the table, and drawing each of
     the twelve twice would double the folder to say the same thing.
 
-    `da_dir` is where the DA table is read from (DA_POOL's folder by default);
+    `da_dir` is where the DA table is read from (`out_dir` by default; the
+    CLI passes DA_POOL's folder, or --da-pool's);
     `pool` still names the gate and `out_dir` the folder written to.
     """
     da_dir = da_dir or out_dir
@@ -329,11 +332,12 @@ def run(pool: str, out_dir: Path, da_dir: Path | None = None) -> pd.DataFrame:
                       f"{d.loc[q['both'], 'language'].nunique():2d} languages "
                       f"[{', '.join(sorted(d.loc[q['both'], 'benchmark'].unique())) or '—'}]")
     head = tasks[tasks["axes"] == axes_sets[0]].reset_index(drop=True)
-    rows = [figure(head, out_dir / f"da_size_vs_da_ckpt_reliable_tasks_{pct(thresh)}_{red}_multi_axes.png", red, thresh)
+    rows = [figure(head, out_dir / f"da_size_vs_da_ckpt_reliable_tasks_{pct(thresh)}_{red}_multi_axes.png", red, thresh,
+                   da_dir.name)
             for thresh in THRESHOLDS for red in REDUCTIONS]
     by_lang = pd.concat(rows, ignore_index=True).assign(axes=axes_sets[0])
     by_lang.to_csv(out_dir / "da_all_reliable_by_language_multi_axes.csv", index=False)
-    generate_readme(pool, out_dir, head, by_lang)
+    generate_readme(pool, out_dir, head, by_lang, da_dir.name)
     return tasks
 
 

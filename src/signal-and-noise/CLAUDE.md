@@ -91,8 +91,9 @@ so a script never decides by model name.
   table). `build_snr_pool` appends it AFTER its rule filters, as a copy of the
   original's row, so it exists only where the original is AND the store holds
   that (model, step): an inner join on `bench_bpb.csv`. The store holds every
-  checkpoint of every seed-1904 ladder cell (rebuilt 2026-10-07), but not the
-  seed replicates nor the 3B cells. The nightly only reduces the store and
+  checkpoint of every seed-1904 ladder cell (rebuilt 2026-10-07), the seed
+  replicates of the deep L1/L2/L50 (175M, 600M) and L1/L2/L30/L30-B (1B) cells,
+  and five of the six 3B cells (not A-L30). The nightly only reduces the store and
   extracts nothing, so a cell evaluated after the last
   `build_per_item_store.sbatch` run has no twin until the sbatch is
   re-submitted; the loader prints those models. Its

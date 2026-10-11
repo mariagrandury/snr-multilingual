@@ -39,7 +39,9 @@ line the regexes cannot read is decoded whole.
 
 ``--bench-bpb`` reduces the store to one bits-per-byte value per (model, step,
 task), the item mean of ``-ll_gold / ln2 / bytes_gold`` (`bench_bpb`), which
-the loader turns into each benchmark's `bbpb_` twin (utils.with_bbpb_twins).
+the loader turns into each benchmark's `bbpb_` twin (utils.with_bbpb_twins),
+with the standard deviation and count of the item values beside it
+(``bbpb_sd``, ``n_items``: the twin's k-fold noise, utils.bbpb_item_stats).
 Without a store it writes nothing, so the committed table stays.
 """
 
@@ -192,8 +194,10 @@ def store_gap(pool_models, store_dir: Path) -> list[str]:
 
 def bench_bpb(parts) -> pd.DataFrame:
     """Per (model, step, task) of the store `parts`: the item-mean bits per
-    byte of the gold answer (`bbpb`) and the mean gold length (`bytes_gold`);
-    a task with no multiple-choice record (no bytes_gold) has none."""
+    byte of the gold answer (`bbpb`), the standard deviation of the item
+    values (`bbpb_sd`, ddof 0) and their count (`n_items`), which give the
+    twin's k-fold noise (`catalogue.kfold_noise`), and the mean gold length
+    (`bytes_gold`); a task with no multiple-choice record (no bytes_gold) has none."""
     out = []
     for d in parts:           # one family per part: a task lives in one part, so reducing part by part is exact
         files = readable_parts(d)
@@ -201,7 +205,10 @@ def bench_bpb(parts) -> pd.DataFrame:
             continue
         x = pq.read_table(files, columns=["model", "step", "task", "ll_gold", "bytes_gold"]).to_pandas()
         x["bbpb"] = -x["ll_gold"] / np.log(2) / x["bytes_gold"]
-        out.append(x.groupby(["model", "step", "task"], as_index=False)[["bbpb", "bytes_gold"]].mean())
+        g = x.groupby(["model", "step", "task"])
+        m = g[["bbpb", "bytes_gold"]].mean()
+        m["bbpb_sd"], m["n_items"] = g["bbpb"].std(ddof=0), g["bbpb"].count()
+        out.append(m.reset_index())
     return pd.concat(out, ignore_index=True).dropna(subset=["bbpb"])
 
 
@@ -210,7 +217,7 @@ def write_bench_bpb() -> None:
     if not parts:
         print(f"no per-item store at {STORE / BBPB_POOL}: {BENCH_BPB.name} not written (build_per_item_store.sbatch builds it)")
         return
-    t = bench_bpb(parts)[["model", "step", "task", "bbpb"]]
+    t = bench_bpb(parts)[["model", "step", "task", "bbpb", "bbpb_sd", "n_items"]]
     out = t.sort_values(["model", "step", "task"]).to_csv(index=False)
     if BENCH_BPB.is_file() and BENCH_BPB.read_text() == out:   # keep the mtime: the driver's fresh() reads it
         print(f"{BENCH_BPB.name} unchanged: {len(t)} (model, step, task)")

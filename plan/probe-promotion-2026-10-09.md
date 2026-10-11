@@ -275,8 +275,9 @@ Full patch: `snr-probe-gate/promotion-2026-10-09/worktree_full.diff`.
 1. ~~Login node: stage BoolQ~~ done 2026-10-09.
 2. Copy the worktree's `configs/tasks.json` (+ the support files) into the live tree. For a 3-task top-up
    over 2,547 checkpoints, consider a one-shot `auto_evals_cscs.py --max-submit N` pass first so the queue
-   is not flooded. The `--watch` watcher only sees the new group after its restart: the nightly at 00:00,
-   or a manual restart. That restart is the launch.
+   is not flooded. That pass takes the watcher's lock and refuses while the watcher holds it
+   (`--stop` the watcher first). The `--watch` watcher only sees the new group after its restart: the
+   nightly at 00:00, or a manual restart. That restart is the launch.
 3. After the top-ups land: `derive_task_options.py --only-missing`, refresh, and check the gate rows for
    the three tasks.
 

@@ -107,8 +107,8 @@ def plot_scaling_error(sle: pd.DataFrame, path: Path) -> None:
     top = G._header(fig, f"Per-language BPB power-law prediction of the {TARGET_SIZE} rung",
                     f"point = median over the L's trained languages of |(predicted − observed) / observed| of the {TARGET_SIZE} BPB, "
                     f"log BPB = a − α log N fitted on the proxy rungs up to the x rung (deep, data A, seed {GRID_SEED}; {sub['task'].nunique()} "
-                    f"languages, {len(sub)} fits); the error is signed in the CSV and negative in {neg} of {len(sub)} rows = the law "
-                    f"under-predicts BPB; chains without a {TARGET_SIZE} final are dropped (rule 9)")
+                    f"languages, {len(sub)} fits); the CSV keeps the sign, and a negative error, {neg} of {len(sub)} rows here, means the "
+                    f"law under-predicts BPB; chains without a {TARGET_SIZE} final are dropped (rule 9)")
     fig.tight_layout(rect=(0, 0, 1, top)); S.save(fig, path, dpi=140)
 
 
@@ -129,17 +129,20 @@ def generate_readme(pool: str, out_dir: Path, sle: pd.DataFrame, dropped: list) 
     rows = [[f"L{L}", int(n_lang[L])] + [fmt(m.loc[L, c], 3) for c in m.columns] for L in m.index]
     body = "\n\n".join([
         "## Scaling-law error on per-language BPB",
-        f"Numbers from the `{pool}` pool (deep, data A, seed {GRID_SEED}; the loader keeps trained languages only). The reference is "
-        f"{TARGET_SIZE} for every chain (rule 9); a chain without a {TARGET_SIZE} final is dropped, never referenced at a smaller size"
+        f"Numbers from the `{pool}` pool (deep, data A, seed {GRID_SEED}, trained languages only, as the loader keeps them). The "
+        f"reference is {TARGET_SIZE} for every chain (rule 9). A chain without a {TARGET_SIZE} final is dropped, never referenced at a smaller size"
         + (": dropped " + ", ".join(f"L{L} {a}/{s}" for L, a, s in dropped) if dropped else "; none dropped") + ". "
         f"Regenerate with `python analysis/rq01_scaling_predictability/scaling_law_error.py --pool {pool}`.",
-        f"- **Scaling-law error** — median |relative error| of the {TARGET_SIZE} per-language BPB "
-        "predicted from the proxy ladder: "
-        + ", ".join(f"L{L} {fmt(m.loc[L].dropna().iloc[-1], 3)}" for L in m.index)
-        + " (largest proxy ladder at that L).",
-        f"- **Sign** — `rel_error` in the CSV is signed, (predicted − observed) / observed: {int((core['rel_error'] < 0).sum())} of "
-        f"{len(core)} plotted fits are negative, the power law under-predicts the {TARGET_SIZE} BPB; median signed error at the largest "
-        "proxy ladder: " + ", ".join(f"L{L} {fmt(signed.loc[L].dropna().iloc[-1], 3)}" for L in signed.index) + ".",
+        f"- **Scaling-law error.** The median |relative error| of the {TARGET_SIZE} per-language BPB predicted from the "
+        "largest proxy ladder at each L: "
+        + ", ".join(f"L{L} {fmt(m.loc[L].dropna().iloc[-1], 3)}" for L in m.index) + ".",
+        "- **Sign.** `rel_error` in the CSV is signed, (predicted − observed) / observed. "
+        + (f"None of the {len(core)} plotted fits is negative, so the power law over-predicts the {TARGET_SIZE} BPB"
+           if not (core["rel_error"] < 0).any() else
+           f"{int((core['rel_error'] < 0).sum())} of the {len(core)} plotted fits are negative, where the power law "
+           f"under-predicts the {TARGET_SIZE} BPB")
+        + ". The median signed error at the largest proxy ladder is "
+        + ", ".join(f"L{L} {fmt(signed.loc[L].dropna().iloc[-1], 3)}" for L in signed.index) + ".",
         "**Median |relative error|** (columns: largest proxy rung in the fit; languages = trained languages behind the median):",
         md_table(["L", "languages"] + list(m.columns), rows),
         f"![Scaling-law error]({rel}/scaling_law_error.png)"])

@@ -14,8 +14,8 @@ median over the baseline (deep, data A) cells with replicate seeds of the sd of
 the final score. Replicates exist at 175M, 600M and 1B (none at the 1.7B
 reference), so the threshold assumes the seed noise of a run's final score
 does not grow with size (rq03 measures it near size-invariant). A task without
-replicates has no sd and no decisive pair (the bBPB twins: their store holds
-seed 1904 only). Every line, the all-pairs one included, reads the same tasks:
+replicates has no sd and no decisive pair; the bBPB twins have replicates and
+are in the Benchmarks population. Every line, the all-pairs one included, reads the same tasks:
 those with an sd and at least MIN_PAIRS decisive pairs at the largest K (rule
 5 at the strictest threshold), so the lines differ by their pairs alone (rule
 13). Rule 1 at the proxy and at the reference, the populations of rq02.
@@ -158,11 +158,11 @@ def generate_readme(pool: str, t: pd.DataFrame) -> None:
     body = "\n\n".join([
         "## Results",
         f"Pool `{pool}`, seed sd from `{SEED_POOL}`. A pair counts when both proxies and both reference runs have a "
-        f"score; a cell is gated at the proxy and at {TARGET_SIZE} (rule 1), and every line reads the tasks with {MIN_PAIRS} "
+        f"score. A cell is gated at the proxy and at {TARGET_SIZE} (rule 1). Every line reads the tasks with {MIN_PAIRS} "
         f"decisive pairs at the largest K (rule 5), so the lines differ by their pairs alone. "
         f"Regenerate with `python analysis/rq02_decisive_pairs/decisive_pairs.py --pool {pool}`.",
         f"![DA-size on decisive pairs]({stage}/{pool}/{NAME}_both_axes.png)",
-        "Pooled DA-size (tasks; share of the comparable pairs kept):",
+        "Pooled DA-size, followed by the number of tasks and the share of the comparable pairs kept:",
         md_table(["pairs", "population", "pairs kept", *SMALL_SIZES], rows),
         f"Table: `{NAME}_both_axes.csv`."])
     replace_block(DECISIVE_PAIRS / "README.md", "decisive-pairs", body, f"decisive_pairs.py --pool {pool}")

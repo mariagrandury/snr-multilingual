@@ -195,7 +195,7 @@ button.lt-chip:hover { background: var(--viz-neutral); }
             Plot.dot(d.family.lift.filter((r) => !r.trained), { x: "lift", y: "sub", stroke: "cell", fill: css("--viz-surface"), r: 4.5, strokeWidth: 2, tip: true, title: liftTip }),
             Plot.dot(d.family.lift.filter((r) => r.trained), { x: "lift", y: "sub", fill: "cell", stroke: css("--viz-surface"), r: 6.5, strokeWidth: 2, tip: true, title: liftTip }),
           ],
-        }), note("Filled, larger dots: the cell trains a non-English language of that subfamily. They sit right of zero; the hollow dots (subfamilies the cell does not train) scatter around it. Drawn where a lift rests on at least 20 verdicts.")];
+        }), note("Filled, larger dots: the cell trains a non-English language of that subfamily. They mostly sit right of zero, and the hollow dots (subfamilies the cell does not train) scatter around it. Drawn where a lift rests on at least 20 verdicts.")];
       }
       const rows = d.family.share.filter((r) => r.cell === s.cell && r.level === s.level)
         .flatMap((r) => [{ ...r, who: `${r.group}, ${s.cell}`, v: r.share, line: "cell" }, { ...r, who: `${r.group}, English only`, v: r.base, line: "English only" }]);

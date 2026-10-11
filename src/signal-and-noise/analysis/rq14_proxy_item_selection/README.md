@@ -1,85 +1,92 @@
 # Proxy-only item selection
 
-**Question.** Can a benchmark be shortened using the proxies alone, so that the shortened benchmark still ranks the design variants like the 1.7B reference does on the full task?
+**Question.** Can we shorten a benchmark using only the proxy runs, so that the short version still ranks the design variants as the 1.7B reference does on the full task?
 
-The two earlier item selections read the reference. [rq12](../rq12_above_chance_items/README.md) keeps the items the 1.7B runs answer above chance and scores DA against those same runs, which makes it circular: it is an upper bound. [rq08's solved items](../rq08_subset_selection/README.md#items-the-reference-solves) select on the 1.7B runs of half of the families. Here the selection reads only proxy runs, so it could be done before the reference is trained.
+Both earlier item selections look at the reference. [rq12](../rq12_above_chance_items/README.md) keeps the items the 1.7B runs answer above chance and then scores DA against those same runs. That is circular, so its result is an upper bound. [rq08's solved items](../rq08_subset_selection/README.md#items-the-reference-solves) are chosen on the 1.7B runs of half of the families. Here the selection reads only proxy runs, so it could be made before the reference is trained.
 
 ## Setup
 
-- **Snapshot.** Ladder report of **2026-10-08 12:06** and the outputs of the 2026-10-08 refresh (detrended checkpoint noise, acc_norm on the cloze-format originals), the first run of `proxy_item_selection.py` with the per-item store present. The results block (below) states the store it read, which still lacks 9 of the pool's models (the eight Muon cells at 90M–350M and the 1.7B L8 SwiGLU run), so those are left out.
-- **Pool.** `predictivity` (seed 1904, every ladder and data build), final checkpoints, parent tasks in trained languages only (rules 2 and 6, applied by the loader). Proxies 90M–1B, reference 1.7B (rules 9 and 10). Per-item outcomes come from the rq08 store (`build_per_item_store.py`), using the task's own metric (acc or acc_norm).
-- **Split.** The families with a 1.7B final are split in two halves, alternating along L, arch, scheme and T. This is the stratified split of `reference_solved.py` and `per_item_ladder.heldout_da`. One half selects, the other is scored, then the halves swap and the two readings are averaged.
-- **Discrimination.** On the selecting half, at 600M and 1B only (never the reference), an item's discrimination is the point-biserial correlation of its outcome with the run's total task score. Item and total are centred within each size first, so an item that only separates 600M from 1B does not count. An item with no variance gets NaN and is never kept; the items with a value are the candidates.
-- **Kept items.** The top q of the candidates by discrimination, q ∈ {25 %, 50 %, 75 %}, and a run's sub-benchmark score is its mean over the kept items. Only 37–38 % of a task's items are candidates (median over the tasks, per-task CSV), so q = 25 / 50 / 75 % keeps about 9 / 18 / 26–27 % of the items (`kept_share`).
-- **Decision accuracy.** DA-size of each proxy size on the kept items against the 1.7B final of the **full** task, on the held-out half's pairs, with multi-axis and mono-axis pair sets (rule 15). There is no reliability filter. A half needs 3 held-out pairs (rule 5), and the per-task table carries the pair count either way. The gate is `predictivity` at the proxy and at 1.7B (rule 1): gated rows are kept and blanked.
-- **Baselines on the same held-out pairs.** The full task. Random subsets: 20 draws of the kept count from the same candidates, averaged. rq12's reference-selected items: those whose mean over every 1.7B final is above the task's chance level. That baseline reads the reference and is labelled as the circular upper bound; it is empty where a task has no chance level or no such item.
-- **Rule 11.** The selection reads only proxy runs of the other half, so its DA is a genuine held-out estimate, available before the reference is trained. The truth it is scored against is still the 1.7B full task, so the analysis needs the reference to *evaluate* the method, not to *apply* it.
-- **Populations move (rule 13).** The gate keeps different tasks (benchmark × language) at different sizes: 238 at 90M up to 375 at 1B on multi-axis pairs, one fewer on mono-axis pairs, and 5 fewer for rq12's baseline. A held-out half has a median of 43 multi-axis and 15 mono-axis pairs (`n_pairs_median`).
+**Setup.**
+- **Measured.** We shorten each benchmark using only the proxy runs and measure the held-out DA-size of the kept items against the 1.7B ranking on the full task.
+- **Models and pairs.** We use the final checkpoints of the seed-1904 runs of every cell, ladder and data build that the per-item store holds (all but the twelve Muon runs at 90M–600M and the 1.7B L8 SwiGLU run). A pair may differ on any number of design axes, and a task must be above chance at the proxy and at 1.7B.
+- **Selection.** We split the design families into two halves. On one half, we rank the items by their discrimination at 600M and 1B and keep the top quarter, half or three quarters of the candidates, the items whose outcome varies across those runs (about 36 % of a task's items). An item's discrimination is the correlation of its correctness with the run's task score, both centred within each size.
+- **How.** On the other half's pairs, we score the DA-size of the proxies 90M–1B on the kept items against the 1.7B ranking on the full task. Then the halves swap and we average the two readings. The baseline is random subsets of the same size, drawn from the same items.
+- **Leakage.** The selection never reads the 1.7B runs, so its DA is a held-out estimate that is available before the reference is trained. Only the task set, through the above-chance gate at 1.7B that every DA uses, depends on the reference.
+
+- **Snapshot.** Ladder report of **2026-10-10 04:31** and the outputs of the 2026-10-10 refresh (detrended checkpoint noise, acc_norm on the cloze-format originals). The results block (below) names the per-item store it read. That store still lacks 13 of the pool's models (the twelve Muon cells at 90M–600M and the 1.7B L8 SwiGLU run), so they are left out.
+- **Pool.** `predictivity` (seed 1904, every ladder and data build), final checkpoints, parent tasks in trained languages only (rules 2 and 6, applied by the loader). Proxies 90M–1B, reference 1.7B (rules 9 and 10). Per-item outcomes come from the rq08 store (`build_per_item_store.py`) and use the task's own metric (acc or acc_norm).
+- **Split.** We split the families with a 1.7B final into two halves, alternating along L, arch, scheme and T. This is the stratified split of `reference_solved.py` and `per_item_ladder.heldout_da`. One half selects and the other is scored. Then the halves swap and we average the two readings.
+- **Discrimination.** An item's discrimination is the point-biserial correlation of its outcome with the run's total task score, on the selecting half at 600M and 1B only (never the reference). Item and total are first centred within each size, so an item that only separates 600M from 1B does not count. An item with no variance gets NaN and is never kept. The items with a value are the candidates.
+- **Kept items.** We keep the top q of the candidates by discrimination, q ∈ {25 %, 50 %, 75 %}. A run's score on the short benchmark is its mean over the kept items. Only 35–36 % of a task's items are candidates (median over the tasks, per-task CSV), so q = 25 / 50 / 75 % keeps about 9 / 18 / 26–27 % of the items (`kept_share`).
+- **Decision accuracy.** DA-size of each proxy size on the kept items against the 1.7B final of the **full** task, on the held-out half's pairs, with multi-axis and mono-axis pair sets (rule 15). There is no reliability filter. A half needs 3 held-out pairs (rule 5), and the per-task table gives the pair count either way. The gate is `predictivity` at the proxy and at 1.7B (rule 1). Gated rows are kept and left blank.
+- **Baselines on the same held-out pairs.** The first is the full task. The second is random subsets: 20 draws of the kept count from the same candidates, averaged. The third is rq12's reference-selected items, those whose mean over every 1.7B final is above the task's chance level. This last baseline reads the reference, so we label it the circular upper bound. It is empty where a task has no chance level or no such item.
+- **Rule 11.** The selection reads only proxy runs of the other half, so its DA is a true held-out estimate, available before the reference is trained. It is still scored against the 1.7B full task. The analysis therefore needs the reference to *evaluate* the method, not to *apply* it.
+- **Populations move (rule 13).** The gate keeps different tasks (benchmark × language) at different sizes: from 238 at 90M up to 375 at 1B on multi-axis pairs, one fewer on mono-axis pairs, and 5 fewer for rq12's baseline. A held-out half has a median of 43 multi-axis and 15 mono-axis pairs (`n_pairs_median`).
 
 ## Held-out decision accuracy of the proxy-selected items
 
 ![Proxy-only item selection, DA-size, both pair sets](pretraining/predictivity/proxy_item_selection_da_size_both_axes.png)
 
-DA-size (no filter, multi-axis and mono-axis pairs, gate `predictivity` at the proxy and at 1.7B), mean over the tasks, per q and proxy size; the full task, random subsets of the same count, and rq12's reference-selected items (dotted, upper bound). [PNG](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq14_proxy_item_selection/pretraining/predictivity/proxy_item_selection_da_size_both_axes.png) · [CSV](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq14_proxy_item_selection/pretraining/predictivity/proxy_item_selection_da_size_both_axes.csv)
+DA-size (no filter, multi-axis and mono-axis pairs, gate `predictivity` at the proxy and at 1.7B), mean over the tasks, per q and proxy size. The lines are the kept items, the full task, random subsets of the same count, and rq12's reference-selected items (dotted, the upper bound). [PNG](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq14_proxy_item_selection/pretraining/predictivity/proxy_item_selection_da_size_both_axes.png) · [CSV](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq14_proxy_item_selection/pretraining/predictivity/proxy_item_selection_da_size_both_axes.csv)
 
 Key findings:
 
-- **Proxy-chosen items never beat the full task.** On multi-axis pairs the kept items read 0.470–0.559 DA-size against 0.528–0.571 for the full task, below it at every q, proxy size and pair set (by 0.005 at 600M with q = 75 % up to 0.058 at 90M with q = 25 %).
-- **They beat random items of the same count, but only just.** The multi-axis gain over random is positive in 14 of the 15 (q, size) cells and at most +0.017, the largest at 1B for every q (+0.017 / +0.016 / +0.008 at q = 25 / 50 / 75 %). Per task, the kept items beat random on 55–60 % of the multi-axis tasks at 600M and 1B, the sizes they were chosen at, against 47–51 % at 90M (per-task CSV).
-- **Mono-axis pairs leave nothing to select for.** The full task itself reads 0.491–0.526 on mono-axis pairs, and the gain over random swings between −0.015 and +0.018 with no pattern in q or size, on a median of 15 held-out pairs.
-- **The circular upper bound stays out of reach.** rq12's reference-selected items read 0.554–0.574 on multi-axis pairs, above the full task at every size (by 0.004 at 1B up to 0.028 at 90M). The proxy selection closes none of that gap, since it never sees which items the 1.7B runs solve.
+- **Proxy-chosen items never beat the full task.** On multi-axis pairs the kept items reach a DA-size of 0.470–0.559 and the full task 0.528–0.571. The kept items are below the full task at every q, proxy size and pair set. On multi-axis pairs the gap runs from 0.004 (600M, q = 75 %) to 0.058 (90M, q = 25 %), and on mono-axis pairs it reaches 0.061 (90M, q = 25 %).
+- **They beat random items of the same count, but only just.** The multi-axis gain over random is positive in 14 of the 15 (q, size) cells and at most +0.017. It is largest at 1B for every q (+0.017 / +0.016 / +0.008 at q = 25 / 50 / 75 %). Per task, the kept items beat random on 55–60 % of the multi-axis tasks at 600M and 1B, the sizes they were chosen at, and on 47–51 % at 90M (per-task CSV).
+- **Mono-axis pairs leave nothing to select for.** The full task itself is at 0.492–0.526 on mono-axis pairs. The gain over random swings between −0.015 and +0.018 with no pattern in q or size, on a median of 15 held-out pairs.
+- **The circular upper bound stays out of reach.** rq12's reference-selected items reach 0.555–0.574 on multi-axis pairs, above the full task at every size (by 0.004 at 1B up to 0.028 at 90M). The proxy selection closes none of that gap, because it never sees which items the 1.7B runs solve.
 
 Follow-ups:
 
-- **The selection at the proxy that is scored.** Read the discrimination at each proxy size separately, so 90M–350M are not judged by items chosen at 600M and 1B. This shows whether the small proxies need their own items.
-- **A split that keeps mono-axis pairs together.** The alternating split tends to put the two members of a mono-axis pair (deep vs shallow at one L, A vs AT3) in different halves, so few mono-axis pairs remain in either half. A split by L would keep them, at the cost of stratification.
-- **The store rebuilt for the whole pool.** The 9 models the store lacks (Muon cells, 1.7B L8 SwiGLU) are out of both halves, so the Muon families do not enter the selection or the scoring yet.
+- **The selection at the proxy that is scored.** Compute the discrimination at each proxy size separately, so that 90M–350M are not judged on items chosen at 600M and 1B. This shows whether the small proxies need their own items.
+- **A split that keeps mono-axis pairs together.** The alternating split tends to put the two members of a mono-axis pair (deep vs shallow at one L, A vs AT3) in different halves, so few mono-axis pairs remain in either half. A split by L would keep them together, at the cost of stratification.
+- **The store rebuilt for the whole pool.** The 13 models the store lacks (Muon cells, 1.7B L8 SwiGLU) are in neither half, so the Muon families do not enter the selection or the scoring yet.
 
 ## For the paper
 
 ![Proxy-only item selection, paper figure](pretraining/predictivity/proxy_item_selection_da_size_multi_axes_paper.png)
 
-Multi-axis pairs only, gate `predictivity`: on the left, DA-size against the 1.7B full task for the full task, random items and items chosen on the proxies at q = 50 %; on the right, the gain of the proxy-selected items over random items for each q. [PNG](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq14_proxy_item_selection/pretraining/predictivity/proxy_item_selection_da_size_multi_axes_paper.png) · [CSV](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq14_proxy_item_selection/pretraining/predictivity/proxy_item_selection_da_size_multi_axes_paper.csv)
+Multi-axis pairs only, gate `predictivity`. Left: DA-size against the 1.7B full task for the full task, for random items and for the items chosen on the proxies at q = 50 %. Right: the gain of the proxy-chosen items over random items, for each q. [PNG](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq14_proxy_item_selection/pretraining/predictivity/proxy_item_selection_da_size_multi_axes_paper.png) · [CSV](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq14_proxy_item_selection/pretraining/predictivity/proxy_item_selection_da_size_multi_axes_paper.csv)
 
 Key findings:
 
-- **Keeping the top half of the candidates helps little over random items.** At q = 50 % (about 18 % of a task's items) the proxy-chosen items read 0.490 at 90M to 0.554 at 1B against 0.484 to 0.538 for random ones, a gain of −0.002 (175M) to +0.016 (1B).
-- **Neither subset reaches the full task.** The full task reads 0.528 at 90M to 0.571 at 1B, 0.014–0.038 above the proxy-chosen half. The gap narrows with size, from 0.038 at 90M to 0.014–0.017 at 600M and 1B.
-- **The gain over random is positive almost everywhere but small.** It is positive in 14 of the 15 (q, size) cells, never above +0.017, and largest at 1B for every q (+0.017 / +0.016 / +0.008 at q = 25 / 50 / 75 %), the size the items were chosen at.
-- **Fewer items cost more than the selection wins back.** At q = 25 % the kept items sit 0.033–0.058 below the full task and at q = 75 % 0.005–0.030 below, while the gain over random stays within −0.002 to +0.017.
+- **The top half of the candidates is barely better than random items.** At q = 50 % (about 18 % of a task's items), the proxy-chosen items reach 0.490 at 90M to 0.554 at 1B, and random items 0.484 to 0.538. The gain over random goes from −0.002 (175M) to +0.016 (1B).
+- **Neither subset reaches the full task.** The full task reaches 0.528 at 90M to 0.571 at 1B, which is 0.013–0.038 above the proxy-chosen half. The gap narrows with size, from 0.038 at 90M to 0.013–0.017 at 600M and 1B.
+- **The gain over random is positive almost everywhere, but small.** It is positive in 14 of the 15 (q, size) cells and never above +0.017. It is largest at 1B, one of the sizes the items were chosen at, for every q (+0.017 / +0.016 / +0.008 at q = 25 / 50 / 75 %).
+- **Dropping items costs more than the selection wins back.** At q = 25 % the kept items sit 0.032–0.058 below the full task, and at q = 75 % they sit 0.004–0.030 below. The gain over random stays between −0.002 and +0.017.
 
 Follow-ups:
 
 - **Per benchmark family.** Show the gain over random per family, to see which benchmarks can be shortened and which cannot.
 - **SNR of the short benchmark.** Compute rq12's final-checkpoint SNR on the kept items, to test whether proxy-chosen items also lower the k-fold noise.
-- **DA-ckpt.** Add it now that the store holds every checkpoint, since the selection has to hold along a run as well as across sizes.
+- **DA-ckpt.** Add it now that the store holds every checkpoint, because the selection must hold along a run as well as across sizes.
 
 <!-- BEGIN auto:proxy-item-selection (proxy_item_selection.py --pool predictivity) -->
 ## Results
 
-Pool `predictivity`, per-item store `predictivity`. DA-size, finals, pool predictivity (seed 1904), held-out half's pairs (>= 3 per half), both halves averaged; items ranked by point-biserial discrimination (within size) on the other half's 600M and 1B runs, the top q kept; scored against the 1.7B final of the full task. Random = 20 draws of the kept count from the items with a discrimination; dotted = rq12's items above chance over every 1.7B final (reads the reference, upper bound). Gate predictivity at the proxy and the reference (rule 1); the task count moves across sizes (rule 13). Regenerate with `python analysis/rq14_proxy_item_selection/proxy_item_selection.py --pool predictivity --store-pool predictivity`. The store lacks 13 of the pool's models (lm-1.7B-L8-swiglu-seed1904, lm-175M-L15-b168-muon-seed1904, lm-175M-L30-b168-muon-seed1904, lm-175M-L8-b168-muon-seed1904, lm-350M-L15-muon-seed1904, lm-350M-L30-muon-seed1904, lm-350M-L8-muon-seed1904, lm-600M-L15-muon-seed1904, lm-600M-L30-muon-seed1904, lm-600M-L8-muon-seed1904, lm-90M-L15-b84-muon-seed1904, lm-90M-L30-b84-muon-seed1904, lm-90M-L8-b84-muon-seed1904); they are left out until the store is rebuilt for the pool.
+Pool `predictivity`, per-item store `predictivity`. DA-size of the finals, pool predictivity (seed 1904), on the held-out half's pairs (>= 3 per half), the two halves averaged. The items are ranked by point-biserial discrimination (within size) on the other half's 600M and 1B runs, the top q are kept, and the kept items are scored against the 1.7B final of the full task. Random = 20 draws of the kept count from the items with a discrimination. Dotted = rq12's items above chance over every 1.7B final (they read the reference, so they are an upper bound). Gate predictivity at the proxy and the reference (rule 1). The task count moves across sizes (rule 13). Regenerate with `python analysis/rq14_proxy_item_selection/proxy_item_selection.py --pool predictivity --store-pool predictivity`.
 
-**DA-size on the held-out half**, kept / full task / random / rq12's reference-selected items (tasks), mean over the tasks; the task count moves along a row (rule 13):
+**DA-size on the held-out half**, kept / full task / random / rq12's reference-selected items (tasks), mean over the tasks. The task count moves along a row (rule 13):
 
 | pairs | kept | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|---|
-| mono-axis | 25% | 0.441 / 0.502 / 0.450 / 0.513 (237) | 0.467 / 0.513 / 0.463 / 0.522 (271) | 0.457 / 0.492 / 0.452 / 0.495 (300) | 0.479 / 0.518 / 0.477 / 0.510 (339) | 0.500 / 0.526 / 0.481 / 0.531 (374) |
-| mono-axis | 50% | 0.465 / 0.502 / 0.464 / 0.513 (237) | 0.466 / 0.513 / 0.481 / 0.522 (271) | 0.478 / 0.492 / 0.471 / 0.495 (300) | 0.492 / 0.518 / 0.494 / 0.510 (339) | 0.508 / 0.526 / 0.503 / 0.531 (374) |
-| mono-axis | 75% | 0.470 / 0.502 / 0.465 / 0.513 (237) | 0.481 / 0.513 / 0.490 / 0.522 (271) | 0.481 / 0.492 / 0.477 / 0.495 (300) | 0.508 / 0.518 / 0.505 / 0.510 (339) | 0.518 / 0.526 / 0.512 / 0.531 (374) |
-| multi-axis | 25% | 0.470 / 0.528 / 0.468 / 0.556 (238) | 0.497 / 0.539 / 0.483 / 0.566 (272) | 0.491 / 0.532 / 0.480 / 0.555 (301) | 0.514 / 0.545 / 0.502 / 0.557 (340) | 0.528 / 0.571 / 0.511 / 0.574 (375) |
-| multi-axis | 50% | 0.490 / 0.528 / 0.484 / 0.556 (238) | 0.503 / 0.539 / 0.505 / 0.566 (272) | 0.512 / 0.532 / 0.501 / 0.555 (301) | 0.533 / 0.545 / 0.525 / 0.557 (340) | 0.554 / 0.571 / 0.538 / 0.574 (375) |
-| multi-axis | 75% | 0.498 / 0.528 / 0.490 / 0.556 (238) | 0.516 / 0.539 / 0.513 / 0.566 (272) | 0.515 / 0.532 / 0.510 / 0.555 (301) | 0.541 / 0.545 / 0.535 / 0.557 (340) | 0.559 / 0.571 / 0.550 / 0.574 (375) |
+| mono-axis | 25% | 0.460 / 0.502 / 0.463 / 0.512 (236) | 0.472 / 0.506 / 0.467 / 0.510 (266) | 0.476 / 0.491 / 0.461 / 0.499 (296) | 0.487 / 0.503 / 0.473 / 0.499 (334) | 0.502 / 0.520 / 0.485 / 0.519 (371) |
+| mono-axis | 50% | 0.467 / 0.502 / 0.478 / 0.512 (236) | 0.494 / 0.506 / 0.479 / 0.510 (266) | 0.499 / 0.491 / 0.472 / 0.499 (296) | 0.501 / 0.503 / 0.491 / 0.499 (334) | 0.508 / 0.520 / 0.501 / 0.519 (371) |
+| mono-axis | 75% | 0.476 / 0.502 / 0.481 / 0.512 (236) | 0.489 / 0.506 / 0.490 / 0.510 (266) | 0.492 / 0.491 / 0.479 / 0.499 (296) | 0.514 / 0.503 / 0.498 / 0.499 (334) | 0.522 / 0.520 / 0.513 / 0.519 (371) |
+| multi-axis | 25% | 0.477 / 0.521 / 0.470 / 0.554 (296) | 0.492 / 0.530 / 0.482 / 0.560 (332) | 0.500 / 0.519 / 0.482 / 0.549 (362) | 0.525 / 0.542 / 0.504 / 0.558 (406) | 0.531 / 0.555 / 0.508 / 0.562 (452) |
+| multi-axis | 50% | 0.493 / 0.521 / 0.485 / 0.554 (296) | 0.515 / 0.530 / 0.504 / 0.560 (332) | 0.522 / 0.519 / 0.497 / 0.549 (362) | 0.542 / 0.542 / 0.527 / 0.558 (406) | 0.547 / 0.555 / 0.529 / 0.562 (452) |
+| multi-axis | 75% | 0.500 / 0.521 / 0.492 / 0.554 (296) | 0.522 / 0.530 / 0.514 / 0.560 (332) | 0.519 / 0.519 / 0.507 / 0.549 (362) | 0.550 / 0.542 / 0.537 / 0.558 (406) | 0.547 / 0.555 / 0.543 / 0.562 (452) |
 
 **Gain over random items** (mean paired difference over the same tasks):
 
 | pairs | kept | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|---|
-| mono-axis | 25% | -0.009 | +0.005 | +0.005 | +0.002 | +0.018 |
-| mono-axis | 50% | +0.001 | -0.015 | +0.008 | -0.003 | +0.005 |
-| mono-axis | 75% | +0.006 | -0.009 | +0.004 | +0.003 | +0.006 |
-| multi-axis | 25% | +0.002 | +0.013 | +0.011 | +0.012 | +0.017 |
-| multi-axis | 50% | +0.006 | -0.002 | +0.011 | +0.007 | +0.016 |
-| multi-axis | 75% | +0.008 | +0.003 | +0.005 | +0.006 | +0.008 |
+| mono-axis | 25% | -0.004 | +0.005 | +0.014 | +0.014 | +0.017 |
+| mono-axis | 50% | -0.011 | +0.015 | +0.026 | +0.010 | +0.008 |
+| mono-axis | 75% | -0.005 | -0.001 | +0.013 | +0.016 | +0.010 |
+| multi-axis | 25% | +0.007 | +0.010 | +0.018 | +0.020 | +0.024 |
+| multi-axis | 50% | +0.008 | +0.011 | +0.025 | +0.016 | +0.017 |
+| multi-axis | 75% | +0.008 | +0.008 | +0.013 | +0.014 | +0.005 |
 
 ![Proxy-only item selection](pretraining/predictivity/proxy_item_selection_da_size_both_axes.png)
 <!-- END auto:proxy-item-selection -->

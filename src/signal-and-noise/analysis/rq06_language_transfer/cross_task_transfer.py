@@ -243,11 +243,11 @@ def generate_readme(pool: str, summ: pd.DataFrame) -> None:
     body = "\n\n".join([
         "## Cross-task transfer of the ranking",
         f"Pool `{pool}` (seed 1904, every data build), mono-axis pairs, ≥ {MIN_PAIRS} pairs per (task pair, size), each "
-        f"side gated (proxy task at the proxy size, target task at {TARGET_SIZE}), accuracy-scored parent tasks. A cell: "
-        f"DA-size of the proxy task's final ranking at a proxy size (y) against the target task's final ranking at "
-        f"{TARGET_SIZE} (x), the mean over 90M–1B. `trained` reads each family only on the languages it trains (rule 2); "
-        "`all_languages` adds the scheme-A deep seed-1904 cells' scores on every other language (and the scheme-B L8 "
-        "deep cells' at 350M–1B), rq06's exception to rule 2. Regenerate with "
+        f"side gated (proxy task at the proxy size, target task at {TARGET_SIZE}), accuracy-scored parent tasks. Each cell "
+        f"is the DA-size of the proxy task's final ranking at a proxy size (y) against the target task's final ranking at "
+        f"{TARGET_SIZE} (x), averaged over 90M–1B. `trained` reads each family only on the languages it trains (rule 2). "
+        "`all_languages` adds the scores of the scheme-A deep seed-1904 cells on every other language (and those of the "
+        "scheme-B L8 deep cells at 350M–1B), rq06's one exception to rule 2. Regenerate with "
         f"`python analysis/rq06_language_transfer/cross_task_transfer.py --pool {pool}`.",
         "\n".join(rows),
         f"![HellaSwag, language against language]({stage}/{pool}/cross_task_da_size_by_language_{flt}{sfx}{SUFFIX}.png)",

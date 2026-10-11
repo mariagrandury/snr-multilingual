@@ -232,7 +232,7 @@ def paper_figure(summ: pd.DataFrame, out_dir: Path) -> None:
     a0.set_ylabel(f"DA-size against {TARGET_SIZE}")
     for q, col in zip(QUANTILES, S.SERIES):
         g = m[m["q"] == q].set_index("size").reindex(SMALL_SIZES)
-        a1.plot(range(len(g)), g["gain_over_random"], "-o", ms=3.5, lw=1.4, color=col, label=f"Top {q:.0%} of items")
+        a1.plot(range(len(g)), g["gain_over_random"], "-o", ms=3.5, lw=1.4, color=col, label=f"Top {q:.0%} of candidates")
     a1.axhline(0, color=S.MUTED, lw=.8); a1.set_ylabel("Gain over random items")
     for ax in (a0, a1):
         ax.set_xticks(range(len(SMALL_SIZES))); ax.set_xticklabels(SMALL_SIZES); ax.set_xlabel("Proxy size")
@@ -253,10 +253,10 @@ def readme(summ: pd.DataFrame, pool: str, store_pool: str, note: str, missing: l
         "## Results",
         f"Pool `{pool}`, per-item store `{store_pool}`. {note} Regenerate with "
         f"`python analysis/rq14_proxy_item_selection/proxy_item_selection.py --pool {pool} --store-pool {store_pool}`."
-        + (f" The store lacks {len(missing)} of the pool's models ({', '.join(missing)}); they are left out until the "
+        + (f" The store lacks {len(missing)} of the pool's models ({', '.join(missing)}). They are left out until the "
            "store is rebuilt for the pool." if missing else ""),
         "**DA-size on the held-out half**, kept / full task / random / rq12's reference-selected items (tasks), "
-        "mean over the tasks; the task count moves along a row (rule 13):",
+        "mean over the tasks. The task count moves along a row (rule 13):",
         md_table(["pairs", "kept", *SMALL_SIZES], rows),
         "**Gain over random items** (mean paired difference over the same tasks):",
         md_table(["pairs", "kept", *SMALL_SIZES], gains),
@@ -318,12 +318,13 @@ def main(pool: str, store_pool: str) -> None:
     out[lead + DA_COLS + ["gated"]].to_csv(out_dir / f"{NAME}_da_size_per_task_both_axes.csv", index=False)
     summ = summarise(out)
     print(summ.round(3).to_string(index=False))
-    note = (f"DA-size, finals, pool {pool} (seed 1904), held-out half's pairs (>= {MIN_PAIRS} per half), both halves "
-            f"averaged; items ranked by point-biserial discrimination (within size) on the other half's "
-            f"{' and '.join(SELECT_SIZES)} runs, the top q kept; scored against the {TARGET_SIZE} final of the full task. "
-            f"Random = {RANDOM_DRAWS} draws of the kept count from the items with a discrimination; dotted = rq12's items "
-            f"above chance over every {TARGET_SIZE} final (reads the reference, upper bound). Gate {CANONICAL_POOL} at the "
-            "proxy and the reference (rule 1); the task count moves across sizes (rule 13).")
+    note = (f"DA-size of the finals, pool {pool} (seed 1904), on the held-out half's pairs (>= {MIN_PAIRS} per half), "
+            f"the two halves averaged. The items are ranked by point-biserial discrimination (within size) on the other "
+            f"half's {' and '.join(SELECT_SIZES)} runs, the top q are kept, and the kept items are scored against the "
+            f"{TARGET_SIZE} final of the full task. Random = {RANDOM_DRAWS} draws of the kept count from the items with a "
+            f"discrimination. Dotted = rq12's items above chance over every {TARGET_SIZE} final (they read the reference, "
+            f"so they are an upper bound). Gate {CANONICAL_POOL} at the proxy and the reference (rule 1). The task count "
+            "moves across sizes (rule 13).")
     figure(summ, out_dir, note)
     paper_figure(summ, out_dir)
     if pool == CANONICAL_POOL:

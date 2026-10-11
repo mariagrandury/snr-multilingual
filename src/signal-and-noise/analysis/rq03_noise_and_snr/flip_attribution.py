@@ -227,7 +227,7 @@ ORDER = ["arch", "L", "scheme", "T", "activation", "optimizer", "all"]
 
 def _focus(t: pd.DataFrame, pop: str = "bpb", size: str = FOCUS, scope: str = "size", k: str = "1 sd") -> pd.DataFrame:
     f = t[(t["population"] == pop) & (t["size"] == size) & (t["sd_scope"] == scope) & (t["threshold"] == k)
-          & (t["n_comparisons"] > 0)].copy()      # activation and optimizer have no BPB pair against 1.7B yet
+          & (t["n_comparisons"] > 0)].copy()      # the optimizer has no BPB pair against 1.7B yet
     f["_o"] = [(0 if a == "mono-axis" else 1, ORDER.index(g) if g in ORDER else 9 + i)
                for i, (a, g) in enumerate(zip(f["axes"], f["axis"]))]
     return f.sort_values("_o").drop(columns="_o")
@@ -270,28 +270,28 @@ def generate_readme(pool: str, t: pd.DataFrame, seeds: pd.DataFrame) -> None:
                                    for s in SMALL_SIZES]] for a, g in zip(f["axes"], f["axis"])]
     body = "\n\n".join([
         "## Attribution of the proxy-reference disagreements",
-        f"Pool `{pool}` (pairs and scores, seed 1904, final checkpoint), seed sd from `{SEED_POOL}` (rq05's `seed_sd`). "
-        f"(a) = |proxy difference| > 1 x the seed sd of the proxy's final score; (b) = the proxy difference has the "
-        f"other sign than the {TARGET_SIZE} one (a DA-size miss, so (b) = 1 - DA-size pooled over comparisons). "
-        f"Regenerate with `python analysis/rq03_noise_and_snr/flip_attribution.py --pool {pool}`; the sqrt(2) x sd "
-        f"threshold, the pooled sd and the benchmark-accuracy population are in the CSV.",
-        f"**{FOCUS}, per-language BPB** (sd: {src}; a comparison is one (design pair, trained language); "
-        f"shares in % of the comparisons; last column = comparisons in (a) and (b) whose {TARGET_SIZE} difference also "
-        f"clears the threshold):",
+        f"Pool `{pool}` (pairs and scores, seed 1904, final checkpoint), with the seed sd from `{SEED_POOL}` (rq05's "
+        f"`seed_sd`). (a) means |proxy difference| > 1 x the seed sd of the proxy's final score. (b) means the proxy "
+        f"difference has the other sign than the {TARGET_SIZE} one. That is a DA-size miss, so (b) = 1 - DA-size pooled "
+        f"over comparisons. Regenerate with `python analysis/rq03_noise_and_snr/flip_attribution.py --pool {pool}`. "
+        f"The sqrt(2) x sd threshold, the pooled sd and the benchmark-accuracy population are in the CSV.",
+        f"**{FOCUS}, per-language BPB.** The sd comes from the {src}. A comparison is one (design pair, trained "
+        f"language), shares are in % of the comparisons, and the last column counts the comparisons in (a) and (b) "
+        f"whose {TARGET_SIZE} difference also clears the threshold:",
         md_table(["pairs", "size-matched", "design pairs", "comparisons", "(a)", "(b)", "(a)(b)", "(a) not (b)",
                   "not (a) (b)", "not (a) not (b)", f"(a)(b), {TARGET_SIZE} clear"], rows),
-        "**Every proxy, per-language BPB** (cell = (b) / (a) / share of (a) that is also (b), in %; sd of the "
-        "proxy's own x3 cells at 175M, 600M and 1B, the pooled sd at 90M and 350M):",
+        "**Every proxy, per-language BPB.** A cell reads (b) / (a) / share of (a) that is also (b), in %. The sd "
+        "comes from the proxy's own x3 cells at 175M, 600M and 1B, and is the pooled sd at 90M and 350M:",
         md_table(["pairs", *SMALL_SIZES], sizes_rows),
-        f"**The depth decision with the deep side's seed re-drawn** (per-language BPB, deep data A at each of its "
-        f"three seeds against shallow data A at seed {GRID_SEED}; cell = comparisons whose sign differs from the "
-        f"{TARGET_SIZE} pair / comparisons; shallow has no replicate, so only the deep side moves):",
+        f"**The depth decision with the deep side's seed re-drawn.** Per-language BPB, with deep data A at each of "
+        f"its three seeds against shallow data A at seed {GRID_SEED}. A cell reads the comparisons whose sign differs "
+        f"from the {TARGET_SIZE} pair over all comparisons. Shallow has no replicate, so only the deep side moves:",
         md_table(["proxy", "deep seed", "per L", "pooled (b)", "median deep − shallow BPB"],
                  [[s, int(sd), ", ".join(f"L{r.L} {r.n_b}/{r.n_comparisons}" for r in g[g["L"] != "all"].itertuples()),
                    _pct(g[g["L"] == "all"]["share_b"].iloc[0]),
                    " / ".join(f"{v:+.4f}" for v in g[g["L"] != "all"]["median_proxy_diff"])]
                   for (s, sd), g in seeds.groupby(["size", "deep_seed"], sort=False)]),
-        f"Tables: `{stage}/{pool}/{NAME}.csv`, `{stage}/{pool}/{SEED_NAME}.csv`; LaTeX: `{stage}/{pool}/{NAME}.tex`."])
+        f"Tables: `{stage}/{pool}/{NAME}.csv`, `{stage}/{pool}/{SEED_NAME}.csv`. LaTeX: `{stage}/{pool}/{NAME}.tex`."])
     replace_block(NOISE_AND_SNR / "README.md", "flip-attribution", body, f"flip_attribution.py --pool {pool}")
 
 

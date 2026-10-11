@@ -5,14 +5,16 @@
 Design axis & matched & Pairs & Comparisons & (a) & (b) & (a), (b) & (a), not (b) & not (a), (b) & not (a), not (b) & (a), (b), 1.7B clear \\
 \midrule
 Depth (deep vs shallow) & no & 10 & 209 & 42 & 95 & 41 & 1 & 54 & 4 & 64 \\
-Language count & yes & 39 & 316 & 75 & 16 & 3 & 71 & 13 & 13 & 1 \\
+Language count & yes & 45 & 378 & 74 & 15 & 3 & 71 & 12 & 14 & 1 \\
 Data scheme (A vs B vs C) & yes & 12 & 80 & 39 & 2 & 1 & 38 & 1 & 60 & 0 \\
 Temperature (T=1 vs T=3) & yes & 4 & 145 & 92 & 1 & 0 & 92 & 1 & 7 & 0 \\
+Activation (XIELU vs SwiGLU) & yes & 3 & 53 & 21 & 83 & 19 & 2 & 64 & 15 & 6 \\
+Optimizer & yes & 3 & 53 & 100 & 70 & 70 & 30 & 0 & 0 & 0 \\
 \midrule
-All mono-axis pairs & no & 65 & 750 & 65 & 34 & 13 & 52 & 21 & 14 & 65 \\
+All mono-axis pairs & no & 77 & 918 & 65 & 37 & 16 & 49 & 21 & 14 & 71 \\
 \midrule
-Multi-axis pairs & no & 325 & 2624 & 80 & 21 & 10 & 70 & 12 & 9 & 119 \\
-Multi-axis, depth moved & no & 160 & 1400 & 78 & 34 & 17 & 60 & 17 & 5 & 117 \\
-Multi-axis, depth held & yes & 165 & 1224 & 82 & 7 & 2 & 80 & 5 & 13 & 2 \\
+Multi-axis pairs & no & 496 & 4299 & 80 & 21 & 10 & 70 & 11 & 9 & 147 \\
+Multi-axis, depth moved & no & 220 & 2040 & 78 & 29 & 13 & 64 & 15 & 7 & 119 \\
+Multi-axis, depth held & yes & 276 & 2259 & 82 & 14 & 7 & 75 & 7 & 11 & 28 \\
 \bottomrule
 \end{tabular}

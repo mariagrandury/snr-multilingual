@@ -1,7 +1,7 @@
 """RQ1 (paper RQ1) — What scales predictably?
 
 Per (task, L), the final-checkpoint score of the deep, data-A (scheme A at
-T=1), seed-1904 ladder against log10 N over the rungs from 175M up: the R² of the log-linear
+T=1), seed-1904 ladder against log10 N over the rungs 90M–1.7B: the R² of the log-linear
 fit and the Spearman ρ with size, then medians per benchmark family. A family
 whose scores do not move with size has no trend to extrapolate, whatever its
 provenance. The above-random gate (analysis/RULES.md, rule 1) is applied per
@@ -224,18 +224,19 @@ def generate_readme(pool: str, out_dir: Path, fits: pd.DataFrame, fam: pd.DataFr
     top = fam.sort_values("r2", ascending=False)
     no_fit = sorted(set(fits.loc[fits["gated"], "task"]) - set(fitted["task"]))
     bullets = [
-        f"- **{len(fitted)} (task, L) fits over {fitted['task'].nunique()} tasks**, each on the rungs where the task is above "
-        f"chance (rule 1, rq00's mask): the gate removed {int(fitted['gated_rungs'].sum())} rungs from the fitted series and left "
-        f"{int(fits['gated'].sum())} (task, L) series with fewer than {MIN_RUNGS} rungs (no fit, `gated` in `rq1_fits.csv`), "
-        f"{len(no_fit)} tasks without any fit. Best-scaling families (median R²): "
+        f"- **{len(fitted)} (task, L) fits over {fitted['task'].nunique()} tasks.** Each fit uses only the rungs where the task "
+        f"is above chance (rule 1, rq00's mask). The gate removed {int(fitted['gated_rungs'].sum())} rungs from the fitted series "
+        f"and left {int(fits['gated'].sum())} (task, L) series with fewer than {MIN_RUNGS} rungs (no fit, `gated` in "
+        f"`rq1_fits.csv`), so {len(no_fit)} tasks have no fit at all. The best-scaling families (median R²) are "
         + ", ".join(f"`{f}` {fmt(r.r2)}" for f, r in top.head(4).iterrows())
-        + "; worst: " + ", ".join(f"`{f}` {fmt(r.r2)}" for f, r in top.tail(3).iterrows()) + ".",
-        "- **Median R² by answer count** (over the gated benchmark fits): "
+        + ", and the worst are " + ", ".join(f"`{f}` {fmt(r.r2)}" for f, r in top.tail(3).iterrows()) + ".",
+        "- **Median R² by answer count.** Over the gated benchmark fits: "
         + ", ".join(f"{fmt(v)} over the {int(k)}-option fits" for k, v in by_opt.items()) + ".",
     ]
     if not sf.empty:
         al = sf.dropna(subset=["alpha"]).groupby(["L", "ladder", "data"]).agg(alpha=("alpha", "first"), n=("n_rungs", "first"))
-        bullets.append(f"- **Loss exponent α per (L, ladder, data build)**, the seed-{GRID_SEED} cells, sizes in the fit in brackets: "
+        bullets.append(f"- **Loss exponent α per (L, ladder, data build).** Seed-{GRID_SEED} cells, with the number of sizes in "
+                       f"the fit in brackets: "
                        + ", ".join(f"L{L} {a}/{s} {fmt(r.alpha, 3)} ({int(r.n)})" for (L, a, s), r in al.iterrows()) + ".")
     rows = [[f, fmt(r.r2), fmt(r.rho), int(r.n), "" if not np.isfinite(r.n_options) else int(r.n_options)]
             for f, r in fam.iterrows()]

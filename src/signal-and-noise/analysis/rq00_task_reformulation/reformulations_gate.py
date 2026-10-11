@@ -231,10 +231,11 @@ def generate_readme(pool: str, mc: pd.DataFrame, head: pd.DataFrame, sizes: list
     h = head.pivot_table(index="population", columns="size", values="gate_share").reindex(columns=sizes).round(2)
     body = "\n\n".join([
         "## The twins and the gate, with significance",
-        f"Per family at {TARGET_SIZE}: the share of languages above the gate for the original and the twin, paired on the "
-        f"language; `twin only / original only` are the discordant languages McNemar's exact test is run on. Below, the "
-        f"gate's pass share per size on every task, the originals alone and the twins alone (`reformulations_gate.csv` carries "
-        f"the same three populations for mean DA-size, the reliable share and rq01's median R²). Regenerate with "
+        f"Per family at {TARGET_SIZE}: the share of languages above the gate for the original and for the twin, paired on "
+        f"the language. `twin only / original only` counts the discordant languages that McNemar's exact test is run on. "
+        f"Below, the gate's pass share per size on every task, on the non-twin tasks alone (`originals only`) and on the "
+        f"twins alone. `reformulations_gate.csv` carries the same three populations for mean DA-size, the reliable share "
+        f"and rq01's median R². Regenerate with "
         f"`python analysis/rq00_task_reformulation/reformulations_gate.py --pool {pool}`.",
         md_table(["family", "twin", "languages", "original", "twin", "twin only / original only", "p (McNemar)"], rows),
         md_table(["population"] + sizes, [[p] + [f"{v:.2f}" for v in h.loc[p]] for p in h.index]),

@@ -16,8 +16,11 @@ Tabs of the MkDocs side:
   data-viz="NAME">` blocks drawn by `interactive/app.js` (one `VIEWS.NAME`
   function each, Observable Plot + d3 from jsdelivr) from
   `interactive/data/*.json`. Regenerate the JSON with
-  `python3 scripts/build_site_data.py` (it filters committed rqNN_ tables,
-  needs `git lfs pull` for the CSVs; the Model ladder's grid comes from
+  `python3 scripts/build_site_data.py` (snr env; it reads the rqNN_ outputs
+  in the working tree, needs `git lfs pull` for the CSVs; most tables are
+  only filtered and renamed, but the per-page modules in `scripts/site_data/`
+  also count, pool and average, each module's docstring says what; a missing
+  input file skips that JSON with a warning and keeps the old file; the Model ladder's grid comes from
   `launch_trainings.py`'s registry and its data mixtures from the builder's
   plans via `src/pretrain/data/data_progress.py`, so run it on the cluster).
   The mixtures' hover cards read `hello`, `thank_you` and `speakers` from
@@ -45,17 +48,23 @@ Tabs of the MkDocs side:
   the pages are still built, searchable, in the sitemap and linked from Home
   and the Findings pages (mkdocs lists them as "not included in the nav").
 
-The Findings pages read one JSON per RQ. RQ0 (`gate.md`) reads `gate.json`
+A Findings page reads its RQ's main JSON plus the JSON of its additional
+views (`scripts/site_data/<page>.py`, often several files, e.g.
+`noise_snr_*.json`). RQ0 (`gate.md`) reads `gate.json`
 (the first-size map, the tokens-seen curves, the format examples from
-`configs/tasks.json`, the reformulation table and the public-model floors)
-and `gate_example.json` plus `gate_example/<benchmark>.json` (the gate
+`configs/tasks.json`, the reformulation table and the public-model floors),
+`gate_extra.json` (the funnel per group, the item-count margins, the
+majority-chance rerun, the early passes, the token exclusion and thresholds,
+the floors per model line) and `gate_example.json` plus `gate_example/<benchmark>.json` (the gate
 explainer, one file per benchmark, fetched on selection). The floors' list of
 public models per task needs the external parquet: run the builder with
 `SNR_MULTILINGUAL_DATA_DIR` pointing at a checkout that has it, otherwise the
 list is empty (the builder says so); unreleased internal checkpoints are left
-off it (`UNRELEASED_LINES`). RQ12 and RQ13 (`above_chance_items.json`,
-`english_only.json`) are skipped until their analysis folders are in the
-checkout, and their pages say so.
+off it (`UNRELEASED_LINES`, and the same `UNRELEASED` pattern in
+`scripts/site_data/gate.py` for the per-line view). RQ12 and RQ13
+(`above_chance_items.json`, `english_only.json`) are built from their
+analysis folders; the builder skips them, with a message, only in a checkout
+without those folders.
 
 ## Anonymity (double-blind review)
 
@@ -67,7 +76,7 @@ in `anonymity.py`; `app.js` reads it from `<meta name="anonymity-notice">`).
 sentence, redacts usernames and storage paths, and warns at the end of the
 build on anything left (`anonymity: <file> contains [...]`): a clean build
 prints no such line. Author names, the affiliation (swiss-ai, EPFL), the
-cluster (CSCS, Clariden, Alps), `claude.ai/` links and the internal
+cluster (CSCS, Clariden, Alps, bristen, daint, ETH, Lausanne), `claude.ai/` links and the internal
 checkpoints (`apertus3-*`, `*from8b*`) are redacted in prose and code too;
 `custom_swissai_hf` shows as `custom_hf`. The Slidev deck is not covered:
 its nav entry is commented out in `mkdocs.yml` and `build.sh` builds it only
@@ -75,11 +84,15 @@ with `BUILD_SLIDES=1`. PNG figures under `repo/` are not scanned (text in an
 image cannot be redacted): check their titles and legends by eye.
 
 After the figures are regenerated, re-check the hand-written numbers (no
-data file feeds them yet): the `index.md` cards (218 runs, 40 of 92
-benchmarks, 37 % → 60 % above chance, median R² 0.88, DA 51–57 % against
-92–96 %, seed noise 1.75× checkpoint noise, transfer 4.4 % / 5.0 %),
-`recommend.md` ("27 of 46 languages"), the "Key findings" admonition in
-`findings/gate.md`, and the hand-written numbers of every findings page.
+data file feeds them yet): the `index.md` cards (218 runs, 47 of 95
+benchmarks, 40 % → 64 % of 933 tasks above chance, median R² 0.87, DA
+51–57 % against 91–95 %, seed noise 1.75× checkpoint noise, transfer 4.4 %
+/ 5.0 %), `recommend.md`, the "Key findings" admonition in
+`findings/gate.md`, and the hand-written numbers of every findings page. The
+2026-10-10 sweep logged every such number with its source CSV and column;
+redo that log rather than re-deriving each number. Captions in
+`interactive/views/*.js` read their numbers from the loaded JSON where they
+can, so they follow a rebuild on their own.
 
 Additional views of a page live in `interactive/views/<page>.js`, loaded
 after `app.js` by `mkdocs.yml`: each registers on `window.SNRSITE.VIEWS`
@@ -127,9 +140,11 @@ pnpm dev
 
 ## Known build warnings
 
-`mkdocs build` emits warnings about README links pointing to source
-files (`.py`, `.sh`, `.sbatch`). These are not docs and won't render —
-the warnings are expected. Don't enable `--strict`.
+`mkdocs build --strict` builds cleanly (checked 2026-10-10): README links
+to source files are rewritten to the anonymity notice by `mkdocs_hooks.py`,
+so they no longer warn. Use `--strict`: the anonymity check in
+`on_post_build` reports a leak as a warning, which `--strict` turns into a
+failed build.
 
 ## What the user is likely to ask
 

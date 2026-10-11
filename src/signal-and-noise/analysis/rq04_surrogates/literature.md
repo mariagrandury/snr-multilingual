@@ -99,6 +99,10 @@ name in `catalogue.py`. A dash means the statistic needs data we do not have.
   items gives fold accuracies m_i with E[(1/k) Σ (m_i − p)²] = p(1−p)(k−1)/(n−1)
   exactly (hypergeometric sampling). We use its root with k = 5. Changing k
   multiplies every task's noise by the same factor, so no ranking moves.
+  A bBPB twin's items are not binary: for n items whose bits per byte have
+  variance v, the same expectation is v(k−1)/(n−1), and v and n come from the
+  per-item store (`bench_bpb.csv`, `utils.bbpb_item_stats`). So the twins
+  carry a k-fold noise too, and the two noises are read on the same cells.
 
 ### How the search is scored
 

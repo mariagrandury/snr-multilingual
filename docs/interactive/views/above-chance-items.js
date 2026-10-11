@@ -36,6 +36,8 @@
       ];
     });
     const order = ["scored", "item at chance at 1.7B", "task dropped by the gate"];
+    const keptBy = (o) => d.survival.filter((r) => r.ordering === o).at(-1)?.n_kept;
+    const extra = keptBy("items_then_gate") - keptBy("gate_then_items");
     const draw = () => [
       plot({
         height: 190, marginLeft: 200, marginRight: 20,
@@ -52,7 +54,7 @@
             text: (s) => (s.seg !== "scored" && s.n / total > 0.08 ? pct(s.n / total) : "") })),
         ],
       }),
-      note(`Each bar is the ${M(total)} items of the ${d.survival[0].n_tasks} tasks with a chance level. Choosing the items first lets the recomputed gate keep almost every task, so far more items are scored, but most of them sit in tasks the full benchmark's gate rejects.`),
+      note(`Each bar is the ${M(total)} items of the ${d.survival[0].n_tasks} tasks with a chance level. Choosing the items first lets the recomputed gate keep almost every task, so ${extra > 0 ? M(extra) + " more" : "more"} items are scored, nearly all of them in tasks the full benchmark's gate rejects.`),
     ];
     mount(el, [], draw);
   };

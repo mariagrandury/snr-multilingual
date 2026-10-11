@@ -3,30 +3,30 @@
 Definition & Pairs kept & 90M & 175M & 350M & 600M & 1B \\
 \midrule
 \multicolumn{7}{l}{\textit{Benchmark accuracy}} \\
-Current rule (a pair tied on one side misses) & 100\% & 0.51 & 0.54 & 0.53 & 0.54 & 0.57 \\
-A tied pair counts one half & 100\% & 0.54 & 0.56 & 0.56 & 0.57 & 0.60 \\
-Pairs the reference ties dropped & 96\% & 0.53 & 0.55 & 0.54 & 0.55 & 0.58 \\
-Reference gap $>$ 1 reference checkpoint SD & 72\% & 0.54 & 0.56 & 0.55 & 0.57 & 0.60 \\
-Reference gap $>$ 2 reference checkpoint SD & 47\% & 0.56 & 0.57 & 0.57 & 0.60 & 0.63 \\
-Reference gap $>$ 1 seed SD of a difference & 51\% & 0.55 & 0.57 & 0.57 & 0.60 & 0.63 \\
-Reference gap $>$ 2 seed SD of a difference & 22\% & 0.61 & 0.61 & 0.63 & 0.65 & 0.69 \\
+Current rule (a pair tied on one side misses) & 100\% & 0.51 & 0.53 & 0.53 & 0.54 & 0.56 \\
+A tied pair counts one half & 100\% & 0.54 & 0.56 & 0.56 & 0.57 & 0.59 \\
+Pairs the reference ties dropped & 96\% & 0.52 & 0.54 & 0.53 & 0.55 & 0.57 \\
+Reference gap $>$ 1 reference checkpoint SD & 72\% & 0.54 & 0.56 & 0.55 & 0.57 & 0.59 \\
+Reference gap $>$ 2 reference checkpoint SD & 47\% & 0.55 & 0.56 & 0.57 & 0.61 & 0.62 \\
+Reference gap $>$ 1 seed SD of a difference & 51\% & 0.55 & 0.56 & 0.57 & 0.60 & 0.62 \\
+Reference gap $>$ 2 seed SD of a difference & 23\% & 0.59 & 0.60 & 0.62 & 0.65 & 0.67 \\
 \midrule
 \multicolumn{7}{l}{\textit{Benchmark accuracy and bBPB twins}} \\
-Current rule (a pair tied on one side misses) & 100\% & 0.63 & 0.60 & 0.61 & 0.60 & 0.62 \\
-A tied pair counts one half & 100\% & 0.64 & 0.61 & 0.62 & 0.61 & 0.63 \\
-Pairs the reference ties dropped & 99\% & 0.63 & 0.60 & 0.61 & 0.61 & 0.62 \\
-Reference gap $>$ 1 reference checkpoint SD & 73\% & 0.66 & 0.63 & 0.63 & 0.63 & 0.65 \\
-Reference gap $>$ 2 reference checkpoint SD & 50\% & 0.70 & 0.65 & 0.67 & 0.67 & 0.69 \\
-Reference gap $>$ 1 seed SD of a difference & 49\% & 0.70 & 0.65 & 0.67 & 0.67 & 0.69 \\
-Reference gap $>$ 2 seed SD of a difference & 22\% & 0.75 & 0.71 & 0.73 & 0.73 & 0.75 \\
+Current rule (a pair tied on one side misses) & 100\% & 0.62 & 0.59 & 0.61 & 0.60 & 0.61 \\
+A tied pair counts one half & 100\% & 0.62 & 0.60 & 0.62 & 0.61 & 0.62 \\
+Pairs the reference ties dropped & 99\% & 0.62 & 0.60 & 0.61 & 0.60 & 0.62 \\
+Reference gap $>$ 1 reference checkpoint SD & 73\% & 0.65 & 0.62 & 0.64 & 0.63 & 0.64 \\
+Reference gap $>$ 2 reference checkpoint SD & 50\% & 0.68 & 0.65 & 0.67 & 0.66 & 0.67 \\
+Reference gap $>$ 1 seed SD of a difference & 47\% & 0.68 & 0.64 & 0.67 & 0.66 & 0.68 \\
+Reference gap $>$ 2 seed SD of a difference & 21\% & 0.73 & 0.70 & 0.73 & 0.71 & 0.73 \\
 \midrule
 \multicolumn{7}{l}{\textit{Per-language BPB}} \\
-Current rule (a pair tied on one side misses) & 100\% & 0.96 & 0.96 & 0.92 & 0.74 & 0.92 \\
-A tied pair counts one half & 100\% & 0.96 & 0.96 & 0.92 & 0.74 & 0.92 \\
-Pairs the reference ties dropped & 100\% & 0.96 & 0.96 & 0.92 & 0.74 & 0.92 \\
-Reference gap $>$ 1 reference checkpoint SD & 86\% & 0.99 & 0.99 & 0.95 & 0.76 & 0.96 \\
-Reference gap $>$ 2 reference checkpoint SD & 69\% & 1.00 & 1.00 & 0.99 & 0.88 & 0.99 \\
-Reference gap $>$ 1 seed SD of a difference & 75\% & 0.99 & 0.99 & 0.97 & 0.85 & 0.97 \\
-Reference gap $>$ 2 seed SD of a difference & 56\% & 1.00 & 1.00 & 1.00 & 0.99 & 1.00 \\
+Current rule (a pair tied on one side misses) & 100\% & 0.94 & 0.94 & 0.89 & 0.74 & 0.92 \\
+A tied pair counts one half & 100\% & 0.94 & 0.94 & 0.89 & 0.74 & 0.92 \\
+Pairs the reference ties dropped & 100\% & 0.94 & 0.94 & 0.89 & 0.74 & 0.92 \\
+Reference gap $>$ 1 reference checkpoint SD & 79\% & 0.98 & 0.98 & 0.94 & 0.79 & 0.96 \\
+Reference gap $>$ 2 reference checkpoint SD & 58\% & 1.00 & 1.00 & 0.98 & 0.93 & 1.00 \\
+Reference gap $>$ 1 seed SD of a difference & 70\% & 0.99 & 0.99 & 0.95 & 0.86 & 0.97 \\
+Reference gap $>$ 2 seed SD of a difference & 48\% & 1.00 & 1.00 & 0.98 & 0.99 & 1.00 \\
 \bottomrule
 \end{tabular}

@@ -260,11 +260,11 @@ def considered_panels(out_dir: Path) -> None:
           for (grp, fmt), r in cell.groupby(["group", "format"], sort=False)]
     body = "\n\n".join([
         "## Every considered benchmark, the screened ones included",
-        f"**Pool `{out_dir.name}` (seed 1904), the same gate; a cell is read on the runs that train the task's language.** "
-        f"Analysed = the `auto` group at every size (the canonical tables above), less the benchmarks whose ladder "
+        f"**Pool `{out_dir.name}` (seed 1904), the same gate, a cell read on the runs that train the task's language.** "
+        f"Analysed is the `auto` group at every size (the canonical tables above), minus the benchmarks whose ladder "
         f"evals have not landed (`utils.pending_benchmarks`: {', '.join(sorted(pending)) or 'none'}), which count as "
-        f"screened. Screened = the `auto_probe` benchmarks outside the analysed group, and discarded = the `discarded` "
-        f"group: both evaluated on the final checkpoint of "
+        f"screened. Screened is the `auto_probe` benchmarks outside the analysed group, and discarded is the `discarded` "
+        f"group. Both were evaluated on the final checkpoint of "
         f"the {say(screened)} cells only (`rq00_task_reformulation/probe.sh`, gate tables in "
         + (f"`utils.PROBE_GATE_DIR`), so their columns below {screened[0]} are empty and the all-considered row is read "
            f"at {say(shared)}. " if not above_ref else
@@ -274,7 +274,7 @@ def considered_panels(out_dir: Path) -> None:
            f"{say(list(DISCARD_SIZES))}: {len(late)} screened tasks of {late['family'].nunique()} benchmarks are at "
            f"chance at both and above chance at 3B"
            + (f" ({', '.join(sorted(late['family'].unique()))})" if len(late) else "")
-           + "; `gate_screened_verdicts_all_considered.csv` lists every screened task's verdicts (`discard_rule`, "
+           + ". `gate_screened_verdicts_all_considered.csv` lists every screened task's verdicts (`discard_rule`, "
            "`passes_3B`). ")
         + "Tasks without a chance level have no verdict. No pool reads this variant: the DA and SNR populations "
         "stay on `auto`. Regenerate with `python analysis/rq00_gate_and_curves/panels.py --paper`.",

@@ -48,11 +48,11 @@ for fam, g in cat.groupby("family", sort=False):
     for i, s in enumerate(g["surrogate"]):
         out.append(f"{fam_name.get(fam, fam) if i == 0 else ''} & {tt(s)} & " + " & ".join(cell(k, s) for k in KINDS) + " \\\\")
 out += ["\\bottomrule", "\\end{tabular}", "\\end{adjustbox}",
-        "\\caption{Spearman $\\rho$ of each catalogue statistic with decision accuracy over the benchmark tasks, one point per (benchmark, language) cluster "
+        "\\caption{\\textbf{Correlation of each catalogue statistic with decision accuracy.} Spearman $\\rho$ over the benchmark tasks, one point per (benchmark, language) cluster "
         f"({units['size'][0]}--{units['size'][1]} clusters for DA-size, {units['goal'][0]}--{units['goal'][1]} for DA-goal, {units['ckpt'][0]}--{units['ckpt'][1]} for DA-ckpt). "
         "We use every pair of variants and pool over the proxy sizes 90M--1B. For DA-goal and DA-ckpt, we also pool over the nine early checkpoints. "
         "Bold marks Benjamini-Hochberg $q < 0.05$ over every configuration of the search. A statistic without a value is circular for that truth or has too few clusters. "
-        "Within a family, rows are ordered by $|\\rho|$ with DA-size. }",
+        "Within a family, rows are ordered by $|\\rho|$ with DA-size.}",
         "\\label{tab:sur-corr-catalogue}", "\\end{table*}", ""]
 # table B: the SNR grid, per signal
 sigs = [s[len("signal__"):] for s in defs.loc[defs["family"] == "AllenAI signal", "surrogate"]]
@@ -74,7 +74,7 @@ for k in KINDS:
     s = g["rho"].abs().idxmax(); _, a, b = s.split("__")
     best.append(f"{tt(a)} / {tt(b)}, $\\rho = {g.loc[s, 'rho']:.2f}$")
 out += ["\\bottomrule", "\\end{tabular}", "\\end{adjustbox}",
-        "\\caption{The signal $\\times$ noise grid. We give the Spearman $\\rho$ with decision accuracy of each signal alone, of its ratio to the relative checkpoint noise (/ckpt, where "
+        "\\caption{\\textbf{The signal $\\times$ noise grid.} Spearman $\\rho$ with decision accuracy of each signal alone, of its ratio to the relative checkpoint noise (/ckpt, where "
         "\\texttt{rel\\_dispersion} / \\texttt{ckpt\\_rel} is the SNR of \\citet{heineman_signal_2025} as released, with the detrended checkpoint noise) and of its ratio to the relative $k$-fold benchmark noise (/$k$-fold). "
         "The last rows give each noise alone. The population and conventions are the same as in Table~\\ref{tab:sur-corr-catalogue}. Rows are ordered by $|\\rho|$ of the checkpoint-noise SNR with DA-size. "
         f"The strongest of the 132 ratios is {best[0]} for DA-size, {best[1]} for DA-goal and {best[2]} for DA-ckpt.}}",
@@ -117,14 +117,14 @@ rows.insert(-1, "\\midrule")   # per-language BPB on its own
 out += ["\\begin{table*}[t]", "\\centering", "\\scriptsize", "\\begin{adjustbox}{max width=\\textwidth}", "\\begin{tabular}{@{}lrrlrlr@{}}", "\\toprule",
         "\\textbf{Stratum} & \\textbf{Clusters} & \\textbf{SNR} & \\textbf{Best SNR definition} & $\\rho$ & \\textbf{Best statistic} & $\\rho$ \\\\",
         "\\midrule", *rows, "\\bottomrule", "\\end{tabular}", "\\end{adjustbox}",
-        "\\caption{Spearman $\\rho$ of a surrogate with DA-size within one stratum of the benchmark tasks: one proxy size, one language-count tier "
+        "\\caption{\\textbf{Correlation with DA-size within one stratum.} Spearman $\\rho$ of a surrogate with DA-size within one stratum of the benchmark tasks: one proxy size, one language-count tier "
         "(the tasks in the languages that first enter the scheme-A lists at that $K$), one benchmark, or the per-language bits per byte. "
         "\\emph{SNR} is the relative standard deviation over the relative checkpoint noise. The next columns give the strongest of the 132 signal $\\times$ noise ratios "
         "and the strongest statistic of the whole catalogue in the stratum. "
         "The population and conventions are those of Table~\\ref{tab:sur-corr-catalogue}: one point per (benchmark, language) cluster, every pair of variants, the proxies 90M--1B pooled except in the proxy rows. "
         f"Strata with fewer than {MIN_UNITS} clusters are not shown"
         + (f" ({', '.join(dropped)})" if dropped else "") + ". "
-        "A best-of-many $\\rho$ in a small stratum is optimistic, so the SNR column is the like-for-like comparison across rows. Bold marks Benjamini-Hochberg $q < 0.05$.}",
+        "The best of many $\\rho$ in a small stratum is optimistic, so the SNR column is the fair comparison across rows. Bold marks Benjamini-Hochberg $q < 0.05$.}",
         "\\label{tab:sur-corr-strata}", "\\end{table*}"]
 block = "\n".join(out)
 t = TEX.read_text()

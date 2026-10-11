@@ -201,17 +201,18 @@ def generate_readme(pool: str, s: pd.DataFrame, r: pd.DataFrame) -> None:
              f"{x['pick_longest_median']:.2f}", f"{x['gold_longest']:.2f}"] for _, x in s.iterrows()]
     body = "\n\n".join([
         "## The early passes: a constant answer, the longest option, or a related language?",
-        f"**Gate verdicts per run · tasks selected on the seed-1904 cell table (`../rq00_chance_vs_train_tokens`, every "
-        f"build and ladder): above chance in at least half of the cells below {LOW:.0e} tokens of the language and in fewer "
-        f"than half of those between {LOW:.0e} and {MID:.0e}, {MIN_CELLS} cells at least on each side · runs read: the "
-        f"deep scheme-A seed-1904 ladder, every evaluated tenth, trained and untrained languages (rule 2 opt-out: a "
-        f"control of the gate, not a population).** {len(s)} tasks. Per task: the share of runs above chance with few "
-        f"(`low`) and intermediate (`mid`) tokens of the language, and of the untrained runs (no tokens of the language, "
-        f"no language of its subfamily trained: `untrained, related` has "
-        f"{int(s['n_untrained_related'].sum())} runs) at the same (size, checkpoint) points as the low ones; then, over "
-        f"the passing low-token runs, the median share of items answered with the run's most picked option, the share "
-        f"of those runs whose most picked option alone would clear chance, and the median share of picks and of gold "
-        f"answers on the single longest option. Regenerate with "
+        f"**Gate verdicts per run · deep scheme-A seed-1904 ladder, every evaluated tenth, trained and untrained "
+        f"languages (a rule 2 opt-out, since this is a control of the gate, not a population).** "
+        f"The tasks are chosen on the seed-1904 cell table of `../rq00_chance_vs_train_tokens` (every build and ladder). "
+        f"A task is chosen when it is above chance in at least half of its cells below {LOW:.0e} tokens of the language "
+        f"and in fewer than half of those between {LOW:.0e} and {MID:.0e}, with at least {MIN_CELLS} cells on each side. "
+        f"{len(s)} tasks qualify. For each task the table gives the share of runs above chance with few (`low`) and "
+        f"intermediate (`mid`) tokens of the language. It also gives that share for the untrained runs (no tokens of the "
+        f"language and no trained language of its subfamily) at the same (size, checkpoint) points as the low ones. "
+        f"The group `untrained, related` has {int(s['n_untrained_related'].sum())} runs. "
+        f"Over the passing low-token runs, it then gives the median share of items answered with the run's most picked "
+        f"option, the share of those runs whose most picked option alone would clear chance, and the median share of "
+        f"picks and of gold answers on the single longest option. Regenerate with "
         f"`python analysis/rq00_gate_and_curves/early_passes.py --pool {pool}`.",
         md_table(["task", "lang.", "items", "pass low (runs)", "pass mid (runs)", "pass untrained (runs)",
                   "passing low runs", "one-option share", "constant passes", "picks longest", "gold longest"], rows),

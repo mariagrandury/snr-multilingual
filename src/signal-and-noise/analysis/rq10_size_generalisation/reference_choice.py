@@ -81,7 +81,9 @@ def read(df, fin, fams, ref_size, ref_fin, mask, keep=lambda pair: True) -> pd.D
     for size, g in c.groupby("size"):
         keep_gate[g.index] = passes_gate(mask, g["task"], size, ref_size).to_numpy()      # rule 1
     c = c[keep_gate]
-    return c.assign(channel=np.where(c["task"].map(benchmark_family) == "bpb", "bpb", "benchmarks"))
+    fam = c["task"].map(benchmark_family)
+    c, fam = c[fam != "loss"], fam[fam != "loss"]          # the training loss is no benchmark (reference_consistency.channel)
+    return c.assign(channel=np.where(fam == "bpb", "bpb", "benchmarks"))
 
 
 def seed_block(df, fin, mask) -> pd.DataFrame:
@@ -130,16 +132,17 @@ def pooled(cells: pd.DataFrame) -> pd.DataFrame:
 
 def write_tex(t: pd.DataFrame, path: Path) -> None:
     """DA-size of benchmark accuracy: a block per reference, a column per reading."""
-    lines = ["\\begin{tabular}{llcccc}", "\\toprule"]
+    lines = ["\\begin{tabular}{lllcccc}", "\\toprule"]
     for block, g in t.groupby("block", sort=False):
         readings = list(dict.fromkeys(g["reading"]))
-        lines += [f"\\multicolumn{{2}}{{l}}{{\\textbf{{Reference {block}}}}} & "
+        lines += [f"\\multicolumn{{2}}{{l}}{{\\textbf{{Reference {block}}}}} & Tasks & "
                   + " & ".join(r.replace(" seed", ", seed").replace("K=", "$K$=") for r in readings)
                   + " & " * (4 - len(readings)) + " \\\\", "\\midrule"]
         for axes, h in g.groupby("axes", sort=False):
             for i, size in enumerate(size_order(h["size"].unique())):
                 v = [h[(h["reading"] == r) & (h["size"] == size)]["da"] for r in readings]
-                lines.append(" & ".join([("Single-axis" if axes == "mono-axis" else "All pairs") if i == 0 else "", size]
+                n = h[h["size"] == size]["n_tasks"].max()
+                lines.append(" & ".join([("Single-axis" if axes == "mono-axis" else "All pairs") if i == 0 else "", size, str(int(n))]
                                         + [f"{x.iloc[0]:.2f}" if len(x) else "--" for x in v]
                                         + ["--"] * (4 - len(readings))) + " \\\\")
         lines.append("\\midrule")
@@ -160,7 +163,7 @@ def generate_readme(pool: str, t: pd.DataFrame, allp: pd.DataFrame) -> None:
             h = h.set_index("reading")
             rows.append([axes, size] + [f"{h.at[r, 'da']:.2f} ({int(h.at[r, 'n_tasks'])})" if r in h.index else "—"
                                         for r in readings])
-        blocks += [f"**{block}, {channel}** — DA-size (tasks)", md_table(["axes", "proxy"] + readings, rows)]
+        blocks += [f"**{block}, {channel}**: DA-size (tasks)", md_table(["axes", "proxy"] + readings, rows)]
     goal = allp[(allp["frac"] < 1.0) & (allp["channel"] == "benchmarks")]
     goal_rows = [[b, r, a, f"{g['da'].min():.2f}–{g['da'].max():.2f}"]
                  for (b, r, a), g in goal.groupby(["block", "reading", "axes"], sort=False)]

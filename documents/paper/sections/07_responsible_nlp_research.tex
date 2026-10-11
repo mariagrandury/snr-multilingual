@@ -1,7 +1,8 @@
 % ARR Responsible NLP Research checklist: https://aclrollingreview.org/responsibleNLPresearch/
 % Source of the checklist form; not \input in main.tex. Each question is in bold, and its answer is
 % plain text (only \ref and \S) so it can be copied from the compiled PDF into the submission form.
-% \TODO{...} marks what the paper does not answer yet (main.tex defines \TODO). The ARR guidance for
+% \TODO{...} marks what the paper does not answer yet (\TODO is defined in main.tex, which does not \input
+% this file, so it compiles only once added to main.tex or given its own preamble). The ARR guidance for
 % each question is kept below it as comments.
 
 \section*{Responsible NLP Research Checklist}
@@ -20,7 +21,7 @@ Yes. Limitations section (unnumbered). The analysis states its own caveats where
 
 \paragraph{A2. Did you discuss any potential risks of your work?}
 Partly. Ethical Statement section (unnumbered): compute cost. The model card lists bias, risks and out-of-scope uses (Appendix~\ref{app:hf_model_card}).
-\TODO{Discuss the risks of releasing models trained on web data (toxic or biased generations, no safety tuning), the energy use, and the uneven coverage of low-resource languages. The model card appendix is not \input in the repo main.tex.}
+\TODO{Discuss the risks of releasing models trained on web data (toxic or biased generations, no safety tuning), the energy use, and the uneven coverage of low-resource languages.}
 % Examples of risks include malicious or unintended harmful uses (disinformation, fake profiles,
 % surveillance), environmental impact, fairness, privacy and security considerations. See Leins et al.
 % (2020). Does the research contribute to overgeneralization, bias confirmation, under or overexposure

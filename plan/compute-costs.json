@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-09",
+  "date": "2026-10-11",
   "since": "2026-08-01",
   "users": [
     "mariagrandury",
@@ -8,20 +8,20 @@
   "gpus_per_node": 4,
   "node_hours": {
     "pretrain": {
-      "charged": 41758.6,
-      "kept": 39201.3
+      "charged": 42934.9,
+      "kept": 41636.5
     },
     "eval": {
-      "charged": 5586.9,
-      "kept": 3933.6
+      "charged": 6799.5,
+      "kept": 5162.5
     },
     "bpb": {
-      "charged": 3392.1,
-      "kept": 2539.1
+      "charged": 3521.3,
+      "kept": 2673.6
     },
     "convert": {
-      "charged": 237.8,
-      "kept": 214.8
+      "charged": 242.1,
+      "kept": 219.1
     },
     "data": {
       "charged": 402.8,

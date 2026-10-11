@@ -277,11 +277,11 @@ def generate_readme_tagged(a: pd.DataFrame, pool: str) -> None:
     nf = a[a["regime"] == FILTERED].groupby("corpus").size()
     body = "\n\n".join([
         f"![Scaling regimes at L1, every task named]({stage}/{pool}/{L1_TAGGED}.png)",
-        f"Pool `{pool}`: the figure above with every point named, one panel per corpus (its panel (b)); the L1 deep "
+        f"Pool `{pool}`: the figure above with every point named, one panel per corpus (its panel (b)). The L1 deep "
         f"seed-{GRID_SEED} cell of each English corpus, 90M–1.7B, gate `{CANONICAL_POOL}`, English accuracy tasks "
-        f"({', '.join(f'{c} {n[c]}' for c in CORPORA.values())} drawn). The table adds the English accuracy tasks the gate "
-        f"filters out (regime `{FILTERED}`: above chance at fewer than three sizes, so no fit; "
-        + ", ".join(f"{c} {nf.get(c, 0)}" for c in CORPORA.values()) + "). Regenerate with "
+        f"(drawn: {', '.join(f'{c} {n[c]}' for c in CORPORA.values())}). The table adds the English accuracy tasks the "
+        f"gate filters out (regime `{FILTERED}`: above chance at fewer than three sizes, so no fit): "
+        + ", ".join(f"{c} {nf.get(c, 0)}" for c in CORPORA.values()) + ". Regenerate with "
         f"`python analysis/rq13_english_only/english_regimes.py --pool {pool}`.",
         "Key findings (the well-known English benchmarks, per corpus):",
         "\n".join([f"- **Predictable across both in all three corpora**: " + ", ".join(names[k] for k in both) + "."]
@@ -303,10 +303,11 @@ def generate_readme(t: pd.DataFrame, s: pd.DataFrame, pool: str) -> None:
     both = "predictable across both"
     by_L = [c for c in si.index if c not in CORPORA.values() and c != BACKGROUND]
     lo, hi = si.loc[by_L, both].min(), si.loc[by_L, both].max()
+    same_n = si.loc[list(CORPORA.values()), "n_tasks"].nunique() == 1
     rows = [f"- **{c}** ({int(si.at[c, 'n_tasks'])} tasks, {int((acc['corpus'] == c).sum())} accuracy-scored): "
             + ", ".join(f"{REGIME_SHORT[r]} {share(c, r)}" for r in REGIMES)
-            + f"; median R² across size {med.at[c, 'r2_size']:.2f}, along training {med.at[c, 'r2_trajectory']:.2f}; "
-            f"the accuracy-scored tasks alone: both {(acc.loc[acc['corpus'] == c, 'regime'] == both).mean():.0%}."
+            + f". Median R² {med.at[c, 'r2_size']:.2f} across size and {med.at[c, 'r2_trajectory']:.2f} along training. "
+            f"On the accuracy-scored tasks alone, both {(acc.loc[acc['corpus'] == c, 'regime'] == both).mean():.0%}."
             for c in CORPORA.values()]
     rows.append(f"- **The same single-fit reading at every other L** (the English tasks of the deep data-A cell, "
                 + "–".join(dict.fromkeys(str(int(n)) for n in sorted(si.loc[by_L, "n_tasks"]))) + " tasks): predictable across both "
@@ -314,17 +315,18 @@ def generate_readme(t: pd.DataFrame, s: pd.DataFrame, pool: str) -> None:
                 + ", ".join(f"{c.split()[0]} {si.at[c, both]:.0%}" for c in by_L) + ").")
     rows.append(f"- **{BACKGROUND}** ({int(si.at[BACKGROUND, 'n_tasks'])} tasks, every trained language, medians over "
                 "the L): " + ", ".join(f"{REGIME_SHORT[r]} {share(BACKGROUND, r)}" for r in REGIMES)
-                + ". A median over six fits is smoother than one fit, so this is the figure's backdrop, not the "
-                "like-for-like comparison (the bullet above is).")
+                + ". A median over six fits is smoother than a single fit, so this is the figure's backdrop. The "
+                "bullet above is the like-for-like comparison.")
     body = "\n\n".join([
         f"![Scaling regimes at L1]({stage}/{pool}/english_only_scaling_regimes.png)",
         f"Pool `{pool}`: the L1 deep seed-{GRID_SEED} cell of each English corpus (DCLM-Edu = data A, DCLM = DCLMP, "
-        f"FineWeb = FWEB), 90M–1.7B, gate `{CANONICAL_POOL}`; the fits and regimes of the scaling-predictability figure, one "
-        "size fit per task (one L) and the median trajectory R² over ≥ 2 sizes; English tasks (originals, RF, LLM-RF, bBPB "
-        "twins) and `bpb_dclm`. The populations differ: the corpora share the gate, so they read the same tasks, and rq01's "
-        "grey points are every trained language. Regenerate with "
+        f"FineWeb = FWEB), 90M–1.7B, gate `{CANONICAL_POOL}`. The fits and regimes are those of the scaling-predictability "
+        "figure, with one size fit per task (a single L) and the median trajectory R² over ≥ 2 sizes. The tasks are the "
+        "English tasks (originals, RF, LLM-RF, bBPB twins) and `bpb_dclm`. The corpora share the gate, "
+        + ("and they read the same number of tasks." if same_n else "but their task counts differ (in brackets below).")
+        + " rq01's grey points cover every trained language. Regenerate with "
         f"`python analysis/rq13_english_only/english_regimes.py --pool {pool}`.",
-        "Key findings (share of tasks per regime; both = predictable across size and training):",
+        "Key findings (share of tasks per regime, where both = predictable across size and along training):",
         "\n".join(rows)])
     replace_block(HERE / "README.md", "english-regimes", body, f"english_regimes.py --pool {pool}")
 
@@ -343,22 +345,22 @@ def generate_readme_l1(a: pd.DataFrame, pool: str) -> None:
     both = "predictable across both"
     agree = a.pivot(index="task", columns="corpus", values="regime").dropna()
     rows = [f"- **{c}** ({n[c]} tasks): " + ", ".join(f"{REGIME_SHORT[r]} {share.at[c, r]:.0%}" for r in REGIMES)
-            + f"; median R² across size {med.at[c, 'r2_size']:.2f}, along training {med.at[c, 'r2_trajectory']:.2f}."
+            + f". Median R² {med.at[c, 'r2_size']:.2f} across size and {med.at[c, 'r2_trajectory']:.2f} along training."
             for c in CORPORA.values()]
     by_fmt = a.assign(b=a["regime"] == both).groupby(["format", "corpus"])["b"].mean()
     rows.append("- **Predictable across both, per format**: " + "; ".join(
         f"{G._TWIN_NAMES.get(f, f)} ({n_f} task{'s' * (n_f != 1)}) " + ", ".join(f"{c} {by_fmt[(f, c)]:.0%}" for c in CORPORA.values())
         for f, n_f in fmt.items()) + ".")
-    rows.append(f"- **Same regime in all three corpora**: {(agree.nunique(axis=1) == 1).sum()} of {len(agree)} tasks; "
-                f"predictable across both in all three: {(agree == both).all(axis=1).sum()}.")
+    rows.append(f"- **Same regime in all three corpora**: {(agree.nunique(axis=1) == 1).sum()} of {len(agree)} tasks, "
+                f"{(agree == both).all(axis=1).sum()} of them predictable across both.")
     body = "\n\n".join([
         f"![Scaling regimes at L1 on the English benchmarks]({stage}/{pool}/{L1_ACCURACY}.png)",
-        f"Pool `{pool}`: the L1 deep seed-{GRID_SEED} cell of each English corpus, 90M–1.7B, gate `{CANONICAL_POOL}`, the fits "
-        "and regimes of the figure above; English accuracy tasks only ("
-        + ", ".join(f"{v} {G._TWIN_NAMES.get(k, k)}" for k, v in fmt.items()) + "), no bBPB twin, no `bpb_dclm`, and no point from an L > 1 cell. "
+        f"Pool `{pool}`: the L1 deep seed-{GRID_SEED} cell of each English corpus, 90M–1.7B, gate `{CANONICAL_POOL}`, with "
+        f"the fits and regimes of the figure above. Only English accuracy tasks are drawn ({next(iter(CORPORA.values()))}: "
+        + ", ".join(f"{v} {G._TWIN_NAMES.get(k, k)}" for k, v in fmt.items()) + "): no bBPB twin, no `bpb_dclm` and no point from an L > 1 cell. "
         + ("The three corpora read the same tasks." if same else "The populations differ: the corpora read different tasks.")
         + f" Regenerate with `python analysis/rq13_english_only/english_regimes.py --pool {pool}`.",
-        "Key findings (share of tasks per regime; both = predictable across size and training):",
+        "Key findings (share of tasks per regime, where both = predictable across size and along training):",
         "\n".join(rows),
         " · ".join(f"[{L1_ACCURACY}.{x}](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/"
                    f"analysis/{HERE.name}/{stage}/{pool}/{L1_ACCURACY}.{x})" for x in ("png", "csv"))])

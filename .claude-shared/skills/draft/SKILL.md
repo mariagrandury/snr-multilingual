@@ -9,6 +9,14 @@ House style for academic paper prose.
 
 The style is consistent enough to be treated as a set of rules. Follow them.
 
+## Always apply AGENTS.md
+
+Every writing task for the paper or the website text also follows
+`/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/.claude-shared/skills/draft/AGENTS.md`
+(natural-writing instructions and the AI-writing-tells field guide). Read it in full before
+writing or revising, and run its workflow on every draft before returning it. Where it and this
+file disagree, the user's own preferences win, then AGENTS.md, then this file.
+
 ## Before writing
 
 Settle three things first. Infer them from context where possible; ask only if a wrong guess would waste the user's time.

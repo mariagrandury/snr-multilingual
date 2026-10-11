@@ -16,7 +16,7 @@ picks it. For each benchmark, which of these six versions makes the right
 decision from the smallest proxy?
 
 **How we measure it.** For every version of every benchmark in every
-language (1,662 tasks over 31 benchmarks, seed-1904 runs, multi-axis design
+language (1,754 tasks over 43 benchmarks, seed-1904 runs, multi-axis design
 pairs) we compute the DA-size of each proxy 90M–1B against the 1.7B model:
 the share of pairs of training choices both order the same way. A version is
 **reliable** at a size when its DA-size is at least τ = 0.75 there and at
@@ -52,16 +52,16 @@ chance), and the bold line is the version to evaluate.
   τ (LLM-RF at 0.76–0.88, on 35 tasks).
 - **Against the same truth, bBPB matches or edges accuracy.** Over every
   task, the original benchmarks scored by bBPB read 0.57–0.60 against
-  0.55–0.59 for their accuracy, and 0.59–0.64 on the tasks both have.
+  0.53–0.57 for their accuracy, and 0.59–0.64 on the tasks both have.
 - **The rewrites help only when scored by bBPB.** RF and LLM-RF scored by
-  accuracy read 0.47–0.55, below the original accuracy; scored by bBPB they
+  accuracy read 0.48–0.56, below the original accuracy; scored by bBPB they
   read 0.57–0.63.
-- **bBPB is the pick for 20 of the 24 benchmarks** with a value against the
-  1.7B accuracy, and accuracy for 4.
+- **bBPB is the pick for 20 of the 36 benchmarks** with a value against the
+  1.7B accuracy, and accuracy for 16.
 - **Few benchmarks are reliable by 1B in most languages.** Against the 1.7B
   accuracy, the share of languages reliable by 1B is 0.69 for HellaSwag,
-  0.62 for XStoryCloze and 0.80 for LAMBADA; every other benchmark is at 0.50
-  or below.
+  0.62 for XStoryCloze and 0.80 for LAMBADA. Every other benchmark with more
+  than three ranked languages is at 0.50 or below.
 
 !!! success "Takeaway"
     Choose the version of a benchmark, not only the benchmark: score it by

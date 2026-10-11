@@ -2,51 +2,50 @@
 \section{Above chance threshold}
 \label{app:chance-threshold}
 
+Small models are at chance on many benchmark tasks, and a score at chance says little about a design choice. We therefore test, for every language task and model size, whether the models score above chance, and analyse a task at a size only if it passes. This appendix defines the test (\S\ref{app:chance-threshold-definition}) and shows how strongly the answer format decides whether a task passes (\S\ref{app:chance-threshold-reformulation}).
 
-For each language task $b_\ell$ and model size $N$, we test whether the observed accuracy is distinguishable from random guessing.
-For a task with $m_b$ answer options, chance accuracy is $1/m_b$. We read the option count from the evaluated samples where available, and from the benchmark's specification otherwise. Where the option count varies across items, chance is the mean of $1/m$ over the items (TruthfulQA mc1, 0.2253). TruthfulQA mc2 scores probability mass instead of a single pick, so its chance level is the mean share of true options (0.449).
-For every model of size $N$, we take its final-checkpoint accuracy $\hat{p}$ over the $n$ scored items of the task. We recover the count of correct answers as $\operatorname{round}(\hat{p}\,n)$ and compute the one-sided 95\% Wilson lower confidence bound on the proportion.
-The model is above chance when
+\subsection{Threshold definition}
+\label{app:chance-threshold-definition}
 
+\textbf{Chance level.} For a task with $m_b$ answer options, chance accuracy is $1/m_b$. We read the option count from the evaluated samples where available, and from the benchmark's specification otherwise. When the option count varies across items, chance is the mean of $1/m$ over the items (0.2253 for TruthfulQA mc1). TruthfulQA mc2 scores probability mass instead of a single pick, so its chance level is the mean share of true options (0.449).
+
+\textbf{Test per model.} For every model of size $N$, we take its final-checkpoint accuracy $\hat{p}$ over the $n$ scored items of the task. We recover the number of correct answers as $\operatorname{round}(\hat{p}\,n)$ and compute the one-sided 95\% Wilson lower confidence bound on the proportion. The model is above chance when
 \[
 \operatorname{LCB}_{95}(\hat{p}) > \frac{1}{m_b}.
 \]
 
-We then aggregate these decisions over the models of the same size, that is, every ladder and every data build at seed 1904.
-A $(b_\ell, N)$ cell is retained if at least 50\% of these models are above chance.
-When models trained on the benchmark language are available, only those models enter the decision. Otherwise, all evaluated models of that size enter it.
-The resulting mask is the gate that every analysis reads. A gated cell keeps its place in every grid and table but carries no value. A scaling fit uses only the sizes where the task passes. A ranking against the reference also requires the task to pass at the reference size.
-Measurements without a meaningful chance baseline, such as bits per byte and training loss, are not filtered by this procedure.
-This filtering step only decides whether a benchmark gives measurable signal at a given scale. It does not assess whether the benchmark can reliably rank model variants.
+\textbf{Decision per task and size.} We pool these decisions over the models of the same size, that is, every ladder and every data build at seed 1904. A $(b_\ell, N)$ cell is retained if at least 50\% of these models are above chance. If some of these models train the language of the task, only they enter the decision. Otherwise, every evaluated model of that size does.
 
-\textbf{Per-benchmark threshold.} The Wilson bound accounts for the number of evaluation examples, so the amount by which accuracy must exceed chance varies across tasks.
-Smaller evaluation sets require a larger margin above chance, while larger sets can support smaller but more reliable departures from chance.
-For example, the median required margins are 9.00 percentage points for nonparallel Global PIQA (100 items per language), 2.44 for Belebele (900), 0.74 for HellaSwag (about 9,000), and 0.60 for Global-MMLU (about 14,000).
+\textbf{Use in the analysis.} The resulting mask is the gate that every analysis reads. A gated cell keeps its place in every grid and table but carries no value. A scaling fit uses only the sizes where the task passes. A ranking against the reference also requires the task to pass at the reference size. The gate does not apply to measurements without a chance level, such as bits-per-byte, benchmark bits-per-byte and training loss.
 
-\textbf{The formulation effect.}
-The corresponding fractions of benchmark-language-size cells that pass the filter over the six sizes from 90M to 1.7B are 37.5\%, 1.1\%, 100.0\% and 4.1\%, respectively. The reformulated variants of Belebele and Global-MMLU pass in 75.4\% and 73.9\% of their cells.
-
-Figure~\ref{fig:app_chance_share} gives the share of language tasks that pass the threshold per benchmark, Figure~\ref{fig:app_chance_reformulation} the same share per answer format, and Figure~\ref{fig:app_chance_full} the verdict of every language task.
-
+\textbf{Per-benchmark threshold.} The Wilson bound depends on the number of items, so the margin by which accuracy must exceed chance differs across tasks. A small test set needs a large margin, while a large one can detect a small departure from chance. For example, the median required margin is 9.00 percentage points for nonparallel Global PIQA (100 items per language), 2.44 for Belebele (900), 0.74 for HellaSwag (about 9,000), and 0.60 for Global-MMLU (about 14,000). Figure~\ref{fig:app_chance_share} gives the share of language tasks that pass the threshold per benchmark.
 
 \begin{figure}[t]
     \centering
     \includegraphics[width=\linewidth]{figures/app_rq00_chance_share.png}
-\caption{Share of language tasks that pass the chance threshold per benchmark. The number in parentheses is the total number of language tasks available per benchmark.}
+\caption{\textbf{Letter-format benchmarks such as Belebele, INCLUDE and Global-MMLU almost never pass the chance threshold, while their reformulated variants mostly do.} Share of the language tasks of each benchmark that pass the threshold, split by the smallest model size from which they pass (a darker blue is a larger size, red is never). The number in parentheses is the benchmark's number of language tasks.}
     \label{fig:app_chance_share}
 \end{figure}
 
+\clearpage
+
+\subsection{Task reformulation}
+\label{app:chance-threshold-reformulation}
+
+\textbf{The formulation effect.} The margin alone does not decide which benchmarks pass. Over the six sizes from 90M to 1.7B, the share of (benchmark, language, size) cells that pass the filter is 37.5\% for nonparallel Global PIQA, 1.1\% for Belebele, 100.0\% for HellaSwag and 4.1\% for Global-MMLU. Belebele and Global-MMLU need small margins, yet they fail almost everywhere. Both ask the model to answer with the letter of an option. Their reformulated variants pose the same items but score the answer strings instead of the letters (\S\ref{subsec:rq0}, Table~\ref{tab:benchmark-families}), and they pass in 74.9\% and 73.0\% of their cells. This suggests that the letter format is what keeps these benchmarks at chance.
+
+Figure~\ref{fig:app_chance_reformulation} compares the share of language tasks that pass for each answer format, and Figure~\ref{fig:app_chance_full} gives the verdict for every language task.
 
 \begin{figure}[t]
     \centering
     \includegraphics[width=\linewidth]{figures/app_rq00_chance_reformulation.png}
-\caption{Share of language tasks that pass the chance threshold per benchmark, depending on the evaluation format.}
+\caption{\textbf{On most letter-format benchmarks, the reformulated versions pass the chance threshold on far more tasks than the originals.} Share of the language tasks of each benchmark that pass the threshold, for the original items (grey), the RF version at each model size (blue, a darker blue is a larger size) and the LLM-RF version (orange). A star marks a McNemar test between the original and its twin with $p < 0.05$.}
     \label{fig:app_chance_reformulation}
 \end{figure}
 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\linewidth,height=0.85\textheight,keepaspectratio]{figures/app_rq00_chance_full.png}
-\caption{Language tasks that pass the chance threshold per benchmark.}
+\caption{\textbf{Whether a task passes the chance threshold depends more on its benchmark than on its language.} One column per benchmark and one row per language. The colour gives the smallest model size from which the task passes (a darker blue is a larger size). Red marks a task that never passes and white a task with no value.}
     \label{fig:app_chance_full}
 \end{figure*}

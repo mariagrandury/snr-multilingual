@@ -1,10 +1,17 @@
-"""Export the committed analysis tables as the compact JSON the site's
-interactive views read (docs/interactive/data/). No statistic is computed
-here — every number is a row of an rqNN_ output, only filtered and renamed —
-except the grid and the data mixtures, which are read from the training
-registry (src/pretrain/launch_trainings.py) and the builder's mixture plans,
-and the recommender's minimum-tokens table (lookup()), a threshold read off
-the tokens-seen cell table.
+"""Export the analysis outputs in the working tree as the compact JSON the
+site's interactive views read (docs/interactive/data/).
+
+The tables written here are rows of an rqNN_ output, filtered and renamed,
+with four exceptions: the grid and the data mixtures, read from the training
+registry (src/pretrain/launch_trainings.py) and the builder's mixture plans;
+the ladder page's score curves, averaged over the cells of a size; and the
+recommender's minimum-tokens table (lookup()), a threshold read off the
+tokens-seen cell table. The per-page modules in scripts/site_data/ also
+compute: counts, pooled ratios, means and per-pair agreement counts. Each
+module's docstring says what it computes and from which table.
+
+A missing input file skips its JSON with a warning (the previous file stays
+on disk) instead of stopping the build.
 
     python3 scripts/build_site_data.py
 """
@@ -48,6 +55,20 @@ def dump(name: str, obj) -> None:
     (OUT / f"{name}.json").parent.mkdir(parents=True, exist_ok=True)   # names may hold a subfolder
     (OUT / f"{name}.json").write_text(json.dumps(obj, separators=(",", ":")))
     print(f"{name}.json  {(OUT / f'{name}.json').stat().st_size // 1024} KB")
+
+
+SKIPPED: list[str] = []
+
+
+def guarded(label: str, fn, *args):
+    """fn(*args), or None with a warning when one of its input files is
+    missing: one absent table skips its JSON, not the whole build."""
+    try:
+        return fn(*args)
+    except FileNotFoundError as e:
+        print(f"WARNING {label}: skipped, input missing: {e.filename or e}")
+        SKIPPED.append(label)
+        return None
 
 
 def _grid():
@@ -457,78 +478,110 @@ def english_only() -> dict | None:
                 scores=rows(pd.read_csv(d / "english_only_scores_summary.csv")))
 
 
+def _tables() -> list:
+    """(json name, builder) of the plain rqNN_ tables."""
+    def da():
+        # rq02 names every table by its pair set (rule 15): the site reads the multi-axis pairs
+        d = pd.read_csv(paths.DECISION_ACCURACY / PRED / "da_all_per_benchmark_multi_axes.csv")
+        return dict(
+            early_small=rows(pd.read_csv(paths.DECISION_ACCURACY / PRED / "early_small_da_goal_summary_multi_axes.csv")),
+            per_task=table(d[["language", "benchmark", "task", "da_def", "comparison", "decision_acc"]]))
+
+    def ext():
+        e = paths.EXTERNAL_FRAMEWORKS / "all/external"
+        return dict(ours=rows(pd.read_csv(e / "top_apertus.csv")), allenai=rows(pd.read_csv(e / "top_allenai.csv")),
+                    agreement=rows(pd.read_csv(e / "shared_task_agreement.csv")),
+                    per_variant=rows(pd.read_csv(e / "pearson_r_per_variant.csv")))
+
+    def design():
+        d = pd.read_csv(paths.BENCHMARK_DESIGN / PRED / "per_family_snr.csv")
+        d["data_source"] = d["data_source"].map(no_byline, na_action="ignore")
+        return rows(d)
+
+    return [
+        ("scaling", lambda: dict(
+            regimes=rows(pd.read_csv(paths.SCALING_PREDICTABILITY / ALL / "scaling_regimes.csv")),
+            families=rows(pd.read_csv(paths.SCALING_PREDICTABILITY / ALL / "rq1_families.csv")))),
+        ("decision_accuracy", da),
+        ("snr", lambda: dict(
+            per_task=table(pd.read_csv(paths.NOISE_AND_SNR / PRED / "snr.csv")),
+            effect_over_seed=table(pd.read_csv(paths.NOISE_AND_SNR / ALL / "effect_over_seed.csv")))),
+        ("surrogates", lambda: dict(
+            rho=rows(pd.read_csv(paths.SURROGATES / PRED / "rq3_surrogates.csv")),
+            best_variant=rows(pd.read_csv(paths.SURROGATES / PRED / "best_variant_per_language.csv")))),
+        ("design_decisions", lambda: dict(
+            # one design decision at a time: rq05's tables are the mono-axis pairs
+            da=rows(pd.read_csv(paths.DESIGN_DECISIONS / ALL / "rq4_da_size_by_intervention_mono_axis.csv")),
+            effect=rows(pd.read_csv(paths.DESIGN_DECISIONS / ALL / "rq4_effect_vs_seed.csv")),
+            early=rows(pd.read_csv(paths.DESIGN_DECISIONS / ALL / "rq2_da_goal_early_small_mono_axis.csv")))),
+        ("transfer", lambda: dict(
+            summary=rows(pd.read_csv(paths.LANGUAGE_TRANSFER / ALL / "rq5_transfer_summary.csv")),
+            per_language=table(pd.read_csv(paths.LANGUAGE_TRANSFER / ALL / "rq5_transfer.csv",
+                                          usecols=["L", "task", "trained", "reference_size", "k", "observed",
+                                                   "pred_transfer", "pred_last", "err_transfer", "err_last"])))),
+        ("external", ext),
+        ("subsets", lambda: rows(pd.read_csv(paths.SUBSET_SELECTION / "all/external/summary.csv"))),
+        ("benchmark_design", design),
+        ("recipe", recipe),
+        ("above_chance_items", above_chance_items),
+        ("english_only", english_only),
+    ]
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    lad = ladder()
-    dump("ladder", lad)
-    dump("mixtures", mixtures(lad["cells"]))
-    dump("lookup", lookup(lad["cells"]))
-    dump("evaluation", evaluation(sorted(lad["languages"])))
-    dump("facts", json.loads((REPO / "documents/ladder-facts.json").read_text()))
+    lad = guarded("ladder", ladder)
+    if lad is not None:
+        dump("ladder", lad)
+        for name, fn in [("mixtures", mixtures), ("lookup", lookup)]:
+            obj = guarded(name, fn, lad["cells"])
+            if obj is not None:
+                dump(name, obj)
+        obj = guarded("evaluation", evaluation, sorted(lad["languages"]))
+        if obj is not None:
+            dump("evaluation", obj)
+    else:
+        print("WARNING mixtures, lookup, evaluation: skipped, they need the ladder grid")
+        SKIPPED.extend(["mixtures", "lookup", "evaluation"])
+    obj = guarded("facts", lambda: json.loads((REPO / "documents/ladder-facts.json").read_text()))
+    if obj is not None:
+        dump("facts", obj)
 
-    dump("gate", gate())
-    index, fams = gate_example()
-    dump("gate_example", index)
-    (OUT / "gate_example").mkdir(exist_ok=True)
-    for fam, tasks in fams.items():
-        (OUT / "gate_example" / f"{fam}.json").write_text(json.dumps(tasks, separators=(",", ":")))
-    print(f"gate_example/  {len(fams)} files")
-    dump("scaling", dict(
-        regimes=rows(pd.read_csv(paths.SCALING_PREDICTABILITY / ALL / "scaling_regimes.csv")),
-        families=rows(pd.read_csv(paths.SCALING_PREDICTABILITY / ALL / "rq1_families.csv"))))
+    obj = guarded("gate", gate)
+    if obj is not None:
+        dump("gate", obj)
+    ex = guarded("gate_example", gate_example)
+    if ex is not None:
+        index, fams = ex
+        dump("gate_example", index)
+        (OUT / "gate_example").mkdir(exist_ok=True)
+        for fam, tasks in fams.items():
+            (OUT / "gate_example" / f"{fam}.json").write_text(json.dumps(tasks, separators=(",", ":")))
+        print(f"gate_example/  {len(fams)} files")
 
-    # rq02 names every table by its pair set (rule 15): the site reads the multi-axis pairs
-    da = pd.read_csv(paths.DECISION_ACCURACY / PRED / "da_all_per_benchmark_multi_axes.csv")
-    dump("decision_accuracy", dict(
-        early_small=rows(pd.read_csv(paths.DECISION_ACCURACY / PRED / "early_small_da_goal_summary_multi_axes.csv")),
-        per_task=table(da[["language", "benchmark", "task", "da_def", "comparison", "decision_acc"]])))
-
-    dump("snr", dict(
-        per_task=table(pd.read_csv(paths.NOISE_AND_SNR / PRED / "snr.csv")),
-        effect_over_seed=table(pd.read_csv(paths.NOISE_AND_SNR / ALL / "effect_over_seed.csv"))))
-
-    dump("surrogates", dict(
-        rho=rows(pd.read_csv(paths.SURROGATES / PRED / "rq3_surrogates.csv")),
-        best_variant=rows(pd.read_csv(paths.SURROGATES / PRED / "best_variant_per_language.csv"))))
-
-    dump("design_decisions", dict(
-        # one design decision at a time: rq05's tables are the mono-axis pairs
-        da=rows(pd.read_csv(paths.DESIGN_DECISIONS / ALL / "rq4_da_size_by_intervention_mono_axis.csv")),
-        effect=rows(pd.read_csv(paths.DESIGN_DECISIONS / ALL / "rq4_effect_vs_seed.csv")),
-        early=rows(pd.read_csv(paths.DESIGN_DECISIONS / ALL / "rq2_da_goal_early_small_mono_axis.csv"))))
-
-    dump("transfer", dict(
-        summary=rows(pd.read_csv(paths.LANGUAGE_TRANSFER / ALL / "rq5_transfer_summary.csv")),
-        per_language=table(pd.read_csv(paths.LANGUAGE_TRANSFER / ALL / "rq5_transfer.csv",
-                                      usecols=["L", "task", "trained", "reference_size", "k", "observed",
-                                               "pred_transfer", "pred_last", "err_transfer", "err_last"]))))
-
-    ext = paths.EXTERNAL_FRAMEWORKS / "all/external"
-    dump("external", dict(
-        ours=rows(pd.read_csv(ext / "top_apertus.csv")), allenai=rows(pd.read_csv(ext / "top_allenai.csv")),
-        agreement=rows(pd.read_csv(ext / "shared_task_agreement.csv")),
-        per_variant=rows(pd.read_csv(ext / "pearson_r_per_variant.csv"))))
-
-    dump("subsets", rows(pd.read_csv(paths.SUBSET_SELECTION / "all/external/summary.csv")))
-    design = pd.read_csv(paths.BENCHMARK_DESIGN / PRED / "per_family_snr.csv")
-    design["data_source"] = design["data_source"].map(no_byline, na_action="ignore")
-    dump("benchmark_design", rows(design))
-    dump("recipe", recipe())
-    for name, build in [("above_chance_items", above_chance_items), ("english_only", english_only)]:
-        obj = build()
+    for name, fn in _tables():
+        obj = guarded(name, fn)
         if obj is None:
-            print(f"{name}: skipped, its analysis folder is not in this checkout")
-        else:
-            dump(name, obj)
+            if name in ("above_chance_items", "english_only") and name not in SKIPPED:
+                print(f"{name}: skipped, its analysis folder is not in this checkout")
+            continue
+        dump(name, obj)
+
     # Per-page data of the additional views: every scripts/site_data/<page>.py
     # defines build() -> {json name: object}, dumped like the tables above.
     import importlib.util
     for mod in sorted((REPO / "scripts/site_data").glob("*.py")):
-        spec = importlib.util.spec_from_file_location(f"site_data_{mod.stem}", mod)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        for name, obj in module.build().items():
+        def run(mod=mod):
+            spec = importlib.util.spec_from_file_location(f"site_data_{mod.stem}", mod)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module.build()
+        out = guarded(f"site_data/{mod.name}", run)
+        for name, obj in (out or {}).items():
             dump(name, obj)
+
+    if SKIPPED:
+        print(f"WARNING {len(SKIPPED)} JSON builds skipped on a missing input (older files kept): {', '.join(SKIPPED)}")
 
 
 if __name__ == "__main__":

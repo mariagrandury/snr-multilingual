@@ -14,11 +14,15 @@ alone (rule 11: its final checkpoint, its ten tenths, its noise window (rule
     and the benchmark (k-fold) noise, relative and absolute.
 
     The k-fold benchmark noise needs per-item outputs, which the ladder report
-    does not carry. For n binary items at accuracy p, the fold accuracies of a
-    random k-fold partition have expected variance p(1-p)(k-1)/(n-1) exactly
-    (hypergeometric; E over partitions of (1/k) sum_i (m_i - p)^2), so its
-    root is used: the noise the k-fold estimator measures on average, with
-    k = K_FOLDS. Its ranking across tasks does not depend on k.
+    does not carry. For n items whose scores have variance v over the items,
+    the fold means of a random k-fold partition have expected variance
+    v(k-1)/(n-1) exactly (sampling without replacement; E over partitions of
+    (1/k) sum_i (m_i - x)^2), so its root is used: the noise the k-fold
+    estimator measures on average, with k = K_FOLDS. Its ranking across tasks
+    does not depend on k. An accuracy's items are binary, v = p(1-p), so it
+    needs only the item count; a bBPB twin's v and n are the per-item store's
+    (`utils.bbpb_item_stats`), so the twins carry the same noise as their
+    originals and the two noises are read on the same cells.
 
 Truths, one long row per (task, proxy, fraction, kind, metric, pair set, L),
 gated (rule 1: DA-size / DA-goal at the proxy and the reference, DA-ckpt at
@@ -81,8 +85,8 @@ from analysis.rq03_noise_and_snr.run_apertus_snr_variants import (  # noqa: E402
     DISCREPANCY_UNIT_INTERVAL, per_model_inputs, variant_key, variant_signal_noise_snr)
 from analysis.utils import (  # noqa: E402
     CKPT_DA_EARLY_FRACS, MIN_PAIRS, NOISE_GRID, NON_EMB, PAIR_AXES, SMALL_SIZES, TARGET_SIZE, agreement_measures,
-    assign_language, benchmark_family, checkpoint_noise, design_axes, ladder_frame, languages_only, lower_is_better, noise_checkpoints,
-    on_shared_grid, pair_agreement, pair_sets, passes_gate)
+    BBPB, assign_language, bbpb_item_stats, benchmark_family, checkpoint_noise, design_axes, ladder_frame, languages_only,
+    lower_is_better, noise_checkpoints, on_shared_grid, pair_agreement, pair_sets, passes_gate)
 
 OUT_ROOT = SURROGATES
 AXES = PAIR_AXES[:2]                   # the design pair sets; the seed null has no decision to predict
@@ -452,15 +456,32 @@ def compute(df: pd.DataFrame, mask: pd.DataFrame | None, tasks: list[str]) -> pd
     return pd.DataFrame(rows)
 
 
-def kfold_noise(p: np.ndarray, n_items: float) -> dict:
-    """The benchmark (k-fold) noise of models at accuracies `p` on `n_items`
-    binary items, in closed form (module docstring): per model the root of
-    the expected fold-accuracy variance p(1-p)(K-1)/(n-1); relative (over p,
-    averaged over models, as the k-fold definition) and absolute."""
-    if not (np.isfinite(n_items) and n_items > 1) or not ((p > 0) & (p < 1)).all():
+def kfold_noise(p: np.ndarray, n_items, item_sd: np.ndarray | None = None) -> dict:
+    """The benchmark (k-fold) noise of models with mean item scores `p` on
+    `n_items` items, in closed form (module docstring): per model the root of
+    the expected fold-mean variance v(K-1)/(n-1), with v the item variance,
+    p(1-p) for binary items (the default) or `item_sd`² (a bBPB twin, per
+    model, as `n_items` then is); relative (over p, averaged over models, as
+    the k-fold definition) and absolute."""
+    n = np.asarray(n_items, dtype=float)
+    var = p * (1 - p) if item_sd is None else np.asarray(item_sd, dtype=float) ** 2
+    ok = ((p > 0) & (p < 1)).all() if item_sd is None else (p > 0).all() and np.isfinite(var).all()
+    if not (np.isfinite(n).all() and (n > 1).all()) or not ok:
         return {"kfold_rel": np.nan, "kfold_abs": np.nan}
-    sd = np.sqrt(p * (1 - p) * (K_FOLDS - 1) / (n_items - 1))
+    sd = np.sqrt(var * (K_FOLDS - 1) / (n - 1))
     return {"kfold_rel": float(np.mean(sd / p)), "kfold_abs": float(np.mean(sd))}
+
+
+def twin_kfold_inputs(g: pd.DataFrame, t: str) -> tuple:
+    """A bBPB twin's `kfold_noise` arguments over the models of one (task,
+    size) group `g` that rq03's `per_model_inputs` keeps (a checkpoint noise
+    on the window), each at its final checkpoint: the item-mean bBPB (its
+    score), the item count and the item standard deviation."""
+    win = noise_checkpoints(g)
+    keep = [m for m, w in win.groupby("model") if np.isfinite(checkpoint_noise(w["frac"], w["primary_score"]))]
+    fin = g[g["model"].isin(keep)].sort_values("step").groupby("model").last()
+    st = bbpb_item_stats().reindex(pd.MultiIndex.from_arrays([fin.index, fin["step"], [t] * len(fin)]))
+    return fin["primary_score"].to_numpy(float), st["n_items"].to_numpy(float), st["bbpb_sd"].to_numpy(float)
 
 
 def snr_grid(df: pd.DataFrame) -> pd.DataFrame:
@@ -486,7 +507,8 @@ def snr_grid(df: pd.DataFrame) -> pd.DataFrame:
             if k in DEPTH:
                 noi[f"{k}_depth"] = b
         noi["ckpt_abs"] = float(np.mean(inputs[0]))
-        noi |= kfold_noise(inputs[1], task_n_items(t) if bench else np.nan)
+        noi |= (kfold_noise(*twin_kfold_inputs(g, t)) if t.startswith(BBPB)
+                else kfold_noise(inputs[1], task_n_items(t) if bench else np.nan))
         row = {"task": t, "proxy_size": s}
         row |= {f"signal__{k}": v for k, v in sig.items()} | {f"noise__{k}": noi[k] for k in NOISES}
         row |= {f"snr__{a}__{b}": sig[a] / noi[b] if noi[b] and np.isfinite(noi[b]) else np.nan

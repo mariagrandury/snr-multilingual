@@ -239,11 +239,11 @@ def main(pool: str, store: str) -> None:
     pd.concat(items).to_csv(out_dir / "per_item_snr.csv", index=False)
     ok = summary[~summary["gated"]]
     note = (f"Grid-seed ({GRID_SEED}) design variants, {ok['task'].nunique()} tasks over {ok['n_runs'].max()} runs at most; "
-            f"per-item SNR on the rule-4 window (80-100 % of the run, k/20 points); dead = the same mean outcome in every run. "
+            f"per-item SNR on the rule-4 window (80-100 % of the run, k/20 points). An item is dead when every run has the same mean outcome on it. "
             f"Gain = best-prefix SNR minus the 95th percentile of {NULL_DRAWS} random subsets of the same size. Held-out DA: items "
             f"chosen on half of the families (stratified over L, arch, scheme, T), scored on the other half's multi-axis pairs "
-            f"(>= {MIN_PAIRS}, proxy final vs the {TARGET_SIZE} final of the full task), both halves averaged; random = {RANDOM_DRAWS} "
-            f"draws of the same size from the items alive on the selecting half (the subset's own pool). Grey = at chance at that size (rule 1); the task set differs across sizes (counts in the cells, rule 13).")
+            f"(>= {MIN_PAIRS}, proxy final vs the {TARGET_SIZE} final of the full task), both halves averaged. Random = {RANDOM_DRAWS} "
+            f"draws of the same size from the items alive on the selecting half (the subset's own pool). Grey = at chance at that size (rule 1). The task set differs across sizes (counts in the cells, rule 13).")
     figure(summary, out_dir, pool, note)
     if pool != CANONICAL_POOL:
         return

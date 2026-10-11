@@ -52,20 +52,20 @@ setting and how far up the ladder the fit reaches, and compare the forecast
 
 <!-- highlight: rq01_scaling_predictability -->
 
-- **Above chance, accuracy scales log-linearly with size.** The 1207 gated
-  (task, L) fits over 431 benchmark tasks have a median size-fit R² of 0.88
-  (IQR 0.77–0.95); per-language BPB fits at 1.00 for all 50 trained languages.
+- **Above chance, accuracy scales log-linearly with size.** The 1417 gated
+  (task, L) fits over 509 benchmark tasks have a median size-fit R² of 0.87
+  (IQR 0.76–0.94). Per-language BPB fits at 1.00 for all 50 trained languages.
   HellaSwag's family median is 0.88, LAMBADA's 0.96 and ARC's 0.98.
-- **78 % of the tasks with a fit are predictable along both size and
-  training.** Of the 352 accuracy and BPB tasks with a regime, 273 are; 49 are
-  predictable across size only, 26 are weak in both and 4 decline with size.
+- **74 % of the tasks with a fit are predictable along both size and
+  training.** Of the 420 accuracy and BPB tasks with a regime, 311 are, 56 are
+  predictable across size only, 42 are weak in both and 11 decline with size.
   None is predictable during training but not across size (9 of the 609 bBPB
   twins are), so varying model size gives the signal without long training
   runs.
-- **The gate decides which benchmarks have a law at all.** 415 of 896
-  accuracy and BPB tasks are at chance wherever a fit was possible, and 15 of
-  42 families lose every task. Letter-format Global-MMLU, INCLUDE and
-  Belebele have no fit at all; their reformulated versions fit at family
+- **The gate decides which benchmarks have a law at all.** 429 of 988
+  accuracy and BPB tasks are at chance wherever a fit was possible, and 16 of
+  54 families lose every task. Letter-format Global-MMLU, INCLUDE and
+  Belebele are among them. Their reformulated versions fit at family
   medians of 0.84–0.92.
 - **R² alone is not enough.** TruthfulQA fits at a family median R² of 0.97
   with ρ = −0.75: it gets worse with size, and does so consistently (its ρ

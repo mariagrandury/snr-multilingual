@@ -78,7 +78,7 @@ OUTLIER_DIST = 0.25     # a task in another quadrant than its family AND this fa
 DECLINES = "declines with size"   # the fifth regime: median ρ with size < 0, whatever the quadrant
 REGIME_SHORT = {"predictable across both": "both", "predictable during training only": "training only",
                 "predictable across size only": "size only", "weak / unpredictable in both": "weak", DECLINES: "declines"}
-SHORT = {"global_piqa_parallel_cloze": "piqa", "global_mmlu_full": "gmmlu", "include_base_44": "include",
+SHORT = {"global_piqa_parallel_cloze": "gpiqa", "global_mmlu_full": "gmmlu", "include_base_44": "include",
          "lambada_openai_mt": "lambada", "truthfulqa-multi_mc1": "truthfulqa"}
 COLS = ["r2_size", "rho_size", "r2_trajectory"]
 mpl.rcParams.update(S.RC)
@@ -102,6 +102,11 @@ def trajectory_medians(df: pd.DataFrame, pool: str, cells=_grid, mask: pd.DataFr
     as in `fit_table`."""
     g0 = G.mark_gated(cells(df), pool, "size", "primary_score", mask=mask)
     g0 = g0[~g0["gated"] & (g0["tokens"] > 0) & on_shared_grid(g0)]     # rule 3: BPB's twentieths are not a benchmark's
+    # rule 3: the ten tenths k = 1..10, one row each. on_shared_grid also passes a save at ~0 % of the run
+    # (k = 0: every 90M BPB run, step 96) and a second save within FRAC_TOL of a tenth (203 BPB/loss runs).
+    g0 = g0.assign(k=(g0["frac"] * 10).round()).reset_index(drop=True)      # idxmin below needs a unique index
+    g0 = g0[g0["k"] >= 1]
+    g0 = g0.loc[(g0["frac"] - g0["k"] / 10).abs().groupby([g0["model"], g0["task"], g0["k"]]).idxmin()]
     rows = []
     for (task, L, size), g in g0.groupby(["task", "L", "size"]):
         if len(g) < MIN_POINTS:
@@ -393,21 +398,24 @@ def main(pool: str) -> None:
     if pool == CANONICAL:
         body = "\n\n".join([
             "## Scaling regimes per benchmark-language pair",
-            f"`regimes.py`: one point per task, medians over the deep data-A seed-1904 cells (parent tasks, trained languages) — the R² and "
-            f"(oriented) Spearman ρ of the gated log-N fits of `rq1_fits.csv`, one per L, and the R² of the training-trajectory fit "
-            f"(score ~ log tokens over a run's checkpoints, ≥ {MIN_POINTS} points), one per (L, size). Both use only the sizes where the "
-            f"task is above chance (rule 1, rq00's mask): {len(t)} tasks have a point; the gate removed {len(gated_out)} tasks that are at "
-            f"chance at every size where a fit was possible (per family: {gated_note}); the training loss is left out (rule 7). The quadrants of (b) split at "
-            f"R² = {R2_SPLIT}, a heuristic; a task with median ρ < 0 is the fifth regime `{DECLINES}` whatever its quadrant "
-            f"({int((t['regime'] == DECLINES).sum())} tasks, black edge in panel (b)). Table: `scaling_regimes.csv`. "
+            f"`regimes.py` draws one point per task, the median over the deep data-A seed-1904 cells (parent tasks, trained languages). "
+            f"A point has the R² and the (oriented) Spearman ρ of the gated log-N fits of `rq1_fits.csv`, one per L, and the R² of the "
+            f"training-trajectory fit (score ~ log tokens over a run's checkpoints, ≥ {MIN_POINTS} points), one per (L, size). Both fits "
+            f"use only the sizes where the task is above chance (rule 1, rq00's mask). In all, {len(t)} tasks have a point. The gate "
+            f"removed {len(gated_out)} tasks that are at chance at every size where a fit was possible (per family: {gated_note}). The "
+            f"training loss is left out (rule 7). The quadrants of (b) split at R² = {R2_SPLIT}, a heuristic. A task with median ρ < 0 "
+            f"falls in the fifth regime, `{DECLINES}`, whatever its quadrant ({int((t['regime'] == DECLINES).sum())} tasks, black edge "
+            f"in panel (b)). Table: `scaling_regimes.csv`. "
             f"Regenerate with `python analysis/rq01_scaling_predictability/regimes.py --pool {pool}`.",
             f"![Scaling regimes]({stage}/{pool}/scaling_regimes.png)",
             f"Named variants of the same points: `scaling_regimes_families.png` (one label per family at its median point, "
-            f"`scaling_regimes_families.csv`; `scaling_regimes_families_paper.png` its bare, square version for the paper), `scaling_regimes_outliers.png` (plus the tasks in another quadrant than their family's "
-            f"majority and > {OUTLIER_DIST} from its median point, `scaling_regimes_outliers.csv`; `scaling_regimes_outliers_paper.png` is its bare, square-panel version "
-            f"for the paper, the label text pulled {LABEL_DARK:.0%} towards the ink), `scaling_regimes_by_family.png` "
-            f"(panel (b) per family, tasks named by language, its per-task table with the labels next to it; `_paper.png/.csv` is its bare version for the paper's appendix) and `scaling_regimes.html` (hover names, click-to-highlight legend; "
-            f"for the project site).",
+            f"`scaling_regimes_families.csv`, with `scaling_regimes_families_paper.png` its bare, square version for the paper), "
+            f"`scaling_regimes_outliers.png` (which adds the tasks that sit in another quadrant than their family's majority and > "
+            f"{OUTLIER_DIST} from its median point, `scaling_regimes_outliers.csv`, with `scaling_regimes_outliers_paper.png` its bare, "
+            f"square-panel version for the paper, the label text pulled {LABEL_DARK:.0%} towards the ink), "
+            f"`scaling_regimes_by_family.png` (panel (b) per family, tasks named by language, with its per-task table and labels next to "
+            f"it, and `_paper.png/.csv` its bare version for the paper's appendix) and `scaling_regimes.html` (hover names and a "
+            f"click-to-highlight legend, for the project site).",
             f"![Scaling regimes, outliers named]({stage}/{pool}/scaling_regimes_outliers.png)",
             f"![Scaling regimes per family]({stage}/{pool}/scaling_regimes_by_family.png)"])
         replace_block(OUT_ROOT / "README.md", "regimes", body, f"regimes.py --pool {pool}")

@@ -3,22 +3,27 @@
 For every src/signal-and-noise/analysis/rqNN_<name>/ this writes
 documents/paper/sections/rqs/app_rqNN_<name>.tex, one page: \\clearpage, then a
 full-width block at the top of the page (\\twocolumn[...], so it cannot drift
-to another page as a figure* would): the subsection title (the first page
-also opens their parent section, PARENT), the research question
-and the setup in the left column, the key findings in the right one, and the
+to another page as a figure* would): the subsection title (after \\rqparent,
+the section main.tex opens for the group the page starts), the research question,
+the setup in the left column, the key findings in the right one, and the
 main figure (the paper copy make_rq_figures.py puts in this folder) across
 both columns under them. A main figure taller than wide goes on a float page
-of its own instead. The question and the findings are read from the README on
-every run, so the pages follow each refresh; the title, the setup, the figure
+of its own instead. The question, the setup and the findings are read from the README on
+every run, so the pages follow each refresh; the title, the figure
 and its description are fixed below (they name no counts that a refresh
-moves). Every caption starts with the figure's takeaway in bold: the lead of
-the first finding for the main figure, a fixed sentence for the extras.
+moves), and so is the setup of a README without one. Every caption starts with the
+figure's takeaway in bold: the lead of the first finding for the main figure, a fixed
+sentence for the extras. Every caption sits below its figure or table.
 
     question     the README's **Question.** paragraph or the first paragraph of
                  its "Research question" / "Question" section (or, failing that,
                  the first paragraph), cut after its last "?"; without one, the
                  question in the title line
-    findings     an rqfinding box (defined in main.tex) of at most three
+    setup        the bullet list right under a `**Setup.**` line of the README (what
+                 is measured, on which population and pool, and how), joined into
+                 one paragraph without the bullets' bold labels; without one, the
+                 setup string of PAGES
+    findings   an rqfinding box (defined in main.tex) of at most three
                  numbered findings ("1. " inside the bold lead), separated by two
                  \\\\ lines, each a bold lead sentence and its elaboration: the opening key finding, i.e. the **Key finding.**
                  paragraph if the README has one, else the bold lead and first
@@ -32,6 +37,12 @@ the first finding for the main figure, a fixed sentence for the extras.
                  its bold takeaway, label), on a full-width float page of their own;
                  the caption may be a function of the figure's CSV, so its
                  numbers follow each refresh
+
+The setup bullet or finding of the README that an extra supports cites it by its paper stem:
+"(figure: app_rq02_bbpb_acc_gate)", "(table: rq00_thresholds)", or several stems in one
+token, "(figures: a, b)" or "(figure: a, table: b)". The README shows the token as written,
+and to_tex turns it into "(Figure~\\ref{...})" with the float's label. A page warns about
+every extra that its setup and findings leave uncited, so each float is referred to in the text.
 
 A FIGURE_PAGES entry writes sections/rqs/<stem>.tex, one more figure on a float page
 of its own, with a caption built from the figure's CSV on every run:
@@ -60,11 +71,9 @@ from make_rq_figures import ANALYSIS, FIGURES, HERE
 
 # every page this writes goes to sections/rqs/, the generated part of the paper
 RQS = HERE.parent / "sections" / "rqs"
-# the appendix section the pages are subsections of, opened by the first page
-PARENT = ("Detailed Analyses", "app:analyses")
-# rq12 scores DA against both 1.7B truths once its per-item store run has written the full-truth columns
-_RQ12_CSV = ANALYSIS / "rq12_above_chance_items" / "pretraining" / "predictivity" / "above_chance_items_snr_paper.csv"
-RQ12_TWO_TRUTHS = _RQ12_CSV.is_file() and "rho_snr_da_size_full_truth" in _RQ12_CSV.read_text().split("\n", 1)[0].split(",")
+# Every page opens with \rqparent, the appendix section its group of pages is a subsection of. main.tex
+# sets it with \rqgroup{title}{label} before the group's first page, which typesets it inside its
+# full-width block and empties it, so main.tex alone decides the order and grouping of the pages.
 SIZES = ["90M", "175M", "350M", "600M", "1B", "1.7B", "3B"]
 
 
@@ -83,13 +92,13 @@ def rq02_crossfit_caption(d):
     rq2 = readings(d, "cross-fitted", "in-sample (half)", panel="DA-size", line="all pairs")
     worst = rq2.loc[rq2["diff"].abs().idxmax()]
     return (
-        f"\\textbf{{Chosen out of sample, the reliable tasks move DA-size over every single-axis pair by at most "
-        f"{abs(worst['diff']):.2f} (at {worst['x']}).}} Figure~\\ref{{fig:rq2}} with the reliable tasks chosen out of "
-        "sample. The verdict (DA above 0.66 on the size or the checkpoint axis) is decided on one half of the design "
-        "pairs and the panels are read on the other half, over 20 random splits stratified by the axes a pair moves, in "
-        "both directions (solid, with the 5--95\\% range over splits). The dashed lines choose and read the tasks on the "
-        "same half, so the gap between the two is the selection effect alone. Lines with too few pairs per half are "
-        "not drawn.")
+        f"\\textbf{{Choosing the reliable tasks out of sample moves DA-size over all single-axis pairs by at most "
+        f"{abs(worst['diff']):.2f} (at {worst['x']}).}} Figure~\\ref{{fig:rq2}} redrawn with the reliable tasks chosen out "
+        "of sample. We decide which tasks are reliable (DA above 0.66 on the size or the checkpoint axis) on one half of "
+        "the design pairs and read the panels on the other half. We repeat this over 20 random splits, stratified by the "
+        "axes a pair moves, and in both directions (solid lines, with the 5--95\\% range over splits). The dashed lines "
+        "choose and read the tasks on the same half, so the gap between solid and dashed lines is the selection effect "
+        "alone. Lines with too few pairs per half are not drawn.")
 
 
 def rq02_da_crossfit_caption(d):
@@ -97,18 +106,21 @@ def rq02_da_crossfit_caption(d):
     twin = readings(d, "cross-fitted", "in-sample (half)", population="all benchmarks")
     return (
         f"\\textbf{{On the multi-axis pairs, the reliable benchmark tasks chosen out of sample and in sample give DA-size "
-        f"within {twin['diff'].abs().max():.2f} of each other.}} Figure~\\ref{{fig:app_rq02_decision_accuracy}} with the "
-        "reliable benchmark tasks, chosen out of sample (solid) and in sample (dashed) on the same half of the pairs, "
-        "over the splits of Figure~\\ref{fig:app_rq02_rq2_crossfit}.")
+        f"within {twin['diff'].abs().max():.2f} of each other.}} Figure~\\ref{{fig:app_rq02_decision_accuracy}} redrawn "
+        "with the reliable benchmark tasks chosen out of sample (solid) or in sample on the same half of the pairs "
+        "(dashed), over the splits of Figure~\\ref{fig:app_rq02_rq2_crossfit}.")
 
 
 def fixed_impact(d, line, what, fmt=".2f", value="value", unit="tasks", **where):
     """What one task set per line does to a line of a paper figure, from the twin's
     CSV `d`: (a bold lead with the largest shift (fixed - moving) along the line
     and the verdict, a sentence with its fixed and moving values at the first and
-    last point and the task counts)."""
-    for k, v in dict(where, line=line).items():
-        d = d[d[k] == v]
+    last point and the task counts, and the largest shift of any line of the same
+    panel when another line moves more)."""
+    panel = d
+    for k, v in where.items():
+        panel = panel[panel[k] == v]
+    d = panel[panel["line"] == line]
     w = d.pivot_table(index="x", columns="reading", values=[value, "n_tasks"])
     w = w.loc[sorted(w.index, key=lambda x: SIZES.index(x) if x in SIZES else float(x))].dropna()
     f, m, n = w[(value, "fixed")], w[(value, "moving")], w[("n_tasks", "moving")]
@@ -116,31 +128,45 @@ def fixed_impact(d, line, what, fmt=".2f", value="value", unit="tasks", **where)
     x = diff.abs().idxmax()
     first, last = w.index[0], w.index[-1]
     num = lambda v, sign="": f"{v:{sign}{fmt}}".replace("-", "−")      # a minus sign, not a hyphen
-    verdict = ("so part of the line's movement comes from its changing tasks" if abs(diff[x]) > (m.max() - m.min()) / 4
+    step = 10 ** -int(fmt.strip(".f"))                                  # the smallest shift `fmt` can show
+    span, flip = m.max() - m.min(), f[x] * m[x] < 0
+    verdict = (f"{'which changes its sign, ' if flip else ''}so the {x} point is a population effect"
+               if flip or abs(diff[x]) >= span else
+               "so part of the line's movement comes from its changing tasks" if abs(diff[x]) > span / 4
                else "small against the line's own range, so its shape is not a population effect")
-    return (f"Holding the tasks fixed moves {what} by at most {num(diff[x], '+')} (at {x}), {verdict}.",
-            f"The {int(w[('n_tasks', 'fixed')].iloc[0])} {unit} it has at every point read {num(f.iloc[0])} at {first} "
-            f"and {num(f.iloc[-1])} at {last}, against {num(m.iloc[0])} and {num(m.iloc[-1])} on the {unit} of each "
-            f"point ({int(n.min())}--{int(n.max())}).")
+    shift = f"by at most {num(diff[x], '+')} (at {x})" if abs(diff[x]) >= step / 2 else f"by less than {step:{fmt}}"
+    o = panel.pivot_table(index=["line", "x"], columns="reading", values=value).dropna()
+    o = o["fixed"] - o["moving"]
+    i = o.abs().idxmax()
+    name = re.sub(r"\bL(?=\d+\b)", "K", i[0])                       # the language count is K in the paper
+    other = (f" Over every line of the panel the largest shift is {num(o[i], '+')} ({name}, at {i[1]})."
+             if abs(o[i]) >= abs(diff[x]) + step / 2 else "")
+    return (f"Holding the tasks fixed moves {what} {shift}, {verdict}.",
+            f"On the {int(w[('n_tasks', 'fixed')].iloc[0])} {unit} with a value at every point, the line reads "
+            f"{num(f.iloc[0])} at {first} and {num(f.iloc[-1])} at {last}, against {num(m.iloc[0])} and "
+            f"{num(m.iloc[-1])} on the {unit} of each point ({int(n.min())}--{int(n.max())}).{other}")
 
 
 # fixed-task twin stem -> (the label of the figure it is a twin of, what the twin changes, fixed_impact's arguments)
 FIXED = {
-    "app_rq02_fixed_rq2": ("fig:rq2", "the reliable tasks of each panel",
+    "app_rq02_fixed_rq2": ("fig:rq2", "the reliable tasks of each line",
                            dict(line="all pairs", what="the DA-size line over every single-axis pair", value="da",
                                 panel="DA-size")),
     "app_rq02_fixed_decision_accuracy": ("fig:app_rq02_decision_accuracy", "the tasks above chance",
                                          dict(line="all benchmarks", what="the benchmark line", value="da")),
     "app_rq05_fixed_design_decisions": ("fig:app_rq05_design_decisions", "the (task, language setting) cells of each line",
-                                        dict(line="temperature / benchmark",
-                                             what="the benchmark line of the temperature decision", unit="cells",
+                                        dict(line="scheme_B:DCLMP / benchmark",      # the K = 1 line Key finding 1 cites
+                                             what="the benchmark line of the A vs DCLMP decision", unit="cells",
                                              panel="da_size")),
     "app_rq10_fixed_size_generalisation": ("fig:app_rq10_size_generalisation",
                                            "the tasks of each channel (the left panel is not redrawn)",
                                            dict(line="benchmarks to 3B", what="the benchmark line against the 3B reference",
-                                                panel="3B")),
+                                                panel="3B",
+                                                also=(dict(line="benchmarks to 1.7B", panel="1.7B",
+                                                           what="the benchmark line against the 1.7B reference"),))),
     "app_rq11_fixed_evaluation_recipe": ("fig:app_rq11_evaluation_recipe", "the tasks of each variant",
-                                         dict(line="All variants", what="the pooled line")),
+                                         dict(line="All variants", what="the pooled line",
+                                              also=(dict(line="Original accuracy", what="the original accuracy line"),))),
     "app_rq12_fixed_above_chance_items": ("fig:app_rq12_above_chance_items", "the tasks of each ordering",
                                           dict(line="items_then_gate", what="the median SNR of the items-then-gate ordering",
                                                panel="snr_median")),
@@ -154,22 +180,28 @@ FIXED = {
 def fixed_caption(ref, tasks, kw):
     """The caption of a fixed-task twin, a function of its CSV."""
     def caption(d):
-        lead, rest = fixed_impact(d, **kw)
-        return (f"\\textbf{{{escape(lead)}}} Figure~\\ref{{{ref}}} on one task set per line, {tasks} that have a value "
-                f"at every point (solid), against the original (dashed). {escape(rest)}")
+        lead, rest = fixed_impact(d, **{k: v for k, v in kw.items() if k != "also"})
+        # the other lines the figure's claim reads (`also`): their largest shift, so the lead's line is not the only one
+        more = "".join(f" {escape(fixed_impact(d, **a)[0])}" for a in kw.get("also", ()))
+        return (f"\\textbf{{{escape(lead)}}} Figure~\\ref{{{ref}}} redrawn with one task set per line, {tasks} that "
+                f"have a value at every point (solid), against the original (dashed). {escape(rest)}{more}")
     return caption
 
 
 def fixed_populations():
     """The appendix of the fixed-task twins: one float page per paper figure whose task set moves along x."""
+    drawn = {stem: ref for stem, (ref, _, _) in FIXED.items() if FIGURES[stem][0].with_suffix(".csv").is_file()}
+    pairs = [f"Figure~\\ref{{fig:{stem}}} {'redraws ' if i == 0 else ''}Figure~\\ref{{{ref}}}"
+             for i, (stem, ref) in enumerate(drawn.items())]
+    which = pairs[0] if len(pairs) < 2 else ", ".join(pairs[:-1]) + f", and {pairs[-1]}"
     return "\n".join([
         "\\clearpage", "\\section{Fixed task sets}", "\\label{app:fixed_populations}", "",
-        plain("A line of a mean over tasks against model size averages, at each size, the tasks that have a value "
-              "there. The above-chance gate keeps more tasks at larger sizes, so a line can rise or fall because "
-              "its tasks changed. Each figure below redraws a paper figure on one task set per line, the tasks "
-              "that have a value at every point of that line (solid), with the original line dashed behind it."),
+        plain("A line that summarizes tasks (a mean, a median or a pooled agreement) against model size or training "
+              "reads, at each point, the tasks that have a value there. The above-chance gate keeps more tasks at larger "
+              "sizes and the three-pair minimum empties some cells, so a line can rise or fall because its tasks change. Each figure below redraws a paper figure with one task set per line, the tasks "
+              f"that have a value at every point of that line (solid), and draws the original line dashed behind it. {which}."),
         "", *(float_page(stem, fixed_caption(ref, tasks, kw), f"fig:{stem}") for stem, (ref, tasks, kw) in FIXED.items()
-              if FIGURES[stem][0].with_suffix(".csv").is_file())])
+              if stem in drawn)])
 
 
 def rq11_benchmarks_caption(d):
@@ -186,7 +218,8 @@ def rq11_benchmarks_caption(d):
     n = len(rows)
     return (
         f"\\textbf{{At the 90M proxy, a benchmark's bBPB read against the 1.7B accuracy ranks the design pairs more like "
-        f"the reference than its best accuracy format on {wins} of the {len(both)} top benchmarks where both have a "
+        f"the reference than its best accuracy format on "
+        f"{'both' if wins == len(both) == 2 else f'{wins} of the {len(both)}'} top benchmarks where both have a "
         f"value.}} Overall, DA-size on accuracy goes from {ov.at['90M', 'acc']:.2f} at 90M to {ov.at['1B', 'acc']:.2f} at "
         f"1B, against {ov['bbpb_bbpb'].min():.2f}--{ov['bbpb_bbpb'].max():.2f} for the bBPB twins (read against the 1.7B "
         f"bBPB) and {ov['bpb'].min():.2f}--{ov['bpb'].max():.2f} for BPB. The other rows are the {n} benchmarks with the "
@@ -196,10 +229,11 @@ def rq11_benchmarks_caption(d):
         "DA-goal against the 1.7B final checkpoint, the last two averaged over the proxies 90M--1B. All use the "
         "multi-axis pairs of the seed-1904 runs, and accuracy is gated above chance. bBPB uses the twins of the "
         "ranking format, read against the 1.7B accuracy of the same items or against the 1.7B bBPB. The reading "
-        "against accuracy has no DA-ckpt, as its reference would be another score. "
-        + (f"{' and '.join(no_twin)} {'has' if len(no_twin) == 1 else 'have'} no twin. " if no_twin else "")
+        "against accuracy has no DA-ckpt, because its reference would be a different score. "
+        + (f"{', '.join(no_twin[:-1]) + ' and ' if len(no_twin) > 1 else ''}{no_twin[-1]} "
+           f"{'has' if len(no_twin) == 1 else 'have'} no twin. " if no_twin else "")
         + "The bands are 95\\% bootstrap intervals over tasks. A point on fewer than five tasks is not drawn. A hollow "
-        "point is 1.0 by self comparison.")
+        "point is 1.0 because it compares a ranking with itself.")
 
 
 def _rq02_maps(d):
@@ -208,14 +242,14 @@ def _rq02_maps(d):
     single, empty = (sorted(rest.loc[rest["n_languages"] < 2, "benchmark"]),
                      sorted(rest.loc[rest["n_languages"] >= 2, "benchmark"]))
     filt = d["filter"].iloc[0]
-    cut = ("Only the tasks whose median DA-size or median DA-ckpt is at least 0.66 are kept, as there. This "
+    cut = ("As in that figure, only the tasks whose median DA-size or median DA-ckpt is at least 0.66 are kept. This "
            "filter selects on DA, so the maps are conditional on it." if filt != "none" else "There is no reliability "
            "filter.")
     setup = (
         "A cell is the mean over a benchmark's original accuracy tasks (no RF, LLM-RF or bBPB twin) in a trained "
         f"language, on the mono-axis pairs of Figure~\\ref{{fig:rq2}}. {cut} Grey cells are gated, white cells have "
-        "no value, and the scale is centred at 0.5 (a coin flip). Languages follow resource rank, with lines where "
-        f"the lists of $K$ = 1, 2, 8, 15, 30 and 50 languages end. Not drawn: {len(single)} single-language "
+        "no value, and the scale is centred at 0.5 (chance agreement). Languages follow resource rank, with lines where "
+        f"the lists of $K$ = 1, 2, 8, 15, 30 and 50 languages end. Not drawn are {len(single)} single-language "
         "benchmarks" + (f", and {', '.join(empty)}, which have no value." if empty else "."))
     lead = "On the tasks that rank reliably, {}" if filt != "none" else "{}"
     return d[d["drawn"]], setup, lambda t: lead.format(t if filt != "none" else t[0].upper() + t[1:])
@@ -233,12 +267,77 @@ def rq02_language_caption(d):
     return (
         "\\textbf{" + lead(f"averaged over the proxies 90M--1B, DA-size is above 0.5 (95\\% interval) on {sb} of "
                             f"{nb} benchmarks and {sl} of {nl} languages.") + "} "
-        f"DA-goal clears 0.5 on {gb} of {gnb} benchmarks and {gl} of {gnl} languages, DA-ckpt on {cb} of {cnb} and {cl} of {cnl}. Cell means: {sm:.2f}, {cm:.2f} and {gm:.2f}. Top: "
+        f"DA-goal clears 0.5 on {gb} of {gnb} benchmarks and {gl} of {gnl} languages, DA-ckpt on {cb} of {cnb} and {cl} of {cnl}. The mean cell is {sm:.2f} for DA-size, {cm:.2f} for DA-ckpt and {gm:.2f} for DA-goal. Top: "
         "DA-size of each proxy's final checkpoint against the 1.7B final. Middle: DA-ckpt of the nine earlier tenths "
         "of each run against its own final, over the proxies and the 1.7B run, where DA-ckpt is defined too. Bottom: "
         "DA-goal of the ten tenths of each proxy against the 1.7B final. DA-size and DA-goal stop at 1B because 1.7B "
         "is their reference. Each task is first averaged over these readings. Side panels: row and column means with "
         "95\\% bootstrap intervals over the cells. " + setup)
+
+
+def rq02_bbpb_acc_gate_caption(d):
+    """The caption of app_rq02_bbpb_acc_gate, its numbers read from the figure's CSV `d`."""
+    mid = d[d["population"] == "acc at chance at the proxy"]
+    span = lambda c: f"{mid[c].min():.2f}--{mid[c].max():.2f}"
+    return (
+        f"\\textbf{{Where accuracy is at chance at the proxy, bBPB still ranks the design variants like the 1.7B bBPB "
+        f"at {span('bbpb_bbpb')}, above accuracy on the same tasks ({span('acc_acc')}) but far below the bits per byte "
+        f"of the training languages ({d['bpb_macro'].min():.2f}--{d['bpb_macro'].max():.2f}).}} DA-size of the final "
+        "checkpoint of each proxy against the 1.7B final checkpoint, on multi-axis design pairs, over the benchmark "
+        "tasks split by their accuracy: above chance at the proxy (left), at chance at the proxy (middle) and, a subset of "
+        "the middle, at chance at every size (right). The pairs are the 406 of the 528 multi-axis pairs whose two families the per-item store holds. Blue: accuracy against the 1.7B accuracy, without the above-chance filter. Orange: the "
+        "bBPB of the proxy against the 1.7B accuracy, defined where the 1.7B accuracy is above chance "
+        f"({span('bbpb_acc')} in the middle panel). Green: bBPB against the 1.7B bBPB, which has no chance level. "
+        f"The middle panel holds {mid['bbpb_bbpb_n'].max()} tasks at 90M and {mid['bbpb_bbpb_n'].min()} at 1B. The black "
+        "tick is the DA-size of the macro average of the per-language bits per byte on the same pairs, and the dashed "
+        "line marks 0.5.")
+
+
+def rq04_by_scoring_caption(d):
+    """The caption of app_rq04_surrogates_by_scoring, its numbers read from the figure's CSV `d`."""
+    snr, early = "SNR, relative std", "early-checkpoint agreement (10 %)"
+    acc, bb, bpb = (d[d["kind"] == k] for k in ("benchmark accuracy", "benchmark bBPB", "per-language bits per byte"))
+    span = lambda x, m: f"{x.loc[x['metric'] == m, 'rho'].min():.2f}--{x.loc[x['metric'] == m, 'rho'].max():.2f}"
+    leader = acc.loc[acc.groupby("proxy")["rho"].idxmax()].set_index("proxy")["metric"]
+    leads = [s for s in SIZES if leader.get(s) == snr]
+    at = f"{leads[0]}--{leads[-1]}" if SIZES.index(leads[-1]) - SIZES.index(leads[0]) == len(leads) - 1 else ", ".join(leads)
+    lead_acc = acc[acc["metric"] == snr].set_index("proxy").loc[leads, "rho"]
+    neg = bpb[(bpb["proxy"] == "600M") & (bpb["rho"] < 0)]
+    return (
+        f"\\textbf{{The bBPB twins carry most of the pooled association of Figure~\\ref{{fig:rq3}} and the lead of "
+        f"early-checkpoint agreement, while on accuracy alone the relative-standard-deviation SNR leads at {at} "
+        f"($\\rho$ {lead_acc.min():.2f}--{lead_acc.max():.2f}).}} Spearman $\\rho$ between each surrogate statistic and DA-size against the 1.7B reference, at each "
+        "proxy size, for the benchmark tasks above chance scored by accuracy (left), their bBPB twins (middle) and the "
+        "per-language bits per byte of the 50 trained languages (right). The number next to each point is the number "
+        f"of tasks. On the twins early-checkpoint agreement reads {span(bb, early)} and the SNR {span(bb, snr)}, "
+        f"against {span(acc, early)} and {span(acc, snr)} on accuracy. On the per-language bits per byte {len(neg)} of "
+        f"the {bpb.loc[bpb['proxy'] == '600M', 'metric'].nunique()} statistics turn negative at 600M. SNR discrepancy "
+        "and the margin above chance are defined on the accuracy tasks only, and the scaling-fit $R^2$ needs three "
+        "model sizes, so it starts at 350M.")
+
+
+def rq04_mono_axis_caption(d):
+    """The caption of app_rq04_surrogates_mono_axis, its numbers read from the figure's CSV `d` (the rq3 heatmap
+    over the single-axis pairs) and from the main-text rq3's CSV (every pair)."""
+    snr, early = "SNR, relative std", "early-checkpoint agreement (10 %)"
+    name = {snr: "the relative-standard-deviation SNR", early: "early-checkpoint agreement"}
+    multi = pd.read_csv(FIGURES["rq3"][0].with_suffix(".csv"))
+    span = lambda x, m: f"{x.loc[x['metric'] == m, 'rho'].min():.2f}--{x.loc[x['metric'] == m, 'rho'].max():.2f}"
+    leader = d.loc[d.groupby("proxy")["rho"].idxmax()].set_index("proxy")["metric"]
+    top = leader.value_counts().idxmax()
+    leads = [s for s in SIZES if leader.get(s) == top]
+    at = ("every proxy size" if len(leads) == leader.size else
+          f"{leads[0]}--{leads[-1]}" if SIZES.index(leads[-1]) - SIZES.index(leads[0]) == len(leads) - 1 else ", ".join(leads))
+    both = d.merge(multi, on=["metric", "proxy"], suffixes=("", "_all"))
+    weaker = "more weakly" if both["rho"].mean() < both["rho_all"].mean() else "about as strongly"
+    return (
+        f"\\textbf{{On the single-axis pairs the surrogates correlate {weaker} with DA-size, and "
+        f"{name.get(top, top)} leads at {at} ($\\rho$ {span(d, top)}).}} Figure~\\ref{{fig:rq3}} redrawn "
+        "with DA-size and early-checkpoint agreement taken over the single-axis pairs of Figure~\\ref{fig:rq2} instead "
+        "of every pair of design variants, with the same gate (above chance at the proxy and at 1.7B) and the same "
+        f"bBPB twins. Early-checkpoint agreement reads {span(d, early)} against {span(multi, early)} over every pair, "
+        f"and the relative-standard-deviation SNR {span(d, snr)} against {span(multi, snr)}. Each cell gives $\\rho$ "
+        "and the number of tasks $n$. The scaling-fit $R^2$ needs three model sizes, so it starts at 350M.")
 
 
 def rq02_language_per_proxy_caption(d):
@@ -247,11 +346,11 @@ def rq02_language_per_proxy_caption(d):
     drawn, setup, lead = _rq02_maps(d)
 
     def per(x):
-        return x.groupby("proxy_size").agg(cells=("da", "count"), mean=("da", "mean"), above=("da", lambda v: v.gt(0.5).mean()))
+        return x.groupby("proxy_size").agg(cells=("da", "count"), mean=("da", "mean"), above=("da", lambda v: v.dropna().gt(0.5).mean()))
     p = per(drawn)
     hl = drawn[drawn["highlight"]].iloc[0]
     out = ("\\textbf{" + lead(
-        f"a larger proxy decides more like the 1.7B reference: {p.at['90M', 'above']:.0%} of the cells have DA-size "
+        f"a larger proxy decides more like the 1.7B reference: {p.at['90M', 'above']:.0%} of the cells with a value have DA-size "
         f"above 0.5 at 90M and {p.at['1B', 'above']:.0%} at 1B, and {hl['benchmark']} (outlined) is above 0.5 at every "
         f"proxy in {int(hl['steady_languages'])} of its {int(hl['complete_languages'])} languages.") + "} "
            f"The mean goes from {p.at['90M', 'mean']:.2f} to "
@@ -261,8 +360,8 @@ def rq02_language_per_proxy_caption(d):
         u = per(pd.read_csv(src.with_name(src.name.replace(f"_{d['filter'].iloc[0]}", "")).with_suffix(".csv"))
                 .query("drawn"))
         out += f"Without the filter it goes only from {u.at['90M', 'mean']:.2f} to {u.at['1B', 'mean']:.2f}. "
-    return out + ("DA-size of each proxy's final checkpoint against the 1.7B final, one map per proxy, the row means "
-                  "last. Only benchmarks with a DA-size at some proxy are drawn. " + setup)
+    return out + ("DA-size of each proxy's final checkpoint against the 1.7B final, one map per proxy, with the row "
+                  "means in the last map. Only benchmarks with a DA-size at some proxy are drawn. " + setup)
 
 
 def rq13_regimes_caption(d):
@@ -279,8 +378,8 @@ def rq13_regimes_caption(d):
         "DCLM corpora.} The scaling regimes of Figure~\\ref{fig:rq1} drawn for the monolingual English cells, one "
         "column per English corpus: DCLM-Edu (the English of every other cell), DCLM without the educational filter, "
         f"and FineWeb. Each is one deep cell at seed 1904, 90M--1.7B, on the same {int(both.at['FineWeb', 'size'])} "
-        "English tasks (originals, RF, LLM-RF, bBPB twins and the English bits per byte). The lead is in the bBPB "
-        f"twins: on the {int(acc.at['FineWeb', 'size'])} accuracy tasks alone the three corpora reach "
+        "English tasks (originals, RF, LLM-RF, bBPB twins and the English bits per byte). The FineWeb lead comes from "
+        f"the bBPB twins. On the {int(acc.at['FineWeb', 'size'])} accuracy tasks alone, the three corpora reach "
         + ", ".join(f"{pct(acc.at[c, 'mean'])} ({c})" for c in ("DCLM-Edu", "DCLM", "FineWeb")) + ". "
         "The fits and the above-chance gate are those of Figure~\\ref{fig:rq1}. With one $K$, a task has one "
         "model-size fit instead of a median over the six $K$, and the trajectory $R^2$ is the median over at least two "
@@ -315,6 +414,27 @@ def rq13_regimes_l1_caption(d):
         "a task whose score declines with size.")
 
 
+def rq13_regimes_tagged_caption(d):
+    """The caption of app_rq13_english_scaling_regimes_l1_accuracy_tagged, its benchmarks read from the figure's CSV `d`."""
+    wide = d.pivot(index="task", columns="corpus", values="regime")
+    name = d.drop_duplicates("task").set_index("task")["name"]
+    pop = d.loc[d["popular"], "task"].unique()
+    every = lambda r: [name[k] for k in pop if (wide.loc[k] == r).all()]
+    listed = lambda xs: ", ".join(xs[:-1]) + f" and {xs[-1]}" if len(xs) > 1 else "".join(xs)
+    weak = [k for k in pop if not wide.loc[k].isin(["predictable across both", "filtered"]).any()]
+    n_filtered = d[d["regime"] == "filtered"].groupby("corpus").size()
+    return (
+        "\\textbf{The well-known English benchmarks are the predictable ones, and the popular tasks that drop out stay "
+        "at chance rather than scale badly.} " + listed(every("predictable across both")) + " are predictable across both "
+        "size and training in all three corpora. " + listed(every("filtered")) + " never pass the above-chance filter "
+        "in their original format" + (", and " + listed([name[k] for k in weak]) + " is the one above chance that does "
+        "not scale" if weak else "") + ". The bottom row of Figure~\\ref{fig:app_rq13_english_scaling_regimes_l1_accuracy}, "
+        "one panel per English corpus ($K$ = 1), with every task named beside its panel, on the left when the $R^2$ of its "
+        "model-size fit is below 0.5 and on the right otherwise. A name takes the colour of its regime (blue predictable "
+        "across both, green during training only, slate across size only, brown weak in both, black declines with size). "
+        f"The {n_filtered.max()} English accuracy tasks that the filter removes have no point.")
+
+
 def rq06_cross_task_caption(d):
     """The caption of app_rq06_cross_task_hellaswag, its numbers read from the figure's CSV `d`."""
     lang = lambda t: "en" if t == "hellaswag" else t.rsplit("_", 1)[-1]
@@ -330,18 +450,29 @@ def rq06_cross_task_caption(d):
         "on the task of another language at the 1.7B final checkpoint (columns), averaged over the proxies 90M--1B. The "
         "diagonal is the task's own DA-size. The pairs are the mono-axis design pairs of the seed-1904 runs, at least "
         "three per size, each task gated above chance at the size it is read at. A model's score on a language it does "
-        "not train counts here: the scheme-A runs are evaluated on every language, so a language that no list trains, "
+        "not train counts here. The scheme-A runs are evaluated on every language, so a language that no list trains, "
         f"such as Basque (its column averages {off[off['tl'] == 'eu']['da_size'].mean():.2f}), is read on those runs "
         "alone. A cell averages the pairs both tasks have, so two cells may average different decisions. The colour is "
-        "centred at 0.5, the agreement of a coin flip. Languages follow the resource order of the training lists.")
+        "centred at 0.5, the agreement expected by chance. Languages follow the resource order of the training lists.")
+
+
+# A family-transfer cell ("L2 ZH") as the paper names it: its K and the scheme letter its build implements
+# there (DATA_SCHEMES `letter`; at K = 2 Russian is A, Chinese B, Spanish C).
+RQ06_LETTER = {"A": "A", "B": "B", "ZH": "B", "ES": "C"}
+rq06_cell = lambda c: f"$K$ = {c.split()[0][1:]} scheme-{RQ06_LETTER[c.split()[1]]}"
 
 
 def rq06_family_caption(d):
     """The caption of app_rq06_family_transfer, its numbers read from the figure's CSV `d`."""
     s = d[(d["cell"] == "L8 A") & (d["level"] == "sub")].pivot(index="size", columns="group", values="lift")
     best = s["same family"].idxmax()
+    sizes = ["90M", "175M", "350M", "600M", "1B", "1.7B"]
+    has = d.groupby("cell")["size"].agg(lambda x: [z for z in sizes if z in set(x)])
+    cover = [f"the {rq06_cell(c)} cell " + ("at every size" if len(v) == len(sizes) else f"at {v[0]}--{v[-1]}")
+             for c, v in sorted(has.items(), key=lambda kv: (int(kv[0].split()[0][1:]), RQ06_LETTER[kv[0].split()[1]]))]
+    cover = ", ".join(cover[:-1]) + " and " + cover[-1]
     return (
-        f"\\textbf{{The $K$ = 8 cell clears chance on more of its untrained same-subfamily tasks than English only does on "
+        f"\\textbf{{The $K$ = 8 scheme-A cell clears chance on more of its untrained same-subfamily tasks than the English-only cell does on "
         f"the same tasks, by up to {s.at[best, 'same family']:+.2f} at {best}, and "
         + ("on the other subfamilies it does not" if s["other family"].max() < 0.005 else
            f"on the other subfamilies by no more than {s['other family'].max():+.2f}") + ".} Each panel is one cell (rows) "
@@ -351,8 +482,9 @@ def rq06_family_caption(d):
         "(left: the top-level family such as Indo-European, right: the subfamily such as Slavic, from a Glottolog-style "
         "classification of every evaluated language). The dotted lines are the English-only $K$ = 1 cell on exactly the "
         "same tasks, so the gap between a solid line and its dotted twin is what training the cell's languages adds. "
-        "Deep runs at seed 1904. Only the scheme-A cells and, at 350M--1B, the $K$ = 8 cell of scheme B are evaluated on "
-        "untrained languages, and the $K$ = 1 cell has no 350M evaluation, so its dotted lines break there.")
+        f"Deep runs at seed 1904. Untrained languages are evaluated for {cover}, some of them on part of the tasks so "
+        "far. The $K$ = 1 cell has no 350M evaluation, so its dotted lines break there. Chinese has no subfamily of its "
+        "own in the classification, so the $K$ = 2 scheme-B cell has no same-subfamily line.")
 
 
 def rq06_lift_caption(d):
@@ -361,28 +493,30 @@ def rq06_lift_caption(d):
     trained, other = d[d["same_sub"]], d[~d["same_sub"]]
     w = lambda g: (g["lift"] * g["n_verdicts"]).sum() / g["n_verdicts"].sum()
     r = d[(d["cell"] == "L8 A") & (d["family_sub"] == "Indo-European, Romance")].iloc[0]
-    up = trained[trained["lift"] > 0]
+    up, down = trained[trained["lift"] > 0], trained[trained["lift"] <= 0]
     lead = (f"All {len(trained)} subfamilies that a cell trains" if len(up) == len(trained)
             else f"Of the {len(trained)} subfamilies that a cell trains, {len(up)}")
+    exceptions = " and ".join(f"{x.family_sub.split(', ')[-1]} under the {rq06_cell(x.cell)} cell ({x.lift:+.2f})"
+                              for x in down.itertuples())
     return (
-        f"\\textbf{{{lead} clear chance more often than under English only "
+        f"\\textbf{{{lead} clear chance more often than under English-only training "
         f"({up['lift'].min():+.2f} to {up['lift'].max():+.2f}), while the {len(other)} others centre on zero "
-        f"(median {other['lift'].median():+.2f}).}} The largest trained lift is Romance under the $K$ = 8 scheme-A cell, "
-        f"which trains Spanish, French and Italian: {100 * r['share_above']:.0f}\\% of the Catalan, Galician, Portuguese "
-        f"and Romanian tasks above chance against {100 * r['baseline_share_above']:.0f}\\% for English only. "
-        + "".join(f"{x.family_sub.split(', ')[-1]} under the $K$ = {x.cell[1:-2]} scheme-{x.cell[-1]} cell is the "
-                  f"exception ({x.lift:+.2f}). " for x in trained[trained["lift"] <= 0].itertuples())
+        f"(median {other['lift'].median():+.2f}).}} Romance under the $K$ = 8 scheme-A cell, "
+        f"which trains Spanish, French and Italian, puts {100 * r['share_above']:.0f}\\% of the Catalan, Galician, Portuguese "
+        f"and Romanian tasks above chance against {100 * r['baseline_share_above']:.0f}\\% for the English-only cell. "
+        + (f"The exception{'s are' if len(down) > 1 else ' is'} {exceptions}. " if len(down) else "")
         + "Each row is one subfamily of the untrained languages, read on the benchmarks every cell is evaluated on, not "
         "on the candidates still being screened. A dot is the share of a cell's tasks in those languages above chance minus "
-        "the share of the English-only $K$ = 1 cell on the same tasks and sizes, pooled over the sizes both have (every "
-        "size but 350M for scheme A, 600M and 1B for scheme B), drawn where it rests on at least 20 verdicts. A filled "
+        "the share of the English-only $K$ = 1 cell on the same tasks and sizes, pooled over the sizes both have (the "
+        "$K$ = 1 cell has no 350M evaluation), drawn where it rests on at least 20 verdicts. A filled "
         "dot marks a subfamily of one of the cell's trained languages. Weighted by verdicts, the trained subfamilies gain "
         f"{w(trained):+.2f} and the others {w(other):+.2f}. Rows follow their mean over the cells.")
 
 
-RQ09_POP = ("the per-task DA-size of Figure~\\ref{fig:rq2}: the final checkpoint of each proxy against the 1.7B final, "
-            "on the mono-axis design pairs of the seed-1904 runs, on the tasks above chance at the proxy and at 1.7B. A "
-            "benchmark's DA-size is the median over its tasks at a proxy, averaged over the proxies 90M--1B")
+RQ09_TASK = ("the per-task DA-size of Figure~\\ref{fig:rq2}: the final checkpoint of each proxy against the 1.7B final, "
+             "on the mono-axis design pairs of the seed-1904 runs, on the tasks above chance at the proxy and at 1.7B")
+RQ09_POP = (RQ09_TASK + ". A benchmark's DA-size is the median over its tasks at a proxy, averaged over the proxies "
+            "90M--1B at which it has a task")
 
 
 def rq09_correlation_caption(d):
@@ -393,58 +527,81 @@ def rq09_correlation_caption(d):
                              == (ok["reading"] == r).sum())
     snr, rel, unf = (v.loc[(r, "n_options")] for r in ("snr", "above_66_either", "unfiltered"))
     n = d.groupby("reading")["n_benchmarks"].max()          # a benchmark with no option count still counts
+    per_proxy = n[n.index.str.startswith("size:")]           # the right panel: fewer benchmarks at the small proxies
+    items, skill = ({r: v.loc[(r, k)] for r in ("unfiltered", "snr", "above_66_either")} for k in ("items", "skill"))
+    excl = lambda r, k: bool(v.loc[(r, k), "ci_low"] > 0 or v.loc[(r, k), "ci_high"] < 0)
+    other = [v.loc[("snr", k), "label"].lower() for k in d["characteristic"].unique() if k not in ("items", "skill")
+             and excl("above_66_either", k) and excl("unfiltered", k)]
     return (
-        "\\textbf{No characteristic orders the benchmarks by DA-size"
-        + (": every 95\\% interval on DA-size contains zero" if crosses("above_66_either")
-           and crosses("unfiltered") else " in both readings")
-        + f".}} The answer options, which correlate with SNR at $\\rho = {snr['value']:.2f}$ "
+        f"\\textbf{{Item count orders the benchmarks by DA-size on every task above chance "
+        f"($\\rho = {items['unfiltered']['value']:.2f}$) but not by SNR ({items['snr']['value']:.2f}), and the LM-like "
+        f"skill correlates with both ({skill['unfiltered']['value']:.2f} and {skill['snr']['value']:.2f}).}} "
+        + (f"No other characteristic has a DA-size interval that excludes zero in both readings. " if not other else
+           f"Of the others, only {' and '.join(other)} excludes zero in both DA-size readings. ")
+        + f"The answer options, which correlate with SNR at $\\rho = {snr['value']:.2f}$ "
         f"(${snr['ci_low']:.2f}$ to ${snr['ci_high']:.2f}$), reach ${rel['value']:.2f}$ on the reliable tasks and "
         f"${unf['value']:.2f}$ on every task above chance. A row is one characteristic of the benchmark families (Table "
         "\\ref{tab:app_rq09_benchmark_characteristics}). The value is a Spearman $\\rho$ over the benchmarks against the "
-        "characteristic's code: the options ranked 2 to 5, no passage to passage, and the two lengths as they are. "
-        "Curation, source and task format are split in two: translated to native (written in the language, English "
-        "originals included, or generated from treebanks or planning problems), translated from English to not, and "
-        "continuation to lettered options. A split whose smaller side holds one benchmark has no value, so task format "
+        "characteristic's code: the options ranked 2 to 5, no passage to passage, and the item count (the median "
+        "number of items over a benchmark's languages) and the two lengths as they are. "
+        "Skill, curation, source, task format and domain are each split in two and coded from the first group to the "
+        "second: knowledge, reading and reasoning to LM-like (commonsense, grammaticality and language modelling), "
+        "translated to native (written in the language, English originals included, or generated from treebanks or "
+        "planning problems), translated from English to not, continuation to lettered options, and the other domains "
+        "to knowledge, the most common domain. A split whose smaller side holds one benchmark has no value, so task format "
         "has none on DA-size, where INCLUDE is the only benchmark with lettered options. A characteristic marked unknown "
-        "in the table leaves that benchmark out of its row. "
+        "in the table leaves that benchmark out of its row, except the curation of BBH, which was written in English and "
+        "so counts as native. "
         f"DA-size is {RQ09_POP}. Left: that mean with a 95\\% bootstrap interval over the "
         f"{n['above_66_either']} benchmarks whose tasks pass the reliability filter of Figure~\\ref{{fig:rq2}} "
         f"(filled), over the {n['unfiltered']} benchmarks with any task above chance (hollow), and the same "
         f"statistics on the median SNR at 1.7B of the {n['snr']} benchmarks (diamonds). Right: one line per "
-        "proxy size, on the reliable tasks. The lengths exist for the original benchmarks with sampled items only.")
+        "proxy size, on the reliable tasks, " f"over {per_proxy.min()} to {per_proxy.max()} benchmarks per proxy. The lengths exist for the original benchmarks with sampled items only.")
 
 
 def rq09_levels_caption(d):
-    """The caption of app_rq09_design_da_by_level, its numbers read from the figure's CSV `d`."""
-    top = d.loc[d["da_size"].idxmax()]
-    n = d["family"].nunique()
+    """The caption of app_rq09_design_da_by_level, its numbers read from the figure's CSV `d` (one row per
+    characteristic and task of the reliable tasks)."""
+    t = d.drop_duplicates("task")
+    full = d.groupby(["characteristic", "level"])["da_size"].agg(["median", "size"])
+    lv = full[full["size"] >= 5]                              # a level of one task has no distribution to read
+    small = full[full["size"] < 5].reset_index()
+    one = d.groupby("label")["level"].nunique()
     return (
-        f"\\textbf{{{top['name']} has the highest DA-size of the {n} benchmarks ({top['da_size']:.2f}), so the levels "
-        f"it carries ({', '.join(d[d['family'] == top['family']]['level'])}) are lifted by one benchmark.}} "
-        "Each row is one level of one characteristic, coloured by characteristic, with the number of benchmarks at that "
-        "level. A dot is one benchmark at its DA-size minus 0.5, so the dotted line is chance agreement, and "
-        f"{(d.drop_duplicates('family')['x'] > 0).sum()} of the {n} benchmarks sit to its right. The bar is the level's "
-        f"median. DA-size is {RQ09_POP}, on the tasks that pass the reliability filter of Figure~\\ref{{fig:rq2}}. "
-        f"{top['name']} is named on its dot once per characteristic.")
+        f"\\textbf{{Read per task, the {len(t)} reliable tasks sit above chance agreement (median DA-size "
+        f"{t['da_size'].median():.2f}), but the levels overlap: the medians of the levels with at least five tasks lie "
+        f"between {lv['median'].min():.2f} and {lv['median'].max():.2f}.}} "
+        + ("".join(f"{r.level[0].upper() + r.level[1:]} holds {r.size} task{'s' if r.size > 1 else ''} "
+                   f"({r.median:.2f}). " for r in small.itertuples()))
+        + ("".join(f"{lab} has one level on these tasks. " for lab in one[one == 1].index))
+        + "Each block is one characteristic, a header row and "
+        "then one row per level with the number of tasks at that level. A dot is one task (one benchmark in one "
+        "language) at its DA-size minus 0.5, so the dotted line is chance agreement, and "
+        f"{(t['x'] > 0).sum()} of the {len(t)} tasks sit to its right. The bar is the level's median and the "
+        f"horizontal line its interquartile range over the tasks. DA-size is {RQ09_TASK}, averaged over the proxies "
+        f"90M--1B that have one, on the tasks of {t['family'].nunique()} benchmarks that pass the reliability filter of "
+        "Figure~\\ref{fig:rq2}. Figure~\\ref{fig:app_rq09_design_da_correlation} gives the same characteristics as "
+        "one correlation per benchmark.")
 
 
 def rq09_quadrant_caption(d):
-    """The caption of app_rq09_design_da_quadrant, its numbers read from the figure's CSV `d`."""
-    dots, cnt = d[d["row"] == "benchmark"], d[d["row"] == "quadrant count"]
-    below = dots.drop_duplicates("family")
-    below = below[below["x"] < 0].sort_values("x")
-    low = dots[dots["family"].isin(below["family"]) & (dots["code"] != 0)]
-    one_sided = sorted(low.groupby("label")["code"].agg(lambda c: c.gt(0).nunique() == 1).loc[lambda x: x].index)
-    spread = ("they fall on both levels of every characteristic" if not one_sided else
-              f"they fall on both levels of every characteristic but {' and '.join(l.lower() for l in one_sided)}")
+    """The caption of app_rq09_design_da_quadrant, its numbers read from the figure's CSV `d` (one row per
+    characteristic, task and proxy of every task above chance, then the quadrant counts)."""
+    dots = d[d["row"] == "task"]
+    pts = dots.drop_duplicates(["task", "size"])
+    by_size = pts.groupby("size")["da_size"].median()
+    band = dots.groupby(["characteristic", "level", "size"])["da_size"].median()
     return (
-        f"\\textbf{{On every task above chance, {len(below)} of the {dots['family'].nunique()} benchmarks decide below chance "
-        f"agreement ({', '.join(below['name'])}), and {spread}.}} One panel per characteristic: x is the DA-size minus 0.5, so the vertical line is chance agreement, and y "
-        "the characteristic's code centred at 0 (the options ranked 2 to 5 as $-1$, $-1/3$, $+1/3$, $+1$, every other "
-        "characteristic split in two as $-1$ and $+1$), jittered. The numbers count the benchmarks per quadrant. The "
-        "shaded quadrants are the ones a positive correlation "
-        f"fills. {dots.loc[dots['da_size'].idxmax(), 'name']} is outlined. DA-size is {RQ09_POP}, on every task above "
-        "chance at the proxy and at 1.7B.")
+        f"\\textbf{{On every task above chance, the median task decides at chance agreement at every proxy size "
+        f"(DA-size {by_size.min():.2f} to {by_size.max():.2f}), on every level of every characteristic.}} One panel "
+        "per characteristic. A dot is one task (one benchmark in one language) at one proxy, coloured by the proxy's "
+        "size: x is its DA-size minus 0.5, so the vertical line is chance agreement, and y the characteristic's code "
+        "centred at 0 (the options ranked 2 to 5 as $-1$, $-1/3$, $+1/3$, $+1$, every other characteristic split in "
+        "two as $-1$ and $+1$), each proxy in a band of its own (90M lowest), jittered within it. The red tick is the "
+        f"band's median, and every band's median lies between {band.min():.2f} and {band.max():.2f}. The numbers count "
+        f"the dots per quadrant, and a dot at exactly 0.5 ({(pts['x'] == 0).mean() * 100:.0f}\\% of them) is in none. The "
+        f"shaded quadrants are the ones a positive correlation fills. DA-size is {RQ09_TASK}, for the {len(pts)} "
+        f"pairs of a task and a proxy over {pts['task'].nunique()} tasks of {pts['family'].nunique()} benchmarks.")
 
 
 def rq09_table_caption(d):
@@ -453,7 +610,9 @@ def rq09_table_caption(d):
         f"\\textbf{{The {len(d)} benchmark families of the benchmark design analysis and the characteristics it "
         f"groups them by.}} {int((d['source_origin'] == 'english_translated').sum())} are translated from English, "
         f"{int((d['source_origin'] == 'english_original').sum())} are English originals evaluated in English, and "
-        f"{int((d['n_options'] == 4).sum())} have four answer options. Curation: how the items in each language were made "
+        f"{int((d['n_options'] == 4).sum())} have four answer options. Domain: what the benchmark tests, as its own "
+        f"paper describes it ({int((d['domain'] == 'knowledge').sum())} test knowledge, the domain the analysis "
+        "contrasts with the rest). Curation: how the items in each language were made "
         "(native: written in the language, English: written in English, human transl.: translated by people, MT: machine "
         "translated, MT + post-edit: machine translated and corrected, transl. (unknown): translated by a method the "
         "dataset does not document, template: generated from treebank or planning templates). Source: whether the "
@@ -462,17 +621,141 @@ def rq09_table_caption(d):
         "continuation of the question, completion scores continuations of a context, statement (LLM-RF) is the LLM "
         "rewrite into a statement with four continuations, last word scores the final word of a passage. Options gives "
         "the range where subtasks differ. Unknown marks a characteristic no source settles, which the analysis leaves "
-        "out. Context and Option: the median characters of the context and of an option over 100 sampled English items.")
+        "out, except the curation of BBH, which counts as native because its items were written in English. Mixed marks "
+        "a suite whose subtasks differ, which the analysis also leaves out. Skill groups the domains: LM-like for "
+        f"commonsense, grammaticality and language modelling ({int((d['skill'] == 'LM-like').sum())} benchmarks), "
+        "knowledge etc. for the rest. Items: the median number of items over the benchmark's languages. Context and "
+        "Option: the median characters of the context and of an option over 100 sampled English items.")
+
+
+def rq09_item_count_caption(d):
+    """The caption of app_rq09_item_count, its numbers read from the table's CSV `d` (one row per metric)."""
+    r = d.set_index("reading")
+    a, c = r.loc["unfiltered"], r.loc["da_ckpt"]
+    return (
+        f"\\textbf{{Benchmarks with more items decide more like the reference: DA-size rises by "
+        f"{a['within_slope']:.2f} per tenfold more items within a benchmark, across its languages and subtasks.}} "
+        "One row per metric. A benchmark's value is its DA-size on every task above chance (the hollow dots of "
+        "Figure~\\ref{fig:app_rq09_design_da_correlation}), the median over its tasks of DA-ckpt (each task's median "
+        "over its checkpoints and sizes) and of the R$^2$ of the scaling fit of Figure~\\ref{fig:rq1}, and its median SNR "
+        "at 1.7B (log10 in the fits). $\\rho$ items and $\\rho$ LM-like: the Spearman correlation over the benchmarks "
+        "with the item count (the median over its languages) and with the LM-like skill (commonsense, grammaticality, "
+        "language modelling, against the rest, so KoBEST and NorEval, which mix both, are left out), with a 95\\% "
+        "bootstrap interval over the benchmarks. Within benchmarks: the slope of the task values on log10 items with "
+        "a fixed effect per benchmark and an interval clustered by benchmark, over the tasks and (in brackets) the "
+        f"number of tasks and of the {int(a['within_n_varying'])} benchmarks whose tasks differ in item count, the "
+        "only ones that inform it. Joint: a fit of the benchmark values on log10 items and LM-like together. DA-ckpt "
+        f"follows item count as DA-size does ($\\rho = {c['rho_items']:.2f}$), SNR does not.")
+
+
+def rq09_waves_caption(d):
+    """The caption of app_rq09_wave_robustness, its numbers read from the table's CSV `d` (per metric and group)."""
+    g = d.set_index(["reading", "group"])
+    later = {r: g.loc[(r, "later, all")] for r in ("unfiltered", "snr", "r2")}
+    names = {"unfiltered": "DA-size", "snr": "SNR", "r2": "the R$^2$ of the scaling fit"}
+    same = [names[r] for r, x in later.items() if x["mannwhitney_p"] >= 0.05]
+    diff = [f"{'lower' if x['items_adjusted_later'] < 0 else 'higher'} {names[r]} ($p = {x['mannwhitney_p']:.2f}$)"
+            for r, x in later.items() if x["mannwhitney_p"] < 0.05]
+    s = later["snr"]
+    return (
+        "\\textbf{The benchmarks added after the sweep began match the original ones on "
+        + " and on ".join(same) + (f", but have a {' and a '.join(diff)}" if diff else "") + ".} "
+        "The original benchmarks are the ones the sweep evaluated from its start (7 September 2026). The later ones "
+        "entered in three waves: twenty screened benchmarks promoted on 23 September, the reformulated twins (22 "
+        "September to 9 October), and the probes promoted on 9 October. A benchmark counts once, so the medians are "
+        "over benchmarks, not tasks, and a benchmark with no task above chance is absent. Its value is its DA-size on "
+        "every task above chance, its median SNR at 1.7B or its median R$^2$ of the scaling fit "
+        "(Table~\\ref{tab:app_rq09_item_count}). Items: the median of the benchmarks' item counts. The interval is a 95\\% "
+        "bootstrap over the benchmarks. Rank test: a two-sided Mann-Whitney test of the original benchmarks against "
+        "all later ones. After items: the difference of the later benchmarks in a fit on log10 items (SNR in log10), "
+        f"with its $p$ (SNR: ${s['items_adjusted_later']:+.2f}$, $p = {s['items_adjusted_p']:.2f}$).")
+
+
+def rq00_screened_3b(d):
+    """Whether rq00's "all considered" outputs carry a 3B verdict for the
+    screened tasks (the 3B probe jobs landed in the probe gate): `d` is either
+    of their CSVs, gate_pass_counts_all_considered (a `size` column) or
+    first_size_share_all_considered_paper (the screened `panel` title names
+    its sizes). Until then every rq00 "considered" caption is the 1B/1.7B one."""
+    if "size" in d:
+        return bool(((d["size"] == "3B") & (d["group"] != "auto") & d["gated"].notna()).any())
+    return bool(d["panel"].str.startswith("Screened").any() and d["panel"].str.contains("3B").any())
+
+
+def rq00_pending():
+    """The `auto` benchmarks still counted as screened (analysis.utils.pending_benchmarks)."""
+    sys.path.insert(0, str(ANALYSIS.parent))
+    from analysis.utils import pending_benchmarks
+    return pending_benchmarks()
+
+
+def rq00_screened_sizes(d):
+    """The sizes the screened tasks have a verdict at, as prose ("600M, 1B and 1.7B"), from either CSV of
+    `rq00_screened_3b`: the probe groups' gated sizes, or the screened panel's title."""
+    if "size" in d:
+        xs = list(dict.fromkeys(d.loc[(d["group"].isin(["probe", "discarded"])) & d["gated"].notna(), "size"]))
+        return xs[0] if len(xs) == 1 else ", ".join(xs[:-1]) + " and " + xs[-1]
+    t = d.loc[d["panel"].str.startswith("Screened"), "panel"].iloc[0]
+    return t.removeprefix("Screened benchmarks, ").removesuffix(" only")
+
+
+def rq00_considered_caption(d):
+    """The caption of app_rq00_pass_counts_considered, its numbers read from the table's CSV `d`."""
+    at = lambda g, f="all", z="1.7B": d[(d["group"] == g) & (d["format"] == f) & (d["size"] == z)].iloc[0]
+    a, s, x = at("all"), at("probe"), at("discarded", "original")
+    has3 = rq00_screened_3b(d)
+    s3 = at("probe", z="3B") if has3 else None
+    sz = rq00_screened_sizes(d)
+    return (
+        f"\\textbf{{Over the {a['benchmarks']} benchmarks with a chance level that we considered, {a['passing']:,.0f} of {a['gated']:,.0f} tasks are "
+        f"above chance at 1.7B, and {s['passing']:,.0f} of the {s['gated']:,.0f} screened tasks pass although we do not "
+        f"analyse them.}} Each cell gives the tasks above chance over the tasks with a verdict, per group, answer "
+        f"format and model size, on the trained languages. Analysed is the group of benchmarks that every other "
+        f"analysis uses. Screened, not analysed are the "
+        f"benchmarks we evaluated only on the final checkpoints of the {sz} models"
+        + (", including those that joined the analysed group after the screen and whose evaluation throughout "
+           "pretraining has not finished" if rq00_pending() else "")
+        + (f". Discarded are the "
+           f"{x['gated']:.0f} screened tasks at chance at both 1B and 1.7B. " if not has3 else
+           f". At 3B, "
+           f"{s3['passing']:,.0f} of the {s3['gated']:,.0f} screened tasks with a 3B verdict pass. Analysed tasks have "
+           f"no 3B verdict, since every other analysis stops at the 1.7B reference, so the all-considered row stops "
+           f"at 1.7B. Discarded are the {x['gated']:.0f} screened tasks at chance at both 1B and 1.7B. ")
+        + f"Original is the benchmark as published, RF scores the "
+        f"answer strings instead of the option letters, and LLM-RF is the LLM rewrite into statements. A cell is above "
+        f"chance when at least half of the seed-1904 runs of that size that train the task's language clear chance. "
+        f"Tasks without a chance level have no verdict.")
+
+
+def rq00_chance_considered_caption(d):
+    """The caption of app_rq00_chance_considered: the 600M-1.7B text until the
+    figure's CSV `d` has a 3B screened panel, then the one with 3B."""
+    if not rq00_screened_3b(d):
+        sz = rq00_screened_sizes(d)
+        return ("\\textbf{Most of the benchmarks we screened and do not analyse clear chance by 1.7B.} Left: the "
+                "analysed benchmarks of Figure~\\ref{fig:app_rq00_gate_and_curves}, here split by task. Right: the "
+                f"benchmarks we evaluated only on the final checkpoints of the {sz} models and do not analyse, with "
+                "the discarded tasks. Each bar splits a benchmark's tasks by the smallest model size from which they stay "
+                f"above chance (a darker blue is a larger size). On the right only {sz} are evaluated, so {sz.split(',')[0]} means "
+                "above chance at every evaluated size. Red marks the tasks at chance at 1.7B. The number in parentheses is the "
+                "benchmark's number of tasks with a chance level. We read the seed-1904 runs that train the task's language.")
+    sz = rq00_screened_sizes(d)
+    return ("\\textbf{Most of the benchmarks we screened and do not analyse clear chance by 1.7B.} Left: the "
+            "analysed benchmarks of Figure~\\ref{fig:app_rq00_gate_and_curves}, here split by task, from 90M to the "
+            f"1.7B reference. Right: the benchmarks we evaluated only on the final checkpoints of the {sz} "
+            "models and do not analyse, with the discarded tasks. Each bar splits a benchmark's tasks by the smallest "
+            f"model size from which they stay above chance (a darker blue is a larger size). On the right only {sz} "
+            f"are evaluated, so {sz.split(',')[0]} means above chance at every evaluated size, and 3B means at chance at 1.7B and "
+            "above it at 3B. Red marks the tasks at chance at the largest size with a verdict. The number in "
+            "parentheses is the benchmark's number of tasks with a chance level. We read the seed-1904 runs that train "
+            "the task's language.")
 
 
 # folder -> title, paper figure stem, setup, (README image the finding follows, which bullet)[, extras]
 PAGES = {
     "rq00_gate_and_curves": (
         "The above-chance gate", "app_rq00_chance_share_horizontal",
-        "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B. A run clears chance on a "
-        "task when the one-sided 95\\% Wilson lower bound of its accuracy over the task's items is above the chance "
-        "level. A (task, size) cell is above chance when at least half of the runs of that size that train the task's "
-        "language clear it. Tasks without a chance level (bits per byte) are not gated.",
+        None,
         "highlights", 0,
         (("app_rq00_early_passes",
           "\\textbf{The tasks that pass at very small token counts answer with one option.} The ten tasks above chance "
@@ -480,28 +763,22 @@ PAGES = {
           "at $10^{8}$--$10^{10}$ tokens. We read the deep runs with the baseline data at seed 1904, at every evaluated "
           "tenth, from their stored option log-likelihoods. Share of runs above chance: trained runs below $10^{8}$ "
           "tokens of the language (Low), trained runs at $10^{8}$--$10^{10}$ tokens (Mid), and runs that never trained "
-          "the language nor a language of its subfamily, at the sizes and checkpoints of the Low runs (Untrained). Over "
+          "the language nor any language of its subfamily, at the sizes and checkpoints of the Low runs (Untrained). Over "
           "the Low runs above chance: their number, the median share of items answered with the option the run picks "
           "most often (One option), and the share of these runs in which that option alone would clear chance "
           "(Constant passes). Longest option: the median share of picks on the single longest option and the share of "
           "gold answers on it. CulturalBench-easy asks in English about a country and is placed at the tokens of the "
           "country's language.",
-          "tab:app_rq00_early_passes"),)),
+          "tab:app_rq00_early_passes"),
+         ("app_rq00_chance_considered", rq00_chance_considered_caption, "fig:app_rq00_chance_considered"),
+         ("app_rq00_pass_counts_considered", rq00_considered_caption, "tab:app_rq00_pass_counts_considered"),)),
     "rq00_task_reformulation": (
         "Task reformulation", "app_rq00_chance_reformulation",
-        "We compare the letter-format multiple-choice benchmarks (Belebele, Global-MMLU, INCLUDE) with two "
-        "reformulated twins of every task. The first twin (RF) drops the answer letters and scores each option as a "
-        "continuation. The second twin (LLM-RF) uses an LLM to rewrite the items as cloze statements. We use the same "
-        "above-chance gate and the same runs as for the gate itself. We pair each original task with its twin and "
-        "compare the two with a McNemar test.",
+        None,
         None, 1),
     "rq00_chance_vs_train_tokens": (
-        "Above chance against the tokens of the language seen", "app_rq00_chance_vs_train_tokens",
-        "A cell is one (task, size, language setting) read at each of the ten evaluated tenths of the run. We place "
-        "it at the number of tokens of the task's language that the checkpoint had seen. This number is the "
-        "language's share of the mixture $\\times$ the size's budget $\\times$ the tenth. We use seed-1904 runs of "
-        "every data build and ladder, 90M--1.7B, at $K \\in \\{1, 2, 8, 15, 30, 50\\}$. The above-chance gate "
-        "is applied per run.",
+        "Above chance against the training tokens of the language", "app_rq00_chance_vs_train_tokens",
+        None,
         None, 0,
         (("rq00_thresholds",
           "\\textbf{Training tokens of the language from which a benchmark is above chance.} For each multilingual "
@@ -509,10 +786,10 @@ PAGES = {
           "the share of (language, $K$, checkpoint) cells above chance is at least 50\\% or 90\\% in that bin and in "
           "every larger bin, pooled over the model sizes 90M--1.7B and for the 90M and 1.7B models alone. Bins are three "
           "per decade of the training tokens of the language that the checkpoint had seen, and a bin counts only with at "
-          "least 20 cells. $\\leq$ marks a level already met in the first bin and never a level not reached. Lang. is "
+          "least 20 cells. $\\leq$ marks a level already met in the first bin, never a level that is not reached. Lang. is "
           "the number of trained languages. Margin is the median accuracy above chance that a task needs for its Wilson "
           "bound to clear chance, and Items its median item count. Seed-1904 runs of every data build and ladder, every "
-          "evaluated tenth of a run. The pooled bins mix sizes, and from $10^{10}$ tokens on most of their cells are "
+          "evaluated tenth of a run. The pooled bins mix sizes, and from $10^{10}$ tokens on, most of their cells are "
           "English.",
           "tab:rq0_thresholds"),
          ("app_rq00_token_exclusion",
@@ -527,22 +804,19 @@ PAGES = {
           "tab:app_rq00_token_exclusion"))),
     "rq01_scaling_predictability": (
         "Scaling predictability", "rq1",
-        "We fit the final score of each task against model size with a log-linear fit, one series per task and "
-        "language setting. We fit only on the sizes where the task is above chance, and we need at least three of "
-        "them. We use the deep cells with the baseline data at seed 1904, 90M--1.7B. Each task is one point, "
-        "the median over its language settings.",
+        None,
         None, 0,
         (("app_rq00_benchmark_size_curves",
           "\\textbf{The reformulated twins rise with model size while their letter-format originals stay at "
           "chance up to 1.7B.} Benchmark accuracy against model size. For each benchmark family, we plot the final-checkpoint accuracy "
           "of every design against non-embedding parameters. This accuracy is the mean over the tasks in the "
           "languages the design trains on. There is one line per (number of languages, ladder, data build, seed), "
-          "90M--1.7B, for every seed and data build. Colour gives the number of trained languages, line "
+          "over 90M--1.7B. Colour gives the number of trained languages, line "
           "width the ladder and line style the data build. The dotted red line is chance. The curves are not "
           "gated, so a family at chance stays visible.",
           "fig:app_size_scaling"),
          ("app_rq00_benchmark_curves",
-          "\\textbf{Along training the letter-format originals stay at chance for the whole run while their "
+          "\\textbf{Along training, the letter-format originals stay at chance for the whole run while their "
           "reformulated twins climb steadily.} Benchmark accuracy along training. For each benchmark family, we plot the accuracy of every run at the "
           "ten evaluated tenths of the run. This accuracy is the mean over the tasks in the languages the run trains "
           "on. Training progress is given in Chinchilla multiples of the run's token budget. The figure covers "
@@ -551,32 +825,30 @@ PAGES = {
           "fig:app_training_scaling"))),
     "rq02_decision_accuracy": (
         "Decision accuracy across sizes", "app_rq02_decision_accuracy",
-        "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B. DA-size is the share of "
-        "design pairs that the final checkpoint of a proxy orders in the same way as the final checkpoint of the "
-        "1.7B reference. Every task is above chance at the proxy and at 1.7B. A pair may differ on any number of "
-        "design axes.",
+        None,
         None, 0,
         (("app_rq02_da_by_language", rq02_language_caption, "fig:app_rq02_da_by_language"),
          ("app_rq02_da_size_by_language_per_proxy", rq02_language_per_proxy_caption,
           "fig:app_rq02_da_size_by_language_per_proxy"),
+         ("app_rq02_bbpb_acc_gate", rq02_bbpb_acc_gate_caption, "fig:app_rq02_bbpb_acc_gate"),
          ("app_rq02_rq2_crossfit", rq02_crossfit_caption, "fig:app_rq02_rq2_crossfit"),
          ("app_rq02_decision_accuracy_crossfit", rq02_da_crossfit_caption, "fig:app_rq02_decision_accuracy_crossfit"),
          ("app_rq02_definition_sensitivity",
-          "\\textbf{No definition of decision accuracy lifts benchmark accuracy far above a coin flip.} DA-size of the "
+          "\\textbf{No definition of decision accuracy lifts benchmark accuracy far above chance.} DA-size of the "
           "final checkpoint of each proxy against the 1.7B final checkpoint, on multi-axis pairs, under the definition "
-          "of Eq.~\\ref{eq:decision-accuracy} and its variants: a pair tied on one side counts one half, the pairs the "
+          "of Eq.~\\ref{eq:decision-accuracy} and its variants: a tied pair (on one side or both) counts one half, the pairs the "
           "reference ties are dropped, or only the pairs whose 1.7B difference exceeds one or two checkpoint standard "
           "deviations of the reference (over the last 20\\% of its run, detrended) or one or two seed standard "
           "deviations of a difference are kept. A value is the mean over the tasks above chance at the proxy and at "
           "1.7B, for benchmark accuracy, for accuracy and the bBPB twins together, and for the per-language bits per "
           "byte, which never tie. Pairs kept is the share of the comparable pairs a variant keeps, pooled over the "
           "proxy sizes. The task set moves across rows, since a cell needs three kept pairs: on accuracy it holds "
-          "302--470 tasks per proxy under Eq.~\\ref{eq:decision-accuracy} and 216--329 under the strictest filter.",
+          "359--553 tasks per proxy under Eq.~\\ref{eq:decision-accuracy} and 243--387 under the strictest filter. A value is a mean over tasks, so it can differ from the pooled lines of Figures~\\ref{fig:app_rq02_decision_accuracy} and \\ref{fig:app_rq02_decisive_pairs}, which weigh a task by its pairs.",
           "tab:app_rq02_definition_sensitivity"),
          ("app_rq02_seed_uncertainty",
           "\\textbf{Two seeds of one design agree with each other about as often as a proxy agrees with the "
-          "reference.} The replicated cells only: English at 175M, 600M and 1B and Russian at 1B, the deep cells with "
-          "the baseline data trained with three seeds. Left: DA-size of the proxy at each of its three seeds against "
+          "reference.} Left and middle: the replicated cells only, English at 175M, 600M and 1B and Russian at 1B, the deep "
+          "cells with the baseline data trained with three seeds, pooled over tasks. Left: DA-size of the proxy at each of its three seeds against "
           "the 1.7B final checkpoint (filled: seed 1904). Middle: the agreement between two seeds' rankings of the "
           "same designs at one size. Right: DA-ckpt of the pairs formed by two seeds of one design, which have nothing to decide "
           "(seed null), against the real design pairs, over the evaluated checkpoints of each size. Every task above "
@@ -584,160 +856,106 @@ PAGES = {
           "fig:app_rq02_seed_uncertainty"))),
     "rq02_permutation_null": (
         "Decision accuracy against a no-signal null", "app_rq02_permutation_null",
-        "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B, on pairs that may differ on any "
-        "number of design axes. For every (task, proxy size) cell with at least three comparable pairs, we shuffle "
-        "the proxy's final scores across the design variants 1000 times and score each shuffle against the unchanged "
-        "1.7B ranking with the same sign rule, ties included. A cell's p-value is the share of shuffles that match at "
-        "least as many pairs, corrected over the cells with the Benjamini-Hochberg procedure. The lines pool the "
-        "matching pairs over the comparable pairs of the tasks above chance at the proxy and at 1.7B, and the band is "
-        "the 95\\% range of the pooled shuffles. The benchmark line includes the bBPB variants at the sizes where "
-        "they were computed (175M, 350M and 1B).",
+        None,
         None, 0),
     "rq02_decisive_pairs": (
         "Decision accuracy on decisive pairs", "app_rq02_decisive_pairs",
-        "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B, on pairs that may differ on any "
-        "number of design axes. A pair is decisive for a task when its gap at 1.7B exceeds $k \\sqrt{2}$ times the "
-        "task's seed standard deviation, for $k \\in \\{1, 2\\}$. The seed standard deviation is the median, over the "
-        "baseline cells trained with three seeds (175M, 600M and 1B), of the standard deviation of the final score. "
-        "There are no replicates at 1.7B, so we assume that seed noise does not grow with size. Every line reads "
-        "the same accuracy tasks: those with a seed standard deviation and at least three pairs above the larger "
-        "threshold, above chance at the proxy and at 1.7B.",
+        None,
         None, 0),
     "rq02_da_vs_train_tokens": (
-        "Decision accuracy against the tokens of the language seen", "app_rq02_da_goal_multi_axes_bpb",
-        "We use the bits per byte of 50 languages, one task each. Design pairs are formed among the variants that "
-        "train the language (at least three per language). We use every data build at seed 1904, the proxies from "
-        "90M--1B and the early checkpoints of the 1.7B run. A point is the mean over languages of DA-goal (a "
-        "checkpoint against the 1.7B final checkpoint) at one size and one tenth of the run. We place it at the "
-        "number of tokens of the language seen.",
+        "Decision accuracy against the training tokens of the language", "app_rq02_da_goal_multi_axes_bpb",
+        None,
         None, 0),
     "rq03_noise_and_snr": (
         "Noise and SNR", "app_rq03_noise_and_snr",
-        "We use the deep cells with the baseline data that were trained with three seeds (175M and 600M at "
-        "$K \\in \\{1, 2, 50\\}$, 1B at $K \\in \\{1, 2, 30\\}$). For each (size, $K$, task) cell, we divide the "
-        "absolute effect of each design decision on the final score by a noise. The seed noise is the sample "
-        "standard deviation across seeds. The checkpoint noise is the detrended standard deviation over the last "
-        "20\\% of the run. Cells at chance are left out.",
+        None,
         None, 0,
         (("app_rq03_flip_attribution",
-          "\\textbf{At 600M, per-language BPB misses the 1.7B decision almost only on the depth pairs, which are not "
-          "size-matched.} One row per design axis (single-axis pairs) and for the multi-axis pairs, split by whether "
-          "the pair moves depth. A comparison is one design pair on one of the 50 per-language BPB tasks, between the "
+          "\\textbf{At 600M, per-language BPB misses the 1.7B decision mostly on the depth pairs, which are not "
+          "size-matched.} One row per design axis (single-axis pairs) and for every design pair (the multi-axis set, "
+          "single-axis pairs included), split by whether the pair moves depth. A comparison is one design pair on one of the 50 per-language BPB tasks, between the "
           "final checkpoints of seed 1904 at 600M and at 1.7B. (a): the 600M difference exceeds one 600M seed standard "
-          "deviation of the task, the median over the deep three-seed cells of the baseline data. (b): its sign differs "
+          "deviation of the task, the median over the deep three-seed cells of the baseline data (the K = 50 cell alone for "
+          "48 of the 50 languages). (b): its sign differs "
           "from the sign of the 1.7B difference. (b) without (a) means that the 600M comparison cannot distinguish the "
           "variants, (a) with (b) that the design choice has opposite measured effects at the two sizes. The last "
-          "column counts the (a), (b) comparisons whose 1.7B difference also exceeds that deviation. The activation "
-          "and optimizer axes have no per-language BPB pair at both sizes.",
+          "column counts the (a), (b) comparisons whose 1.7B difference also exceeds that deviation. A difference of two "
+          "runs has a seed standard deviation of 1.41 times that of one run, so (a) admits about half of the pure "
+          "seed differences. At that 1.41 threshold the last column falls from 64 to 13 for depth. The optimizer "
+          "axis has no per-language BPB pair at both sizes.",
           "tab:app_rq03_flip_attribution"),)),
     "rq04_surrogates": (
         "SNR as a surrogate for decision accuracy", "app_rq04_surrogates",
-        "Seed-1904 runs of every cell, 90M--1.7B, on the tasks above chance. For each of 22 SNR definitions, "
-        "we compute the Pearson $r$ between $\\log_{10}$ SNR and decision accuracy over the tasks of one language. "
-        "We keep the languages with at least three tasks and average over the 50 trained languages. We do this for "
-        "DA-size (proxy final against 1.7B final) and for DA-ckpt (the early checkpoints of a proxy against its "
-        "final checkpoint).",
-        "highlights", 0),
+        None,
+        "highlights", 0,
+        (("app_rq04_surrogates_by_scoring", rq04_by_scoring_caption, "fig:app_rq04_surrogates_by_scoring"),
+         ("app_rq04_surrogates_mono_axis", rq04_mono_axis_caption, "fig:app_rq04_surrogates_mono_axis"))),
     "rq05_design_decisions": (
         "Design decisions", "app_rq05_design_decisions",
-        "We study four single-axis interventions against the baseline (deep, scheme A, $T = 1$). They are depth "
-        "(deep vs shallow at equal non-embedding size), data scheme A vs B, data scheme A vs C, and sampling "
-        "temperature $T = 1$ vs $T = 3$. We use every seed. We report the DA-size of the proxies 90M--1B and "
-        "the DA-ckpt of the earlier checkpoints of the 1.7B run, both against the 1.7B final checkpoint. We read "
-        "them on the bits per byte of the languages that both levels train and on the benchmarks above chance.",
+        None,
         None, 0),
     "rq06_language_transfer": (
         "Language transfer", "app_rq06_language_transfer",
-        "We read the language-list decision (scheme A vs B at $K \\in \\{8, 15, 30\\}$, single-axis pairs, every "
-        "seed) on the bits per byte of 100 evaluation languages. We group the languages by whether both lists, one "
-        "list or neither list trains them. When neither list trains a language, we also check whether they train "
-        "its script. We report the DA-size of the proxies 90M--1B and the DA-ckpt of the checkpoints of the "
-        "1.7B run, against the 1.7B final checkpoint.",
+        None,
         None, 0,
         (("app_rq06_cross_task_hellaswag", rq06_cross_task_caption, "fig:app_rq06_cross_task_hellaswag"),
          ("app_rq06_family_transfer", rq06_family_caption, "fig:app_rq06_family_transfer"),
          ("app_rq06_family_lift", rq06_lift_caption, "fig:app_rq06_family_lift"))),
     "rq07_external_frameworks": (
         "Agreement with DataDecide", "app_rq07_external_frameworks",
-        "We compare our 1B rung (seed 1904, every cell and data build) with the 1B rung of DataDecide (25 data "
-        "recipes). We use the English tasks that both evaluate and that clear the above-chance gate on our side. "
-        "SNR is the average absolute deviation over noise, and we compare it on a log scale.",
+        None,
         None, 0),
     "rq08_subset_selection": (
         "Subset selection", "app_rq08_subset_selection",
-        "Seed-1904 runs of every cell, 90M--1.7B. For each multilingual benchmark and size, we take the "
-        "language subset with the highest SNR, that is, the best prefix of the languages ranked by SNR. We compare "
-        "it with the 95th percentile of 100 random subsets of the same size. Each per-language task is gated above "
-        "chance.",
+        None,
         None, 0),
     "rq09_benchmark_design": (
         "Benchmark design", "app_rq09_benchmark_design",
-        "Seed-1904 runs of every cell. SNR is the mean pairwise distance over noise at the 1.7B reference. For each "
-        "family, we take the median over its per-language tasks. We keep the benchmark families that clear the "
-        "above-chance gate. We group the families by curation, source, task format, answer-option count and "
-        "passage use, and we test the groups with a Kruskal-Wallis test.",
+        None,
         None, 0,
         (("app_rq09_benchmark_characteristics", rq09_table_caption, "tab:app_rq09_benchmark_characteristics"),
          ("app_rq09_design_da_correlation", rq09_correlation_caption, "fig:app_rq09_design_da_correlation"),
          ("app_rq09_design_da_by_level", rq09_levels_caption, "fig:app_rq09_design_da_by_level"),
-         ("app_rq09_design_da_quadrant", rq09_quadrant_caption, "fig:app_rq09_design_da_quadrant"))),
+         ("app_rq09_design_da_quadrant", rq09_quadrant_caption, "fig:app_rq09_design_da_quadrant"),
+         ("app_rq09_item_count", rq09_item_count_caption, "tab:app_rq09_item_count"),
+         ("app_rq09_wave_robustness", rq09_waves_caption, "tab:app_rq09_wave_robustness"))),
     "rq10_size_generalisation": (
         "Size generalisation to 3B", "app_rq10_size_generalisation",
-        "The deep cells trained at 3B (seed 1904) and the same families at 1.7B. Each (family, task) is scored at "
-        "both rungs. Left: for each benchmark, the share of its tasks above chance at 1.7B and at 3B. We show the "
-        "benchmarks with at least five tasks whose share moves. Right: DA-size from the final checkpoints of 90M--1B "
-        "to the 3B final checkpoint and to the 1.7B final checkpoint, on the same single-axis decisions. "
-        "Benchmark accuracy (tasks above chance at the proxy, at 1.7B and at 3B) and per-language bits per byte "
-        "are pooled separately. The bands are 90\\% leave-one-family-out jackknife bands.",
+        None,
         None, 0,
         (("app_rq10_reference_choice",
-          "\\textbf{Neither the seed of the reference nor a 3B reference at $K=30$ lifts benchmark accuracy far above a "
-          "coin flip.} DA-size of benchmark accuracy (with the bBPB twins) from the final checkpoint of each proxy. "
+          "\\textbf{Neither the seed of the reference nor a 3B reference at $K=30$ lifts benchmark accuracy far above "
+          "chance.} DA-size of benchmark accuracy from the final checkpoint of each proxy, pooled over decisions (top block: three quarters "
+          "of the tasks are bBPB twins of English tasks, since $K=1$ trains English only; bottom block: no bBPB twins, "
+          "which the 3B model at $K=30$ lacks). "
           "Top: against the 1B final checkpoint of each of its three seeds, on the four designs trained with three "
           "seeds at 1B (deep, $K \\in \\{1, 2, 30\\}$ with scheme A and $K=30$ with scheme B), and against the 1.7B "
           "final checkpoint on the same designs. Bottom: against the 3B final checkpoint, on the decisions between "
-          "the one 3B model at $K=30$ and the five other 3B models. Then the same decisions against 1.7B, and every "
+          "the one 3B model at $K=30$ and the five other 3B models, then the same decisions against 1.7B, and every "
           "decision among the six 3B models. Within a block a task counts only where every column scores it. A task "
           "is above chance at the proxy and at the reference and has at least three pairs.",
           "tab:app_rq10_reference_choice"),)),
     "rq11_evaluation_recipe": (
         "Evaluation recipe", "app_rq11_evaluation_recipe",
-        "Seed-1904 runs of every cell. We report the DA-size of the proxies 90M--1B against the 1.7B final "
-        "checkpoint, on multi-axis pairs. Each benchmark is read in up to six ways. The items are used as "
-        "published, as RF or as LLM-RF, and each version is scored by accuracy or by the bits per byte of the gold "
-        "answer (bBPB). The accuracy variants count on the tasks above chance at the proxy and at the reference. A "
-        "bBPB variant has no chance level and is read against its original's 1.7B accuracy, so it counts where that "
-        "accuracy is above chance at the reference. The pooled line holds both kinds.",
+        None,
         None, 0,
         (("app_rq11_recipe_by_benchmark", rq11_benchmarks_caption, "fig:app_rq11_recipe_by_benchmark"),)),
     "rq12_above_chance_items": (
         "Above-chance items", "app_rq12_above_chance_items",
-        "Seed-1904 runs of every cell, 90M--1.7B, final checkpoints. Every benchmark-language task keeps only "
-        "the items that its 1.7B runs answer above chance, after the above-chance gate. We compare it with the full "
-        "task. The selection reads the reference by design, so the gains are an upper bound, not a held-out "
-        "estimate." + (" Decision accuracy is scored against two truths, the 1.7B ranking on the full task and on "
-                       "the kept items, and the gap between them is the part of the gain that comes from re-scoring "
-                       "the reference." if RQ12_TWO_TRUTHS else ""),
+        None,
         None, 0),
     "rq13_english_only": (
         "English-only models", "app_rq13_english_only",
-        "We compare the monolingual English cells ($K = 1$) with the baseline cells of the same depth at every "
-        "other language setting. These other cells give half of their tokens to English. We use seed 1904, final "
-        "checkpoints and sizes 90M--1.7B, on the English accuracy tasks above chance at each size.",
+        None,
         None, 0,
         (("app_rq13_english_scaling_regimes", rq13_regimes_caption, "fig:app_rq13_english_scaling_regimes"),
          ("app_rq13_english_scaling_regimes_l1_accuracy", rq13_regimes_l1_caption,
-          "fig:app_rq13_english_scaling_regimes_l1_accuracy"))),
+          "fig:app_rq13_english_scaling_regimes_l1_accuracy"),
+         ("app_rq13_english_scaling_regimes_l1_accuracy_tagged", rq13_regimes_tagged_caption,
+          "fig:app_rq13_english_scaling_regimes_l1_accuracy_tagged"))),
     "rq14_proxy_item_selection": (
         "Item selection from the proxies alone", "app_rq14_proxy_item_selection",
-        "Seed-1904 runs of every cell, final checkpoints, on pairs that may differ on any number of design axes. "
-        "For each benchmark-language task, we split the design families into two halves. On one half, we rank the "
-        "items by their discrimination at 600M and 1B: the correlation of an item's correctness with the run's task "
-        "score, both centred within each size. We keep the top half of the items and score the DA-size of the "
-        "proxies 90M--1B on the other half's pairs, against the 1.7B ranking on the full task. We then swap the "
-        "halves and average. Random subsets of the same size, drawn from the same items, are the baseline. The "
-        "selection never reads the 1.7B runs, so its DA is a held-out estimate that is available before the "
-        "reference is trained. Tasks are above chance at the proxy and at 1.7B.",
+        None,
         None, 0),
 }
 
@@ -764,30 +982,36 @@ CAPTIONS = {
         "median point (its number of tasks in parentheses) and small labels name the outlying tasks.",
     "rq02_decision_accuracy":
         "DA-size of the final checkpoint of each proxy size against the final checkpoint of the 1.7B reference, on "
-        "multi-axis design pairs. Left: the benchmark tasks above chance. Right: the per-language bits per byte. The "
-        "band is the jackknife interval, the dotted line marks 0.9 and the circle marks the smallest proxy above it. "
+        "multi-axis design pairs, pooled over decisions (matching over comparable pairs, summed over tasks). Left: the "
+        "benchmark tasks above chance and their bBPB twins. Right: the per-language bits per byte. The "
+        "band is the 90% leave-one-variant-out jackknife interval, the dotted line marks 0.9 and the circle marks the smallest proxy above it. "
         "The dashed segment joins the 1B proxy to the reference itself.",
     "rq02_da_vs_train_tokens":
         "Mean DA-goal over the bits per byte of the 50 trained languages against the training tokens of the language "
         "that the checkpoint had seen (log scale). There is one line per proxy size, a darker blue for a larger size, "
-        "and one point per evaluated tenth of the run. The bars give the uncertainty over languages and the dotted "
-        "line marks 0.75.",
+        "and one point per evaluated tenth of the run. The x position is the geometric mean over languages, the bars give the standard error over languages and the "
+        "dotted line marks 0.75.",
     "rq02_permutation_null":
         "DA-size of the final checkpoint of each proxy size against the 1.7B final checkpoint, on multi-axis design "
-        "pairs, for the benchmark tasks (left) and the per-language bits per byte (middle). The black line is the "
-        "observed DA-size, the dashed grey line the mean of the shuffled null and the grey band its 95% range. The "
+        "pairs, pooled over decisions, for the benchmark tasks with their bBPB twins (left) and the per-language bits "
+        "per byte (middle). The black line is the observed DA-size, the dashed grey line the mean of the shuffled null and the grey band its 95% range. The "
         "dotted line marks 0.5. Right: the share of (task, proxy size) cells above their own null at q < 0.05.",
     "rq02_decisive_pairs":
         "DA-size of the final checkpoint of each proxy size against the 1.7B final checkpoint, on multi-axis design "
-        "pairs, for the benchmark tasks (left) and the per-language bits per byte (middle). One line per threshold: "
+        "pairs, pooled over decisions, for the benchmark tasks with their bBPB twins (left) and the per-language bits per "
+        "byte (middle). One line per threshold: "
         "every comparable pair (black) and the pairs whose 1.7B gap exceeds one or two seed standard deviations of a "
         "difference (dark and light blue). The dotted line marks 0.5. Right: the share of the comparable pairs each threshold keeps, "
         "solid for the bits per byte and dashed for the benchmarks.",
     "rq03_noise_and_snr":
-        "Median absolute effect of each design decision over the noise, per model size, on the benchmarks, the "
+        "Median over the (K, task) cells of a size of the absolute effect of each design decision (seed 1904, final "
+        "checkpoint) over the noise, on the benchmarks (accuracy tasks with their rf and bBPB twins), the "
         "per-language bits per byte, the macro average of the bits per byte and the training loss. Top row: over the "
-        "seed noise. Bottom row: over the checkpoint noise. There is one column per decision. The dashed line at 1 is "
-        "where the effect equals the noise (log scale).",
+        "seed noise, only at the nine replicated cells (175M, 600M, 1B), so activation has only 1B (K = 30) and the "
+        "optimizer a single cell (the training loss at 1B). Bottom row: over the checkpoint noise of the baseline "
+        "run, 90M--1.7B. Muon has only the training loss at 1B and 1.7B. There is one column per decision. The dashed "
+        "line at 1 is where the effect equals the noise (log scale). A pure seed re-roll would reach a median of "
+        "1.15 in the top row.",
     "rq04_surrogates":
         "For each of the 22 SNR definitions, the mean over languages of the Pearson r between log₁₀ SNR and decision "
         "accuracy across the tasks of one language, for DA-size (blue) and DA-ckpt (orange). The definitions are "
@@ -811,8 +1035,9 @@ CAPTIONS = {
         "subset minus the 95th percentile of 100 random subsets of the same size. Blue means that the chosen subset "
         "beats the null. White cells have no value.",
     "rq09_benchmark_design":
-        "Median SNR at 1.7B over the languages of each benchmark family that clears the above-chance gate, ranked. "
-        "The colour gives the number of answer options.",
+        "Median SNR at 1.7B over the per-language tasks of each benchmark family that clears the above-chance gate, "
+        "ranked, on a log scale. The number above a bar counts its tasks. The colour gives the number of answer options "
+        "(grey: LAMBADA scores a last word and BBH mixes two to eight).",
     "rq10_size_generalisation":
         "Left: for each benchmark with at least five tasks whose share moves, the share of its tasks above chance at "
         "1.7B (open circles) and at 3B (filled circles). Right: DA-size of the proxies 90M--1B against the 3B final "
@@ -870,13 +1095,34 @@ def clean_md(s):
     return re.sub(r"\s+", " ", s).strip()
 
 
+# a README's citation of paper floats by stem: "(figure: a)", "(tables: a, b)", "(figure: a, table: b)"
+CITE = re.compile(r"\((?:figures?|tables?):\s*([^()]*)\)")
+
+
+def cite(inner):
+    """The LaTeX of a CITE token's stems: Figure~\\ref{..}, Figures~\\ref{..} and~\\ref{..}, Table~\\ref{..}."""
+    groups = []
+    for stem in re.split(r",\s*(?:(?:figures?|tables?):\s*)?|\s+and\s+", inner.strip()):
+        if stem not in LABELS:
+            print(f"  WARNING: ({inner}) names {stem}, which is no float of the paper")
+            continue
+        kind = "Table" if LABELS[stem].startswith("tab:") else "Figure"
+        if groups and groups[-1][0] == kind:
+            groups[-1][1].append(LABELS[stem])
+        else:
+            groups.append((kind, [LABELS[stem]]))
+    refs = lambda ls: ", ".join(f"\\ref{{{l}}}" for l in ls[:-1]) + f" and~\\ref{{{ls[-1]}}}"
+    return " and ".join(f"{k}~\\ref{{{ls[0]}}}" if len(ls) == 1 else f"{k}s~{refs(ls)}" for k, ls in groups)
+
+
 def to_tex(s):
-    """Markdown inline (code, bold, italics, 10^k) to LaTeX, everything else escaped."""
-    out = []
+    """Markdown inline (code, bold, italics, 10^k, CITE tokens) to LaTeX, everything else escaped."""
+    out, held = [], []
     for i, part in enumerate(re.split(r"`([^`]*)`", clean_md(s))):
         if i % 2:
             out.append("\\texttt{" + escape(part) + "}")
             continue
+        part = CITE.sub(lambda m: held.append(cite(m[1])) or f"\x05{len(held) - 1}\x06", part)
         part = re.sub(r"\bL(?=\d+\b)|\bL\b(?![-'’])", "K", part)          # the language count is K in the paper
         part = re.sub(r"(\d+)\^(\d+)", lambda m: f"\x00{m[1]}\x01{m[2]}\x02", part)
         part = re.sub(r'"([^"]*)"', "\x03\\1\x04", part)
@@ -884,7 +1130,7 @@ def to_tex(s):
         part = part.replace("\x00", "$").replace("\x01", "^{").replace("\x02", "}$")
         part = re.sub(r"\*\*(.+?)\*\*", r"\\textbf{\1}", part)
         part = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"\\emph{\1}", part)
-        out.append(part)
+        out.append(re.sub("\x05(\\d+)\x06", lambda m: f"({held[int(m[1])]})" if held[int(m[1])] else "", part))
     return "".join(out)
 
 
@@ -1042,11 +1288,43 @@ def rq02_bbpb_caption(d):
         f"{acc.at['1B', 'reliability_macro']:.2f} at 1B over {n_acc.min()}--{n_acc.max()} tasks (the gate keeps more "
         f"tasks at larger sizes). On bBPB it stays at {lo:.2f}--{hi:.2f} over {tasks_bb}. Left: DA-size, one black "
         "line over all pairs and one green line per design axis. Middle: DA-ckpt. Right: DA-goal, one line per proxy "
-        "size. A hollow point is 1.0 by comparing a ranking with itself.")
+        "size. A hollow point is 1.0 because it compares a ranking with itself.")
+
+
+def rq00_majority_caption(d):
+    """The caption of app_rq00_majority_chance (rq00 majority_chance.py), its
+    numbers read from the figure's CSV `d`: panel a per task, panel b the
+    trained tasks above chance per size under each chance level."""
+    t, p = d[d["panel"] == "a"], d[d["panel"] == "b"].set_index(["chance", "size"])
+    n = int(p["n_tasks"].max())
+    flip = t["flipped_sizes"].notna()
+    fixed = t["fixed_options"].astype(str) == "True"
+    c = lambda chance, size: int(p.at[(chance, size), "n_pass"])
+    return (
+        "\\textbf{A majority-class chance level removes passes mainly through answer order, which log-likelihood scoring "
+        "cannot exploit.} The majority baseline of a task is the accuracy of always choosing its most frequent gold "
+        "option position, read from the evaluated items. (a) Uniform chance against the majority baseline for the "
+        f"{len(t)} trained tasks with a chance level. Orange marks the {int(flip.sum())} tasks above chance at some size "
+        "under the uniform level and at chance there under the larger of the two, with a benchmark label where a "
+        "benchmark has at least five such tasks. Circles are tasks whose answer positions carry the same label on every item (a letter or a yes or no "
+        "answer), where a model with a constant preference can reach the majority baseline. Triangles are tasks whose "
+        "answers change per item. (b) Trained tasks above chance per size under the uniform level, under the majority "
+        "level, and under the majority level applied to the labelled tasks only. Of the "
+        f"{n} trained tasks, {c('uniform', '90M')} are above chance at 90M and {c('uniform', '1.7B')} at 1.7B under the "
+        f"uniform level, {c('majority', '90M')} and {c('majority', '1.7B')} under the majority level, and "
+        f"{c('majority_fixed', '90M')} and {c('majority_fixed', '1.7B')} when only the labelled tasks change. "
+        f"Of the flipped tasks, {int((flip & fixed).sum())} are labelled. Seed-1904 runs of every language setting, "
+        "ladder and data build, with the Wilson rule of Appendix~\\ref{app:chance-threshold}.")
 
 
 # paper figure stem -> (its caption from its CSV, label): one float page each, sections/rqs/<stem>.tex
-FIGURE_PAGES = {"app_rq02_bbpb": (rq02_bbpb_caption, "fig:app_rq02_bbpb")}
+FIGURE_PAGES = {"app_rq02_bbpb": (rq02_bbpb_caption, "fig:app_rq02_bbpb"),
+                "app_rq00_majority_chance": (rq00_majority_caption, "fig:app_rq00_majority_chance")}
+
+# paper stem -> label of every float a README can cite: the main figures, the extras, FIGURE_PAGES, FIXED
+LABELS = {**{p[1]: f"fig:app_{f}" for f, p in PAGES.items()},
+          **{stem: label for p in PAGES.values() for stem, _, label in (p[5] if len(p) > 5 else ())},
+          **{stem: label for stem, (_, label) in FIGURE_PAGES.items()}, **{stem: f"fig:{stem}" for stem in FIXED}}
 
 
 def float_page(stem, caption, label):
@@ -1054,13 +1332,15 @@ def float_page(stem, caption, label):
     0.8 of the text height, which leaves room for a caption of ten lines: a float
     taller than the page runs into the bottom margin, which ACL's format check
     rejects. The page block caps its figure at 0.36 for the same reason. A stem
-    copied as TeX is a generated table (in ../tables/), set in a table* float instead. A callable
+    copied as TeX is a generated table (in ../tables/), set in a table* float instead and scaled down
+    to the text width when wider. Every caption sits below its figure or table. A callable
     `caption` is built from the figure's CSV, so its numbers follow each refresh."""
     caption = plain(caption(pd.read_csv(FIGURES[stem][0].with_suffix(".csv"))) if callable(caption) else caption)
     if FIGURES[stem][1] == ("tex",):
-        return "\n".join(["\\begin{table*}[p]", "\\centering", "\\small", f"\\caption{{{caption}}}",
-                          f"\\label{{{label}}}", f"\\input{{tables/{stem}}}",
-                          f"% source: {FIGURES[stem][0].relative_to(ANALYSIS.parents[2])}.tex", "\\end{table*}", ""])
+        return "\n".join(["\\begin{table*}[p]", "\\centering", "\\small",
+                          "\\begin{adjustbox}{max width=\\textwidth}", f"\\input{{tables/{stem}}}", "\\end{adjustbox}",
+                          f"% source: {FIGURES[stem][0].relative_to(ANALYSIS.parents[2])}.tex",
+                          f"\\caption{{{caption}}}", f"\\label{{{label}}}", "\\end{table*}", ""])
     return "\n".join([
         "\\begin{figure*}[p]",
         "\\centering",
@@ -1071,6 +1351,23 @@ def float_page(stem, caption, label):
         "\\end{figure*}",
         "",
     ])
+
+
+def readme_setup(lines):
+    """The README's setup: the bullet list right under a line `**Setup.**` as one paragraph, each
+    bullet's bold label dropped, or None when the README has none (then PAGES gives it)."""
+    i = next((i for i, l in enumerate(lines) if l.strip() == "**Setup.**"), None)
+    if i is None:
+        return None
+    bullets = []
+    for l in lines[i + 1:]:
+        if l.startswith("- "):
+            bullets.append(l[2:])
+        elif l.startswith("  ") and l.strip() and bullets:
+            bullets[-1] += " " + l.strip()
+        elif bullets or l.strip():
+            break
+    return plain(to_tex(" ".join(re.sub(r"^\*\*[^*]+\*\*\s*", "", b) for b in bullets)))
 
 
 def tall(stem):
@@ -1106,11 +1403,15 @@ def page(folder, title, stem, setup, kf_image, kf_bullet, extras=()):
         f"\\label{{{label}}}",
         "\\end{minipage}",
     ]
-    parent = [f"\\section{{{PARENT[0]}}}", f"\\label{{{PARENT[1]}}}", ""] if folder == next(iter(PAGES)) else []
+    setup = readme_setup(lines) or plain(setup)
+    for _, _, ref in extras:
+        if f"\\ref{{{ref}}}" not in setup + "".join(findings):
+            print(f"  WARNING app_{folder}: neither the setup nor the findings cite {ref}, add a (figure: stem) or "
+                  "(table: stem) to the README bullet it supports")
     return "\n".join([
         "\\clearpage",
         "\\twocolumn[{%",
-        *parent,
+        "\\rqparent",
         f"\\subsection{{{title}}}",
         f"\\label{{app:{folder}}}",
         "",
@@ -1118,7 +1419,7 @@ def page(folder, title, stem, setup, kf_image, kf_bullet, extras=()):
         "\\vspace{0pt}",
         f"\\paragraph{{Research Question.}} \\emph{{{plain(to_tex(question(lines)))}}}",
         "",
-        f"\\paragraph{{Setup.}} {plain(setup)}",
+        f"\\paragraph{{Setup.}} {setup}",
         "\\end{minipage}\\hfill",
         "\\begin{minipage}[t]{0.485\\textwidth}",
         "\\vspace{0pt}",
@@ -1127,7 +1428,7 @@ def page(folder, title, stem, setup, kf_image, kf_bullet, extras=()):
         "\\end{rqfinding}",
         "\\end{minipage}",
         *main,
-        "\\vspace{\\baselineskip}",
+        *([] if main else ["\\vspace{\\baselineskip}"]),     # under the figure it would only push the page over
         "}]",
         "",
     ] + ([float_page(stem, caption, label)] if tall(stem) else [])

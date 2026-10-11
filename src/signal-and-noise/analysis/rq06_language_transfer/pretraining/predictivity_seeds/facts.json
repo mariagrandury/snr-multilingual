@@ -113,32 +113,32 @@
    {
     "group": "trained by both levels",
     "proxy_size": "90M",
-    "da": 0.953,
-    "cells": 16
+    "da": 0.855,
+    "cells": 22
    },
    {
     "group": "trained by both levels",
     "proxy_size": "175M",
-    "da": 0.964,
-    "cells": 16
+    "da": 0.849,
+    "cells": 22
    },
    {
     "group": "trained by both levels",
     "proxy_size": "350M",
-    "da": 0.831,
-    "cells": 16
+    "da": 0.764,
+    "cells": 22
    },
    {
     "group": "trained by both levels",
     "proxy_size": "600M",
-    "da": 0.705,
-    "cells": 16
+    "da": 0.585,
+    "cells": 22
    },
    {
     "group": "trained by both levels",
     "proxy_size": "1B",
-    "da": 0.906,
-    "cells": 16
+    "da": 0.817,
+    "cells": 22
    },
    {
     "group": "trained by one level",
@@ -173,62 +173,62 @@
    {
     "group": "script trained",
     "proxy_size": "90M",
-    "da": 0.699,
-    "cells": 16
+    "da": 0.664,
+    "cells": 22
    },
    {
     "group": "script trained",
     "proxy_size": "175M",
-    "da": 0.732,
-    "cells": 16
+    "da": 0.708,
+    "cells": 22
    },
    {
     "group": "script trained",
     "proxy_size": "350M",
-    "da": 0.69,
-    "cells": 16
+    "da": 0.7,
+    "cells": 22
    },
    {
     "group": "script trained",
     "proxy_size": "600M",
-    "da": 0.694,
-    "cells": 16
+    "da": 0.623,
+    "cells": 22
    },
    {
     "group": "script trained",
     "proxy_size": "1B",
-    "da": 0.743,
-    "cells": 16
+    "da": 0.7,
+    "cells": 22
    },
    {
     "group": "script not trained",
     "proxy_size": "90M",
-    "da": 0.561,
-    "cells": 16
+    "da": 0.518,
+    "cells": 22
    },
    {
     "group": "script not trained",
     "proxy_size": "175M",
-    "da": 0.621,
-    "cells": 16
+    "da": 0.578,
+    "cells": 22
    },
    {
     "group": "script not trained",
     "proxy_size": "350M",
-    "da": 0.61,
-    "cells": 16
+    "da": 0.628,
+    "cells": 22
    },
    {
     "group": "script not trained",
     "proxy_size": "600M",
-    "da": 0.609,
-    "cells": 16
+    "da": 0.633,
+    "cells": 22
    },
    {
     "group": "script not trained",
     "proxy_size": "1B",
-    "da": 0.677,
-    "cells": 16
+    "da": 0.682,
+    "cells": 22
    }
   ]
  }

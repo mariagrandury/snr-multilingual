@@ -243,16 +243,18 @@ def generate_readme(pool: str, out_dir: Path, sv: pd.DataFrame, nv: pd.DataFrame
         vals = ", ".join(f"{v:.2f}" for v in g.sort_values("seed")["da"])
         rows.append([size, lang, int(g["designs"].iloc[0]), vals,
                      f"{tr.min():.2f}–{tr.max():.2f}" if len(tr.dropna()) else "—", int(g["tasks"].max())])
-    null = ("; ".join(f"{s}: {nv[nv['size'] == s]['da'].mean():.2f} vs real {nv[nv['size'] == s]['da_real'].mean():.2f}"
+    null = (", ".join(f"{s}: {nv[nv['size'] == s]['da'].mean():.2f} vs real {nv[nv['size'] == s]['da_real'].mean():.2f}"
                       for s in size_order(nv["size"].unique())) if len(nv) else "not available")
     body = "\n\n".join([
         "## Seed uncertainty",
-        f"What the replicate seeds say about decision accuracy — English at three proxy sizes and Russian at 1B, the only "
-        f"(size, language) cells where three replicated designs give ≥ {MIN_PAIRS} cross-L pairs under rule 2. Per row: DA "
-        f"of those decisions against the {TARGET_SIZE} final with the proxy at each of its three seeds (proxy-side noise), "
-        f"and the DA between two seeds' rankings of the same designs at that size (the reference-side ceiling). Three "
-        f"pairs put a DA on {{0, ⅓, ⅔, 1}}: read the spread, not a mean. The seed null (DA-ckpt over pairs of two seeds "
-        f"of one design, mean over fractions and gated tasks) is {null}. Regenerate with "
+        f"This section asks what the replicate seeds say about decision accuracy. Only English at three proxy sizes "
+        f"and Russian at 1B can be read. These are the only (size, language) cells where the replicated designs give "
+        f"≥ {MIN_PAIRS} pairs under rule 2. Each row reports two things. The first is the DA of those decisions "
+        f"against the {TARGET_SIZE} final, with the proxy at each of its three seeds (proxy-side noise). The second is "
+        f"the DA between two seeds' rankings of the same designs at that size (the reference-side ceiling). With as "
+        f"few as three pairs per task, a task's DA can only be 0, ⅓, ⅔ or 1, so read the spread, not a mean. The seed "
+        f"null is DA-ckpt over pairs of two seeds of one design, where there is nothing to decide, averaged over "
+        f"fractions and gated tasks: {null}. Regenerate with "
         f"`python analysis/rq02_decision_accuracy/seed_uncertainty.py --pool {pool}`.",
         md_table(["size", "language", "designs", "DA at the 3 proxy seeds", "test-retest (3 seed pairs)", "tasks"], rows),
         f"![Seed uncertainty]({stage}/{pool}/seed_uncertainty_da_all_seed_null.png)"])

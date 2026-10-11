@@ -352,12 +352,14 @@ def generate_definition_readme(pool: str, t: pd.DataFrame) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     blocks = [
         "## DA-size under other definitions",
-        f"Task-mean DA-size (proxy final against the {TARGET_SIZE} final, grid-seed variants) over the cells above chance "
-        f"at the proxy and at {TARGET_SIZE} (rule 1) with ≥ {MIN_PAIRS} comparable and ≥ {MIN_PAIRS} kept pairs (rule 5), "
-        "per definition. Checkpoint SD = the reference's checkpoint noise (rule 4: residual SD around a line through the "
-        f"80–100 % window, mean over the {TARGET_SIZE} runs); seed SD of a difference = √2 × rq05's seed sd (the "
-        "threshold of rq02_decisive_pairs). Each cell: DA (tasks); pairs kept = share of the comparable pairs, pooled over "
-        "the proxy sizes. `own` = each variant's own cells; `common` = the cells every variant defines. Regenerate with "
+        "Each row gives the task-mean DA-size under one definition of DA. DA-size compares the proxy's "
+        f"final ranking of the grid-seed variants with the {TARGET_SIZE} final's. A task counts at a proxy size when it is "
+        f"above chance at the proxy and at {TARGET_SIZE} (rule 1) and has ≥ {MIN_PAIRS} comparable pairs, ≥ {MIN_PAIRS} of them "
+        "kept (rule 5). The checkpoint SD is the reference's checkpoint noise (rule 4): the residual SD around a line fitted "
+        f"through the 80–100 % window, averaged over the {TARGET_SIZE} runs. The seed SD of a difference is √2 × rq05's "
+        "seed sd, the threshold rq02_decisive_pairs uses. Each cell reads DA (tasks). \"Pairs kept\" is the share of the "
+        "comparable pairs a definition keeps, pooled over the proxy sizes. `own` uses each definition's own cells, and "
+        "`common` only the cells every definition defines. Regenerate with "
         f"`python analysis/rq02_decision_accuracy/agreement.py --pool {pool}`."]
     for axes in ("multi-axis", "mono-axis"):
         for task_set in ("own", "common"):
@@ -384,17 +386,21 @@ def generate_readme(pool: str, out_dir: Path, d: pd.DataFrame, sens: pd.DataFram
          .reindex(columns=size_order(sens["size"].unique())).mul(100).round(1).reset_index())
     body = "\n\n".join([
         "## Decision accuracy is Kendall's τ under another tie convention",
-        f"Over the {len(d):,} (benchmark task, proxy size) cells of DA-size's population (every pair of the grid-seed "
-        f"variants, ≥ {MIN_PAIRS} pairs, above chance at the proxy and at {TARGET_SIZE}): 2·DA − 1 = τ_a + (T_both − T_one)/n "
-        f"exactly, where T_both / T_one are the pairs tied on both / one side. Ties are {ties:,} of {d['n_pairs'].sum():,} pairs "
-        f"({ties / d['n_pairs'].sum():.1%}), {d['tied_one'].sum() / max(ties, 1):.0%} of them one-sided, and touch "
-        f"{(d['tied_both'] + d['tied_one'] > 0).mean():.0%} of the cells — so the two statistics correlate at "
-        f"r = {d['da'].corr(d['tau_b']):.3f} by construction, and the number with content is how often the tie "
-        f"convention changes a reliability verdict (DA ≥ {CUT:g}, i.e. τ ≥ {2 * CUT - 1:.2f}), in % of cells per proxy size:",
+        "DA and Kendall's τ_a differ only in how they count tied pairs. We check this on the "
+        f"{len(d):,} (benchmark task, proxy size) cells of DA-size's population: every pair of the grid-seed variants, "
+        f"≥ {MIN_PAIRS} pairs per cell, above chance at the proxy and at {TARGET_SIZE}. In every cell, "
+        "2·DA − 1 = τ_a + (T_both − T_one)/n exactly, where T_both and T_one count the pairs tied on both sides and on "
+        f"one side, and n counts all pairs. Ties are {ties:,} of {d['n_pairs'].sum():,} pairs "
+        f"({ties / d['n_pairs'].sum():.1%}). {d['tied_one'].sum() / max(ties, 1):.0%} of them are one-sided, and they touch "
+        f"{(d['tied_both'] + d['tied_one'] > 0).mean():.0%} of the cells. DA and τ_b therefore correlate at "
+        f"r = {d['da'].corr(d['tau_b']):.3f} by construction. The number that matters is how often the tie convention "
+        f"changes a reliability verdict (DA ≥ {CUT:g}, or equivalently τ ≥ {2 * CUT - 1:.2f}). The table gives it in % of "
+        "cells per proxy size:",
         md_table(list(t.columns), t.values.tolist()),
-        f"Spearman ρ and Pearson r on the raw scores are the two statistics that are NOT a rescaling — they weight a pair "
-        f"by its displacement — and sit at r = {d['da'].corr(d['rho']):.3f} and {d['da'].corr(d['pearson_r']):.3f} against DA. "
-        f"Median {int(d['n_models'].median())} models per cell. Values in `agreement_da_size_per_cell_multi_axes.csv`; regenerate with "
+        "Spearman ρ and Pearson r on the raw scores are the only two statistics here that are not a rescaling of DA. "
+        f"They weight a pair by how far it is displaced, and they correlate with DA at r = {d['da'].corr(d['rho']):.3f} and "
+        f"{d['da'].corr(d['pearson_r']):.3f}. A cell has a median of {int(d['n_models'].median())} models. Values are in "
+        "`agreement_da_size_per_cell_multi_axes.csv`. Regenerate with "
         f"`python analysis/rq02_decision_accuracy/agreement.py --pool {pool}`.",
         f"![DA, Kendall tau and Spearman rho against each other]({stage}/{pool}/agreement_da_size_correlation_multi_axes.png)",
         f"![DA against Kendall's tau]({stage}/{pool}/agreement_da_size_identity_multi_axes.png)",

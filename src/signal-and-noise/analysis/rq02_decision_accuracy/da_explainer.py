@@ -260,37 +260,41 @@ def generate_readme(pool: str, t: pd.DataFrame) -> None:
     spans = ", ".join(f"{int(r['min'])}–{int(r['max'])} for {a}" for a, r in span.iterrows())
     body = "\n\n".join([
         "### Decision accuracy on a toy ladder",
-        "**Toy, not measured.** Four labelled variants (Deep-A-T1, Deep-B-T1, Shallow-A-T1, Deep-A-T3) with hand-written scores; every DA in "
-        "the figure is the pipeline's kernel run on them. (a) the finals per size and (b) one run along training show the two ways a ranking "
-        "moves; (c) decides the six pairs three ways over both pair sets of rule 15 and rings the values at or above the reliability cut; "
-        "(d) is where each definition sits on the size × checkpoint grid, with the two identities. "
+        "**Toy, not measured.** The figure uses four labelled variants (Deep-A-T1, Deep-B-T1, Shallow-A-T1, Deep-A-T3) with "
+        "hand-written scores. Every DA in it is the pipeline's kernel run on these scores. Panels (a) and (b) show the two ways a "
+        "ranking moves: (a) across sizes, on the final checkpoints, and (b) along training, for one run. Panel (c) decides the six "
+        "pairs in three ways, over both pair sets of rule 15, and rings the values at or above the reliability cut. Panel (d) places "
+        "each definition on the size × checkpoint grid and shows the two identities between them. "
         f"Regenerate with `python analysis/rq02_decision_accuracy/da_explainer.py --pool {pool}`.",
         f"![Decision accuracy explained on a toy ladder]({rel}/da_all_explainer_both_axes.png)",
-        "Key findings (definitions, so nothing to measure):",
+        "Key findings (these are definitions, so there is nothing to measure):",
         "\n".join([
-            f"- On the toy, DA-size {da['DA-size']:.2f}, DA-ckpt {da['DA-ckpt']:.2f} and DA-goal {da['DA-goal']:.2f} over the six "
-            f"multi-axis pairs; over the three mono-axis pairs {mono['DA-size']:.2f} / {mono['DA-ckpt']:.2f} / {mono['DA-goal']:.2f}. "
-            "The tied pair (Deep-A-T1 = Deep-A-T3 at the proxy's final) is a miss wherever the other side decides it, an agreement only "
-            "if both sides tie — `decision_acc_fast`'s convention, order-invariant.",
-            f"- A cell of n pairs takes the values k/n: at the minimum of {MIN_PAIRS} pairs that is 0, ⅓, ⅔, 1, so a per-cell DA is read on "
-            "its lattice and the figures draw the pooled ratio over tasks (`scale_convergence.py`) or the mean over cells (`by_L.py`), never one cell. "
+            f"- **The three definitions disagree on the toy.** Over the six multi-axis pairs, DA-size is {da['DA-size']:.2f}, "
+            f"DA-ckpt {da['DA-ckpt']:.2f} and DA-goal {da['DA-goal']:.2f}. Over the three mono-axis pairs (the pairs that move "
+            f"exactly one design axis) they are {mono['DA-size']:.2f}, {mono['DA-ckpt']:.2f} and {mono['DA-goal']:.2f}. "
+            "The tied pair (Deep-A-T1 = Deep-A-T3 at the proxy's final) counts as a miss when the other side orders it, and as an "
+            "agreement only when both sides tie. This is `decision_acc_fast`'s convention, and it is order-invariant.",
+            f"- **A single cell can only take a few values.** A cell of n pairs takes the values k/n. At the minimum of {MIN_PAIRS} "
+            "pairs that is 0, ⅓, ⅔ or 1, so a per-cell DA is read on this lattice. The figures therefore never show one cell. They "
+            "draw the ratio pooled over tasks (`scale_convergence.py`) or the mean over cells (`by_L.py`). "
             f"The ringed cells ({', '.join(above)}) are the ones the `above_66_*` filters would keep (cut {CUT:g}).",
-            "- 0.5 is chance agreement on every untied pair; since a one-sided tie is a miss, an uninformative proxy sits below it, at "
-            f"0.5 × (1 − the share of pairs one side ties): ≈ {0.5 * (1 - tie):.2f} on the ladder ({tie:.0%} one-sided ties over the "
-            "benchmark cells that pass the gate, `agreement_da_size_per_cell_multi_axes.csv`). The seed null of `seed_uncertainty.py` is a different baseline (two seeds of "
-            "one design, read in its own section).",
-            "- DA-goal at the final checkpoint is DA-size, and at the reference size DA-ckpt is DA-goal: the early-and-small grid's "
-            "last column and last row are the other two figures' numbers.",
-            "- `by transformation` is the mono-axis set split by the axis a pair moves; each group needs its own three pairs. On the ladder "
-            f"a (task, size) cell at the final checkpoint holds {spans} (`da_all_by_transformation_per_task_mono_axis.csv`), so the "
-            "smaller groups often fall below the minimum and are NaN "
-            "(`early_small_da_*_by_transformation_*`, `scale_convergence_da_size_transformation_panels*`)."]),
+            "- **An uninformative proxy scores a little below 0.5.** Chance agreement on an untied pair is 0.5. A one-sided tie "
+            f"counts as a miss, so chance falls to 0.5 × (1 − the share of pairs that one side ties). On the ladder that is "
+            f"≈ {0.5 * (1 - tie):.2f}, with {tie:.0%} one-sided ties over the benchmark cells that pass the gate "
+            "(`agreement_da_size_per_cell_multi_axes.csv`). The seed null of `seed_uncertainty.py` is a different baseline (two "
+            "seeds of one design), read in its own section.",
+            "- **Two identities link the definitions.** DA-goal at the final checkpoint is DA-size, and DA-ckpt at the reference "
+            "size is DA-goal. So the last column and the last row of the early-and-small grid repeat the numbers of the other two figures.",
+            "- **Small axes often fall below the pair minimum.** `by transformation` splits the mono-axis set by the axis a pair "
+            "moves, and each group needs its own three pairs. On the ladder, a (task, size) cell at the final checkpoint holds "
+            f"{spans} (`da_all_by_transformation_per_task_mono_axis.csv`). The smaller groups therefore often fall below the minimum "
+            "and are NaN (`early_small_da_*_by_transformation_*`, `scale_convergence_da_size_transformation_panels*`)."]),
         "Follow-ups:",
         "\n".join([
-            "- A measured twin: the same panels on one real task (`hellaswag_de`, say) with the ladder's families, so the toy "
+            "- **A measured twin**: the same panels on one real task (`hellaswag_de`, say) with the ladder's families, so the toy "
             "orders become the observed ones.",
-            "- The lattice of the ladder's actual pair counts per cell (`median_pairs` in the scale-convergence CSVs), to show how coarse "
-            "a per-cell DA is on each axis."]),
+            "- **The lattice of the ladder's actual pair counts per cell** (`median_pairs` in the scale-convergence CSVs), to show how "
+            "coarse a per-cell DA is on each axis."]),
         f"Files: [`da_all_explainer_both_axes.png`]({gh}/da_all_explainer_both_axes.png), [`da_all_explainer_both_axes.csv`]({gh}/da_all_explainer_both_axes.csv)."])
     replace_block(DECISION_ACCURACY / "README.md", "da-explainer", body, f"da_explainer.py --pool {pool}")
 

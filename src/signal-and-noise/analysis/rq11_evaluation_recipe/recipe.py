@@ -62,9 +62,10 @@ to the higher mean DA-size.
 Combined and per variant: mean DA-size and share of reliable tasks per proxy,
 for each variant and for all variants together, over every task and over the
 PAIRED set (the tasks whose own original, every `bbpb_`/`rf_`/`rfgm_` prefix
-stripped, has an accuracy value at that proxy: the only head-to-head in which
-the gate treats the variants alike, since bBPB passes where accuracy is at
-chance).
+stripped, has both an accuracy value and a bBPB -> 1.7B accuracy value at that
+proxy: the head-to-head on the same items, in which the gate treats the
+variants alike, since bBPB passes where accuracy is at chance, and an original
+without a twin (LAMBADA, MMMLU, NorEval, ...) is left out of both sides).
 
     recipe_da_all_per_task{_multi_axes,_mono_axis}.csv          per task and reading
     recipe_da_size_by_variant{...}.csv                          benchmark x variant, per bBPB reading
@@ -329,7 +330,8 @@ def overview(t: pd.DataFrame) -> pd.DataFrame:
         c = f"da_size_{s}"
         have = t.dropna(subset=[c])
         orig = set(have.loc[(have["reading"] == "acc_acc") & (have["format"] == "original"), "task"])
-        paired = have[have["src"].isin(orig)]                 # the task's own original has an accuracy value here
+        twin = set(have.loc[(have["reading"] == "bbpb_acc") & (have["format"] == "original"), "src"])
+        paired = have[have["src"].isin(orig & twin)]          # its original has an accuracy AND a bBPB value here
         for pop, d in (("every task", have), ("paired", paired)):
             groups = [(vname(f, sc, r), r, d[(d["format"] == f) & (d["reading"] == r)]) for f, sc, r in VARIANTS]
             groups += [(f"{ALL}, {bbpb_name(r)}", r, d[d["reading"].isin(rs)]) for r, rs in BBPB_READINGS.items()]
@@ -466,7 +468,7 @@ def variants_figure(ov: pd.DataFrame, t: pd.DataFrame, path: Path, note: str) ->
                           [["panel", "row", "col", "value"]])
         ax.axhline(TAU, color=S.MUTED, lw=.8, ls=":"); ax.axhline(0.5, color=S.GRID, lw=.8)
         ax.set_xticks(range(len(LEVELS))); ax.set_xticklabels(LEVELS); ax.set_ylim(0.3, 1.0)
-        ax.set_title(f"Mean DA-size, {pop}" + (" (tasks whose own original has an accuracy value)" if pop == "paired" else ""),
+        ax.set_title(f"Mean DA-size, {pop}" + (" (tasks whose own original has an accuracy and a bBPB value)" if pop == "paired" else ""),
                      loc="left", fontsize=8.5)
         ax.set_xlabel("proxy size"); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
     axes[0].set_ylabel(f"DA-size (mean over tasks; dotted = τ = {TAU:g})")
@@ -722,7 +724,7 @@ def readme(pool: str, rec: pd.DataFrame, ov: pd.DataFrame, t: pd.DataFrame) -> N
         for rd in BBPB_READINGS:
             x = rec[(rec["benchmark"] == b) & (rec["bbpb_reading"] == rd)]
             if not len(x):
-                rec_rows.append([G.paper_name(b), bbpb_name(rd), "— (no variant has a value: every cell at chance or under "
+                rec_rows.append([G.paper_name(b), bbpb_name(rd), "none (no variant has a value: every cell at chance or under "
                                  "the pair minimum)", "", "", "", "", f"0 / {t.loc[t['benchmark'] == b, 'language'].nunique()}", "0", ""])
                 continue
             r = x.iloc[0]
@@ -740,36 +742,36 @@ def readme(pool: str, rec: pd.DataFrame, ov: pd.DataFrame, t: pd.DataFrame) -> N
     replace_block(readme_path, "results", "\n\n".join([
         f"DA-size against the {TARGET_SIZE} final, multi-axis pairs (rule 15), pool `{pool}`, rq02's early-small table "
         f"written {snap}, "
-        f"≥ {MIN_PAIRS} pairs; reliable = "
-        f"DA-size ≥ τ = {TAU:g} (`utils.RELIABLE_DA`); safe size = the smallest proxy from which it stays ≥ τ at every "
-        f"larger proxy. Every row says what it predicts: an accuracy variant its accuracy at {TARGET_SIZE} (gate "
-        f"`predictivity` at the proxy and the reference); a bBPB variant either its original's accuracy at {TARGET_SIZE} "
-        f"(**bBPB {against('bbpb_acc')}**, gated on that accuracy at the reference only, the reading of "
+        f"≥ {MIN_PAIRS} pairs. Reliable means "
+        f"DA-size ≥ τ = {TAU:g} (`utils.RELIABLE_DA`), and the safe size is the smallest proxy from which DA-size stays ≥ τ "
+        f"at every larger proxy. Every row says what it predicts. An accuracy variant predicts its accuracy at {TARGET_SIZE} "
+        f"(gate `predictivity` at the proxy and the reference). A bBPB variant predicts either its original's accuracy at "
+        f"{TARGET_SIZE} (**bBPB {against('bbpb_acc')}**, gated on that accuracy at the reference only, the reading of "
         f"`bench_bpb_da.py`) or its own bBPB at {TARGET_SIZE} (**bBPB {against('bbpb_bbpb')}**, no chance level, never "
         f"gated). {t['task'].nunique()} tasks over {t['benchmark'].nunique()} benchmarks. The bBPB twins are read on the "
-        f"same checkpoint grid as the accuracy variants. A mean over fewer than {MIN_DRAWN} tasks is left blank (`n < {MIN_DRAWN}`) in the tables "
-        f"below and the figures; it stays in the CSVs. Regenerate with "
+        f"same checkpoint grid as the accuracy variants. A mean over fewer than {MIN_DRAWN} tasks is left blank (`n < {MIN_DRAWN}`) "
+        f"in the tables below and in the figures, but it stays in the CSVs. Regenerate with "
         f"`python analysis/rq11_evaluation_recipe/recipe.py --pool {pool}`.",
-        f"**How the pick is made**, per bBPB reading and scoring of the pick (benchmarks with a value; reliable somewhere = "
-        f"mean safe rank below {never}, a task of the pick safe from some proxy on; never reliable = {never}.00, no task of the "
-        f"pick ever safe):",
+        f"**How the pick is made**, per bBPB reading and scoring of the pick, over the benchmarks with a value. Reliable "
+        f"somewhere = mean safe rank below {never} (a task of the pick is safe from some proxy on). Never reliable = "
+        f"{never}.00 (no task of the pick is ever safe):",
         md_table(["bBPB read", "pick", "benchmarks", "reliable somewhere", "never reliable", "won on the DA-size tie-break",
                   "only variant that competes", "no accuracy variant competes"], split),
-        f"**The recommendation** (per benchmark and bBPB reading: the variant with the smallest mean safe rank over its "
-        f"ranked tasks — 0 = safe from 90M, 4 = from 1B, {never} = never; a task gated or under the pair minimum at every "
-        f"proxy has no rank, so the ranked languages and tasks are counted beside it (rule 13) — then the higher mean "
-        f"DA-size over the (task, proxy) cells every tied variant has, given in brackets; τ = {TAU:g}), ordered by the "
-        f"reading with bBPB {against('bbpb_acc')}:",
+        f"**The recommendation**, per benchmark and bBPB reading, is the variant with the smallest mean safe rank over its "
+        f"ranked tasks (0 = safe from 90M, 4 = from 1B, {never} = never). A task gated or under the pair minimum at every "
+        f"proxy has no rank, so the ranked languages and tasks are counted beside it (rule 13). A tie goes to the higher "
+        f"mean DA-size over the (task, proxy) cells every tied variant has, given in brackets (τ = {TAU:g}). The rows are "
+        f"ordered by the reading with bBPB {against('bbpb_acc')}:",
         md_table(["benchmark", "bBPB read", "evaluate it as", "decided by", "mean safe rank", "median safe size",
                   "share safe by 1B", "languages ranked / all", "tasks ranked", "mean DA-size"], rec_rows),
         f"![The cheapest reliable proxy]({rel}/recipe_da_size_ladder_multi_axes.png)"]), gen)
     replace_block(readme_path, "variants", "\n\n".join([
-        f"**Every variant together and apart** — mean DA-size per proxy over every task with a value (τ = {TAU:g}; "
-        f"in brackets the tasks behind each mean, which differ across proxies and variants because the gate keeps "
-        f"different tasks at different sizes, rule 13):",
+        f"**Every variant together and apart.** The mean DA-size per proxy over every task with a value (τ = {TAU:g}). "
+        f"In brackets are the tasks behind each mean, which differ across proxies and variants because the gate keeps "
+        f"different tasks at different sizes (rule 13):",
         table("every task"),
         "The same over the paired tasks (those whose own original, every `bbpb_`/`rf_`/`rfgm_` prefix stripped, has an "
-        "accuracy value at that proxy, so the gate treats every variant alike):",
+        f"accuracy and a bBPB {against('bbpb_acc')} value at that proxy, so the gate treats every variant alike):",
         table("paired"),
         f"![Variants together and apart]({rel}/recipe_da_size_variants_multi_axes.png)"]), gen)
     replace_block(readme_path, "heatmap", f"![Benchmark x variant heat map]({rel}/recipe_da_size_heatmap_multi_axes.png)", gen)

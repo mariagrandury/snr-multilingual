@@ -1,5 +1,6 @@
 """rq05: the grid's transformations side by side — language count, sampling
-temperature, model depth and data scheme (A vs B, A vs C) — read as decisions a proxy size
+temperature, model depth, data scheme (A vs B, A vs C), activation (xIELU vs
+SwiGLU) and optimizer (AdEMAMix vs Muon) — read as decisions a proxy size
 makes for the reference, on ONE item set, so their predictability can be
 compared. analyze.py reads each intervention on its own items; pooled over
 different task mixes those numbers are not comparable (a pair whose 1.7B has
@@ -12,7 +13,7 @@ no reformulated evals yet pools only the predictable families).
                             at the reference; `mean_abs_delta_ref` is the reference's effect on the own items;
                             `size_matched` is False on the 600M depth pairs (utils.UNMATCHED_PAIRS: kept, flagged)
     transformation_da_size_mono_axis.png   mean over a transformation's pairs of the shared-item DA vs proxy size;
-                            solid benchmarks, dashed per-language BPB (all 100 validation languages)
+                            solid benchmarks, dashed per-language BPB (the languages both cells train)
 
     python analysis/rq05_design_decisions/transformations.py --pool predictivity_seeds
 """
@@ -41,7 +42,7 @@ from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.rq05_design_decisions.analyze import CANONICAL, COLOUR, MIN_ITEMS, OUT_ROOT, gate_mask  # noqa: E402
 from analysis.utils import (GRID_SEED, TARGET_SIZE, data_build, finals, ladder_frame, passes_gate,  # noqa: E402
                             size_match_note, size_matched, size_order)
-from pretrain.launch_trainings import DATA_SCHEMES, exp_name, mix_label  # noqa: E402
+from pretrain.launch_trainings import DATA_SCHEMES, exp_name, ladders_for, mix_label  # noqa: E402
 
 mpl.rcParams.update(S.RC)
 # key -> (label, pairs); a pair is two cells as (L, scheme, T, ladder) on the
@@ -61,14 +62,20 @@ TRANSFORMATIONS = {
                     [((L, "A", 1, "deep"), (L, "B", 1, "deep")) for L in _LS if data_build(L, "B", 1)]),
     "scheme_C":    ("data scheme (A vs C)",
                     [((L, "A", 1, "deep"), (L, "C", 1, "deep")) for L in _LS if data_build(L, "C", 1)]),
+    # the swiglu and muon ladders, where the launcher plans their reference
+    # (scheme A, L8-L30); a pair whose 1.7B has not landed is skipped below
+    "activation":  ("activation (xIELU vs SwiGLU)",
+                    [((L, "A", 1, "deep"), (L, "A", 1, "swiglu")) for L in _A if "swiglu" in ladders_for("A", TARGET_SIZE, L)]),
+    "optimizer":   ("optimizer (AdEMAMix vs Muon)",
+                    [((L, "A", 1, "deep"), (L, "A", 1, "muon")) for L in _A if "muon" in ladders_for("A", TARGET_SIZE, L)]),
 }
 COLOUR = {**COLOUR, "langs": S.RAMP[2]}
-# BPB is read on ALL validation languages, not on the languages both cells
-# train: consecutive language-count pairs share only the smaller setting's
-# list (L1 vs L2 shares English alone), which leaves too few items to
-# compare transformations on. `bpb_all` is every per-language BPB row the
-# loader delivers, i.e. the languages the cell trains (RULES.md rule 2).
-POPULATIONS = ("benchmark", "bpb_all")
+# `bpb_trained` is every per-language BPB row the loader delivers, i.e. the
+# languages the cell trains (RULES.md rule 2); a pair's difference exists only
+# where both cells have the row, so a pair reads the languages both cells
+# train, rq05's `bpb_trained`. Consecutive language-count pairs share only the
+# smaller setting's list (L1 vs L2 shares English alone).
+POPULATIONS = ("benchmark", "bpb_trained")
 
 
 def _cell(size: str, c: tuple) -> str:
@@ -137,14 +144,16 @@ def transformation_da(df: pd.DataFrame, mask: pd.DataFrame | None) -> pd.DataFra
     t = pd.DataFrame(rows)
     # pass 2: the shared set per (population, proxy) = the items every
     # transformation that HAS data there decides in some pair. Intersecting
-    # over all four instead would empty the set whenever one of them has no
+    # over all of them instead would empty the set whenever one of them has no
     # data at all (the AT3 cells have no BPB scored, which would blank the
     # BPB read for every transformation); `n_transformations` records how
     # many went into the intersection so a thin one is visible.
     out = []
     for (pop, s), g in t.groupby(["population", "proxy_size"]):
         per_tr = {k: set().union(*[set(a.index) for a in gg["_agree"]]) for k, gg in g.groupby("transformation")}
-        per_tr = {k: v for k, v in per_tr.items() if v}
+        # a transformation with fewer than MIN_ITEMS items in every pair (A vs C
+        # on BPB: English alone) would shrink the shared set to those items
+        per_tr = {k: v for k, v in per_tr.items() if len(v) >= MIN_ITEMS}
         shared = set.intersection(*per_tr.values()) if per_tr else set()
         for _, r in g.iterrows():
             a = r["_agree"]; sh = a[a.index.isin(shared)]
@@ -172,7 +181,7 @@ def plot(sm: pd.DataFrame, out_dir: Path) -> None:
     fig, ax = plt.subplots(figsize=(5.2, 3.6))
     order = size_order(sm["proxy_size"].unique())
     for key, (label, _) in TRANSFORMATIONS.items():
-        for pop, ls, mk in (("benchmark", "-", "s"), ("bpb_all", "--", "o")):
+        for pop, ls, mk in (("benchmark", "-", "s"), ("bpb_trained", "--", "o")):
             g = sm[(sm["transformation"] == key) & (sm["population"] == pop)].set_index("proxy_size").reindex(order)
             if g["decision_acc_shared"].notna().any():
                 ax.plot(range(len(order)), g["decision_acc_shared"], ls=ls, marker=mk, ms=4.5, lw=1.6, color=COLOUR[key])
@@ -194,11 +203,11 @@ def generate_readme(pool: str, out_dir: Path, sm: pd.DataFrame) -> None:
     rel = out_dir.relative_to(OUT_ROOT)
     blocks = ["## Transformations on one item set",
               f"Mean decision accuracy over each transformation's pairs, on the items every transformation "
-              f"decides somewhere (benchmarks gated by rq00's above-random mask at the proxy and the reference); "
+              f"decides somewhere (benchmarks gated by rq00's above-random mask at the proxy and the reference). "
               f"`transformation_da_size_mono_axis.csv` has every pair."
               + size_match_note([("arch", s) for s in sm["proxy_size"].unique()])
               + f" Regenerate with `python analysis/rq05_design_decisions/transformations.py --pool {pool}`."]
-    for pop, title in (("benchmark", "benchmarks"), ("bpb_all", "per-language BPB (trained languages)")):
+    for pop, title in (("benchmark", "benchmarks"), ("bpb_trained", "per-language BPB (trained languages)")):
         g = sm[sm["population"] == pop]
         if g.empty:
             continue
@@ -207,10 +216,17 @@ def generate_readme(pool: str, out_dir: Path, sm: pd.DataFrame) -> None:
         pairs = g.groupby("label")["pairs"].max()
         withdata = g.groupby("label")["pairs_with_data"].max()
         items = g.groupby("label")["n_shared"].max()
-        blocks += [f"**{title}** (rows: transformation; columns: proxy size; mean over pairs, shared items):",
+        planned = {v[0]: len(v[1]) for v in TRANSFORMATIONS.values()}
+        blocks += [f"**{title}** (rows: transformation, columns: proxy size, values: mean over pairs on the shared "
+                   f"items. Pairs = read of planned (with data): a planned pair without a {TARGET_SIZE} result at both "
+                   "cells is not read yet. An empty row means that no pair has items there yet):",
                    md_table(["transformation", "pairs (with data)", "items"] + cols,
-                            [[lab, f"{int(pairs[lab])} ({int(withdata[lab])})", int(items[lab])]
+                            [[lab, f"{int(pairs[lab])} of {planned[lab]} ({int(withdata[lab])})", int(items[lab])]
                              + [fmt(grid.loc[lab, c]) for c in cols] for lab in grid.index])]
+        missing = [lab for lab in planned if not g.loc[g["label"] == lab, "decision_acc_own"].notna().any()]
+        if missing:           # rule 9: a transformation whose reference has not landed is said, not dropped
+            blocks.append("Not read: " + ", ".join(missing) + f" (no pair has a {TARGET_SIZE} result at both cells, or "
+                          f"fewer than {MIN_ITEMS} items, on these items).")
     blocks.append(f"![Transformations]({rel}/transformation_da_size_mono_axis.png)")
     replace_block(OUT_ROOT / "README.md", "transformations", "\n\n".join(blocks), f"transformations.py --pool {pool}")
 

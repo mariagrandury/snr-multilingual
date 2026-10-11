@@ -244,13 +244,15 @@ def generate_readme(pool: str, out_dir: Path, per_lang: dict, r2: dict, stem: st
     t = pd.DataFrame(rows)
     body = "\n\n".join([
         "## Scale convergence per language",
-        f"For each language of the L8 setting, the `--by L` lines read on that language's benchmarks alone: "
-        f"R at the smallest → largest proxy [tasks], per regime that trains the language, on every gated task (no "
-        f"selection on DA — the inference version; the `above_66_size` twin is the conditional one). The last column is "
-        f"the collapse test: R² of one log-linear line through every regime's points with x = model size, then with "
-        f"x = tokens of the language (its share of all tokens × D(N)); a rise under tokens says exposure explains what language "
-        f"count does not. Regimes pool arch, scheme and temperature decisions at once. Regenerate with "
-        f"`python analysis/rq02_decision_accuracy/by_language.py --pool {pool}`; `{stem}_coverage.csv` says why a "
+        f"For each language of the L8 setting, this table reads the `--by L` lines on that language's benchmarks alone. "
+        f"A cell gives R at the smallest → largest proxy for one regime that trains the language, with the largest task "
+        f"count in brackets. Every gated task is included, with no selection on DA, so this is the version to draw "
+        f"inferences from. The `above_66_size` twin is the conditional reading. The last column is the collapse test. "
+        f"It fits one log-linear line through the points of every regime, first with x = model size, then with "
+        f"x = tokens of the language (its share of all tokens × D(N)), and reports the R² of each fit. A higher R² under "
+        f"tokens would mean that exposure to the language explains what language count does not. Each regime pools "
+        f"architecture, scheme and temperature decisions. Regenerate with "
+        f"`python analysis/rq02_decision_accuracy/by_language.py --pool {pool}`. `{stem}_coverage.csv` says why a "
         f"cell is empty.",
         md_table(list(t.columns), t.values.tolist()),
         f"![Scale convergence per language]({stage}/{pool}/{stem}.png)",

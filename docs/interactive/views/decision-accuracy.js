@@ -104,6 +104,7 @@
     const bpbLang = Object.fromEntries(x.early.filter((r) => r.group === "bpb" && r.frac === 1).map((r) => [r.proxy_size, r.da]));
     const atChance = Object.fromEntries(x.acc_gate.filter((r) => r.population === "acc at chance at the proxy").map((r) => [r.size, r]));
     const macro = Object.fromEntries(x.acc_gate.filter((r) => r.population === "acc above chance at the proxy").map((r) => [r.size, r.bpb_macro]));
+    const chanceBbpb = d3.extent(Object.values(atChance), (r) => r.bbpb_bbpb);
     S.mount(el, [{ key: "pop", label: "Benchmark tasks", type: "seg", options: [
       { value: "all", label: "every gated task" }, { value: "chance", label: "accuracy still at chance at the proxy" }] }], (s) => {
       const R = s.pop === "all"
@@ -131,7 +132,7 @@
         ],
       }), note(s.pop === "all"
         ? "Each dot: one proxy size, mean DA-size over the tasks above chance at the proxy and at 1.7B (bBPB needs the reference above chance only). Accuracy sits just above chance at every size; scoring the same items by the gold answer's bits per byte (bBPB) gains a few points; the per-language BPB of the training languages agrees with the reference on more than 90 % of the decisions, except at 600M, where the depth pairs are not size-matched. A shuffled proxy scores 0.49 on benchmarks and 0.50 on BPB (permutation null)."
-        : "The tasks a proxy cannot yet answer above chance. Their accuracy ranks the designs below chance, while their bBPB still ranks them like the 1.7B bBPB on 61–64 % of the decisions: scoring by log-likelihood lifts these items above chance, but not to the level of BPB.")];
+        : `The tasks a proxy cannot yet answer above chance. Their accuracy ranks the designs below chance, while their bBPB still ranks them like the 1.7B bBPB on ${pct(chanceBbpb[0]).replace(" %", "")}–${pct(chanceBbpb[1])} of the decisions: scoring by log-likelihood lifts these items above chance, but not to the level of BPB.`)];
     });
   };
 
@@ -151,6 +152,9 @@
       const nulls = rows.filter((r) => r.kind === KINDS[0] && r.nullm != null);
       const kept = rows.filter((r) => r.kind === KINDS[1]);
       const share = (p) => kept.find((r) => r.pop === p)?.kept;
+      const das = (pop, k) => x.decisive.filter((r) => r.axes === "multi-axis" && r.population === pop && r.k === k).map((r) => r.da);
+      const f3 = (v) => fmt(v, v >= 0.995 ? 3 : 2);
+      const span = (pop, k) => `${f3(d3.min(das(pop, k)))}–${f3(d3.max(das(pop, k)))}`;
       const links = sizes.flatMap((z) => Object.values(POP).map((p) => {
         const a = rows.find((r) => r.size === z && r.pop === p && r.kind === KINDS[0]);
         const b = rows.find((r) => r.size === z && r.pop === p && r.kind === KINDS[1]);
@@ -172,7 +176,7 @@
           Plot.dot(rows, { x: "da", y: "size", fy: "pop", fill: "kind", r: 5.5, stroke: css("--viz-surface"), strokeWidth: 1.5, tip: true,
             title: (r) => `${r.pop}, ${r.size}\n${r.kind}: ${fmt(r.da)}` + (r.kind === KINDS[1] ? ` (${pct(r.kept)} of the pairs kept)` : "") + ` · ${r.tasks} tasks` }),
         ],
-      }), note("Dark tick: what a proxy scores with its final scores shuffled across the designs (the no-signal null, measured cell by cell). Grey dot: every pair. Blue dot: only the pairs whose 1.7B gap exceeds k √2 seed standard deviations, the pairs the reference itself decides. On benchmarks DA rises from about 0.59 to 0.64–0.66 (1 sd) and 0.71–0.73 (2 sd), but the decisive pairs are only half and a quarter of the pairs; BPB reaches 0.88–0.99 and 0.95–0.995, and its 600M dip shrinks.")];
+      }), note(`Dark tick: what a proxy scores with its final scores shuffled across the designs (the no-signal null, measured cell by cell). Grey dot: every pair. Blue dot: only the pairs whose 1.7B gap exceeds k √2 seed standard deviations, the pairs the reference itself decides. On benchmarks DA rises from about ${fmt(d3.mean(das("all benchmarks", 0)))} to ${span("all benchmarks", 1)} (1 sd) and ${span("all benchmarks", 2)} (2 sd), but the decisive pairs are only half and a quarter of the pairs. BPB reaches ${span("bpb", 1)} and ${span("bpb", 2)}, and its 600M dip shrinks.`)];
     });
   };
 
@@ -233,7 +237,7 @@
         } else [agree, n] = p[k][i];
         return { size, agree, n, share: n ? agree / n : null, avg: pooled[k][i] };
       }).filter((r) => r.n > 0);
-      if (!rows.length) return h("div", { class: "viz-empty" }, `No ${SCORE[k]} comparison for this pair: ${k === "bpb" ? "the two designs share no trained language with a BPB score at both sizes (the SwiGLU runs have no BPB pair yet)" : "no task is above chance for both designs"}.`);
+      if (!rows.length) return h("div", { class: "viz-empty" }, `No ${SCORE[k]} comparison for this pair: ${k === "bpb" ? "the two designs share no trained language with a BPB score at both sizes (the Muon runs have no BPB pair yet)" : "no task is above chance for both designs"}.`);
       const bars = rows.flatMap((r) => [
         { size: r.size, part: "same winner as 1.7B", v: r.share, k: r.agree, n: r.n },
         { size: r.size, part: "opposite winner", v: 1 - r.share, k: r.n - r.agree, n: r.n }]);
@@ -255,7 +259,7 @@
             Plot.barX(bars, Plot.stackX({ x: "v", y: "size", fill: "part", order: ["same winner as 1.7B", "opposite winner"], insetTop: 4, insetBottom: 4, insetRight: 1, rx: 2, tip: true,
               title: (r) => `${r.size}: ${r.part} on ${r.k} of ${r.n} ${UNIT[k]} (${pct(r.v)})` })),
             Plot.tickX(rows, { x: "avg", y: "size", stroke: css("--md-default-fg-color"), strokeWidth: 2, strokeDasharray: "2 2",
-              title: (r) => `average over all 406 pairs at ${r.size}: ${pct(r.avg)}` }),
+              title: (r) => `average over all ${d.pairs.length} pairs at ${r.size}: ${pct(r.avg)}` }),
             Plot.ruleX([0.5], { stroke: css("--viz-muted"), strokeDasharray: "4 3" }),
             Plot.text(rows, { x: 1, y: "size", dx: 8, textAnchor: "start", fill: css("--md-default-fg-color"), text: (r) => `${r.agree} of ${r.n}` }),
           ],
@@ -282,7 +286,7 @@
         }));
         nodes.push(note(`One square per language that both designs train (the BPB of a language neither design trains is not compared). Lower BPB wins. A = ${A}; B = ${B}.`));
       }
-      nodes.push(note(`Bars: on how many ${UNIT[k]} each proxy's final checkpoint picks the same winner as the 1.7B final. Dashed tick: the same share averaged over all 406 pairs of designs, the DA-size of the page's figures (pooled). ${k === "acc" ? "Accuracy counts the tasks above chance at the proxy and at 1.7B; a pair tied on one side counts as a miss." : k === "bbpb" ? "bBPB: bits per byte of the gold answer on the same benchmark items." : ""} ${flags.join(" ")}`));
+      nodes.push(note(`Bars: on how many ${UNIT[k]} each proxy's final checkpoint picks the same winner as the 1.7B final. Dashed tick: the same share averaged over all ${d.pairs.length} pairs of designs, the DA-size of the page's figures (pooled). ${k === "acc" ? "Accuracy counts the tasks above chance at the proxy and at 1.7B; a pair tied on one side counts as a miss." : k === "bbpb" ? "bBPB: bits per byte of the gold answer on the same benchmark items." : ""} ${flags.join(" ")}`));
       return nodes;
     });
   };

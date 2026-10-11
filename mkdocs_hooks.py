@@ -111,9 +111,10 @@ def _link_readme(text, readme, page_uri):
 # a bare mention in text or code becomes a neutral placeholder.
 NOTICE_TOKEN = "{{ anonymity_notice }}"
 _NOTICE = {"text": REMOVED_LINK}  # the wording lives only in anonymity.py
-_PEOPLE = r"mariagrandury|aromanou|maria[_ ]?grandury|antonia[_ ]?romanou|grandury|romanou|angelika|hasler|bosselut|clara[_ ]?meister"
+_PEOPLE = (r"mariagrandury|aromanou|mar[ií]a[_ ]?grandury|antonia[_ ]?romanou|grandury|romanou|angelika|hasler"
+           r"|bosselut|clara[_ ]?meister|meister|[eé]l[eé]onore|antoine|maría")
 # Affiliation, cluster and personal hosts: any URL containing one becomes the notice.
-_AFFIL = r"swiss[- _]?ai|cscs|clariden|epfl|claude\.ai/"
+_AFFIL = r"swiss[- _]?ai|cscs|clariden|epfl|claude\.ai/|lausanne|bristen|daint|(?-i:\bETH\b)|ethz\.ch"
 _ORGS = r"swiss-ai|msnr|msnr-data|multilingual-snr|snr-models"
 _URL = re.compile(r"https?://[^\s<>\"'`)\]]+")
 _BLOCKED_URL = re.compile(
@@ -154,13 +155,16 @@ _REDACT = [
     (re.compile(r"snreswsstorage\w*"), "<account>"),
     (re.compile(r"\b(?:CSCS|Clariden|Alps)(?:\s+(?:cluster|supercomputer))?\b"), "our cluster"),
     (re.compile(r"cscs|clariden", re.I), "cluster"),
-    (re.compile(r"swiss[- _]?ai|\bepfl\b", re.I), "anon-org"),
+    (re.compile(r"swiss[- _]?ai|\bepfl\b|\bethz\.ch\b", re.I), "anon-org"),
+    (re.compile(r"\bETH(?:\s+Z(?:u|ü)rich)?\b"), "anon-org"),
+    (re.compile(r"\b(?:bristen|daint)\b", re.I), "cluster"),
+    (re.compile(r"\bLausanne\b", re.I), "anon-location"),
     (re.compile(r"[\w.+-]+@(?!example\.)[\w-]+(?:\.[\w-]+)+"), "anon@example.org"),
 ]
 # What must never reach the built site; on_post_build warns on any hit.
 # The affiliation, cluster and internal checkpoints are redacted above; a hit
 # here means a page or data file bypassed _anonymize (static JSON, raw HTML).
-_LEAK = re.compile(rf"{_PEOPLE}|epfl|swiss[- _]?ai|cscs|clariden|claude\.ai/|apertus3|from8b|github\.com/swiss-ai|huggingface\.co/(?:datasets/)?(?:{_ORGS})\b|wandb\.ai/\w|iopsstor|capstor|(?<!\w)(?:a139|infra01)(?!\w)|\balps\d*\b|anon-org/|\ba06\b|snreswsstorage|azureml-blobstore-[0-9a-f]|(?<![a-z0-9])msnr(?![a-z0-9])", re.I)
+_LEAK = re.compile(rf"{_PEOPLE}|epfl|swiss[- _]?ai|cscs|clariden|lausanne|bristen|\bdaint\b|(?-i:\bETH\b)|ethz\.ch|claude\.ai/|apertus3|from8b|github\.com/swiss-ai|huggingface\.co/(?:datasets/)?(?:{_ORGS})\b|wandb\.ai/\w|iopsstor|capstor|(?<!\w)(?:a139|infra01)(?!\w)|\balps\d*\b|anon-org/|\ba06\b|snreswsstorage|azureml-blobstore-[0-9a-f]|(?<![a-z0-9])msnr(?![a-z0-9])", re.I)
 
 
 # Figures whose pixels name internal lines (the a06 / distillation / Swiss-AI

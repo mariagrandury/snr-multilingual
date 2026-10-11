@@ -3,7 +3,7 @@ early-decision read, without pooling the benchmarks.
 
     intervention_da_size_by_benchmark_mono_axis.png   agreement with the reference, proxy size x L; one subplot per (intervention, benchmark), intervention by intervention, BPB first
     intervention_da_size_by_language_mono_axis.png    the same, one subplot per (intervention, language)
-    intervention_da_goal_early_by_benchmark_mono_axis.png   the two planned decisions (depth; scheme A vs B on the L8-L30 lists), proxy size x share of the run (mean over L), per benchmark
+    intervention_da_goal_early_by_benchmark_mono_axis.png   early_decision.DECISIONS (depth; scheme A vs B on the L8-L30 lists; activation; optimizer), proxy size x share of the run (mean over L), per benchmark
     intervention_da_goal_early_by_language_mono_axis.png    the same per language
     da_all_lines_mono_axis.png                       DA-size (x = proxy size) and DA-ckpt (x = the reference's checkpoint), one line per
                                        intervention and recipe (`analyze.by_recipe`: a scheme decision per build, marker = build),
@@ -108,7 +108,7 @@ def da_lines(da: pd.DataFrame, out_dir: Path, *, name: str = "da_all_lines_mono_
     sizes = [s_ for s_ in LADDER_SIZES if s_ in set(size["proxy_size"])]
     fracs = sorted(ckpt["frac"].unique())
     fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.0) if paper else (13.5, 4.6), sharey=True)
-    tables = []
+    tables, drawn = [], set()        # a legend entry only for a key with a line (a reference still in flight has none)
     for ax, t, x, xs, xlab, ttl in ((axes[0], size, "proxy_size", sizes, "proxy size (final checkpoint)",
                                      "DA-size: the proxy's final ranking vs the reference's"),
                                     (axes[1], ckpt, "frac", fracs, "reference's training tokens (× Chinchilla)",
@@ -117,6 +117,7 @@ def da_lines(da: pd.DataFrame, out_dir: Path, *, name: str = "da_all_lines_mono_
             for pop, ls, _ in populations:
                 g = t[(t[series] == key) & (t["population"] == pop)].set_index(x).reindex(xs)
                 if g["decision_acc"].notna().any():
+                    drawn.add(key)
                     ax.plot(range(len(xs)), g["decision_acc"], color=colours[key], ls=ls, marker=(markers or {}).get(key, "o"),
                             ms=3.5, lw=1.3)
         ax.set_xticks(range(len(xs))); ax.set_xticklabels([str(v) if x != "frac" else G.chinchilla(v) for v in xs])
@@ -127,7 +128,6 @@ def da_lines(da: pd.DataFrame, out_dir: Path, *, name: str = "da_all_lines_mono_
         tables.append(t.rename(columns={series: "row", x: "col", "decision_acc": "value"}).assign(panel=ttl)
                       .assign(row=lambda d: d["row"].astype(str) + " / " + d["population"])[["panel", "row", "col", "value"]])
     axes[0].set_ylabel("Decision accuracy (mean over L)" if paper else "decision accuracy (mean over L)")
-    drawn = set(da[series])
     handles = ([plt.Line2D([], [], color=c, lw=2, marker=(markers or {}).get(k), label=(labels or {}).get(k, k))
                 for k, c in colours.items() if k in drawn]
                + [plt.Line2D([], [], color=S.INK, ls=ls, label=lab) for _, ls, lab in populations
@@ -364,7 +364,7 @@ def main(pool: str) -> None:
         f"The decision table and the early read above, without pooling the benchmarks (`{pool}` pool). Language "
         "aggregates and per-subject facets are left out here (about 60 % of the pooled benchmark items remain), "
         "and a language's subplot averages its BPB item with its benchmark items. Regenerate with "
-        f"`python analysis/rq05_design_decisions/panels.py --pool {pool}`. White cells have no value; each figure's table "
+        f"`python analysis/rq05_design_decisions/panels.py --pool {pool}`. White cells have no value. Each figure's table "
         "sits next to it under the same name (`intervention_da_size_by_<unit>_mono_axis.csv`).",
         f"![rq05 in one figure]({rel}/highlights.png)",
         f"![Decisions by proxy size and checkpoint]({rel}/da_all_lines_mono_axis.png)",

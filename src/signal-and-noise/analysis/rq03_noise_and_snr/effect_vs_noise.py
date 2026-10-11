@@ -3,9 +3,9 @@
 Per (size, L, task): each intervention's |Δ| at the grid seed is put against
 the seed noise (sample std over the seed replicates of the baseline cell,
 where ≥ 2 seeds exist) and the checkpoint noise of the baseline cell over
-the noise window of RULES.md rule 4 (`utils.noise_checkpoints`: the shared
-tenths in the last NOISE_WINDOW = 20 % of the run, 80 / 90 / 100 %, the same
-for BPB and benchmarks) — raw, and detrended because under WSD the final
+the noise window of RULES.md rule 4 (`utils.noise_checkpoints`: the k/20
+points in the last NOISE_WINDOW = 20 % of the run, 80 / 85 / 90 / 95 / 100 %,
+the same for BPB and benchmarks) — raw, and detrended because under WSD the final
 window is still descending. Both checkpoint noises are `utils.checkpoint_noise`
 (rule 4): the detrended one, the residual SD around a line with n−2 degrees
 of freedom, is the default every SNR reads; the raw one is the population
@@ -127,7 +127,10 @@ def plot_effect_vs_noise(evn: pd.DataFrame, path: Path, paper: bool = False) -> 
             med = g.groupby("size")[col].median().dropna()
             sizes = size_order(med.index)
             if sizes:
+                # a fixed colour per population: the cycle would hand a panel's first drawn line
+                # (the optimizer/seed panel holds the loss alone) the Benchmarks colour
                 ax.plot(sizes, [med[s] for s in sizes], marker="o", ms=3.5 if paper else 6,
+                        color=f"C{list(PAPER_POPULATION).index(pop)}",
                         label=PAPER_POPULATION.get(pop, pop) if paper else pop)
                 rows += [{"panel": col, "population": pop, "size": s, "median": med[s]} for s in sizes]
         ax.axhline(1, ls="--", lw=0.8, color=S.MUTED)
@@ -161,23 +164,25 @@ def generate_readme(pool: str, out_dir: Path, evn: pd.DataFrame) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     rel = f"{stage}/{pool}"
     bullets, rows = [], []
-    bullets.append(f"- **Noise definitions.** Seed noise = sample std (n−1) of the final score across the replicate seeds "
-                   f"of the deep data-A cell; checkpoint noise = std of the grid seed's run over the noise window, "
-                   f"the k/20 points in the last {NOISE_WINDOW:.0%} of the run (80/85/90/95/100 %, the same for BPB and "
-                   f"benchmarks), `utils.checkpoint_noise`: detrended by a line (residual SD, n−2, the rule-4 default) "
-                   f"and raw (ddof 0, the labelled alternative). The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter "
-                   f"of one run: above 1 a re-roll of the seed moves the score more than the late checkpoints do.")
+    bullets.append(f"- **Noise definitions.** The seed noise is the sample std (n−1) of the final score across the replicate "
+                   f"seeds of the deep data-A cell. The checkpoint noise is the std of the grid seed's run over the noise "
+                   f"window, the k/20 points in the last {NOISE_WINDOW:.0%} of the run (80/85/90/95/100 %, the same for BPB "
+                   f"and benchmarks). `utils.checkpoint_noise` computes it detrended by a line (residual SD, n−2, the rule-4 "
+                   f"default) and raw (ddof 0, the labelled alternative). The seed-over-checkpoint ratio compares the "
+                   f"scatter between runs with the scatter within one run. Above 1, a re-roll of the seed moves the score "
+                   f"more than the late checkpoints do.")
     bullets.append(f"- **Gate.** {int(evn['gated'].sum())} of {len(evn)} (size, L, task) cells are at chance at their "
-                   f"size (rule 1); they keep their row, carry no number and enter no median below.")
+                   f"size (rule 1). They keep their row, carry no number and enter no median below.")
     seed_vs_ckpt = (evn["seed_noise"] / evn["ckpt_noise_detrended"]).replace([np.inf, -np.inf], np.nan).dropna()
     if not seed_vs_ckpt.empty:
-        bullets.append(f"- **Seed noise vs detrended checkpoint noise** — median ratio "
+        bullets.append(f"- **Seed noise vs detrended checkpoint noise.** The median ratio is "
                        f"{fmt(seed_vs_ckpt.median())} over {len(seed_vs_ckpt)} (size, L, task) cells with seed replicates.")
     arch = evn.get("effect_arch_over_seed")
     if arch is not None and arch.notna().any():
         arch = arch.dropna()
-        bullets.append(f"- **Depth effect vs seed noise** — median |Δ|/seed-std {fmt(arch.median())}; "
-                       f"{(arch > 2).mean():.0%} of {len(arch)} cells above 2× (a distinct model for SNR, not a re-roll).")
+        bullets.append(f"- **Depth effect vs seed noise.** The median |Δ|/seed-std is {fmt(arch.median())}, and "
+                       f"{(arch > 2).mean():.0%} of {len(arch)} cells are above 2×, where the two depths count as distinct "
+                       f"models for SNR rather than a re-roll.")
     for pop, g in evn.groupby("population"):
         for k in INTERVENTIONS:
             for kind in ("seed", "ckpt"):
@@ -189,7 +194,8 @@ def generate_readme(pool: str, out_dir: Path, evn: pd.DataFrame) -> None:
         f"Numbers from the `{pool}` pool. Regenerate with "
         f"`python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool {pool}`.",
         "\n".join(bullets),
-        "**Effect over noise** (median over the ungated (size, L, task) cells; `n` = cells behind the median):",
+        "**Effect over noise.** Each value is the median over the ungated (size, L, task) cells, and `n` counts the "
+        "cells behind the median:",
         md_table(["population", "effect / noise", "median", "n"], rows),
         f"![Effect vs noise]({rel}/effect_vs_noise.png)"])
     readme = OUT_ROOT / "README.md"

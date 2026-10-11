@@ -53,24 +53,27 @@ comparisons against 1.7B into agreements and flips (orange), and each into
 ## What we find
 
 - **SNR peaks at 350M and is lowest at the reference.** The median log₁₀
-  SNR of the benchmark tasks above chance is 0.30 at 90M, 0.41 at 350M and
-  0.24 at 1.7B (316 to 512 tasks): at 1.7B the typical benchmark separates
-  the design variants by only 1.7× its checkpoint noise. 38 of 512 tasks
-  (7 %) are below the noise at 1.7B. The bBPB twins follow the same curve
+  SNR of the benchmark tasks above chance is 0.29 at 90M, 0.41 at 350M and
+  0.23 at 1.7B (381 to 588 tasks): at 1.7B the typical benchmark separates
+  the design variants by only 1.7× its checkpoint noise. 75 of 588 tasks
+  (13 %) are below the noise at 1.7B. The bBPB twins follow the same curve
   one notch higher (0.36 at 1.7B), and the per-language BPB is far above it
-  (1.34 at 350M, 0.81 at 1.7B).
-- **HellaSwag carries the most signal at 1.7B** (median log₁₀ SNR 0.62,
-  then Global-MMLU 0.53 and XStoryCloze 0.49); Belebele the least (0.11).
-  Every trained language but Lithuanian is above the noise.
+  (1.21 at 350M, 0.80 at 1.7B).
+- **HellaSwag carries the most signal at 1.7B** (median log₁₀ SNR 0.62 over
+  26 tasks, then XStoryCloze 0.49 over 8, among the families with more than
+  one task). KoBEST carries the least (−0.09), one of four families below the
+  noise. Every trained language but Lithuanian and Norwegian is above the
+  noise.
 - **Seed noise exceeds checkpoint noise, so the checkpoint SNR is
   optimistic.** A re-roll of the seed moves the final score a median 1.75×
-  the detrended checkpoint noise (in 75 % of 4394 cells). Depth's median
-  effect is 2.13× the checkpoint noise but 1.31× the seed noise, and no
+  the detrended checkpoint noise (in 75 % of 4650 cells). Depth's median
+  effect is 2.12× the checkpoint noise but 1.30× the seed noise, and no
   design decision clears twice the seed noise in half of its cells (depth
-  31 %, data scheme A vs B 29 %, A vs C 43 %, temperature 47 %).
+  30 %, data scheme A vs B 29 %, A vs C 43 %, temperature 46 %,
+  activation 27 %). The optimizer has a single cell so far.
 - **The 600M BPB misses are one seed of one depth pair.** Per-language BPB
-  ranks the variants like 1.7B from every proxy (DA-size 0.92–0.96) except
-  600M (0.74). There, 95 % of the depth comparisons flip against 4–27 % at
+  ranks the variants like 1.7B from every proxy (DA-size 0.91–0.95) except
+  600M (0.73). There, 95 % of the depth comparisons flip against 4–27 % at
   the other proxies, while language count, data scheme and temperature
   behave as everywhere else. Most of those flips are below the 600M seed
   noise, and re-drawing the deep run's seed flips 15, 43 or 50 of the 50
@@ -78,7 +81,7 @@ comparisons against 1.7B into agreements and flips (orange), and each into
   not size-matched, +3.7 % parameters for shallow).
 - **The ranking of SNR definitions survives a seed swap only as a
   family.** Across replicate seeds the ranking of the 22 definitions
-  correlates at Spearman ρ 0.70 (DA-ckpt) and 0.55 (DA-size), but that rests
+  correlates at Spearman ρ 0.72 (DA-ckpt) and 0.55 (DA-size), but that rests
   on one or two languages (English, Russian).
 
 !!! success "Takeaway"

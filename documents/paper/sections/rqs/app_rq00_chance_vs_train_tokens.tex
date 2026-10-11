@@ -1,24 +1,25 @@
 \clearpage
 \twocolumn[{%
-\subsection{Above chance against the tokens of the language seen}
+\rqparent
+\subsection{Above chance against the training tokens of the language}
 \label{app:rq00_chance_vs_train_tokens}
 
 \noindent\begin{minipage}[t]{0.485\textwidth}
 \vspace{0pt}
-\paragraph{Research Question.} \emph{Does a benchmark task clear chance once the model has seen enough of the task's language, and is that exposure or model size?}
+\paragraph{Research Question.} \emph{Does a benchmark task clear chance once the model has seen enough tokens of the task's language, and is it the exposure or the model size that decides?}
 
-\paragraph{Setup.} A cell is one (task, size, language setting) read at each of the ten evaluated tenths of the run. We place it at the number of tokens of the task's language that the checkpoint had seen. This number is the language's share of the mixture $\times$ the size's budget $\times$ the tenth. We use seed-1904 runs of every data build and ladder, 90M--1.7B, at $K \in \{1, 2, 8, 15, 30, 50\}$. The above-chance gate is applied per run.
+\paragraph{Setup.} We measure the share of cells above chance. A cell is one (task, size, language setting K), read at one of the ten evaluated tenths of the run. We use the seed-1904 runs of every data build and ladder, 90M--1.7B, at K $\in$ \{1, 2, 8, 15, 30, 50\}. The tasks are the benchmark tasks with a chance level in trained languages. BPB and the bBPB twins have no chance level and are left out. A cell is above chance when it passes the gate (the per-run Wilson test and the half-of-the-runs rule), applied at that tenth. A cell sits at the number of tokens of the task's language that the checkpoint had seen: the language's share of the build's mixture $\times$ the size's token budget $\times$ the tenth. We bin the cells three per decade of tokens. From these bins we read, per benchmark and answer format, the token count from which half or 90 \% of its cells are above chance (Table~\ref{tab:rq0_thresholds}). We then test whether leaving out the cells below that threshold changes how well an aggregate score ranks the designs (Table~\ref{tab:app_rq00_token_exclusion}).
 \end{minipage}\hfill
 \begin{minipage}[t]{0.485\textwidth}
 \vspace{0pt}
 \begin{rqfinding}
-\textbf{1. Outside English, the share of cells above chance rises with every decade of the language's tokens from $10^{7}$ on.} But at matched tokens the larger model still clears chance more often. The share goes from 40 \% at $10^{7}$--$10^{8}$ tokens to 62 \% at $10^{10}$--$10^{11}$, and at $10^{8}$--$10^{9}$ tokens it is 40 \% at 90M against 60 \% at 1.7B: exposure is necessary, not sufficient. (Figure~\ref{fig:app_rq00_chance_vs_train_tokens}.)
+\textbf{1. Outside English, the share of cells above chance rises with every decade of the language's tokens from $10^{7}$ on.} But at matched tokens the larger model still clears chance more often. The share goes from 43 \% at $10^{7}$--$10^{8}$ tokens to 63 \% at $10^{10}$--$10^{11}$. At $10^{8}$--$10^{9}$ tokens it is 43 \% at 90M against 63 \% at 1.7B, so exposure is necessary but not sufficient. (Figure~\ref{fig:app_rq00_chance_vs_train_tokens}.)
 \\
 \\
-\textbf{2. Pooled over every language the curve peaks at $10^{8}$--$10^{9}$ tokens and falls after, because the top bin is mostly English.} It reads 49 \% ($10^{8}$--$10^{9}$), dips to 48 \% ($10^{9}$--$10^{10}$) and drops to 38 \% in $10^{10}$--$10^{11}$ (23,877 cells), 80 \% of which are English.
+\textbf{2. Pooled over every language, the curve peaks at $10^{8}$--$10^{9}$ tokens and falls after, because the top bins are mostly English.} It reads 52 \% at $10^{8}$--$10^{9}$, dips to 51 \% at $10^{9}$--$10^{10}$ and drops to 41 \% at $10^{10}$--$10^{11}$ (25,047 cells, 81 \% of them English).
 \\
 \\
-\textbf{3. Without English the share is flat at 40 \% up to $10^{8}$ tokens and rises with every decade after.} Per decade: 40 \% ($10^{5}$, 77 cells), 40 \% ($10^{6}$), 40 \% ($10^{7}$), 49 \% ($10^{8}$), 60 \% ($10^{9}$), 62 \% ($10^{10}$, 4,691 cells).
+\textbf{3. Without English, the share stays near 40 \% up to $10^{8}$ tokens and rises with every decade after.} Per decade: 40 \% ($10^{5}$, 77 cells), 41 \% ($10^{6}$), 43 \% ($10^{7}$), 53 \% ($10^{8}$), 62 \% ($10^{9}$), 63 \% ($10^{10}$, 4,820 cells).
 \end{rqfinding}
 \end{minipage}
 \vspace{\baselineskip}
@@ -35,17 +36,21 @@
 \begin{table*}[p]
 \centering
 \small
-\caption{\textbf{Training tokens of the language from which a benchmark is above chance.} For each multilingual benchmark (trained in at least two languages) and answer format, the lower edge of the token bin from which the share of (language, $K$, checkpoint) cells above chance is at least 50\% or 90\% in that bin and in every larger bin, pooled over the model sizes 90M--1.7B and for the 90M and 1.7B models alone. Bins are three per decade of the training tokens of the language that the checkpoint had seen, and a bin counts only with at least 20 cells. $\leq$ marks a level already met in the first bin and never a level not reached. Lang. is the number of trained languages. Margin is the median accuracy above chance that a task needs for its Wilson bound to clear chance, and Items its median item count. Seed-1904 runs of every data build and ladder, every evaluated tenth of a run. The pooled bins mix sizes, and from $10^{10}$ tokens on most of their cells are English.}
-\label{tab:rq0_thresholds}
+\begin{adjustbox}{max width=\textwidth}
 \input{tables/rq00_thresholds}
+\end{adjustbox}
 % source: src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_seeds/pass_threshold_tokens_by_benchmark_1904_ckpts.tex
+\caption{\textbf{Training tokens of the language from which a benchmark is above chance.} For each multilingual benchmark (trained in at least two languages) and answer format, the lower edge of the token bin from which the share of (language, $K$, checkpoint) cells above chance is at least 50\% or 90\% in that bin and in every larger bin, pooled over the model sizes 90M--1.7B and for the 90M and 1.7B models alone. Bins are three per decade of the training tokens of the language that the checkpoint had seen, and a bin counts only with at least 20 cells. $\leq$ marks a level already met in the first bin, never a level that is not reached. Lang. is the number of trained languages. Margin is the median accuracy above chance that a task needs for its Wilson bound to clear chance, and Items its median item count. Seed-1904 runs of every data build and ladder, every evaluated tenth of a run. The pooled bins mix sizes, and from $10^{10}$ tokens on, most of their cells are English.}
+\label{tab:rq0_thresholds}
 \end{table*}
 
 \begin{table*}[p]
 \centering
 \small
+\begin{adjustbox}{max width=\textwidth}
+\input{tables/app_rq00_token_exclusion}
+\end{adjustbox}
+% source: src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity/token_exclusion_da_size_mono_axis.tex
 \caption{\textbf{Leaving out the cells below the token threshold lowers the decision accuracy of an aggregate score.} For each benchmark and each seed-1904 run at its final checkpoint, the aggregate is the mean of the benchmark's tasks over the languages the run trains. We compute it on every cell, on the cells at or above the benchmark's pooled 50\% token threshold (Table~\ref{tab:rq0_thresholds}), and on the cells above chance at the run's size and at 1.7B. SE is the median over runs of the standard deviation of the per-language values divided by the square root of their number. DA-size compares the aggregate of each proxy with the 1.7B aggregate under the same rule, on single-axis pairs, pooled over the 18 benchmarks that keep an aggregate under every rule. The nine benchmarks that never reach their threshold lose every cell.}
 \label{tab:app_rq00_token_exclusion}
-\input{tables/app_rq00_token_exclusion}
-% source: src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity/token_exclusion_da_size_mono_axis.tex
 \end{table*}

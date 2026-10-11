@@ -1,19 +1,19 @@
 # Task reformulation for the auto evals
 
-Status 2026-10-08. Every hand-written number outside the dated sections, and
-every generated block, is from the ladder-report snapshot **2026-10-08 12:06**
-(regenerated locally: acc_norm on the cloze-format originals) and the outputs
-of the 2026-10-08 refresh (detrended checkpoint noise), read from this folder's CSVs and the
-`predictivity` gate mask (`../rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv`).
+Status 2026-10-10. Every hand-written number outside the dated sections, and
+every generated block, comes from the ladder report of **2026-10-10 04:31**
+and from the outputs of the 2026-10-10 refresh. The numbers are
+read from this folder's CSVs and from the `predictivity` gate mask
+(`../rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv`).
 
 The dated sections keep their own dates: the harness survey and the pilot of
-2026-09-18, the probe of 2026-09-23. The benchmark-BPB twins (`bbpb_*`) are
+2026-09-18, and the probe of 2026-09-23. The benchmark-BPB twins (`bbpb_*`) are
 left out of every count here.
 
-Companion to [plan/benchmark_selection.md](../../../../plan/benchmark_selection.md)
-(what we evaluate on) and [the gate-and-curves README](../rq00_gate_and_curves/) (the chance gate).
+This README is a companion to [plan/benchmark_selection.md](../../../../plan/benchmark_selection.md)
+(what we evaluate on) and to [the gate-and-curves README](../rq00_gate_and_curves/) (the chance gate).
 The reference implementation is [lighteval_reference.py](lighteval_reference.py)
-(HuggingFace's FineWeb-edu ablation tasks); everything here runs inside the lm-eval harness we already use.
+(HuggingFace's FineWeb-edu ablation tasks). Everything here runs inside the lm-eval harness we already use.
 
 ## Research question
 
@@ -22,9 +22,9 @@ letters are dropped (`rf_`) or the items are rewritten as cloze statements
 (`rfgm_`), and do the reformulated twins then rank designs better?
 
 On 2026-09-18, before the twins and the probe promotions, 113 of 461 gated
-tasks cleared chance at any size, and only 21 of 252 four-option tasks. In
-today's mask, 681 of the 1,287 non-twin benchmark tasks clear chance at some
-size and 305 of the 782 four-option ones.
+tasks cleared chance at any size, and only 21 of 252 four-option tasks did. In
+today's mask, 670 of the 1,291 non-twin benchmark tasks clear chance at some
+size, and 297 of the 755 four-option ones do.
 
 `global_mmlu_full` clears in 6 of 37 languages at 175M, 2 at 350M, 1 at 1.7B
 and none at 90M, 600M or 1B. `global_piqa_*` clears in at most 12 of its 95
@@ -32,33 +32,42 @@ tasks (at 1.7B), and `truthfulqa-multi_mc1` in 1 of 3 at every size but 600M.
 
 Base models at 90M–1.7B do not pick up the "answer with a letter" convention,
 so a lettered multiple-choice prompt measures the convention, not the
-knowledge. The lighteval file's fix for MMLU: no letters, no few-shot, the
-full answer string scored as the continuation after `Answer:`, with `acc_norm`
-(length-normalised) as the metric.
+knowledge. The lighteval file fixes this for MMLU. It drops the letters and the
+few-shot examples, scores the full answer string as the continuation after
+`Answer:`, and reports `acc_norm` (length-normalised accuracy).
 
 ## Setup
 
-Gate counts: the `predictivity` gate mask (seed 1904, every cell, data build
-and ladder, 90M–1.7B), read on the cells that trained the task's language
-(on every cell where none did). The twins sit in `auto` beside their
-originals, so every cell scores them in the languages it trains on and a
-twin's verdict is read by the same rule as its original's.
+**Setup.**
+- **Measured.** We measure whether the letter-format benchmarks (Belebele, Global-MMLU, INCLUDE) pass the above-chance gate as published and after two reformulations of the same items.
+- **Twins.** We call a reformulated task the twin of its original. RF drops the answer letters and scores each option as a continuation. LLM-RF has an LLM rewrite every item into a cloze statement with the options as its continuations (Belebele and INCLUDE only).
+- **Models.** We use the runs of the gate: seed 1904, every language setting, ladder and data build, 90M–1.7B, each task read on the runs that train its language.
+- **How.** Each twin goes through the same gate as its original. A McNemar test on the paired verdicts of the original and its twin (one pair per task) tests the difference at every size.
+
+The gate counts come from the `predictivity` gate mask (seed 1904, every
+cell, data build and ladder, 90M–1.7B). Each task is read on the cells that
+trained its language, or on every cell where none did. The twins sit in
+`auto` beside their originals. Every cell therefore scores them in the
+languages it trains on, and a twin's verdict follows the same rule as its
+original's.
 
 The cells scored in every language (`auto_evals_cscs.ALL_LANGUAGES_RUNS`) are
-the deep seed-1904 cells of scheme A and, since 2026-10-08, of ZH and ES at L2
-and B at L8, whose every-language evals land after this snapshot. `compare.py`
-(the `rf_gate*` and `rf_significance*` tables) still keeps to the deep
-scheme-A seed-1904 cells.
+the deep seed-1904 cells of scheme A. Since 2026-10-08 they also include ZH and
+ES at L2 and B at L8, whose every-language evals were only partly in by this
+snapshot (the B-L8 finals carry 99–105 of the 105 Belebele tasks, the ZH-L2
+finals 14–87 and the ES-L2 finals 2–13).
+`compare.py` (the `rf_gate*` and `rf_significance*` tables) still reads only
+the deep scheme-A seed-1904 cells.
 
-The mask carries 105 belebele, 37 Global-MMLU and 43 INCLUDE tasks, plus 45
-tasks of the five promoted families with an `rf_` twin (mmlu 1,
-commonsense_qa 1, bbh_mcq 17, acp_bench_mcq 7, cultural_bench_easy 19) and 47
-of the seven probe families scored from 600M on that have one (m_mmlu 27,
-mmmlu 12, french_bench_extra 4, arabicmmlu, careqa, oall_arabic_mmlu and
-oall_exams 1 each; 44 twins). The
+The mask carries 105 Belebele, 37 Global-MMLU and 43 INCLUDE tasks. It also
+carries 45 tasks of the five promoted families with an `rf_` twin (mmlu 1,
+commonsense_qa 1, bbh_mcq 17, acp_bench_mcq 7, cultural_bench_easy 19), and 47
+tasks of the seven probe families, scored from 600M on, that have a twin
+(m_mmlu 27, mmmlu 12, french_bench_extra 4, and arabicmmlu, careqa,
+oall_arabic_mmlu and oall_exams 1 each), with 44 twins between them. The
 margins and significance tests use the deep scheme-A seed-1904 finals (six
-cells per size, L1–L50; five at 350M, no L1), trained languages only: 59
-belebele, 29 Global-MMLU and 36 INCLUDE tasks.
+cells per size, L1–L50, five at 350M with no L1), trained languages only: 59
+Belebele, 29 Global-MMLU and 36 INCLUDE tasks.
 
 ## Highlighted result
 
@@ -66,29 +75,30 @@ belebele, 29 Global-MMLU and 36 INCLUDE tasks.
 
 GitHub: [reformulations_gate_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate_paper.png) · [reformulations_gate_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate_paper.csv)
 
-Population: the `predictivity` gate mask, per family and size, the original
-(grey) against each twin, paired on the task; * marks McNemar p < 0.05. The
-counts below are tasks above the gate (`reformulations_gate_mcnemar.csv`).
+Population: the `predictivity` gate mask, per family and size. The original
+(grey) is drawn against each twin, paired on the task, and * marks McNemar
+p < 0.05. The counts below are tasks above the gate (`reformulations_gate_mcnemar.csv`).
 
-Key findings (snapshot 2026-10-08 12:06):
+Key findings (snapshot 2026-10-10 04:31):
 
-- **The letter-format originals sit on chance.** Their median margin over chance (trained languages, deep scheme-A finals) stays within ±0.013 at every size; at 1.7B it is +0.011 on belebele, −0.010 on Global-MMLU and +0.005 on INCLUDE. At 1.7B the gate keeps 5 of 105 belebele, 1 of 37 Global-MMLU and 3 of 43 INCLUDE originals.
-- **Dropping the letters moves whole families across the gate.** At 1.7B the `rf_` twins pass in 86 of 105 belebele, 35 of 37 Global-MMLU and 31 of 43 INCLUDE tasks (McNemar twin-only : original-only 82 : 1, 34 : 0 and 29 : 1; p ≤ 5.8e-08). The McNemar test is significant at every size for belebele and Global-MMLU, and from 175M for INCLUDE.
-- **The margin gain is larger at 1.7B than at 90M.** rf − original goes from +0.030 / +0.017 / +0.004 at 90M to **+0.098 / +0.058 / +0.047** at 1.7B (belebele / Global-MMLU / INCLUDE), significant at 1.7B in 56 of 59, 26 of 29 and 17 of 36 tasks. belebele and INCLUDE grow at every size, while Global-MMLU dips to +0.009 at 175M and passes its 90M value again only from 600M (+0.019).
-- **The Gemini rewrite adds more where it exists.** `rfgm_` gains **+0.168** on belebele (59 of 59 tasks significant) and **+0.075** on INCLUDE (21 of 36) at 1.7B. `rfgm_belebele` passes the gate in 59 of 59 tasks at every size, and `rfgm_include_base_44` in 32 of 43 at 1.7B; Global-MMLU has no rewrite yet.
-- **The gain is not the metric.** On plain `acc` on both sides, the median rf gain per (task, model) at 1.7B is +0.124 belebele, +0.047 Global-MMLU and +0.062 INCLUDE, against +0.104 / +0.064 / +0.078 on acc_norm (`rf_significance.csv`, 288 pairs).
-- **Over the gate's whole population, the twins pass far more often than the other tasks.** At 1.7B they pass in 310 of 376 tasks (0.82), against 644 of 1,287 non-twin benchmark tasks (0.50); their own 277 originals pass in 10.
-- **Passing the gate does not make the twins rank designs better.** Mean DA-size (proxy → 1.7B, multi-axis pairs, gated at proxy and reference, `predictivity`) is 0.480 at 90M and 0.547 at 1B on the twins (145 and 214 tasks), against 0.546 and 0.586 on the non-twin tasks (157 and 256). The twins' pairs come from the deep scheme-A cells alone (the L axis), so the two means are not on the same pairs.
+- **The letter-format originals sit at chance.** Their median margin over chance (trained languages, deep scheme-A finals) stays within ±0.013 at every size. At 1.7B it is +0.011 on Belebele, −0.010 on Global-MMLU and +0.005 on INCLUDE, and the gate keeps 5 of 105 Belebele, 1 of 37 Global-MMLU and 3 of 43 INCLUDE originals.
+- **Dropping the letters moves whole families across the gate.** At 1.7B the RF twins (`rf_`) pass in 86 of 105 Belebele, 35 of 37 Global-MMLU and 31 of 43 INCLUDE tasks (tasks where only the twin passes against tasks where only the original passes: 82 : 1, 34 : 0 and 29 : 1, McNemar p ≤ 5.8e-08). The McNemar test is significant at every size for Belebele and Global-MMLU, and from 175M for INCLUDE.
+- **The margin gain is larger at 1.7B than at 90M.** The RF twins' median margin over chance exceeds the originals' by +0.030 / +0.017 / +0.004 at 90M and by **+0.098 / +0.058 / +0.047** at 1.7B (Belebele / Global-MMLU / INCLUDE). At 1.7B the gain is significant in 56 of 59, 26 of 29 and 17 of 36 tasks. Belebele and INCLUDE grow at every size. Global-MMLU dips to +0.009 at 175M and passes its 90M value again only from 600M (+0.019).
+- **The Gemini rewrite gains more than dropping the letters.** At 1.7B the LLM-RF twins (`rfgm_`) gain **+0.168** on Belebele (59 of 59 tasks significant) and **+0.075** on INCLUDE (21 of 36), against +0.098 and +0.047 for RF. `rfgm_belebele` passes the gate in 59 of 59 tasks at every size, and `rfgm_include_base_44` in 32 of 43 at 1.7B. Global-MMLU has no rewrite yet.
+- **The gain does not come from the metric.** With plain `acc` on both sides, the median RF gain per (task, model) at 1.7B is +0.124 on Belebele, +0.047 on Global-MMLU and +0.062 on INCLUDE, against +0.104 / +0.064 / +0.078 with acc_norm (`rf_significance.csv`, 288 pairs).
+- **Over the gate's whole population, the twins pass far more often than the other tasks.** At 1.7B they pass in 310 of 376 tasks (0.82), against 636 of 1,291 non-twin benchmark tasks (0.49). Their own 277 originals pass in 10.
+- **Passing the gate does not make the twins rank designs better.** Mean DA-size, the share of design pairs a proxy orders as the 1.7B reference does (multi-axis pairs, gated at proxy and reference, `predictivity`), is 0.489 at 90M and 0.555 at 1B on the twins (166 and 249 tasks). It is 0.529 and 0.571 on the non-twin tasks (193 and 304). The twins are now scored on every cell and have the same design pairs as their originals, but the two means cover different tasks, so they do not compare a twin with its own original.
 
 Follow-ups:
 
-- Draw DA-size for the twins against their own originals on the same deep scheme-A pairs, so that the last bullet compares like with like.
+- Draw DA-size for the twins against their own originals, on the pairs they now share, so that the last bullet compares like with like.
 
 ## What the harness already does per family
 
-The survey of 2026-09-18, before the twins and the probe promotions joined `auto`:
-467 auto tasks, all zero-shot (`NUM_FEWSHOT` is never set), 1.19M questions.
-Counts read from the offline cache (`$HF_HOME/datasets/*/dataset_info.json`).
+We surveyed the harness on 2026-09-18, before the twins and the probe promotions
+joined `auto`. It held 467 auto tasks with 1.19M questions, all zero-shot
+(`NUM_FEWSHOT` is never set). The counts are read from the offline cache
+(`$HF_HOME/datasets/*/dataset_info.json`).
 
 | family | tasks | prompt format in the harness | questions | tok/q | Mtok |
 |---|---:|---|---:|---:|---:|
@@ -107,21 +117,21 @@ Counts read from the offline cache (`$HF_HOME/datasets/*/dataset_info.json`).
 | multiblimp | 57 | minimal pair, no context | 94,450 | 140 | 13.2 |
 | lambada_openai_mt | 5 | last-word log-likelihood | 25,765 | 100 | 2.6 |
 
-Only the first three families are letter-format; that is the whole scope of
-the programmatic reformulation. arc and hellaswag are already cloze and still
-mostly at chance, so a prompt change cannot help them — only a rewrite of the
-items themselves (below) can. Two asides the survey turned up: `xnli` for the
-15 `facebook/xnli` languages is scored on the 2,490-row *validation* split
-(the common YAML sets no `test_split`) while `xnli_eu`/`xnli_gl` use their
-5,010-row test split, and 10 of the 57 `multiblimp` tasks have under 200
-items (`guj` 7, `ben` 21, `gle` 28).
+Only the first three families are letter-format, and they are the whole scope
+of the programmatic reformulation. arc and hellaswag are already cloze and
+still mostly at chance, so a prompt change cannot help them. Only a rewrite of
+the items themselves (below) can. The survey also turned up two side issues.
+`xnli` for the 15 `facebook/xnli` languages is scored on the 2,490-row
+*validation* split (the common YAML sets no `test_split`), while
+`xnli_eu`/`xnli_gl` use their 5,010-row test split. And 10 of the 57
+`multiblimp` tasks have under 200 items (`guj` 7, `ben` 21, `gle` 28).
 
-## Tier 1 — programmatic reformulation (implemented)
+## Tier 1: programmatic reformulation (implemented)
 
 [`src/evals/scripts/make_rf_tasks.py`](../../../evals/scripts/make_rf_tasks.py) writes one self-contained harness YAML
-per original task under `src/evals/tasks/rf/<family>/rf_<task>.yaml` — same
-`dataset_path`, `dataset_name` and split, read from the pinned harness
-checkout — with:
+per original task under `src/evals/tasks/rf/<family>/rf_<task>.yaml`. Each YAML
+keeps the original's `dataset_path`, `dataset_name` and split, read from the
+pinned harness checkout, and sets:
 
 | family | `doc_to_text` | `doc_to_choice` |
 |---|---|---|
@@ -131,29 +141,30 @@ checkout — with:
 
 `output_type: multiple_choice`, `num_fewshot: 0`, metrics `acc` and
 `acc_norm`. The global_mmlu and include twins are one task per language over
-the whole split rather than a group of subject/domain subtasks — the report
+the whole split, not a group of subject or domain subtasks. The report
 aggregates to the family anyway, and a 57-way group is what made the
 originals slow.
 
-Plumbing, all keyed on the new task names so originals and twins coexist:
+The plumbing is keyed on the new task names, so originals and twins coexist:
 
 - `configs/tasks.json`: one entry per twin (`language`, `benchmark:
   rf_<family>`, `n_options: 4`, `metric: acc_norm`), group `auto_rf`,
   `benchmarks` metadata. The `rf_` **prefix** is deliberate:
   `tasks_for_benchmarks` matches `<benchmark>_…`, so a `_rf` suffix would be
-  selected by the original family. Registered entries are what keep the
-  analysis from folding `rf_belebele_eng_Latn` into `belebele` (`results_io.
-  aggregate_parents`, `analysis/utils._is_language_aggregate`) and what gives
-  `ladder_report` its `chance` column.
+  selected by the original family. The registered entries keep the analysis
+  from folding `rf_belebele_eng_Latn` into `belebele`
+  (`results_io.aggregate_parents`, `analysis/utils._is_language_aggregate`),
+  and they give `ladder_report` its `chance` column.
 - `evaluate.sbatch`: `HARNESS_INCLUDE_PATH` → `eval_worker.py --include_path`
   (already accepted, never set before). The pinned wheel is untouched.
-- `auto_evals_cscs.py --reformulated` (removed on 2026-10-03, with its groups
-  retired on 2026-09-23: the twins are now in `auto`): the `auto_rf` group instead of `auto`,
-  jobs named `eval-<cell>-iter<N>-rf` (the original and the rf set of one
-  checkpoint are different work — neither watcher may read the other's job
-  as its own); the include path is always exported. Per-task idempotency, walltime sizing,
-  hold-backs and the W&B push need nothing — the metric override makes the
-  series `rf_<task>/acc_norm`.
+- `auto_evals_cscs.py --reformulated` (removed on 2026-10-03, its groups
+  retired on 2026-09-23, since the twins are now in `auto`) ran the `auto_rf`
+  group instead of `auto`, with jobs named `eval-<cell>-iter<N>-rf`. The
+  original and the rf set of one checkpoint are different work, and neither
+  watcher could read the other's job as its own. The include path was always
+  exported. Per-task idempotency, walltime sizing, hold-backs and the W&B push
+  needed no change, because the metric override makes the series
+  `rf_<task>/acc_norm`.
 - Per cell: L1 2 · L2 5 · L8 24 · L15 49 · L30 84 · L50 124 rf tasks (185 in
   every language).
 
@@ -163,14 +174,15 @@ The question is whether the reformulation moves scores off the chance line
 at all, and whether it opens a gap between sizes. Answer it on final
 checkpoints before touching the grid:
 
-1. **Two checkpoints, one job each**: the strongest model and a small one at
-   the same setting — `lm-1.7B-L8-deep-seed1904` and `lm-175M-L8-deep-seed1904`,
-   final iter plus the noise window (`--every 1000` coarsens the tenths away, but the 85/90/95/100 % points are added unconditionally, so five saves are due, not one). Both are
-   ALL_LANGUAGES runs, so every rf task runs (185) and the comparison covers
-   trained and untrained languages. Read: per family and language, rf
-   `acc_norm` vs the original `acc` on the same checkpoint (both on disk),
-   against chance 0.25 + 0.05. If the 1.7B stays at chance, stop: the
-   families need Tier 2, not a prompt change.
+1. **Two checkpoints, one job each.** The strongest model and a small one at
+   the same setting, `lm-1.7B-L8-deep-seed1904` and `lm-175M-L8-deep-seed1904`,
+   at the final iteration plus the noise window. `--every 1000` coarsens the
+   tenths away, but the 85/90/95/100 % points are always added, so five saves
+   are due, not one. Both are ALL_LANGUAGES runs, so all 185 rf tasks run and
+   the comparison covers trained and untrained languages. Read, per family and
+   language, the rf `acc_norm` against the original `acc` on the same
+   checkpoint (both on disk), against chance 0.25 + 0.05. If the 1.7B model
+   stays at chance, stop: the families need Tier 2, not a prompt change.
 2. **The L8 size ladder finals** (90M … 1.7B, 6 jobs): does rf order the
    sizes, and from which size does it clear the gate?
 3. **The deep-A-seed1904 ladder** at the normal `--every 2` cadence, under
@@ -193,31 +205,34 @@ done
 python3.11 auto_evals_cscs.py --reformulated --arch deep --scheme A --seed 1904 --max-submit 20 --watch 1800
 ```
 
-The walltime estimate is fitted on the original task mix; the rf
-global_mmlu tasks score four answer strings per question over 14k questions,
-so the first jobs may hit their limit. That costs only the tasks in flight:
-the next pass resubmits what is missing, sized to it.
+The walltime estimate is fitted on the original task mix. The rf global_mmlu
+tasks score four answer strings per question over 14k questions, so the first
+jobs may hit their limit. That costs only the tasks in flight, because the next
+pass resubmits what is missing, sized to it.
 
 ### Which metric to compare
 
 The originals ask for a letter, so every option is one token of the same
-length (" A" … " D") and byte-length normalisation cannot change the ranking:
-their `acc` and `acc_norm` are identical, and comparing the rf `acc_norm`
-with the original `acc` is acc_norm against acc_norm. The rf tasks are the
-only place the two differ — the answers have different lengths — and
-`acc_norm` is the standard choice for cloze scoring (the lighteval reference
-scores `loglikelihood_acc_norm`). It is the metric the pipeline carries for
-the rf tasks: tasks.json's per-task `metric`, honoured by `results_io.flatten`
-(W&B) and `ladder_report._primary` (the report), so both show the same number.
-`compare.py` reads that `primary_score` from the ladder report through the
-chance gate (`above_random.scores_and_mask` on the `predictivity` pool, deep
-scheme-A cells). So the `auto:rf-compare` table further down (after
+length (" A" … " D"), and byte-length normalisation cannot change the ranking.
+Their `acc` and `acc_norm` are therefore identical, and comparing the rf
+`acc_norm` with the original `acc` is in effect acc_norm against acc_norm. The
+two metrics differ only on the rf tasks, whose answers have different lengths.
+There `acc_norm` is the standard choice for cloze scoring (the lighteval
+reference scores `loglikelihood_acc_norm`). It is the metric the pipeline
+carries for the rf tasks: tasks.json sets it as the per-task `metric`, and
+`results_io.flatten` (W&B) and `ladder_report._primary` (the report) both
+honour it, so both show the same number. `compare.py` reads that
+`primary_score` from the ladder report through the chance gate
+(`above_random.scores_and_mask` on the `predictivity` pool, deep scheme-A
+cells). So the `auto:rf-compare` table further down (after
 [the length tell](#the-length-tell-and-where-it-actually-is)) is `original acc → rf acc_norm`.
 
-It moves only after `ladder_report.py --plot --publish --push-hf` has picked up
-new rf results and `scripts/refresh_analysis.sh` has re-run. Until then `compare.py` refuses to run against a report without the `rf_*` columns (it would empty the table); point `SNR_LADDER_DIR` at a report that has them.
+The table changes only after `ladder_report.py --plot --publish --push-hf` has
+picked up new rf results and `scripts/refresh_analysis.sh` has re-run.
+`compare.py` refuses to run against a report without the `rf_*` columns, since
+it would empty the table. Point `SNR_LADDER_DIR` at a report that has them.
 
-The conclusion does not depend on the metric. On the 2026-10-08 12:06 snapshot,
+The conclusion does not depend on the metric. On the 2026-10-10 04:31 snapshot,
 the median rf gain per (task, model) at 1.7B is +0.104 on acc_norm and +0.124
 on acc for belebele, +0.064 and +0.047 for Global-MMLU, and +0.078 and +0.062
 for INCLUDE (`rf_significance.csv`, which carries the twin run's own `acc`, the
@@ -232,44 +247,45 @@ metric the significance test reads).
 | include_base_44 (43) | 0.259 | 0.259 | 0.279 | 0.249 | 11 / 0 |
 
 The reformulation moves the letter families off the chance line at 1.7B and
-opens the size gap the originals never showed: belebele 0.30 vs 0.24, Global-
-MMLU in the trained languages en 0.37 · de/es/fr 0.32 · it 0.31 · ja 0.30 · zh
-0.32 (untrained languages stay at 0.25), INCLUDE fr 0.46 · es/it 0.38 · jp 0.35
-· de/bg 0.30. At 175M only belebele moves (+0.045); the knowledge families
-stay at chance, as they should for a 175M model. Cost: the rf Global-MMLU
-tasks take 2.7–3.3 min per worker-task (one 14k-row task per language) against
-0.1–0.3 for belebele and INCLUDE, so the watcher weights them ×6 in the
-walltime. Two data faults surfaced and are fixed: 37 Global-MMLU rows and one
-INCLUDE row with a `None`/blank option (dropped by `process_docs`), and the
-cross-user `datasets` lock files in the shared cache (see
-`src/evals/CLAUDE.md`, "lock files"). Steps 2 and 3 were launched the same
-day (`eval-<cell>-iter<N>-rf` jobs).
+opens the size gap the originals never showed. Belebele reads 0.30 against
+0.24. Global-MMLU reads en 0.37 · de/es/fr 0.32 · it 0.31 · ja 0.30 · zh 0.32
+in the trained languages, while the untrained languages stay at 0.25. INCLUDE
+reads fr 0.46 · es/it 0.38 · jp 0.35 · de/bg 0.30. At 175M only Belebele moves
+(+0.045). The knowledge families stay at chance, as they should for a 175M
+model. On cost, the rf Global-MMLU tasks take 2.7–3.3 min per worker-task (one
+14k-row task per language) against 0.1–0.3 for Belebele and INCLUDE, so the
+watcher weights them ×6 in the walltime. The pilot surfaced two data faults,
+both fixed. 37 Global-MMLU rows and one INCLUDE row had a `None` or blank
+option (now dropped by `process_docs`), and the cross-user `datasets` lock
+files blocked the shared cache (see `src/evals/CLAUDE.md`, "lock files").
+Steps 2 and 3 were launched the same day (`eval-<cell>-iter<N>-rf` jobs).
 
-## Tier 2 — rewriting the items with Gemini (`rfgm_*`: Belebele and INCLUDE rewritten and evaluated, Global-MMLU not yet)
+## Tier 2: rewriting the items with Gemini (`rfgm_*`: Belebele and INCLUDE rewritten and evaluated, Global-MMLU not yet)
 
-Tier 1 only drops the letters. Here the item itself changes: Gemini turns
+Tier 1 only drops the letters. Tier 2 changes the item itself. Gemini turns
 the question into one declarative sentence that stops where the answer goes
-(a stem) and the four options into short, parallel continuations, in the
-item's own language — the cloze formulation the FineWeb-2 / FineTasks work
-found readable at small scale. Decided 2026-09-19: the three letter families
-in all their languages (185 tasks, ~636k items), `gemini-3.8-flash` through
-the Batch API, evaluated on the deep data-A seed-1904 ladder at every
-evaluated checkpoint (the `rf_*` coverage), so original / rf / rfgm are
-compared on identical models. The families that are cloze already (arc,
-hellaswag, global_piqa) are not rewritten.
+(the stem), and the four options into short, parallel continuations, in the
+item's own language. This is the cloze formulation that the FineWeb-2 /
+FineTasks work found readable at small scale. The plan decided on 2026-09-19
+covers the three letter families in all their languages (185 tasks, ~636k
+items), rewritten by `gemini-3.8-flash` through the Batch API. The rewrites are
+evaluated on the deep data-A seed-1904 ladder at every evaluated checkpoint
+(the `rf_*` coverage), so original, rf and rfgm are compared on identical
+models. The families that are already cloze (arc, hellaswag, global_piqa) are
+not rewritten.
 
-The set is a third family prefix — `rfgm_` — on the exact `rf_` plumbing:
+The set has a third family prefix, `rfgm_`, on the exact `rf_` plumbing.
 [`rewrite_items_gemini.py`](../../../evals/scripts/rewrite_items_gemini.py)
-produces one JSONL per task under
-`/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/rf-data/rfgm/` (never
-pushed publicly: gold labels), `make_rf_tasks.py --set rfgm` writes one
-`dataset_path: json` YAML per task under `src/evals/tasks/rfgm/` and the
-tasks.json entries (`benchmark: rfgm_<family>`, `metric: acc_norm`, group
-`auto_rfgm`), `auto_evals_cscs.py --reformulated rfgm` evaluates them with
-`-rfgm` job names, and `compare.py` draws them next to `rf` (SETS).
+writes one JSONL per task under
+`/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/rf-data/rfgm/`, never
+pushed publicly because it holds the gold labels. `make_rf_tasks.py --set rfgm`
+writes one `dataset_path: json` YAML per task under `src/evals/tasks/rfgm/`,
+plus the tasks.json entries (`benchmark: rfgm_<family>`, `metric: acc_norm`,
+group `auto_rfgm`). `auto_evals_cscs.py --reformulated rfgm` evaluated them
+with `-rfgm` job names, and `compare.py` draws them next to `rf` (SETS).
 
-Row schema of `<task>.jsonl` (`text`, `choices`, `gold` are what the YAML
-reads by column name; the rest is for audits):
+Row schema of `<task>.jsonl` (the YAML reads `text`, `choices` and `gold` by
+column name, and the rest is for audits):
 
 ```json
 {"id": 17, "text": "<passage>\n<stem>", "choices": ["…", "…", "…", "…"], "gold": 2,
@@ -277,20 +293,21 @@ reads by column name; the rest is for audits):
  "orig_question": "…", "orig_choices": ["…"], "lang": "deu_Latn"}
 ```
 
-`text` is the full prompt: the belebele passage verbatim + newline + stem;
-Global-MMLU / INCLUDE the stem only. Gold keeps the original position. The
-stem carries no trailing space — the harness appends `" " + choice` itself.
+`text` is the full prompt. For Belebele it is the passage verbatim, a newline
+and the stem. For Global-MMLU and INCLUDE it is the stem only. `gold` keeps the
+original position. The stem carries no trailing space, because the harness
+appends `" " + choice` itself.
 
 ### Step by step
 
-**0. Once — Application Default Credentials.** We authenticate to Vertex AI
-with ADC, not an API key: the Generative Language API refuses keys under an
-organisation policy that blocks them, which is what `API_KEY_INVALID` on a
-well-formed key means. ADC uses your own Google identity and the SDK picks
+**0. Once: Application Default Credentials.** We authenticate to Vertex AI
+with ADC, not an API key. Under an organisation policy that blocks keys, the
+Generative Language API refuses them, and that is what `API_KEY_INVALID` on a
+well-formed key means. ADC uses your own Google identity, and the SDK picks
 it up with no secret in the repo. Run Google's
-[setup script](https://storage.googleapis.com/cloud-samples-data/adc/setup_adc.sh)
-— it installs the gcloud CLI, asks for your project ID, runs the login,
-sets the quota project and enables `aiplatform.googleapis.com` — or do the
+[setup script](https://storage.googleapis.com/cloud-samples-data/adc/setup_adc.sh),
+which installs the gcloud CLI, asks for your project ID, runs the login,
+sets the quota project and enables `aiplatform.googleapis.com`. Or do the
 same by hand:
 
 ```bash
@@ -303,30 +320,30 @@ gcloud auth application-default set-quota-project <project-id>
 `~/.config/gcloud/application_default_credentials.json`, and the driver
 reads the one on the machine it runs on. `--no-browser` prints a
 `gcloud … --remote-bootstrap="…"` command to paste into a laptop that has
-gcloud and a browser; that returns a URL you paste back. If you already
+gcloud and a browser. That command returns a URL you paste back. If you already
 authenticated on the laptop, copying the file over is equivalent and
 quicker: `scp ~/.config/gcloud/application_default_credentials.json
 clariden:.config/gcloud/`. Credentials refresh themselves and gcloud is not
 needed again afterwards.
 
 **Enabling the API is a different credential.** `gcloud auth
-application-default login` writes ADC for client libraries; it does not log
+application-default login` writes ADC for client libraries. It does not log
 the gcloud CLI itself in, so `gcloud services enable` answers "You do not
 currently have an active account selected". Either run `gcloud auth login`
 first, or just switch the API on in the console:
 `console.cloud.google.com/apis/library/aiplatform.googleapis.com?project=<project-id>`.
-The project also needs billing — batch prediction is not a free-tier
+The project also needs billing, because batch prediction is not a free-tier
 feature.
 
 **Cloud Storage.** A Vertex batch job reads its requests from Cloud Storage
 and writes its answers back there (an uploaded file, which the Gemini
 Developer API takes, is not a valid Vertex source). The driver keeps them
 under `gs://<bucket>/rfgm/`, where `<bucket>` is `$RFGM_GCS_BUCKET`, else
-`--bucket`, else `<project>-msnr-rfgm`, and creates it on first use with
-the same ADC credential — which needs `storage.buckets.create` on the
+`--bucket`, else `<project>-msnr-rfgm`. It creates the bucket on first use
+with the same ADC credential, which needs `storage.buckets.create` on the
 project (`roles/storage.admin`, or `roles/storage.bucketCreator` plus
 `roles/storage.objectAdmin`). Without it the driver stops with the 403 and
-the role to ask for.
+names the role to ask for.
 
 ```bash
 # 1. can this account create the bucket?
@@ -342,19 +359,19 @@ gcloud storage buckets add-iam-policy-binding gs://<name> \
 gcloud storage ls gs://$GOOGLE_CLOUD_PROJECT-msnr-rfgm
 ```
 
-The bucket may live in another project the account does own; Vertex reads
-it as long as the caller has object access. Only `submit`/`fetch` need it —
-`pilot` and `build` do not. About 250 MB of requests and a similar volume of
-answers, at Standard-class prices a few cents a month; delete the bucket
-when the rewritten sets are on capstor.
+The bucket may live in another project that the account does own. Vertex
+reads it as long as the caller has object access. Only `submit` and `fetch`
+need it, not `pilot` or `build`. It holds about 250 MB of requests and a
+similar volume of answers, a few cents a month at Standard-class prices.
+Delete the bucket when the rewritten sets are on capstor.
 
 **The environment every command below starts from.** The location must be
 `global`: the whole Gemini 3.x family is served only from the global
 endpoint, and a regional job answers 404 *The PublisherModel does not
 exist* (checked 2026-09-20 against `us-central1`, `europe-west4` and
-`us-east5` — only 2.5 is regional). Batch prediction accepts `global`, and
-the bucket's `US` multi-region default serves it.
-`google-genai` is in `requirements-ml.txt` and already in the snr env; the
+`us-east5`). Only the 2.5 models are regional. Batch prediction accepts
+`global`, and the bucket's `US` multi-region default serves it.
+`google-genai` is in `requirements-ml.txt` and already in the snr env. The
 storage calls use `google-auth` and `requests`, which come with it.
 
 ```bash
@@ -366,20 +383,20 @@ export HF_HOME=/iopsstor/scratch/cscs/mariagrandury/hf_home HF_HUB_OFFLINE=1 HF_
 
 `GOOGLE_GENAI_USE_VERTEXAI` decides the shape of the request files, so the
 driver refuses to run if the SDK resolves a different backend than the one
-it was configured for — export it before `build`, not between `build` and
-`submit`. Everything runs on the login node (outbound internet, the snr
-env, the offline datasets cache the items come from); the driver is
-network-bound and light, and every mode is idempotent, so re-run after any
+it was configured for. Export it before `build`, not between `build` and
+`submit`. Everything runs on the login node, which has outbound internet, the
+snr env and the offline datasets cache the items come from. The driver is
+network-bound and light, and every mode is idempotent, so re-run it after any
 interruption. Vertex's batch quota is per project and region: `submit`
 stops at the first `RESOURCE_EXHAUSTED` and is re-run later.
 
-**1. Pilot (~$0.40, 15 min).** Synchronous calls with the batch's prompt
-and schema on 10 items of each review task — the `REVIEW_TASKS` in the
-driver: Spanish, Hindi, Turkish, Farsi, Greek, Arabic, Basque and Chinese
-in every family that has them (8 belebele, 7 Global-MMLU, 8 INCLUDE; 230
-items) — printed original → rewritten and written to `pilot_<task>.jsonl`
-in this directory (accepted rows in the row schema, rejected ones with
-their reason):
+**1. Pilot (~$0.40, 15 min).** The pilot makes synchronous calls with the
+batch's prompt and schema on 10 items of each review task. The review tasks
+(`REVIEW_TASKS` in the driver) are Spanish, Hindi, Turkish, Farsi, Greek,
+Arabic, Basque and Chinese in every family that has them: 8 Belebele, 7
+Global-MMLU and 8 INCLUDE tasks, 230 items. Each item is printed as original →
+rewritten and written to `pilot_<task>.jsonl` in this directory, accepted rows
+in the row schema and rejected ones with their reason:
 
 ```bash
 python3.11 src/evals/scripts/rewrite_items_gemini.py pilot
@@ -387,14 +404,14 @@ python3.11 src/evals/scripts/rewrite_items_gemini.py pilot
 
 Read all of them: language kept, stem answerable, gold not leaked, options
 parallel. The prompt (`SYSTEM`, `NOTES` in the driver) is tuned here and
-nowhere else; the validator should pass ≥ 95 %. `--tasks a,b` / `--family`
+nowhere else. The validator should pass ≥ 95 %. `--tasks a,b` and `--family`
 narrow the pilot while iterating on the prompt.
 
-**2. Build the request files.** One line per item in
+**2. Build the request files.** `build` writes one line per item in
 `rf-data/rfgm/_requests/<task>.jsonl` (REST JSON: the user content, the
-system instruction, `responseSchema`, `thinkingLevel: LOW`), rows with a
-missing option dropped as in the rf twins; prints the token estimate and
-the cost per family. `--dry-run` prints the estimate only.
+system instruction, `responseSchema`, `thinkingLevel: LOW`). Rows with a
+missing option are dropped, as in the rf twins. It prints the token estimate
+and the cost per family, and `--dry-run` prints the estimate only.
 
 ```bash
 python3.11 src/evals/scripts/rewrite_items_gemini.py build --dry-run
@@ -403,7 +420,7 @@ python3.11 src/evals/scripts/rewrite_items_gemini.py build
 
 **3a. No bucket? Run it online instead.** `online` uses the same prompt and
 the same validation but calls `generate_content` directly, so it needs
-nothing but ADC — no Cloud Storage, no `build`/`submit`/`fetch`. It costs
+nothing but ADC: no Cloud Storage and no `build`, `submit` or `fetch`. It costs
 **double** the batch price and takes wall-clock time instead of a queue,
 so it is the fallback while `storage.buckets.create` is missing, not the
 default.
@@ -413,10 +430,10 @@ python3.11 src/evals/scripts/rewrite_items_gemini.py online --family include_bas
 python3.11 src/evals/scripts/rewrite_items_gemini.py online --family belebele --L 50
 ```
 
-**`--L 50` is not an optimisation, it is the right task set.** The ladder
-only scores a task on models that trained its language (rule 2,
+**`--L 50` selects exactly the tasks the analysis reads.** The ladder only
+scores a task on models that trained its language (rule 2,
 `utils.trained_only`), so a twin outside the L-cell's languages is paid for
-and never read — the chance gate's own task counts are exactly this set. L50
+and never read. The chance gate's own task counts are exactly this set. L50
 keeps 124 of the 185 tasks:
 
 | family | all | L50 | items (L50) |
@@ -425,25 +442,25 @@ keeps 124 of the 185 tasks:
 | global_mmlu_full | 37 | 29 | 407,192 |
 | include_base_44 | 43 | 36 | 18,337 |
 
-On belebele that is $38 and ~3 hours saved online; on Global-MMLU, 112k
+On Belebele that saves $38 and ~3 hours online, and on Global-MMLU 112k
 items. `--scheme` picks the scheme `--L` refers to (default A).
 
 Run one family at a time. Two concurrent runs at the default concurrency
-put 24 requests in flight, which is where the shared quota collapses — the
-aggregate is slower than running them in sequence.
+put 24 requests in flight, which is where the shared quota collapses.
+Together they then run slower than the two in sequence.
 
-Every answer is appended and flushed as it lands and a re-run skips the ids
-already written, so a killed login-node process loses at most the requests
-in flight — re-run the same command to continue. `--limit N` caps new items
-per task, `--concurrency` defaults to 12: Gemini 3.x online runs on Vertex's
-dynamic shared quota, where 12 threads sustain ~2.9 items/s while 24 trips
-429s and collapses throughput to 0.3 (measured 2026-09-20). It prints rate,
-ETA and running cost every 200 items.
+Every answer is appended and flushed as it lands, and a re-run skips the ids
+already written. A killed login-node process therefore loses at most the
+requests in flight: re-run the same command to continue. `--limit N` caps the
+new items per task. `--concurrency` defaults to 12, because Gemini 3.x online
+runs on Vertex's dynamic shared quota, where 12 threads sustain ~2.9 items/s
+while 24 trip 429s and collapse throughput to 0.3 (measured 2026-09-20). The
+run prints rate, ETA and running cost every 200 items.
 
-**3. Submit.** One batch job per task (185 files of 1–20 MB): each is
-uploaded to `gs://<bucket>/rfgm/requests/<task>.jsonl` and becomes the
-job's source, and the answers land in `…/<task>/dest`. Both URIs and the
-job name go into `rf-data/rfgm/_jobs.json`; a task that has a job is
+**3. Submit.** `submit` starts one batch job per task (185 files of 1–20 MB).
+Each file is uploaded to `gs://<bucket>/rfgm/requests/<task>.jsonl` and
+becomes the job's source, and the answers land in `…/<task>/dest`. Both URIs
+and the job name go into `rf-data/rfgm/_jobs.json`. A task that has a job is
 skipped, so re-run until `status` shows 185.
 
 ```bash
@@ -451,68 +468,72 @@ python3.11 src/evals/scripts/rewrite_items_gemini.py submit --max-jobs 40
 python3.11 src/evals/scripts/rewrite_items_gemini.py status
 ```
 
-**4. Fetch and validate.** Reads every SUCCEEDED job's destination prefix
-in Cloud Storage, matches each answer back to its item — Vertex drops
-everything outside `request` and echoes the request instead of a key, so
-the match is on the prompt text, and any line that matches nothing is
-counted and skipped rather than written — validates each item — JSON with a non-empty stem (a
-trailing colon, dash or ellipsis is trimmed rather than rejected: five of
-the six pilot rejects were a colon, and they fell on Basque 3/10 and
-Persian 2/20 against 0 of 180 elsewhere, a per-language item loss this
-comparison cannot absorb), exactly four non-empty pairwise-distinct
-choices, no choice appearing as a word in the stem (answer leak), the
-majority Unicode script unchanged, plus a per-choice script check for the
-options the source wrote in the item's own script (the per-item majority was
-blind to a Greek item whose four numerals came back in Latin; options that
-were already off-script, such as a bare `"a, b"`, are skipped). Kana,
-katakana, hangul and han count as one script: Japanese mixes kanji and kana
-within a sentence, and comparing the per-choice majority without folding
-them rejected 30.9 % of Japanese INCLUDE items against 0-2 % elsewhere — an
-uneven item loss across languages is the one bias this comparison cannot
-absorb. Script is the cheap "still in its language" check and cannot tell
-Spanish from English; step 5 covers the Latin-script languages. Writes
-`<task>.jsonl` (accepted) and `_rejects/<task>.jsonl` (with the reason and
-what the model produced, so a reject can be re-judged without paying for the
-call again; `online --retry-rejects` re-runs them). A task file is written only from a
-SUCCEEDED job, so a partial run never leaves a half file; FAILED / EXPIRED
-jobs are cleared and `submit` resubmits them (from the object already in
-the bucket); rejected items get one more
-round through `submit --retry` (then `fetch` again), a second rejection
-drops the item. Batch jobs target 24 h; most finish sooner.
+**4. Fetch and validate.** `fetch` reads every SUCCEEDED job's destination
+prefix in Cloud Storage and matches each answer back to its item. Vertex drops
+everything outside `request` and echoes the request instead of a key, so the
+match is on the prompt text. Any line that matches nothing is counted and
+skipped, not written. Each item must then pass these checks:
+
+- JSON with a non-empty stem. A trailing colon, dash or ellipsis is trimmed,
+  not rejected. Five of the six pilot rejects were a colon, and they fell on
+  Basque (3/10) and Persian (2/20) against 0 of 180 elsewhere, a per-language
+  item loss this comparison cannot absorb.
+- Exactly four non-empty, pairwise-distinct choices.
+- No choice appearing as a word in the stem (answer leak).
+- The majority Unicode script unchanged.
+- A per-choice script check for the options the source wrote in the item's
+  own script. The per-item majority was blind to a Greek item whose four
+  numerals came back in Latin. Options that were already off-script, such as
+  a bare `"a, b"`, are skipped. Kana, katakana, hangul and han count as one
+  script, because Japanese mixes kanji and kana within a sentence. Without
+  that folding, the per-choice check rejected 30.9 % of Japanese INCLUDE items
+  against 0-2 % elsewhere, and an uneven item loss across languages is the
+  one bias this comparison cannot absorb.
+
+Script is the cheap "still in its language" check and cannot tell Spanish from
+English. Step 5 covers the Latin-script languages. `fetch` writes
+`<task>.jsonl` (accepted) and `_rejects/<task>.jsonl`, which keeps the reason
+and what the model produced, so a reject can be re-judged without paying for
+the call again (`online --retry-rejects` re-runs them). A task file is written
+only from a SUCCEEDED job, so a partial run never leaves a half file. FAILED
+and EXPIRED jobs are cleared, and `submit` resubmits them from the object
+already in the bucket. Rejected items get one more round through
+`submit --retry` (then `fetch` again), and a second rejection drops the item.
+Batch jobs target 24 h, and most finish sooner.
 
 ```bash
 python3.11 src/evals/scripts/rewrite_items_gemini.py fetch
 python3.11 src/evals/scripts/rewrite_items_gemini.py submit --retry && python3.11 src/evals/scripts/rewrite_items_gemini.py fetch
 ```
 
-**5. Spot-check (45 min, human).** Per task the row and reject counts,
-reject rate, median stem / choice length, the tokens actually spent and
-their cost, and with `--show` five random items of each of the 23 review
-tasks (the pilot's eight languages):
+**5. Spot-check (45 min, human).** `report` prints, per task, the row and
+reject counts, the reject rate, the median stem and choice length, and the
+tokens actually spent and their cost. With `--show` it also prints five random
+items of each of the 23 review tasks (the pilot's eight languages):
 
 ```bash
 python3.11 src/evals/scripts/rewrite_items_gemini.py report --show
 ```
 
-Look for translation drift, stems that give the answer away, options
-collapsed to one word where the original was a clause. A task above 5 %
-rejects: read its rejects before evaluating it.
+Look for translation drift, stems that give the answer away, and options
+collapsed to one word where the original was a clause. For a task above 5 %
+rejects, read its rejects before evaluating it.
 
-**6. Register the tasks.** 185 YAMLs + tasks.json (idempotent; tasks whose
-JSONL is missing are skipped and counted). `n_items` is filled from the
-first results by `derive_task_options.py`.
+**6. Register the tasks.** This writes 185 YAMLs and the tasks.json entries.
+It is idempotent, and tasks whose JSONL is missing are skipped and counted.
+`derive_task_options.py` fills `n_items` from the first results.
 
 ```bash
 python3.11 src/evals/scripts/make_rf_tasks.py --set rfgm
 ```
 
-Steps 7 and 8 are the record of the 2026-09 launch; `--reformulated` and
+Steps 7 and 8 are the record of the 2026-09 launch. `--reformulated` and
 `auto_rfgm` no longer exist, and the `rfgm_*` twins are in `auto`.
 
-**7. First eval — one job (needs approval).** `test_new_tasks.py` checks
+**7. First eval: one job (needs approval).** `test_new_tasks.py` checks
 names against a harness clone and never passes `--include_path`, so the
-smoke test is the watcher on one final checkpoint, all rfgm tasks, ~25
-min on one node; the `per_task/rfgm_*` results must carry `acc,none` and
+smoke test is the watcher on one final checkpoint with all rfgm tasks, ~25
+min on one node. The `per_task/rfgm_*` results must carry `acc,none` and
 `acc_norm,none`, and `samples_rfgm_*.jsonl` the rewritten docs:
 
 ```bash
@@ -521,12 +542,12 @@ python3.11 auto_evals_cscs.py --reformulated rfgm --name lm-175M-L8-deep-seed190
 python3.11 auto_evals_cscs.py --reformulated rfgm --name lm-175M-L8-deep-seed1904 --every 1000 --max-submit 1
 ```
 
-**8. The ladder (needs approval).** The rf watcher's shape: every 2nd
-checkpoint + final of the deep data-A seed-1904 cells, jobs
-`eval-<cell>-iter<N>-rfgm`, 23–45 min each on one node, ~625 jobs, ~385
-node-hours (rf took about two days at `--max-submit 20`). Held-back tasks:
-a `--retry-held` pass. `pretrain_progress.py` does not count reformulated
-sets; progress is `squeue --me | grep rfgm` and the watcher log.
+**8. The ladder (needs approval).** The run has the rf watcher's shape: every
+2nd checkpoint plus the final of the deep data-A seed-1904 cells, jobs
+`eval-<cell>-iter<N>-rfgm` of 23–45 min each on one node, ~625 jobs and ~385
+node-hours (rf took about two days at `--max-submit 20`). Held-back tasks
+need a `--retry-held` pass. `pretrain_progress.py` does not count reformulated
+sets, so follow progress with `squeue --me | grep rfgm` and the watcher log.
 
 ```bash
 python3.11 auto_evals_cscs.py --reformulated rfgm --arch deep --scheme A --seed 1904 --dry-run
@@ -540,14 +561,14 @@ and the merged `results_*.json`, one `samples_<task>_*.jsonl` per task,
 and `push_all_results.py` pushes `rfgm_<task>/acc_norm` to W&B (registered
 tasks are never dropped).
 
-**9. Report and analysis.** The report picks the `rfgm_*` columns up
-(`metric_for` → acc_norm); `compare.py` then draws five panels — original,
-rf, rfgm, rf − original, rfgm − original — with the significance counts
-per set, the table below gets both deltas, and the gate outputs
+**9. Report and analysis.** The report picks up the `rfgm_*` columns
+(`metric_for` → acc_norm). `compare.py` then draws five panels (original, rf,
+rfgm, rf − original, rfgm − original) with the significance counts per set,
+and the table below gets both deltas. The gate outputs
 (`first_size_above_random`, `gate_margin_by_benchmark`) list the `rf_*` and
-`rfgm_*` families as rows next to the originals: that is the direct read of
-the gate impact. Every other analysis (decision accuracy, noise and SNR) sees the new tasks
-too, as it does the rf ones.
+`rfgm_*` families as rows next to the originals, which is the direct read of
+the gate impact. Every other analysis (decision accuracy, noise and SNR) sees
+the new tasks too, as it sees the rf ones.
 
 ```bash
 python3.11 src/pretrain/ladder_report.py --plot --publish --push-hf
@@ -563,57 +584,60 @@ bash scripts/refresh_analysis.sh
 | include_base_44 (43) | 22.1k | 15 | 2 | 9 | 18 |
 | total | 636k | 441 | 54 | **267** | **533** |
 
-Measured, not estimated: 16 real requests per family on 2026-09-20 gave
-791/678/658 input and 55/90/88 output tokens per item (output includes
-thinking at LOW). The earlier bytes/3.5 projection of 607 Mtok in was ~38 %
-high, so the run is cheaper than the $525–570 first documented. Online
-prices are double batch, and are what the run costs if it goes through
-`generate_content` because no Cloud Storage bucket is available.
+These token counts are measured, not estimated: 16 real requests per family
+on 2026-09-20 gave 791/678/658 input and 55/90/88 output tokens per item
+(output includes thinking at LOW). The earlier bytes/3.5 projection of 607 Mtok
+in was ~38 % high, so the run is cheaper than the $525–570 first documented.
+Online prices are double the batch ones. They are what the run costs if it goes
+through `generate_content` because no Cloud Storage bucket is available.
 
-The instruction and the response schema are 550 tokens by `count_tokens`
-and go out with every single request, against an item that is only 57
-tokens for Global-MMLU and ~240 for belebele — so the scaffold is about
-80 % of the input bill, and trimming instruction text is the only lever
-that moves it. `scaffold()` estimates it as bytes/3.5, which runs ~30 %
-high on English prose (719 vs 550), so `build --dry-run` moves with the
-prompt but reads high. No cache discount is
-available against it: implicit caching wants a 2 048-token shared prefix on
-Vertex and this is a quarter of that, and batch and cache discounts would
-not compound anyway.
+The instruction and the response schema are 550 tokens by `count_tokens` and
+go out with every request, while an item is only 57 tokens for Global-MMLU and
+~240 for Belebele. The scaffold is therefore about 80 % of the input bill, and
+trimming the instruction text is the only lever that moves it. `scaffold()`
+estimates it as bytes/3.5, which runs ~30 % high on English prose (719 against
+550 on the 2026-09-20 prompt), so `build --dry-run` follows the prompt but reads
+high. The prompt has grown since, and `scaffold()` now estimates ~905 tokens.
+No cache discount
+applies. Implicit caching on Vertex wants a 2 048-token shared prefix and this
+is a quarter of that, and batch and cache discounts would not compound anyway.
 
-`gemini-3.8-flash` batch: $0.375 / $1.875 per Mtok in / out through
-2026-12-31, double from 2027 — the same on Vertex as on the Gemini API
-([pricing](https://ai.google.dev/gemini-api/docs/pricing)), billed to the
-Cloud project instead of the key;
-thinking tokens bill as output and no Gemini 3 model turns thinking off,
-only down to `LOW` / `MINIMAL`. Input = item + ~150 tokens of instruction
-and schema; output = stem + four choices + JSON; belebele passages are
-input only. Bytes/3.5 estimates, ±30 %. `build --dry-run` prints the same
-table from the cache; `report` prints what was actually spent. Cheaper
-alternatives at the same scope: `gemini-3.1-flash-lite` batch
-($0.125 / $0.75 → ~$125–170), riskier on low-resource scripts;
-`gemini-3.1-pro-preview` batch ($1 / $6 → ~$1,000–1,400).
+`gemini-3.8-flash` batch costs $0.375 / $1.875 per Mtok in / out through
+2026-12-31, and double from 2027. The price is the same on Vertex as on the
+Gemini API ([pricing](https://ai.google.dev/gemini-api/docs/pricing)), billed
+to the Cloud project instead of the key. Thinking tokens bill as output, and no
+Gemini 3 model turns thinking off, only down to `LOW` or `MINIMAL`. Input is
+the item plus the instruction and schema, and output is the stem, the four
+choices and the JSON around them. Belebele passages are input only.
+`build --dry-run` prints the same table from the cache, estimated as
+bytes/3.5 (±30 %), and `report` prints what was actually spent. The
+alternatives at the same scope, on the measured token counts, are
+`gemini-3.1-flash-lite` batch ($0.125 / $0.75 → ~$96), cheaper but riskier on
+low-resource scripts, and `gemini-3.1-pro-preview` batch ($1 / $6 → ~$765).
 
 ### The prompt
 
 **The rewriter is never told which option is correct.** The user turn carries
 the language, the subject, the passage, the question and the four options in
-their original order, and nothing else; `gold` stays in the driver and is
-copied to the output row untouched. Telling it would invite the failure that
-defeats the whole exercise: a model that knows the answer writes the true
-statement more fully or more specifically than the false ones, and a small
-model then scores above chance by following the style rather than the
-content, which is the letter-format artefact traded for a subtler one. The
-instruction to "preserve which choice is correct" is a prohibition on
-flipping truth values, not a disclosure.
+their original order, and nothing else. `gold` stays in the driver and is
+copied to the output row untouched. Telling the rewriter would invite the
+failure that defeats the whole exercise. A model that knows the answer writes
+the true statement more fully or more specifically than the false ones. A
+small model then scores above chance by following the style rather than the
+content, and the letter-format artefact is traded for a subtler one. The
+instruction to "preserve which choice is correct" forbids flipping truth
+values. It does not disclose the answer.
 
-It can still often infer the answer, so `report` measures what is left: how
-often the gold continuation is the single longest of the four, in the
-rewrite and in the originals side by side. Chance is 25 %, the originals
-already carry some of this artefact, and what matters is whether the rewrite
-raised it.
+The rewriter can still often infer the answer, so `report` measures what is
+left: how often the gold continuation is the single longest of the four, in
+the rewrite and in the originals side by side. Chance is 25 % and the
+originals already carry some of this artefact. What matters is whether the
+rewrite raised it.
 
-System instruction (`SYSTEM` in the driver; `{family_note}` per family):
+System instruction (`SYSTEM` in the driver, `{family_note}` per family), as of
+the 2026-09-20 pilot. The driver's `SYSTEM` and `NOTES` have gained rules
+since (for example, "Preserve the order of the choices and which choice is
+correct"), so read the driver for the current text:
 
 ```
 You rewrite multiple-choice test items so that a small language model can be
@@ -638,7 +662,7 @@ continuation that completes the stem into a true or false statement. Rules:
 Return only JSON: {"stem": "...", "choices": ["...", "...", "...", "..."]}
 ```
 
-Family notes — belebele: "A passage is given; the stem must be answerable
+Family notes. Belebele: "A passage is given; the stem must be answerable
 from that passage alone. Do not rewrite or quote the passage." Global-MMLU:
 "The subject is given; the stem may name it." INCLUDE: "The item may test
 regional knowledge (driving rules, local history); keep the local terms."
@@ -648,17 +672,17 @@ schema pins `{"stem": string, "choices": [4 strings]}`.
 
 ## The probe (2026-09-23)
 
-The same question, asked of new candidates: `configs/tasks.json` →
+The probe asks the same question of new candidates: `configs/tasks.json` →
 `groups.auto_probe` (BBH and ACP-Bench as cloze arms, mmlu, commonsense_qa,
 cultural_bench, INCLUDE v2, …, and the `rf_` twins of the ones that ask for a
 letter), evaluated at the last checkpoint of the 600M–1.7B cells. `probe.sh`
-runs the chain — `derive_task_options` → `ladder_report --plot` →
+runs the chain `derive_task_options` → `ladder_report --plot` →
 `above_random` → `compare.py --tag probe` → `probe_survivors.py` →
-`check_rules` — and leaves `rf_gate_probe.*` (the pairs, this README's
+`check_rules`. It leaves `rf_gate_probe.*` (the pairs, this README's
 `rf-compare-probe` block) and `probe_survivors.csv` (the gate per language,
 the `probe-survivors` block). `compare.py` subtracts each task's own chance
 level, so the 2- to 10-way probe pairs read on the same scale as the 4-way
-families above (whose numbers this does not change).
+families above. It does not change those families' numbers.
 
 **The probe's gate is its own (2026-10-08).** `probe.sh` gates with the probe
 group counted as trained (`SNR_TRAINED_GROUPS=auto,auto_probe`) and on the
@@ -667,14 +691,17 @@ it wrote over `rq00_gate_and_curves/pretraining/predictivity/above_random_*.csv`
 and every RQ run after it read the probe-flavoured mask. It now writes its
 tables to a scratch dir outside the repo (`$PROBE_GATE`, default
 `/iopsstor/scratch/cscs/$USER/snr-probe-gate`, passed as `SNR_GATE_DIR` to
-`above_random.py` and `probe_survivors.py`), and only `probe_survivors.csv`
-and the two README blocks come back into the repo. The default `FAMILIES`
+`above_random.py` and `probe_survivors.py`). Only `probe_survivors.csv` and
+the two README blocks come back into the repo. The nightly refresh
+(`run_all_predictivity.sh`) also rewrites `probe_survivors.csv` and its block,
+from the committed `predictivity` mask, and the block names the gate it was
+read from. The default `FAMILIES`
 also covers the seven pairs of the 2026-10-08 batch (m_mmlu, mmmlu,
 arabicmmlu, oall_arabic_mmlu, oall_exams, careqa, french_bench_extra).
 
 **Chance levels of the 2026-10-08 batch.** Several of its families have a
-variable option count, and `above_random` had read them at 1 / the derived
-count. The multilingual TruthfulQA mc2 families (`m_truthfulqa_mc2`,
+variable option count, and `above_random` had set their chance level at
+1 / the derived count. The multilingual TruthfulQA mc2 families (`m_truthfulqa_mc2`,
 `truthfulqa-multi_mc2`) score probability mass on the true options, so their
 chance level is the mean true-option share, 0.449, as for `truthfulqa_mc2`.
 They had been gated at 1/6 = 0.167, so all 27 tasks passed at every size on
@@ -686,7 +713,7 @@ are keyed by task prefix (`CHANCE_BY_PREFIX`).
 
 **Outcome (2026-09-23).** Twenty of the twenty-one candidates were promoted
 into `groups.auto`, so every checkpoint is topped up with them and they enter
-every analysis: a population change, stated in `RULES.md`.
+every analysis. This changes the population, as `RULES.md` states.
 
 `bbq` was not promoted: it cleared a 1/12 chance at 0.44 without telling us
 much, and it cost 23 min per checkpoint against 2.9 for mmlu and 0.3 for a
@@ -694,16 +721,16 @@ belebele task.
 
 ### The length tell, and where it actually is
 
-Replacing letters with answer strings hands the model a lever the lettered
+Replacing letters with answer strings gives the model a cue the lettered
 form does not have: the options now differ in length. If the gold answer is
 systematically the shortest (or longest) of its set, a model scores above
-chance by preferring short (raw log-likelihood) or long (`acc_norm`, which
-divides by length) strings without reading the stem — and the
-original→`rf_` difference is then partly that artefact rather than the format
-change. `acc_norm` normalises a candidate by its own length; it does not
+chance without reading the stem, by preferring short strings (raw
+log-likelihood) or long ones (`acc_norm`, which divides by length). The
+original→`rf_` difference is then partly that artefact and not the format
+change. `acc_norm` normalises a candidate by its own length. It does not
 remove a dataset-level correlation between *being the gold* and *being short*.
 
-Measured off the cached items, not the model: how often the gold is the
+We measure it on the cached items, not on the model: how often the gold is the
 **strictly** shortest (or longest) option, ties excluded, over every task of a
 family (8 sampled where a family has more).
 
@@ -719,13 +746,15 @@ family (8 sampled where a family has more).
 | rf_mmlu | 25.0 % | 17.8 % | 23.7 % | 14,042 |
 | rfgm_include_base_44 | 25.0 % | 17.6 % | 21.9 % | 4,243 |
 
-So this is not a property of the reformulation: every family the study
-already relies on sits at or below chance on both tells, the Gemini rewrite
-included (17.6 %, which is what the driver's own length report is there to
-keep). It is a property of ACP-Bench's published distractor sets — its items
-are plans, and a wrong plan tends to be stated at greater length — and it
-only becomes reachable once the strings are scored. Three of its seven
-subtasks carry it:
+The tell is therefore not a property of the reformulation. Apart from
+ACP-Bench, every family the study relies on sits at or near chance on both
+tells. The highest is `rf_cultural_bench_easy`'s 27.1 % gold-longest rate,
+within the sampling error of its 221 items. The Gemini rewrite is included
+(21.9 % gold longest, the rate the driver's own length report tracks). The
+tell is a property of ACP-Bench's published distractor sets. Its items are
+plans, and a wrong plan tends to be stated at greater length. The tell only
+becomes usable once the strings are scored. Three of its seven subtasks carry
+it:
 
 | task | chance | gold shortest |
 |---|---:|---:|
@@ -737,15 +766,15 @@ subtasks carry it:
 | rf_acp_bench_mcq_reach | 25 % | 26.9 % |
 | rf_acp_bench_mcq_just | 25 % | 19.2 % |
 
-For those three, the reference a score has to beat is the pick-shortest rate
-(0.50 / 0.48 / 0.47), not the 0.25 the gate uses, and the gate's verdict on
-them should be read with that substitution — which is why the probe reports
-`rf_acp_bench_mcq` as a family and not as one number. `rf_bbh_mcq_snarks`,
-the two-way task where a tell would be cheapest, measures 54.8 % against its
-50 % chance on 177 items, inside its own sampling error.
+For those three, a score has to beat the pick-shortest rate (0.50 / 0.48 /
+0.47), not the 0.25 the gate uses, and the gate's verdict on them should be
+read with that substitution. This is why the probe reports `rf_acp_bench_mcq`
+as a family and not as one number. `rf_bbh_mcq_snarks`, the two-way task where
+a tell would be cheapest, measures 54.8 % against its 50 % chance on 177
+items, within its own sampling error.
 
 <!-- BEGIN auto:rf-compare (analysis/rq00_task_reformulation/compare.py) -->
-Gate cells (median task margin over the task's chance level, trained languages, deep data-A seed-1904 ladder, from the ladder report; each set on the models that have the original and that twin scored — the original shown is the rf pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's own acc, p < 0.05; the acc_norm−acc offset is family-shaped, rf median +0.005, and exceeds half the plotted rf gain in 36 % of the pairs).
+Gate cells: the median task margin over the task's chance level (trained languages, deep data-A seed-1904 ladder, from the ladder report). Each set is read on the models that have both the original and that twin scored, and the original shown is the rf pairing. A cell gives the original's acc, then per set `twin acc_norm (**Δ** = twin − original, n = tasks, sig)`. sig counts the tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's own acc, p < 0.05). The twins' acc_norm − acc offset differs by family (rf median +0.004), and it exceeds half the pair's acc_norm gain in 45% of the rf (task, model) pairs.
 
 | family | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---:|---:|---:|---:|---:|---:|
@@ -762,37 +791,37 @@ GitHub: [rf_gate.png](https://github.com/mariagrandury/snr-multilingual/blob/mai
 GitHub: [rf_gate_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_by_language.png) · [rf_gate_by_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_by_language.csv) ·
 [rf_significance.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_significance.csv)
 
-The opening figure showed the twins crossing the gate; this one measures how far above chance they land.
-Population: `predictivity`, deep scheme-A seed-1904 cells (L1–L50; five at 350M, no L1), final checkpoints, 90M–1.7B, trained languages only; 59 belebele, 29 Global-MMLU and 36 INCLUDE tasks.
+The opening figure showed the twins crossing the gate. This one measures how far above chance they land.
+Population: `predictivity`, deep scheme-A seed-1904 cells (L1–L50, five at 350M with no L1), final checkpoints, 90M–1.7B, trained languages only: 59 Belebele, 29 Global-MMLU and 36 INCLUDE tasks.
 
 Cells are medians over tasks of the margin over chance, `acc` for the originals and acc_norm for the twins.
 
 Key findings:
 
-- **The originals stay within ±0.013 of chance at every size.** That holds in all three families; at 1.7B the median margin is +0.011 on belebele, −0.010 on Global-MMLU and +0.005 on INCLUDE.
-- **The rf gain and its significance rise overall, but not at every size.** From 90M to 1.7B, belebele goes from +0.030 to +0.098 and INCLUDE from +0.004 to +0.047, rising at every size, while Global-MMLU goes from +0.017 to +0.058 with a dip to +0.009 at 175M. The significant-task counts by size (90M → 1.7B) are 41/45/55/54/57/56 of 59 on belebele, 2/1/3/13/24/26 of 29 on Global-MMLU and 2/1/7/6/12/17 of 36 on INCLUDE.
-- **rfgm beats rf at every size on belebele.** It gains +0.067 at 90M → +0.168 at 1.7B (53 of 59 tasks significant at 90M, 59 of 59 at 600M, 1B and 1.7B); on INCLUDE, rfgm stays within 0.003 of rf up to 350M (+0.022 each there) and pulls ahead from 600M (+0.075 against +0.047 at 1.7B).
-- **Per language at 1.7B, every belebele and Global-MMLU language gains** (`rf_gate_by_language.csv`). rf − original runs from +0.042 (hi) to +0.158 (ru) over 49 belebele languages (median +0.106; rfgm median +0.170) and from +0.011 (bn) to +0.107 (en) over 29 Global-MMLU languages (median +0.059).
-- **INCLUDE loses in two of 36 languages under each twin.** It loses ne and ur under rf, ml and ur under rfgm; its median language gains +0.067 (rf) and +0.082 (rfgm).
-- **Part of every twin cell is the acc_norm choice.** Its mean offset (twin acc_norm − twin acc) over the 1,726 rf (task, model) pairs, 90M–1.7B, is −0.016 on belebele, +0.015 on Global-MMLU and +0.018 on INCLUDE, with a median of +0.004. The block's "rf median +0.005 … 36 % of the pairs" is a constant in `compare.py`; today |offset| exceeds half the pair's |acc_norm gain| in 45 % of the pairs.
+- **The originals stay within ±0.013 of chance at every size.** That holds in all three families. At 1.7B the median margin is +0.011 on Belebele, −0.010 on Global-MMLU and +0.005 on INCLUDE.
+- **The rf gain and its significance rise overall, but not at every size.** From 90M to 1.7B, Belebele goes from +0.030 to +0.098 and INCLUDE from +0.004 to +0.047, rising at every size. Global-MMLU goes from +0.017 to +0.058 with a dip to +0.009 at 175M. The significant-task counts by size (90M → 1.7B) are 41/45/55/54/57/56 of 59 on Belebele, 2/1/3/13/24/26 of 29 on Global-MMLU and 2/1/7/6/12/17 of 36 on INCLUDE.
+- **rfgm beats rf at every size on Belebele.** Its gain grows from +0.067 at 90M to +0.168 at 1.7B (53 of 59 tasks significant at 90M, 59 of 59 at 600M, 1B and 1.7B). On INCLUDE, rfgm stays within 0.003 of rf up to 350M (+0.022 each there) and pulls ahead from 600M (+0.075 against +0.047 at 1.7B).
+- **Per language at 1.7B, every Belebele and Global-MMLU language gains** (`rf_gate_by_language.csv`). rf − original runs from +0.042 (hi) to +0.158 (ru) over 49 Belebele languages (median +0.106, rfgm median +0.170), and from +0.011 (bn) to +0.107 (en) over 29 Global-MMLU languages (median +0.059).
+- **INCLUDE loses in two of 36 languages under each twin.** It loses ne and ur under rf, and ml and ur under rfgm. Its median language gains +0.067 (rf) and +0.082 (rfgm).
+- **Part of every twin cell is the acc_norm choice.** Its mean offset (twin acc_norm − twin acc) over the 1,726 rf (task, model) pairs, 90M–1.7B, is −0.016 on Belebele, +0.015 on Global-MMLU and +0.018 on INCLUDE, with a median of +0.004. |offset| exceeds half the pair's |acc_norm gain| in 45 % of the pairs. The block now computes both numbers from these pairs.
 
 Follow-ups:
 
 - Draw each row once: `rf_gate.csv` holds 138 rows for 78 distinct cells, and `rf_gate_by_language.csv` 5,622 rows for 3,072, which makes the per-language figure unreadable. Splitting it by family would make the languages legible.
-- Compute the acc_norm-offset sentence in the block and caption from `rf_significance.csv` on every run, instead of the constants.
+- Compute the acc_norm-offset sentence in the block and caption from `rf_significance.csv` on every run, instead of the constants. Done for the block (`compare.py` reads the pairs of each run). The module docstring of `compare.py` still quotes the old constants (+0.005, 36 %).
 - Add a same-metric panel (twin `acc` − original `acc`) beside the acc_norm one, since the z-test already runs on `acc`.
 - Add a Global-MMLU rfgm set: it is the family with the most items and the only letter family with no rewrite.
 
 <!-- BEGIN auto:rf-compare-probe (analysis/rq00_task_reformulation/compare.py --tag probe) -->
-Gate cells (median task margin over the task's chance level, trained languages, deep data-A seed-1904 ladder, from the ladder report; each set on the models that have the original and that twin scored — the original shown is the rf pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's own acc, p < 0.05; 3 of 1419 (task, model) pairs untested, no harness results file).
+Gate cells: the median task margin over the task's chance level (trained languages, deep data-A seed-1904 ladder, from the ladder report). Each set is read on the models that have both the original and that twin scored, and the original shown is the rf pairing. A cell gives the original's acc, then per set `twin acc_norm (**Δ** = twin − original, n = tasks, sig)`. sig counts the tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's own acc, p < 0.05). 3 of 1452 (task, model) pairs are untested, for lack of a harness results file.
 
 | family | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---:|---:|---:|---:|---:|---:|
-| mmlu | -0.007 · rf +0.023 (**+0.030**, n=1, sig=1) · rfgm — | +0.001 · rf +0.030 (**+0.029**, n=1, sig=1) · rfgm — | -0.005 · rf +0.036 (**+0.041**, n=1, sig=1) · rfgm — | +0.001 · rf +0.057 (**+0.057**, n=1, sig=1) · rfgm — | -0.004 · rf +0.082 (**+0.086**, n=1, sig=1) · rfgm — | +0.017 · rf +0.111 (**+0.093**, n=1, sig=1) · rfgm — |
-| commonsense_qa | +0.004 · rf +0.107 (**+0.103**, n=1, sig=1) · rfgm — | +0.004 · rf +0.135 (**+0.131**, n=1, sig=1) · rfgm — | -0.000 · rf +0.148 (**+0.148**, n=1, sig=1) · rfgm — | +0.002 · rf +0.188 (**+0.186**, n=1, sig=1) · rfgm — | +0.001 · rf +0.214 (**+0.213**, n=1, sig=1) · rfgm — | +0.009 · rf +0.265 (**+0.256**, n=1, sig=1) · rfgm — |
-| cultural_bench_easy | +0.175 · rf +0.010 (**-0.165**, n=19, sig=0) · rfgm — | -0.093 · rf +0.025 (**+0.118**, n=19, sig=7) · rfgm — | -0.026 · rf +0.021 (**+0.047**, n=19, sig=2) · rfgm — | -0.015 · rf +0.025 (**+0.039**, n=19, sig=7) · rfgm — | +0.021 · rf +0.065 (**+0.044**, n=19, sig=5) · rfgm — | +0.043 · rf +0.092 (**+0.049**, n=19, sig=7) · rfgm — |
-| bbh_mcq | -0.000 · rf +0.024 (**+0.024**, n=17, sig=6) · rfgm — | -0.004 · rf +0.030 (**+0.034**, n=17, sig=6) · rfgm — | +0.005 · rf +0.036 (**+0.031**, n=17, sig=5) · rfgm — | +0.006 · rf +0.060 (**+0.054**, n=17, sig=7) · rfgm — | +0.000 · rf +0.075 (**+0.075**, n=17, sig=8) · rfgm — | -0.003 · rf +0.084 (**+0.087**, n=17, sig=10) · rfgm — |
-| acp_bench_mcq | +0.003 · rf +0.047 (**+0.045**, n=7, sig=4) · rfgm — | -0.001 · rf +0.064 (**+0.065**, n=7, sig=5) · rfgm — | +0.010 · rf +0.062 (**+0.052**, n=7, sig=4) · rfgm — | +0.000 · rf +0.087 (**+0.087**, n=7, sig=5) · rfgm — | +0.006 · rf +0.105 (**+0.099**, n=7, sig=5) · rfgm — | +0.010 · rf +0.132 (**+0.122**, n=7, sig=5) · rfgm — |
+| mmlu | -0.007 · rf +0.023 (**+0.030**, n=1, sig=1) · rfgm — | +0.001 · rf +0.030 (**+0.029**, n=1, sig=1) · rfgm — | -0.003 · rf +0.039 (**+0.042**, n=1, sig=1) · rfgm — | +0.001 · rf +0.057 (**+0.057**, n=1, sig=1) · rfgm — | -0.004 · rf +0.082 (**+0.086**, n=1, sig=1) · rfgm — | +0.017 · rf +0.111 (**+0.093**, n=1, sig=1) · rfgm — |
+| commonsense_qa | +0.004 · rf +0.107 (**+0.103**, n=1, sig=1) · rfgm — | +0.004 · rf +0.135 (**+0.131**, n=1, sig=1) · rfgm — | +0.000 · rf +0.155 (**+0.155**, n=1, sig=1) · rfgm — | +0.002 · rf +0.188 (**+0.186**, n=1, sig=1) · rfgm — | +0.001 · rf +0.214 (**+0.213**, n=1, sig=1) · rfgm — | +0.009 · rf +0.265 (**+0.256**, n=1, sig=1) · rfgm — |
+| cultural_bench_easy | +0.175 · rf +0.010 (**-0.165**, n=19, sig=0) · rfgm — | -0.093 · rf +0.025 (**+0.118**, n=19, sig=7) · rfgm — | -0.030 · rf +0.025 (**+0.054**, n=19, sig=3) · rfgm — | -0.015 · rf +0.025 (**+0.039**, n=19, sig=7) · rfgm — | +0.021 · rf +0.065 (**+0.044**, n=19, sig=5) · rfgm — | +0.043 · rf +0.092 (**+0.049**, n=19, sig=7) · rfgm — |
+| bbh_mcq | -0.000 · rf +0.024 (**+0.024**, n=17, sig=6) · rfgm — | -0.004 · rf +0.030 (**+0.034**, n=17, sig=6) · rfgm — | -0.001 · rf +0.037 (**+0.038**, n=17, sig=5) · rfgm — | +0.006 · rf +0.060 (**+0.054**, n=17, sig=7) · rfgm — | +0.000 · rf +0.075 (**+0.075**, n=17, sig=8) · rfgm — | -0.003 · rf +0.084 (**+0.087**, n=17, sig=10) · rfgm — |
+| acp_bench_mcq | +0.003 · rf +0.047 (**+0.045**, n=7, sig=4) · rfgm — | -0.001 · rf +0.064 (**+0.065**, n=7, sig=5) · rfgm — | +0.006 · rf +0.064 (**+0.058**, n=7, sig=4) · rfgm — | +0.000 · rf +0.087 (**+0.087**, n=7, sig=5) · rfgm — | +0.006 · rf +0.105 (**+0.099**, n=7, sig=5) · rfgm — | +0.010 · rf +0.132 (**+0.122**, n=7, sig=5) · rfgm — |
 
 ![family x size](rf_gate_probe.png)
 
@@ -808,10 +837,10 @@ Population: the same deep scheme-A seed-1904 finals, on the five promoted famili
 
 Key findings:
 
-- **rf − original is larger at 1.7B than at 90M on all four English families.** It goes commonsense_qa +0.103 → +0.256, acp_bench_mcq +0.045 → +0.122, mmlu +0.030 → +0.093 and bbh_mcq +0.024 → +0.087; only commonsense_qa rises at every size: mmlu dips at 175M (+0.029), and bbh_mcq (+0.031) and acp_bench_mcq (+0.052) dip at 350M.
-- **mmlu and commonsense_qa are significant at every size.** bbh_mcq's significant subtasks go from 6 to 10 of 17 (6/6/5/7/8/10, 90M → 1.7B), and acp_bench_mcq's stay at 4–5 of 7.
-- **acp_bench_mcq's gain partly rides [the length tell](#the-length-tell-and-where-it-actually-is).** Under acc_norm, which the cell plots, only areach beats its pick-shortest rate at 1.7B (0.688 against 0.50; prog 0.350 and val 0.181 stay below theirs, medians over the six 1.7B cells). Plain `acc`, which the significance count reads, reaches 0.527 on prog, above its 0.469.
-- **cultural_bench_easy's original is erratic.** It reads +0.175 at 90M, −0.093 at 175M and +0.043 at 1.7B; its rf − original (−0.165 at 90M, +0.049 with 7 of 19 tasks significant at 1.7B) reflects the original's instability below 600M, not the twin.
+- **rf − original is larger at 1.7B than at 90M on all four English families.** It goes from +0.103 to +0.256 on commonsense_qa, +0.045 to +0.122 on acp_bench_mcq, +0.030 to +0.093 on mmlu and +0.024 to +0.087 on bbh_mcq. Only commonsense_qa rises at every size. The mmlu gain dips at 175M (+0.029), and the bbh_mcq (+0.031) and acp_bench_mcq (+0.052) gains dip at 350M.
+- **The mmlu and commonsense_qa gains are significant at every size.** bbh_mcq's significant subtasks go from 6 to 10 of 17 (6/6/5/7/8/10, 90M → 1.7B), and acp_bench_mcq's stay at 4–5 of 7.
+- **acp_bench_mcq's gain partly rides [the length tell](#the-length-tell-and-where-it-actually-is).** Under acc_norm, which the cell plots, only areach beats its pick-shortest rate at 1.7B (0.688 against 0.50, medians over the six 1.7B cells). prog (0.350) and val (0.181) stay below theirs. Plain `acc`, which the significance count reads, reaches 0.527 on prog, above its 0.469.
+- **cultural_bench_easy's original is erratic.** It reads +0.175 at 90M, −0.093 at 175M and +0.043 at 1.7B. Its rf − original (−0.165 at 90M, +0.049 with 7 of 19 tasks significant at 1.7B) reflects the original's instability below 600M, not the twin.
 
 Follow-ups:
 
@@ -820,7 +849,7 @@ Follow-ups:
 - Check cultural_bench_easy's 90M original for a constant-answer bias before reading its small-size cells.
 
 <!-- BEGIN auto:probe-survivors (analysis/rq00_task_reformulation/probe_survivors.py) -->
-Probe survivors: which of the 59 candidate benchmarks in `auto_probe` clear the above-random gate (rule 1, the `predictivity` gate re-run by probe.sh with the probe counted as trained, cells that trained the language), over 50 languages. A cell counts languages (original | rf twin where one exists) — the population differs per cell (rule 13) — and the second table names the surviving benchmarks per language, the twin as `-rf`. Same items as `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance; this table is only the gate.
+Probe survivors: which of the 59 candidate benchmarks in `auto_probe` clear the above-random gate (rule 1, the committed `predictivity` gate mask, which reads a benchmark in `auto` on the cells that trained the language and a candidate outside `auto` on every cell), over 50 languages. A cell counts languages (original | rf twin where one exists), so the population differs per cell (rule 13). The second table names the surviving benchmarks per language, with the twin as `-rf`. The items are those of `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance they land. This table is only the gate.
 
 | benchmark | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---:|---:|---:|---:|---:|---:|
@@ -856,17 +885,17 @@ Probe survivors: which of the 59 candidate benchmarks in `auto_probe` clear the 
 | include_v2_en | orig 32/42 | orig 34/42 | orig 36/42 | orig 38/42 | orig 41/42 | orig 42/42 |
 | include_v2_og | orig 13/42 | orig 16/42 | orig 23/42 | orig 28/42 | orig 31/42 | orig 35/42 |
 | kmmlu | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 1/1 | orig 1/1 |
-| kobest | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
-| m_mmlu | orig — | orig — | orig — | orig 0/27 · rf 23/27 | orig 0/27 · rf 24/27 | orig 0/27 · rf 27/27 |
+| kobest | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
+| m_mmlu | orig — · rf 20/27 | orig — · rf 19/27 | orig — · rf 21/27 | orig 0/27 · rf 24/27 | orig 0/27 · rf 24/27 | orig 0/27 · rf 27/27 |
 | m_truthfulqa_mc1 | orig — | orig — | orig — | orig 16/27 | orig 17/27 | orig 18/27 |
 | m_truthfulqa_mc2 | orig — | orig — | orig — | orig 2/24 | orig 2/24 | orig 2/24 |
 | mathqa | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
 | mela | orig — | orig — | orig — | orig — | orig — | orig — |
 | mmlu | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
-| mmmlu | orig — | orig — | orig — | orig 0/12 · rf 9/12 | orig 0/12 · rf 10/12 | orig 0/12 · rf 12/12 |
-| multiblimp-extra | orig — | orig — | orig — | orig 3/3 | orig 3/3 | orig 3/3 |
+| mmmlu | orig — · rf 8/12 | orig — · rf 9/12 | orig — · rf 9/12 | orig 0/12 · rf 9/12 | orig 0/12 · rf 10/12 | orig 0/12 · rf 12/12 |
+| multiblimp-extra | orig 3/3 | orig 3/3 | orig 3/3 | orig 3/3 | orig 3/3 | orig 3/3 |
 | noreval | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
-| noreval_extra | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
+| noreval_extra | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
 | oall_acva | orig — | orig — | orig — | orig 0/1 | orig 0/1 | orig 0/1 |
 | oall_alghafa | orig — | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
 | oall_arabic_mmlu | orig — | orig — | orig — | orig 0/1 · rf 0/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
@@ -890,57 +919,57 @@ Probe survivors: which of the 59 candidate benchmarks in `auto_probe` clear the 
 | az | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
 | bg | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
 | bn | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf |
-| ca | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_openbookqa, ibero_piqa | ibero_arc, ibero_nli, ibero_openbookqa, ibero_paraphrase, ibero_piqa, ibero_siqa, m_mmlu-rf | ibero_arc, ibero_nli, ibero_openbookqa, ibero_paraphrase, ibero_piqa, ibero_siqa, m_mmlu-rf | ibero_arc, ibero_nli, ibero_openbookqa, ibero_paraphrase, ibero_piqa, ibero_siqa, m_mmlu-rf |
+| ca | ibero_arc, ibero_openbookqa, ibero_piqa, m_mmlu-rf | ibero_arc, ibero_openbookqa, ibero_piqa, m_mmlu-rf | ibero_arc, ibero_openbookqa, ibero_piqa, m_mmlu-rf | ibero_arc, ibero_nli, ibero_openbookqa, ibero_paraphrase, ibero_piqa, ibero_siqa, m_mmlu-rf | ibero_arc, ibero_nli, ibero_openbookqa, ibero_paraphrase, ibero_piqa, ibero_siqa, m_mmlu-rf | ibero_arc, ibero_nli, ibero_openbookqa, ibero_paraphrase, ibero_piqa, ibero_siqa, m_mmlu-rf |
 | cs | include_v2_og | include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| da | — | — | — | include_v2_en, m_mmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf |
-| de | — | — | include_v2_en | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf |
+| da | m_mmlu-rf | m_mmlu-rf | m_mmlu-rf | include_v2_en, m_mmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf |
+| de | m_mmlu-rf, mmmlu-rf | m_mmlu-rf, mmmlu-rf | include_v2_en, m_mmlu-rf, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf |
 | el | include_v2_en | include_v2_en | include_v2_en | include_v2_en | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
 | en | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, blend_sample, commonsense_qa-rf, cultural_bench_easy, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa, toksuite, toksuite_math, toksuite_stem |
-| es | cultural_bench_easy, ibero_cola, include_v2_en, include_v2_og | ibero_openbookqa, include_v2_en, include_v2_og | ibero_openbookqa, include_v2_en, include_v2_og | arc_mt, cultural_bench_easy-rf, headqa, ibero_copa, ibero_openbookqa, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | arc_mt, careqa-rf, cultural_bench_easy-rf, headqa, ibero_cola, ibero_copa, ibero_openbookqa, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | arc_mt, careqa-rf, cultural_bench_easy-rf, headqa, ibero_cola, ibero_copa, ibero_openbookqa, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf |
+| es | cultural_bench_easy, ibero_cola, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | ibero_openbookqa, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | ibero_openbookqa, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | arc_mt, cultural_bench_easy-rf, headqa, ibero_copa, ibero_openbookqa, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | arc_mt, careqa-rf, cultural_bench_easy-rf, headqa, ibero_cola, ibero_copa, ibero_openbookqa, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | arc_mt, careqa-rf, cultural_bench_easy-rf, headqa, ibero_cola, ibero_copa, ibero_openbookqa, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf |
 | et | — | — | — | — | — | include_v2_en |
 | eu | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa | ibero_arc, ibero_piqa |
 | fa | toksuite | toksuite | toksuite | toksuite | include_v2_en, toksuite | include_v2_en, toksuite |
 | fi | — | include_v2_en | include_v2_en | include_v2_en | include_v2_en | arc_mt, include_v2_en |
-| fr | french_bench, include_v2_en | french_bench, include_v2_en | french_bench, include_v2_en | french_bench, french_bench_extra, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | french_bench, french_bench_extra, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | french_bench, french_bench_extra, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf |
+| fr | french_bench, include_v2_en, m_mmlu-rf, mmmlu-rf | french_bench, include_v2_en, m_mmlu-rf, mmmlu-rf | french_bench, include_v2_en, m_mmlu-rf, mmmlu-rf | french_bench, french_bench_extra, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | french_bench, french_bench_extra, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | french_bench, french_bench_extra, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf |
 | gl | ibero_openbookqa | ibero_openbookqa | ibero_openbookqa | ibero_openbookqa | ibero_openbookqa | ibero_openbookqa |
 | he | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og |
 | hi | cultural_bench_easy, include_v2_en | include_v2_en | include_v2_en | include_v2_en, m_truthfulqa_mc1 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf |
-| hr | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, multiblimp-extra | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, multiblimp-extra | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, multiblimp-extra |
-| hu | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
-| id | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | copal_id, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf |
+| hr | include_v2_en, include_v2_og, m_mmlu-rf, multiblimp-extra | include_v2_en, include_v2_og, multiblimp-extra | include_v2_en, include_v2_og, multiblimp-extra | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, multiblimp-extra | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, multiblimp-extra | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, multiblimp-extra |
+| hu | include_v2_en, m_mmlu-rf | include_v2_en, m_mmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
+| id | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | copal_id, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf |
 | is | — | — | — | — | — | — |
-| it | evalita_llm, include_v2_en, toksuite | evalita_llm, include_v2_en, toksuite | evalita_llm, include_v2_en, include_v2_og, toksuite | arc_mt, evalita_llm, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite | arc_mt, evalita_llm, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite | arc_mt, evalita_llm, evalita_llm_extra, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf, toksuite |
-| ja | cultural_bench_easy, include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og, mmmlu-rf | include_v2_en, include_v2_og, mmmlu-rf | cultural_bench_easy-rf, include_v2_en, include_v2_og, mmmlu-rf |
+| it | evalita_llm, include_v2_en, m_mmlu-rf, toksuite | evalita_llm, include_v2_en, m_mmlu-rf, mmmlu-rf, toksuite | evalita_llm, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite | arc_mt, evalita_llm, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite | arc_mt, evalita_llm, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite | arc_mt, evalita_llm, evalita_llm_extra, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf, toksuite |
+| ja | cultural_bench_easy, include_v2_en, mmmlu-rf | include_v2_en, mmmlu-rf | include_v2_en, mmmlu-rf | include_v2_en, include_v2_og, mmmlu-rf | include_v2_en, include_v2_og, mmmlu-rf | cultural_bench_easy-rf, include_v2_en, include_v2_og, mmmlu-rf |
 | ka | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
 | kk | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ko | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, kobest, mmmlu-rf | include_v2_en, include_v2_og, kmmlu, kobest, mmmlu-rf | include_v2_en, include_v2_og, kmmlu, kobest, mmmlu-rf |
+| ko | include_v2_en, include_v2_og, kobest, mmmlu-rf | include_v2_en, include_v2_og, kobest, mmmlu-rf | include_v2_en, include_v2_og, kobest, mmmlu-rf | include_v2_en, include_v2_og, kobest, mmmlu-rf | include_v2_en, include_v2_og, kmmlu, kobest, mmmlu-rf | include_v2_en, include_v2_og, kmmlu, kobest, mmmlu-rf |
 | lt | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| lv | — | — | — | multiblimp-extra | multiblimp-extra | multiblimp-extra |
-| ml | — | include_v2_en | include_v2_en | include_v2_en, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 |
-| mr | — | — | — | m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 |
+| lv | multiblimp-extra | multiblimp-extra | multiblimp-extra | multiblimp-extra | multiblimp-extra | multiblimp-extra |
+| ml | m_mmlu-rf | include_v2_en | include_v2_en | include_v2_en, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 |
+| mr | m_mmlu-rf | m_mmlu-rf | m_mmlu-rf | m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 |
 | ms | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ne | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
-| nl | blimp_nl, include_v2_en | blimp_nl, include_v2_en | blimp_nl, include_v2_en, include_v2_og | blimp_nl, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | blimp_nl, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | blimp_nl, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
-| no | noreval | noreval | noreval | m_mmlu-rf, noreval, noreval_extra | arc_mt, m_mmlu-rf, noreval, noreval_extra | arc_mt, m_mmlu-rf, noreval, noreval_extra |
+| ne | include_v2_en, include_v2_og, m_mmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
+| nl | blimp_nl, include_v2_en, m_mmlu-rf | blimp_nl, include_v2_en, m_mmlu-rf | blimp_nl, include_v2_en, include_v2_og, m_mmlu-rf | blimp_nl, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | blimp_nl, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | blimp_nl, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
+| no | m_mmlu-rf, noreval, noreval_extra | m_mmlu-rf, noreval, noreval_extra | m_mmlu-rf, noreval, noreval_extra | m_mmlu-rf, noreval, noreval_extra | arc_mt, m_mmlu-rf, noreval, noreval_extra | arc_mt, m_mmlu-rf, noreval, noreval_extra |
 | pl | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og | arc_mt, include_v2_en, include_v2_og |
-| pt | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf |
-| ro | — | — | — | m_mmlu-rf, m_truthfulqa_mc1 | m_mmlu-rf, m_truthfulqa_mc1 | m_mmlu-rf, m_truthfulqa_mc1 |
-| ru | cultural_bench_easy, include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
-| sk | — | — | — | m_mmlu-rf | include_v2_en, m_mmlu-rf | include_v2_en, m_mmlu-rf |
-| sq | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og, multiblimp-extra | include_v2_en, include_v2_og, multiblimp-extra | include_v2_en, include_v2_og, multiblimp-extra |
-| sr | include_v2_en | include_v2_en | include_v2_en | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
-| sv | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf |
-| ta | include_v2_en | include_v2_en | include_v2_en | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 |
+| pt | include_v2_en, m_mmlu-rf, mmmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1, mmmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf |
+| ro | — | — | m_mmlu-rf | m_mmlu-rf, m_truthfulqa_mc1 | m_mmlu-rf, m_truthfulqa_mc1 | m_mmlu-rf, m_truthfulqa_mc1 |
+| ru | cultural_bench_easy, include_v2_en, include_v2_og, m_mmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
+| sk | m_mmlu-rf | m_mmlu-rf | m_mmlu-rf | m_mmlu-rf | include_v2_en, m_mmlu-rf | include_v2_en, m_mmlu-rf |
+| sq | include_v2_en, multiblimp-extra | include_v2_en, multiblimp-extra | include_v2_en, multiblimp-extra | include_v2_en, include_v2_og, multiblimp-extra | include_v2_en, include_v2_og, multiblimp-extra | include_v2_en, include_v2_og, multiblimp-extra |
+| sr | include_v2_en | include_v2_en, m_mmlu-rf | include_v2_en, m_mmlu-rf | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
+| sv | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf | arc_mt, include_v2_en, include_v2_og, m_mmlu-rf |
+| ta | include_v2_en, m_mmlu-rf | include_v2_en, m_mmlu-rf | include_v2_en, m_mmlu-rf | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 | include_v2_en, m_mmlu-rf, m_truthfulqa_mc1, m_truthfulqa_mc2 |
 | tr | include_v2_en, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp | include_v2_en, include_v2_og, toksuite, turblimp |
 | uk | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
 | ur | — | — | — | include_v2_en | include_v2_en | include_v2_en, include_v2_og |
-| vi | include_v2_en, include_v2_og | include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
-| zh | cultural_bench_easy, include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, toksuite, zhoblimp | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp |
+| vi | include_v2_en, include_v2_og, m_mmlu-rf | include_v2_en, include_v2_og, m_mmlu-rf | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 | cultural_bench_easy-rf, include_v2_en, include_v2_og, m_mmlu-rf, m_truthfulqa_mc1 |
+| zh | cultural_bench_easy, include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp | include_v2_en, include_v2_og, m_mmlu-rf, mmmlu-rf, toksuite, zhoblimp |
 <!-- END auto:probe-survivors -->
 
 [probe_survivors.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/probe_survivors.csv)
 
-The margins above leave open which candidates pass the gate at all, per language; this table answers that.
+The margins above leave open which candidates pass the gate at all, per language. This table answers that.
 Population: the `predictivity` gate mask (seed 1904, every cell and data build), cells that trained the language, the 59 candidates over 50 languages.
 
 Each cell counts languages, and the language count changes from row to row.
@@ -948,10 +977,10 @@ Each cell counts languages, and the language count changes from row to row.
 Key findings:
 
 - **INCLUDE v2 has the broadest coverage.** include_v2_en clears the gate in 42 of 42 languages at 1.7B (32 of 42 at 90M), and include_v2_og in 35 of 42 (13 of 42 at 90M).
-- **arc_mt switches on with size.** It clears in 0 of 11 languages through 350M, then 2 at 600M, 10 at 1B and 11 at 1.7B.
-- **Nine lettered originals never pass, while their `rf_` twins do.** mmlu, commonsense_qa and acp_bench_mcq clear in 0 of 1 language at every size and their twins in 1 of 1; m_mmlu (0 of 27), mmmlu (0 of 12), arabicmmlu, careqa, oall_arabic_mmlu and oall_exams (0 of 1), scored from 600M, have twins that clear at 1.7B in every language. The bbh_mcq original passes only at 90M, 175M and 1B, its twin at every size.
+- **arc_mt switches on with size.** It clears in 0 of 11 languages through 350M, then 3 at 600M, 10 at 1B and 11 at 1.7B.
+- **Nine lettered originals never pass, while their `rf_` twins do.** mmlu, commonsense_qa and acp_bench_mcq clear in 0 of 1 language at every size, and their twins in 1 of 1. m_mmlu (0 of 27), mmmlu (0 of 12), arabicmmlu, careqa, oall_arabic_mmlu and oall_exams (0 of 1), scored from 600M, have twins that clear at 1.7B in every language. The bbh_mcq original passes only at 90M, 175M and 1B, and its twin at every size.
 - **cultural_bench_easy's original passes in 6 of 8 languages at 90M and in none from 175M up.** Its twin rises from 1 of 8 at 90M to 5 of 8 at 1.7B.
-- **Ten candidates never pass in any language at any size.** They are acp_bench_cloze, bangla, bbh_cloze, ceval, cultural_bench_hard (0 of 8), ibero_truthfulqa, oall_acva, toxigen, truthfulqa_mc1 and truthfulqa_mc2 (0 of 3); blend_sample passes in 1 of 4 at 90M only, and xquad (generative) and mela have no gate.
+- **Eleven candidates never pass in any language at any size.** They are acp_bench_cloze, bangla, bbh_cloze, ceval, cultural_bench_hard (0 of 8), ibero_truthfulqa, oall_acva, toxigen, truthfulqa-multi_mc2 (0 of 3, scored from 600M), truthfulqa_mc1 and truthfulqa_mc2 (0 of 3). The blend_sample original passes in 1 of 4 at 90M only, and xquad (generative) and mela have no gate.
 
 Follow-ups:
 
@@ -960,22 +989,22 @@ Follow-ups:
 <!-- BEGIN auto:reformulations-gate (reformulations_gate.py --pool predictivity) -->
 ## The twins and the gate, with significance
 
-Per family at 1.7B: the share of languages above the gate for the original and the twin, paired on the language; `twin only / original only` are the discordant languages McNemar's exact test is run on. Below, the gate's pass share per size on every task, the originals alone and the twins alone (`reformulations_gate.csv` carries the same three populations for mean DA-size, the reliable share and rq01's median R²). Regenerate with `python analysis/rq00_task_reformulation/reformulations_gate.py --pool predictivity`.
+Per family at 1.7B: the share of languages above the gate for the original and for the twin, paired on the language. `twin only / original only` counts the discordant languages that McNemar's exact test is run on. Below, the gate's pass share per size on every task, on the non-twin tasks alone (`originals only`) and on the twins alone. `reformulations_gate.csv` carries the same three populations for mean DA-size, the reliable share and rq01's median R². Regenerate with `python analysis/rq00_task_reformulation/reformulations_gate.py --pool predictivity`.
 
 | family | twin | languages | original | twin | twin only / original only | p (McNemar) |
 |---|---|---|---|---|---|---|
 | acp_bench_mcq | rf | 7 | 0.00 | 0.71 | 5 / 0 | 0.0625 |
 | arabicmmlu | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 | bbh_mcq | rf | 17 | 0.00 | 0.59 | 10 / 0 | 0.00195 |
-| belebele | rf | 105 | 0.05 | 0.82 | 82 / 1 | 1.74e-23 |
+| belebele | rf | 105 | 0.04 | 0.81 | 81 / 0 | 8.27e-25 |
 | belebele | rfgm | 59 | 0.05 | 1.00 | 56 / 0 | 2.78e-17 |
 | careqa | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 | commonsense_qa | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 | cultural_bench_easy | rf | 19 | 0.00 | 0.37 | 7 / 0 | 0.0156 |
 | french_bench_extra | rf | 1 | 0.00 | 0.00 | 0 / 0 | — |
 | global_mmlu_full | rf | 37 | 0.03 | 0.95 | 34 / 0 | 1.16e-10 |
-| include_base_44 | rf | 43 | 0.07 | 0.72 | 29 / 1 | 5.77e-08 |
-| include_base_44 | rfgm | 43 | 0.07 | 0.74 | 30 / 1 | 2.98e-08 |
+| include_base_44 | rf | 43 | 0.05 | 0.72 | 30 / 1 | 2.98e-08 |
+| include_base_44 | rfgm | 43 | 0.05 | 0.72 | 30 / 1 | 2.98e-08 |
 | m_mmlu | rf | 27 | 0.00 | 1.00 | 27 / 0 | 1.49e-08 |
 | mmlu | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 | mmmlu | rf | 12 | 0.00 | 1.00 | 12 / 0 | 0.000488 |
@@ -984,9 +1013,9 @@ Per family at 1.7B: the share of languages above the gate for the original and t
 
 | population | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| every task | 0.39 | 0.42 | 0.45 | 0.48 | 0.52 | 0.56 |
-| originals only | 0.36 | 0.38 | 0.40 | 0.41 | 0.45 | 0.49 |
-| twins only | 0.52 | 0.57 | 0.62 | 0.70 | 0.76 | 0.82 |
+| every task | 0.41 | 0.44 | 0.47 | 0.48 | 0.53 | 0.56 |
+| originals only | 0.37 | 0.39 | 0.41 | 0.42 | 0.46 | 0.49 |
+| twins only | 0.53 | 0.58 | 0.63 | 0.69 | 0.76 | 0.82 |
 
 ![The reformulations and the gate](reformulations_gate.png)
 <!-- END auto:reformulations-gate -->
@@ -995,15 +1024,15 @@ GitHub: [reformulations_gate.png](https://github.com/mariagrandury/snr-multiling
 [reformulations_gate_mcnemar.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate_mcnemar.csv)
 
 This figure is the full version of the opening one: every size, plus the pooled gate share and the decision-accuracy reading.
-Population: the `predictivity` gate mask; the McNemar rows pair each twin with its original on the task, and at 600M–1.7B the pooled rows split the 1,663 gated benchmark tasks into 1,287 non-twin tasks and 376 twins (1,433, 1,101 and 332 at 90M–350M).
+Population: the `predictivity` gate mask. The McNemar rows pair each twin with its original on the task, and at 600M–1.7B the pooled rows split the 1,667 gated benchmark tasks into 1,291 non-twin tasks and 376 twins (1,511, 1,140 and 371 at 90M–350M).
 
 Key findings:
 
 - **At 1.7B the large twins pass in significantly more tasks than their originals.** Twin-only : original-only is 82 : 1 for belebele rf (p 1.7e-23), 56 : 0 for belebele rfgm (2.8e-17), 34 : 0 for Global-MMLU rf (1.2e-10), 29 : 1 and 30 : 1 for INCLUDE rf and rfgm (5.8e-08, 3.0e-08), 27 : 0 for m_mmlu (1.5e-08), 12 : 0 for mmmlu (4.9e-04), 10 : 0 for bbh_mcq (0.002) and 7 : 0 for cultural_bench_easy (0.016).
-- **acp_bench_mcq does not reach p < 0.05.** It reads 5 : 0 (p 0.06), and mmlu, commonsense_qa, arabicmmlu, careqa, oall_arabic_mmlu and oall_exams have one task each (p 1).
-- **Across sizes, belebele and Global-MMLU are significant at every size, INCLUDE and bbh_mcq from 175M.** At 90M cultural_bench_easy is significant the other way: 10 of its 19 originals pass where the twin does not, against 1 the other way round.
-- **The "originals only" row is every non-twin benchmark task, not the twins' own originals.** It passes in 644 of 1,287 at 1.7B (0.50), while the twins' own originals pass in 10 of 277.
-- **The twins do not rank designs better.** Mean DA-size (proxy → 1.7B, multi-axis pairs, gated at proxy and reference) is 0.480 / 0.498 / 0.494 / 0.499 / 0.547 on the twins from 90M to 1B, against 0.546 / 0.568 / 0.557 / 0.580 / 0.586 on the non-twin tasks. The twins' pairs are the deep scheme-A cells' alone (the L axis), so this is not a same-pairs comparison.
+- **acp_bench_mcq does not reach p < 0.05.** It reads 5 : 0 (p 0.06). mmlu, commonsense_qa, arabicmmlu, careqa, oall_arabic_mmlu and oall_exams have one task each (p 1).
+- **Across sizes, Belebele and Global-MMLU are significant at every size, INCLUDE (rf) and bbh_mcq from 175M.** The INCLUDE rfgm twin is significant already at 90M (p 0.021). At 90M cultural_bench_easy is significant the other way: 10 of its 19 originals pass where the twin does not, against 1 the other way round.
+- **The "originals only" row is every non-twin benchmark task, not the twins' own originals.** It passes in 636 of 1,291 at 1.7B (0.49), while the twins' own originals pass in 10 of 277.
+- **The twins do not rank designs better.** Mean DA-size (proxy → 1.7B, multi-axis pairs, gated at proxy and reference) is 0.489 / 0.500 / 0.506 / 0.507 / 0.555 on the twins from 90M to 1B, against 0.529 / 0.555 / 0.539 / 0.574 / 0.571 on the non-twin tasks. The twins now have the same design pairs as their originals, but the two populations are different tasks, so this does not compare a twin with its own original.
 
 Follow-ups:
 
@@ -1015,8 +1044,8 @@ The former `twins_gate.*` name of these outputs is retired.
 
 ## Extensions from other sweeps
 
-None. The reformulation exists on the ladder only (`predictivity`, the deep
-scheme-A seed-1904 cells for the twin comparison): the 36-model sweep never
-evaluated the `rf_` or `rfgm_` twins, and its numbers would not be pooled
-with the ladder's in any case (a different harness, task set and reference
-size).
+None. The reformulation exists on the ladder only (`predictivity`, and the
+deep scheme-A seed-1904 cells for the twin comparison). The 36-model sweep
+never evaluated the `rf_` or `rfgm_` twins, and its numbers would not be
+pooled with the ladder's in any case (a different harness, task set and
+reference size).

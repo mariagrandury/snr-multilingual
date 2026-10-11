@@ -5,7 +5,8 @@
 #
 #   evals   00:00  queue the bpb chain, then restart the auto-eval watcher
 #   ladder  04:00  publish the ladder report, then submit the analysis and,
-#                  after it, the curves-only job
+#                  after it, the two curves-only jobs (per-benchmark and
+#                  per-language grids, 10 h each)
 #
 # ONE INSTANCE, ACROSS EVERY LOGIN NODE. $HOME is shared NFS, so
 # ~/.config/systemd/user/timers.target.wants/ is visible to EVERY login node's
@@ -140,15 +141,21 @@ do_evals() {
     # only, and the timer may fire on ln001 while the watcher runs on ln004 —
     # on 2026-10-08/09 two watchers on one node submitted the same 231 evals.
     # `--stop` finds the holder wherever it runs: SIGTERM if it is on this
-    # node, a stop file it reads within a minute otherwise (ssh cannot reach
-    # another login node from here), and it waits for the lock to go.
-    local wlog=$LOG_DIR/$STAMP.watcher.log wpid
+    # node, otherwise a stop file it consumes at its next heartbeat (ssh cannot
+    # reach another login node from here) — within a minute while it sleeps,
+    # after the current cell or post-pass step while it works — and it waits
+    # for the lock to go.
+    local wlog=$LOG_DIR/$STAMP.watcher.log wpid stopped=1 i h p
+    local owner=${AUTO_EVALS_LOCK_DIR:-/iopsstor/scratch/cscs/$USER/logs/auto_evals}/watcher.lock/owner
     cd "$REPO/src" || { FAILED+=("cannot cd to $REPO/src"); return; }
     if ! "$PY" -u pretrain/auto_evals_cscs.py --stop "${WATCHER_STOP_WAIT:-900}" >>"$LOG" 2>&1; then
-        # Do NOT start another: it would refuse at the lock anyway, and a
-        # holder that ignores its stop file is the user's to look at.
-        say "ERROR: the running watcher did not stop (see above) — not restarting it"
-        FAILED+=("watcher would not stop"); cd "$REPO" || true; return
+        # A timed-out --stop withdraws its request, so the old watcher keeps
+        # running (on the old code) instead of exiting at some later beat
+        # after we have given up, which left no watcher at all. Start the
+        # fresh one regardless: the lock refuses it while the old one is
+        # live, and lets it in if the old one went in the meantime.
+        stopped=0
+        say "WARN: the running watcher did not stop (see above) — starting a fresh one anyway; the lock refuses it while the old one is live"
     fi
 
     say "starting a fresh watcher (SBATCH_PARTITION=preemptable, --watch 1800)"
@@ -166,13 +173,21 @@ do_evals() {
     wpid=$!
     disown "$wpid" 2>/dev/null
     cd "$REPO" || true
-    echo "$wpid" > "$LOG_DIR/watcher.pid"
-    sleep 3
-    if kill -0 "$wpid" 2>/dev/null; then
+    # Up = the lock names it, not merely alive after a fixed sleep: the
+    # imports take seconds, so a watcher about to refuse is still running at 3s.
+    for (( i = 0; i < 60; i++ )); do
+        read -r h p _ 2>/dev/null < "$owner" && [ "$p" = "$wpid" ] && break
+        kill -0 "$wpid" 2>/dev/null || break
+        sleep 1
+    done
+    if [ "$p" = "$wpid" ] && kill -0 "$wpid" 2>/dev/null; then
         NOTES+=("watcher pid $wpid, log $wlog")
         say "watcher up (pid $wpid): $(tr '\0' ' ' < /proc/$wpid/cmdline 2>/dev/null | cut -c1-70)"
+    elif (( ! stopped )); then
+        say "ERROR: the old watcher kept the lock, still on the old code (${h:-?}:${p:-?}; $wlog names it) — stop it by hand with --stop, then start one"
+        FAILED+=("watcher would not stop (the old one keeps running)")
     else
-        say "ERROR: the watcher died within 3s — see $wlog (a lock refusal names the holder)"
+        say "ERROR: the fresh watcher did not take the lock — see $wlog (a lock refusal names the holder)"
         FAILED+=("watcher did not start")
     fi
 }
@@ -282,29 +297,38 @@ do_ladder() {
     say "analysis job $main_id"
     NOTES+=("analysis job $main_id")
 
-    # The ~140 acc-vs-FLOPs grids are about an hour and nothing downstream
-    # reads them, so they go in their own job rather than lengthening the one
-    # above. run_apertus.py without --no-grids is exactly what CURVES=1 does
-    # inside run_all_predictivity.sh. After, not concurrent: the grids read the
+    # The ~150 acc-vs-FLOPs grids take hours and nothing downstream reads
+    # them, so they go in their own jobs rather than lengthening the one above.
+    # run_apertus.py without --no-grids is exactly what CURVES=1 does inside
+    # run_all_predictivity.sh. After, not concurrent: the grids read the
     # above-random mask the main pipeline writes. afterany, not afterok: the
     # refresh exits non-zero when ANY one of its steps fails, so under afterok
     # the curves never ran (every refresh from 2026-09-28 to 10-04 ended FAILED)
     # and the never-satisfiable child then blocked the next night's submit.
-    local curves_id
-    curves_id=$($SBATCH --parsable --account=infra01 --partition=normal --nodes=1 \
-        --time=04:00:00 --job-name=ladder-curves --dependency="afterany:$main_id" \
-        --output="$LOG_DIR/$STAMP.curves-%j.log" \
-        --wrap="source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr \
-                && cd $REPO/src/signal-and-noise \
-                && HF_HUB_OFFLINE=1 OPENBLAS_NUM_THREADS=4 \
-                   python3 analysis/rq00_gate_and_curves/run_apertus.py --pool predictivity" \
-        2>>"$LOG")
-    if [ -n "$curves_id" ]; then
-        say "curves job $curves_id (afterany:$main_id)"
-        NOTES+=("curves job $curves_id, afterany:$main_id")
-    else
-        say "WARN: the curves job did not submit"; FAILED+=("sbatch ladder-curves")
-    fi
+    # Two jobs, per-benchmark and per-language (`--only`), 10 h each: one 4 h
+    # job TIMED OUT on 2026-10-09 (3620897, 67/80 benchmark grids) and
+    # 2026-10-10 (3630051, 54/92 after 3 h, ~3.4 min a grid on 1.86M rows,
+    # 3x the rows of 10-06), and both kinds together (~11 h) would sit at the
+    # normal partition's 12 h MaxTime. Same job name, so the in-flight check
+    # above still sees them.
+    local curves_ids="" only id
+    for only in benchmark language; do
+        id=$($SBATCH --parsable --account=infra01 --partition=normal --nodes=1 \
+            --time=10:00:00 --job-name=ladder-curves --dependency="afterany:$main_id" \
+            --output="$LOG_DIR/$STAMP.curves-$only-%j.log" \
+            --wrap="source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr \
+                    && cd $REPO/src/signal-and-noise \
+                    && HF_HUB_OFFLINE=1 OPENBLAS_NUM_THREADS=4 \
+                       python3 analysis/rq00_gate_and_curves/run_apertus.py --pool predictivity --only $only" \
+            2>>"$LOG")
+        if [ -n "$id" ]; then
+            curves_ids+=" $id"
+            say "curves job $id ($only grids, afterany:$main_id)"
+        else
+            say "WARN: the $only curves job did not submit"; FAILED+=("sbatch ladder-curves $only")
+        fi
+    done
+    if [ -n "$curves_ids" ]; then NOTES+=("curves jobs$curves_ids, afterany:$main_id"); fi
 }
 
 # --- run ---------------------------------------------------------------------
@@ -320,7 +344,7 @@ if (( DRY )); then
         echo "would run    $PY pretrain/ladder_report.py --plot --publish --push-hf --push-git"
         echo "then         install the report (fetch if the push landed, local copy if not) + cmp"
         echo "then sbatch  ladder-refresh  FORCE=1 refresh_analysis.sh --no-fetch --no-deck"
-        echo "then sbatch  ladder-curves   run_apertus.py --pool predictivity (afterany)"
+        echo "then sbatch  ladder-curves x2 run_apertus.py --pool predictivity --only {benchmark,language} (afterany, 10 h)"
     fi
     exit 0
 fi

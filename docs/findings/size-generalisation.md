@@ -21,17 +21,17 @@ varies in two pairs only.
 
 !!! note "Key findings"
     - **Per-language bits per byte carries over.** The 1.7B models predict
-      the 3B decisions at 0.95–0.96, every proxy from 90M reaches at least
-      0.81, and the macro average of BPB orders every pair the same way at
+      the 3B decisions at 0.94–0.95, every proxy from 90M reaches at least
+      0.78, and the macro average of BPB orders every pair the same way at
       1.7B and at 3B.
     - **Benchmark accuracy stays at chance against either reference.** On
-      the same decisions it reads 0.47–0.52 against 1.7B and against 3B, and
+      the same decisions it reads 0.48–0.53 against 1.7B and against 3B, and
       the 1.7B model orders the 3B decisions no better than a smaller proxy.
       The gap between accuracy and BPB does not come from the choice of the
       1.7B reference.
     - **The larger reference measures more of the suite.** The above-chance
-      filter keeps 687 of 841 benchmark tasks at 3B against 522 at 1.7B
-      (+32 %), mostly the letter-format originals of Belebele, Global-MMLU
+      filter keeps 772 of 927 benchmark tasks at 3B against 607 at 1.7B
+      (+27 %), mostly the letter-format originals of Belebele, Global-MMLU
       and INCLUDE, which their reformulations already make measurable at
       1.7B.
     - **The reference's seed matters as much as its size.** At 1B, the only
@@ -46,7 +46,7 @@ varies in two pairs only.
 <div class="viz" data-viz="aboveReference"></div>
 
 The six 3B models give only 15 pairs (9 that move one design axis), so each
-point rests on few decisions, and the BPB lines on 10–12 tasks: the
+point rests on few decisions, and the BPB lines on 16–21 tasks: the
 languages every 3B model with a BPB final trains, English and the macro
 average. Read the trend, not single points.
 

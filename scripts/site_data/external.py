@@ -45,7 +45,8 @@ def build() -> dict:
          for x in sweep.itertuples()]
     names = {t: paper_name(t) for t in shared}
     names.update(arc_easy="ARC Easy", arc_challenge="ARC Challenge", csqa="CommonsenseQA",
-                 hellaswag="HellaSwag", mmlu="MMLU", openbookqa="OpenBookQA")   # the paper figure's names
+                 hellaswag="HellaSwag", mmlu="MMLU", openbookqa="OpenBookQA",
+                 piqa="PIQA", winogrande="Winogrande", boolq="BoolQ")   # the paper figure's names
     return {"external_ranks": dict(
         snr=snr, r=r, names=names, titles={v: VARIANT_TITLES[v] for v in VARIANTS},
         pairs=[f"{a}|{b}" for a, b in SIZE_PAIRS],

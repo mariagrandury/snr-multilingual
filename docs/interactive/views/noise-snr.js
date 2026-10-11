@@ -223,7 +223,7 @@
             Plot.ruleX([0], { stroke: css("--viz-muted") }),
           ],
         }),
-        note("Shallow fixed at seed 1904, deep at each of its three seeds. The same 600M L50 pair flips on 30 %, 86 % or 100 % of its languages depending on the deep run's seed, and one 1B seed flips all 30 L30 languages where the other two flip none: the reversal is a draw of the seed, not a property of 600M."),
+        note(`Shallow fixed at seed 1904, deep at each of its three seeds. The same 600M L50 pair flips on ${seedRows.filter((r) => r.size === "600M" && r.L === 50).map((r) => pct(r.share)).join(", ").replace(/, ([^,]*)$/, " or $1")} of its languages depending on the deep run's seed, and one 1B seed flips all 30 L30 languages where the other two flip none: the reversal is a draw of the seed, not a property of 600M.`),
       ];
     });
   };

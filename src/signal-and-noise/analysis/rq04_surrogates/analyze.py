@@ -3,9 +3,13 @@
 Statistics computable on the proxy alone — an SNR variant, its signal or noise
 part, the proxy's own early-checkpoint agreement, the R² of the log-N fit over
 the rungs up to the proxy (rule 11: never a fit that includes the reference;
-it needs MIN_RUNGS rungs, so it exists from 600M) and the margin above chance —
+it needs MIN_RUNGS rungs, so it exists from 350M) and the margin above chance —
 against the proxy's decision accuracy versus the reference (DA-size, rq02's
-truth as carried in rq03's per-task table). The population at a proxy size is
+truth). DA is read over the multi-axis pair set (every pair of seed-1904
+variants, rq03's per-task table) by default; `--axes mono-axis` swaps in rq02's
+mono-axis DA columns (rule 15) and writes every output to a `mono_axis/`
+subfolder of the pool's. The bBPB twins have no chance level, so every twin enters, also the
+twins of tasks at chance. The population at a proxy size is
 the tasks above chance at the proxy and at the reference (rule 1); a
 candidate is scored, as a Spearman ρ per proxy size and task kind, on the
 tasks of that population where it has a value, so n differs per candidate
@@ -17,6 +21,8 @@ populations; `bpb_macro` and `train_loss` are in neither (rule 7).
     rq3_surrogates_paper.png/.csv   the same for the paper: bare (rule 18), no title or caption
     rq3_surrogates_by_scoring.csv/.png (+ _paper)   the same with the benchmarks split by scoring:
                               accuracy | bBPB twins | per-language BPB, on rq3_surrogates' rows and one x axis
+    rq3_surrogates_heatmap_paper.png/.csv   the paper's rq3: rq3_surrogates' benchmark panel as a grid of
+                              statistic x proxy size, each cell its ρ and n
 
     python analysis/rq04_surrogates/analyze.py --pool predictivity
     python analysis/rq04_surrogates/analyze.py --paper    # the _paper figure alone, from the CSV
@@ -46,13 +52,13 @@ from evals.scripts.utils.configs import load_pools  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, fmt, md_table, replace_block  # noqa: E402
-from analysis.paths import GATE_AND_CURVES, NOISE_AND_SNR, SURROGATES  # noqa: E402
+from analysis.paths import DECISION_ACCURACY, GATE_AND_CURVES, NOISE_AND_SNR, SURROGATES  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask, task_chance  # noqa: E402
 from analysis.rq01_scaling_predictability.analyze import MIN_RUNGS, fit_table  # noqa: E402
 from analysis.rq02_decision_accuracy.compute_da import _frac_label  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    BBPB, CKPT_DA_EARLY_FRACS, EVAL_SIZES, SMALL_SIZES, TARGET_SIZE, assign_language, finals, ladder_frame,
-    languages_only, passes_gate)
+    AXES_SUFFIX, BBPB, CKPT_DA_EARLY_FRACS, EVAL_SIZES, SMALL_SIZES, TARGET_SIZE, assign_language, finals,
+    ladder_frame, languages_only, one_axes, passes_gate)
 
 OUT_ROOT = SURROGATES
 CANONICAL = CANONICAL_POOL                 # rq03's headline table
@@ -201,6 +207,47 @@ def plot_by_scoring(t: pd.DataFrame, t3: pd.DataFrame, out_dir: Path, paper: boo
     plot(t3, out_dir, paper, SCORING_KINDS, "rq3_surrogates_by_scoring", metric_order(t), x_limits(t, t3))
 
 
+def plot_heatmap(t: pd.DataFrame, out_dir: Path) -> None:
+    """rq3_surrogates_heatmap_paper, the paper's rq3: the benchmark panel of
+    rq3_surrogates (accuracy and the bBPB twins pooled) as a grid, one row per statistic (by mean ρ over
+    the proxies, the strongest on top) and one column per proxy size, each cell
+    its ρ and n on a diverging scale centred at 0. White: no value (the
+    scaling-fit R² below MIN_RUNGS rungs)."""
+    g = t[t["kind"] == KINDS[0]]
+    proxies = [s for s in SMALL_SIZES if s in set(g["proxy"])]
+    order = g.groupby("metric")["rho"].mean().sort_values(ascending=False).index.tolist()
+    rho = g.pivot_table(index="metric", columns="proxy", values="rho").reindex(index=order, columns=proxies)
+    n = g.pivot_table(index="metric", columns="proxy", values="n").reindex(index=order, columns=proxies)
+    lim = np.nanmax(np.abs(rho.to_numpy()))
+    norm = mpl.colors.Normalize(-lim, lim)
+    # the house diverging map lightened towards white, so the numbers on the cells stay legible
+    cmap = mpl.colors.ListedColormap(.5 * S.DIV(np.linspace(0, 1, 256))[:, :3] + .5)
+    fig, ax = plt.subplots(figsize=(1.15 * len(proxies) + 2.6, 0.42 * len(order) + 0.9))
+    for i, m in enumerate(order):
+        for j, s in enumerate(proxies):
+            r = rho.loc[m, s]
+            ax.add_patch(mpl.patches.FancyBboxPatch((j - .45, i - .42), .9, .84, boxstyle="round,pad=0,rounding_size=.08",
+                                                    facecolor=cmap(norm(r)) if np.isfinite(r) else "white",
+                                                    edgecolor=S.GRID, lw=.6))
+            if np.isfinite(r):
+                ax.text(j, i - .1, f"{r:.2f}", ha="center", va="center", fontsize=8, fontweight="bold")
+                ax.text(j, i + .2, f"(n={int(n.loc[m, s])})", ha="center", va="center", fontsize=6.5, color=S.MUTED)
+    ax.set_xlim(-.5, len(proxies) - .5); ax.set_ylim(len(order) - .5, -.5)
+    ax.set_xticks(range(len(proxies))); ax.set_xticklabels(proxies, fontweight="bold")
+    ax.xaxis.tick_top()
+    ax.set_yticks(range(len(order))); ax.set_yticklabels([m[0].upper() + m[1:] for m in order])
+    ax.set_xlabel("Proxy model size"); ax.set_ylabel("Surrogate statistic")
+    ax.tick_params(length=0)
+    for side in ax.spines.values():
+        side.set_visible(False)
+    cb = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), ax=ax, fraction=.04, pad=.03)
+    cb.outline.set_visible(False)
+    cb.set_label("Spearman ρ with DA-size")
+    fig.tight_layout()
+    g.to_csv(out_dir / "rq3_surrogates_heatmap_paper.csv", index=False)
+    S.save_paper(fig, out_dir / "rq3_surrogates_heatmap_paper")
+
+
 def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame) -> None:
     if pool != CANONICAL:
         return
@@ -211,12 +258,12 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame) -> None:
         if g.empty:
             continue
         best = g.groupby("metric")["rho"].mean().sort_values(ascending=False)
-        bullets.append(f"- **{kind}** — strongest surrogate of DA-size (mean ρ over proxies): "
-                       f"`{best.index[0]}` {fmt(best.iloc[0])}; weakest: `{best.index[-1]}` {fmt(best.iloc[-1])}.")
+        bullets.append(f"- **{kind}.** The strongest surrogate of DA-size (mean ρ over proxies) is "
+                       f"`{best.index[0]}` at {fmt(best.iloc[0])}, and the weakest is `{best.index[-1]}` at {fmt(best.iloc[-1])}.")
         piv = g.pivot_table(index="metric", columns="proxy", values="rho").reindex(best.index)
         n = g.pivot_table(index="metric", columns="proxy", values="n").reindex(best.index)
         cols = [s for s in SMALL_SIZES if s in piv.columns]
-        blocks += [f"**{kind}** (Spearman ρ of the statistic with DA-size, per proxy size; n = the tasks behind the ρ):",
+        blocks += [f"**{kind}.** Spearman ρ of the statistic with DA-size per proxy size, with n the number of tasks behind the ρ:",
                    md_table(["metric"] + [f"{c} ρ (n)" for c in cols],
                             [[m] + [f"{fmt(piv.loc[m, c])} ({int(n.loc[m, c])})" if np.isfinite(piv.loc[m, c]) else ""
                                     for c in cols] for m in piv.index])]
@@ -226,21 +273,25 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame) -> None:
         "## Statistics beyond SNR (paper RQ3)",
         f"Numbers from the `{pool}` pool's rq03 table. Regenerate with "
         f"`python analysis/rq04_surrogates/analyze.py --pool {pool}`. The population at a proxy size is the tasks "
-        f"above chance at the proxy and at {TARGET_SIZE} (rule 1); each candidate is scored on the tasks of it where "
-        f"the candidate has a value, so n differs per candidate and is given next to every ρ. The scaling-fit R² is "
-        f"rq01's log-N fit refitted on the rungs up to the proxy only (rule 11; it needs {MIN_RUNGS} rungs, so it "
-        f"starts at {EVAL_SIZES[MIN_RUNGS - 1]}). `bpb_macro` and `train_loss` are in neither population (rule 7).",
+        f"above chance at the proxy and at {TARGET_SIZE} (rule 1). Each candidate is scored on the tasks where it "
+        f"has a value, so n differs per candidate and is given next to every ρ. The scaling-fit R² is "
+        f"rq01's log-N fit refitted on the rungs up to the proxy only (rule 11). It needs {MIN_RUNGS} rungs, so it "
+        f"starts at {EVAL_SIZES[MIN_RUNGS - 1]}. `bpb_macro` and `train_loss` are in neither population (rule 7).",
         "\n".join(bullets)] + blocks)
     replace_block(readme, "surrogates", body, f"analyze.py --pool {pool}")
     print(f"Wrote auto README block → {readme}")
 
 
-def main(pool: str, out_dir: Path) -> None:
+def main(pool: str, out_dir: Path, axes: str = "multi-axis") -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     src = NOISE_AND_SNR / stage / pool / "snr_variants_per_task.csv"
     if not src.is_file():
         sys.exit(f"missing {src} — run rq02 compute_da.py and rq03 run_apertus_snr_variants.py --pool {pool} first")
     v = pd.read_csv(src, index_col=0).rename_axis("task").reset_index()
+    if axes != "multi-axis":       # rq03 carries the multi-axis DA: swap in rq02's columns of the other pair set
+        da = one_axes(pd.read_csv(DECISION_ACCURACY / stage / pool / "da_all_per_task_both_axes.csv"), axes).set_index("task")
+        cols = [c for c in da.columns if c in v.columns]
+        v[cols] = da[cols].reindex(v["task"]).to_numpy()
     v = languages_only(v.assign(language=v["task"].map(assign_language)))   # rule 7: no bpb_macro / train_loss
     scores = pd.read_csv(GATE_AND_CURVES / stage / pool / "above_random_scores.csv")
     fits_r2 = proxy_fit_r2(SMALL_SIZES, pool)
@@ -257,24 +308,31 @@ def main(pool: str, out_dir: Path) -> None:
         plot(t, out_dir, paper=True)
         plot_by_scoring(t, t3, out_dir)
         plot_by_scoring(t, t3, out_dir, paper=True)
+        plot_heatmap(t, out_dir)
     (out_dir / "facts.json").write_text(json.dumps({"rq3": t.round(3).to_dict("records")}, indent=1, default=str))
-    generate_readme(pool, out_dir, t)
+    if axes == "multi-axis":
+        generate_readme(pool, out_dir, t)
 
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL,
                    help=f"Pool whose rq03 table to read (default: {CANONICAL})")
+    p.add_argument("--axes", default="multi-axis", choices=("multi-axis", "mono-axis"),
+                   help="the pair set DA-size and the early-checkpoint agreement are read over (rule 15)")
     p.add_argument("--paper", action="store_true",
                    help="only the bare _paper figures, from rq3_surrogates.csv and rq3_surrogates_by_scoring.csv on disk")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; available: {sorted(load_pools())}")
     out = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
+    if args.axes != "multi-axis":                # the other pair set in a folder of its own, no README block
+        out = out / AXES_SUFFIX[args.axes].lstrip("_")
     if args.paper:
         t = pd.read_csv(out / "rq3_surrogates.csv")
         plot(t, out, paper=True)
+        plot_heatmap(t, out)
         if (out / "rq3_surrogates_by_scoring.csv").is_file():
             plot_by_scoring(t, pd.read_csv(out / "rq3_surrogates_by_scoring.csv"), out, paper=True)
     else:
-        main(args.pool, out)
+        main(args.pool, out, args.axes)

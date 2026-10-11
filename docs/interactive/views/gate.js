@@ -93,7 +93,7 @@
             text: (d) => pct(d.above / d.n) }),
         ],
       }), note(s.g.startsWith("Analysed")
-        ? "Analysed: the 841 tasks of the 40 benchmarks every later question reads, in the 50 trained languages, gated at every size from 90M to 1.7B."
+        ? `Analysed: the ${d3.format(",")(x.analysed.tasks)} tasks of the ${x.analysed.benchmarks} benchmarks the gate reads, in the ${x.analysed.languages} trained languages, gated at every size from 90M to 1.7B.`
         : "Screened and discarded benchmarks were evaluated only at the final checkpoint of the 600M, 1B and 1.7B runs, so they have no verdict below 600M; \"never\" means never above chance at those three sizes.")];
     });
   };
@@ -203,7 +203,7 @@
             Plot.text(last.filter((r) => r.chance !== "majority_fixed"), { x: "size", y: "n_pass", text: (r) => r.n_pass, dx: 10, dy: -5, textAnchor: "start", fill: css("--md-default-fg-color") }),
             Plot.text(last.filter((r) => r.chance === "majority_fixed"), { x: "size", y: "n_pass", text: (r) => r.n_pass, dx: 10, dy: 8, textAnchor: "start", fill: css("--md-default-fg-color") }),
           ],
-        }), note("Each line counts the 841 trained tasks above chance at each size under one chance level. Blue is the gate the site uses. Orange applies the majority class (the accuracy of always giving the most frequent correct position) to every task; green applies it only where a constant answer is possible, i.e. where each position carries a fixed label (A/B/C/D, yes/no).")];
+        }), note(`Each line counts the ${d3.format(",")(rows[0].n_tasks)} trained tasks above chance at each size under one chance level. Blue is the gate the site uses. Orange applies the majority class (the accuracy of always giving the most frequent correct position) to every task; green applies it only where a constant answer is possible, i.e. where each position carries a fixed label (A/B/C/D, yes/no).`)];
       }
       const rows = x.majority_by_benchmark.filter((r) => r.flipped_cells > 0).sort((a, b) => b.flipped_cells - a.flipped_cells);
       const long = rows.flatMap((r) => [["cells_uniform", dom[0]], ["cells_majority", dom[1]], ["cells_majority_fixed", dom[2]]]
@@ -270,7 +270,7 @@
             Plot.dot(rows, { x: "size", y: "da", fill: "label", r: 4.5, stroke: css("--viz-surface"), strokeWidth: 1.5, tip: true,
               title: (r) => `${r.size}, ${r.label}: DA-size ${fmt(r.da, 3)}\n(${r.n_matching} of ${r.n_pairs} design pairs ranked like 1.7B, ${r.n_benchmarks} benchmarks)` }),
           ],
-        }), note("A benchmark's aggregate score is the mean of its languages that a run trains. Each line is how often that aggregate, at a small proxy, ranks two training designs the way it does at 1.7B, over the 18 benchmarks every policy can score. Higher is better: blue (keep every language) stays on top.")];
+        }), note(`A benchmark's aggregate score is the mean of its languages that a run trains. Each line is how often that aggregate, at a small proxy, ranks two training designs the way it does at 1.7B, over the ${uniq(x.exclusion_by_benchmark.filter((r) => r.policy === "tokens" && r.da != null).map((r) => r.benchmark)).length} benchmarks that keep an aggregate under every policy. Higher is better: blue (keep every language) stays on top.`)];
       }
       const f = x.exclusion_by_benchmark.filter((r) => r.axes === s.axes);
       const by = d3.rollup(f, (v) => Object.fromEntries(v.map((r) => [r.policy, r.da])), (r) => r.benchmark);
@@ -317,7 +317,7 @@
         Plot.text(ends.filter((e, i) => !crowded(e, i)), { x: "params", y: "share", text: "line", dx: 8, textAnchor: "start", fill: css("--md-default-fg-color") }),
         Plot.text(ends.filter(crowded), { x: "params", y: "share", text: "line", dx: 8, dy: 12, textAnchor: "start", fill: css("--md-default-fg-color") }),
       ],
-    }), note("Each line is one family of models, from small to large; each point is the share of the shared tasks (73 for the ladder, 71 for the public models) a model reads above chance. The ladder's point is its verdict (half of the runs of that size); a public model's point is its own single run. At the same size, public models trained on far more tokens read many more tasks.")]);
+    }), note(`Each line is one family of models, from small to large; each point is the share of the shared tasks (${uniq(rows.filter((r) => r.line === "our ladder").map((r) => r.n_tasks)).join("/")} for the ladder, ${uniq(rows.filter((r) => r.line !== "our ladder").map((r) => r.n_tasks)).join("/")} for the public models) a model reads above chance. The ladder's point is its verdict (half of the runs of that size); a public model's point is its own single run. At the same size, public models trained on far more tokens read many more tasks.`)]);
   };
 
   // ---------- 9. the margin a task needs, by item count ----------
@@ -362,7 +362,7 @@
           nd == null ? null : Plot.ruleX([n], { stroke: css("--viz-s2"), strokeWidth: 1.5 }),
           nd == null ? null : Plot.dot([{ n, m: (nd - c) * 100 }], { x: "n", y: "m", r: 6, fill: css("--viz-s2"), stroke: css("--viz-surface"), strokeWidth: 2 }),
         ].filter(Boolean),
-      }), note("Each dot is one of the 841 trained tasks: how far above chance a run must score for its 95 % lower bound to clear chance, given the task's item count. Dashed curve: the same bar for any task with the chosen number of options, before rounding to whole items. Drag the slider to read the bar for any item count; the orange point follows it.")];
+      }), note(`Each dot is one of the ${d3.format(",")(tasks.length)} trained tasks with an item count: how far above chance a run must score for its 95 % lower bound to clear chance, given the task's item count. Dashed curve: the same bar for any task with the chosen number of options, before rounding to whole items. Drag the slider to read the bar for any item count; the orange point follows it.`)];
     });
   };
 })();

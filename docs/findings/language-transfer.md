@@ -32,7 +32,7 @@ train? And does training a language help its untrained relatives?
   non-English language, at two family levels (top-level family such as
   Indo-European, subfamily such as Slavic), against the English-only cell on
   exactly the same tasks. These views read the benchmarks every cell is
-  evaluated on (the `auto` set: 941 tasks of 27 benchmarks), not the
+  evaluated on (the `auto` set: 1,027 tasks of 34 benchmarks), not the
   candidates still being screened.
 
 ## Explore
@@ -96,18 +96,20 @@ their English-only baselines.
 - **Within one benchmark, the languages a mixture trains together predict
   each other.** On HellaSwag, German, Spanish, French and Italian, the four
   European languages of the L8 list, predict each other's 1.7B ranking at
-  0.82 on average, as well as each predicts itself. English ranks itself at
-  0.78 but the other languages at 0.43, and they rank it at 0.50; Basque,
+  0.81 on average, almost as well as each predicts itself (0.82). English
+  ranks itself at 0.78 but the other languages at 0.43, and they rank it at
+  0.50; Basque,
   which no list trains, is predicted by no other language (0.46 on average).
 - **Across benchmarks the transfer is weak.** On every task above chance the
-  own-task diagonal averages 0.51 and every off-diagonal kind 0.48; only 4 %
-  of the off-diagonal cells reach 0.75.
+  own-task diagonal averages 0.51 and the three off-diagonal kinds
+  0.47–0.49. Only 4 % of the off-diagonal cells reach 0.75.
 - **Training a language helps its own subfamily a little, and no one else.**
-  Five of the six (cell, trained subfamily) lifts over English only are
-  positive, +0.03 to +0.06 (Romance under L8 A the largest: 0.55 of the
-  Catalan, Galician, Portuguese and Romanian tasks above chance against
-  0.49); Germanic under L8 A is −0.01. The 54 lifts on subfamilies a cell
-  does not train centre on zero (median 0.00, 44 % positive). Russian lifts
+  Five of the seven (cell, trained subfamily) lifts over English only are
+  positive, +0.03 to +0.11 (the +0.11 is Iranian under L8 B, on 37
+  verdicts). Romance under L8 A gains +0.05: 0.58 of the Catalan, Galician,
+  Portuguese and Romanian tasks above chance against 0.53. Germanic is at
+  0.00 under L8 B and −0.02 under L8 A. The 83 lifts on subfamilies a cell
+  does not train centre on zero (median 0.00, 37 % positive). Russian lifts
   Slavic at every L (+0.03 to +0.04). The raw same-family share sits above
   the other-family one at both family levels, but English only shows most of
   that gap too, so the gap is mostly which languages and benchmarks fall in

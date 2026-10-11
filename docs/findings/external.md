@@ -11,10 +11,10 @@ on the English tasks both evaluate?
 **How we measure it.** We compute the SNR of every shared English task on
 both ladders and correlate them (Pearson r on log SNR, Spearman ρ on the
 ranking). The headline compares our 1B rung (seed 1904, every design variant)
-with DataDecide's 1B rung (25 data recipes), on the six shared tasks that
+with DataDecide's 1B rung (25 data recipes), on the nine shared tasks that
 clear the above-chance gate on our side: ARC Easy, ARC Challenge, HellaSwag,
-MMLU, CommonsenseQA and OpenBookQA (MMLU and CommonsenseQA through our cloze
-versions, which match DataDecide's format). Both sides use the same noise
+MMLU, CommonsenseQA, OpenBookQA, PIQA, Winogrande and BoolQ (MMLU and
+CommonsenseQA through our cloze versions, which match DataDecide's format). Both sides use the same noise
 window, the same detrended checkpoint noise and the same metric. What they
 vary differs: 25 pretraining corpora on DataDecide, our design variants on
 our ladder.
@@ -39,18 +39,19 @@ in levels.
 
 <!-- highlight: rq07_external_frameworks -->
 
-- **Both corpora rank the six gated shared tasks alike** (Spearman ρ 0.83,
-  Pearson r of log₁₀ SNR 0.81, p = 0.049). Both put CommonsenseQA and
-  OpenBookQA last; the top task differs (HellaSwag on ours, ARC Easy on
-  DataDecide). Six points make this indicative, not robust.
-- **Our SNR is 1.9–4.2× smaller.** DataDecide's SNR exceeds ours on every
-  shared task, by 1.9× on HellaSwag up to 4.2× on ARC Challenge: compare
+- **Both corpora rank the nine gated shared tasks alike** (Spearman ρ 0.77,
+  Pearson r of log₁₀ SNR 0.77, p = 0.016). Both put BoolQ last and OpenBookQA
+  near the bottom. The top task differs (HellaSwag on ours, ARC Easy on
+  DataDecide). Nine points make this indicative, not robust.
+- **Our SNR is 1.2–4.2× smaller.** DataDecide's SNR exceeds ours on every
+  shared task, by 1.2× on Winogrande up to 4.2× on ARC Challenge: compare
   orders across corpora, never SNR levels.
-- **The agreement does not hinge on the SNR definition.** 20 of the 22
-  definitions have r ≥ 0.6 at 1B ↔ 1B, from 0.47 (`gini`) to 0.94
-  (`rel_star_discrepancy`), and the seed pool moves no r by more than 0.14.
-- **It does depend on the size pair.** With five or six points, `rel_std`
-  spans r 0.04 (175M ↔ 150M) to 0.81 (1B ↔ 1B), while `rel_star_discrepancy`
-  stays at 0.93–0.97.
+- **The agreement holds for most SNR definitions.** 16 of the 22
+  definitions have r ≥ 0.6 at 1B ↔ 1B, from 0.21 (`gini`) to 0.90
+  (`rel_dispersion`). The seed pool raises r for all but one definition and
+  moves no r by more than 0.27.
+- **It does depend on the size pair.** With seven or nine points, `rel_std`
+  spans r 0.36 (175M ↔ 150M) to 0.85 (1.7B ↔ 1B), while `rel_star_discrepancy`
+  stays at 0.82–0.95.
 
 [Full analysis →](../signal-noise/external_frameworks.md)

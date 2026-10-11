@@ -163,14 +163,14 @@
           h("thead", {}, h("tr", {}, h("th", {}, "benchmark (click a row for its curves)"), ...CORPORA.map((c) => h("th", { title: CORPUS_NOTE[c] }, c)))),
           h("tbody", {}, rows)));
       return [
-        tiles([[CORPORA.map((c) => pct(share(c))).join(" / "), `of the ${fitted(CORPORA[0]).length} tasks above chance scale with size and training (${CORPORA.join(" / ")})`],
+        tiles([[CORPORA.map((c) => pct(share(c))).join(" / "), `of the ${CORPORA.map((c) => fitted(c).length).join(" / ")} tasks above chance scale with size and training (${CORPORA.join(" / ")})`],
           [`${popAll.length} of ${pop.length}`, "widely used benchmarks scale in all three corpora"],
           [popChance.length, `widely used benchmarks never leave chance in any corpus (${popChance.map((t) => meta[t].name).join(", ")})`]]),
         h("div", { class: "ladder-legend" }, Object.values(REGIMES).map(([word, long, col]) => h("span", { title: long },
           h("i", { style: `display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:.35em;vertical-align:-2px;background:${css(col)}` }), `${word}: ${long}`))),
         keep.length ? table : h("div", { class: "viz-empty" }, "No English benchmark matches."),
         curves(selected),
-        note(`With the bBPB twins counted (132 tasks) the corpora differ: ${CORPORA.map((c) => `${c} ${pct(twins(c))}`).join(", ")} scale with size and training; on the accuracy tasks alone they tie.`),
+        note(`With the bBPB twins counted (${CORPORA.map((c) => d.summary.find((r) => r.corpus === c)?.n_tasks).join(" / ")} tasks) the corpora differ: ${CORPORA.map((c) => `${c} ${pct(twins(c))}`).join(", ")} scale with size and training. On the accuracy tasks all three corpora share, they tie.`),
       ];
     });
     const input = el.querySelector("input[type=text]");

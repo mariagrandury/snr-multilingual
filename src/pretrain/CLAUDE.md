@@ -619,9 +619,13 @@ pass, one-shot or `--watch`, mkdirs
 (`AUTO_EVALS_LOCK_DIR` overrides) holding `host pid start ttl`, and refuses to
 start, naming the holder, while it is live. A holder on the same node is live
 iff `/proc/<pid>/cmdline` is this script (a dead or reused pid is stale); one
-on another node is live until its `heartbeat` file, touched before every cell
-and every minute of the sleep, is older than its ttl (3 × the watch interval).
-A stale lock is taken over. SIGTERM (and SIGHUP, unless nohup ignores it)
+on another node is live until its `heartbeat` file, touched before every
+cell, between the post-pass steps and every minute of the sleep, is older than
+its ttl (3 × the watch interval); a lock with no `heartbeat` yet (the moment
+between the holder's `owner` write and its first beat) gets the same minute's
+grace on the directory mtime as an unreadable `owner`. A stale lock is taken
+over, and a holder that was only slow finds a stranger in `owner` at its next
+beat and exits without touching the new holder's files. SIGTERM (and SIGHUP, unless nohup ignores it)
 unwinds through atexit, which removes the lock only if it is still ours.
 One-shot passes take it too, rather than only refusing while a watcher runs:
 "refuse" alone still lets two one-shots, or a one-shot and a watcher started a
@@ -629,9 +633,15 @@ second later, overlap; `--dry-run` takes no lock (it submits nothing). The lock
 is per user and per `--group`: a probe pass names its jobs differently, and a
 collaborator's watcher is hers to run. Another node's watcher cannot be
 killed from here, so `--stop` writes a `stop` file naming the holder, which
-exits at its next heartbeat (within a minute while idle, after the current
-cell mid-pass), plus SIGTERM when the holder is on this node; it then waits
-for the lock to go. `nightly.sh evals` restarts the watcher through it, and
+consumes it and exits at its next heartbeat (within a minute while idle, after
+the current cell or post-pass step mid-pass), plus SIGTERM when the holder is
+on this node; it then waits for the lock to go. On a timeout it withdraws the
+request (unlinks the file: exactly one of the two unlinks wins) and exits 1,
+so the holder keeps running instead of exiting at a later beat after
+`nightly.sh` gave up on a successor, which left no watcher at all (found in
+review, 2026-10-10). `nightly.sh evals` restarts the watcher through it,
+starting the fresh one even after a failed `--stop` (the lock refuses it while
+the old one is live), and
 the launcher starts one only when no live holder exists. Second guard:
 `submit_eval`/`submit_convert` re-ask `squeue -h -n <job>` immediately before
 each sbatch (`already_queued`), so even two passes that slip past the lock

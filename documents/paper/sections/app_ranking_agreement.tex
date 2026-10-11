@@ -1,0 +1,31 @@
+\clearpage
+
+\section{Ranking Agreement}
+\label{app:ranking-agreement}
+
+Ranking agreement asks whether a proxy point ranks a set of model variants in the same order as the reference point (Table~\ref{tab:ra_defs}). We measure it with three metrics. Spearman's rank correlation $\rho$ compares the full proxy and reference rankings.
+Kendall's $\tau_a = (C-D)/n$ is the number of concordant pairs $C$ minus the number of discordant pairs $D$, divided by the number $n$ of pairs of variants.
+Decision accuracy (DA, \citealp{heineman_signal_2025}) is the share of pairwise preferences on which the proxy and the reference agree. Most of our results use DA, because each pair of variants is one development decision.
+
+\textbf{Decision accuracy.} For a language task $b_\ell$, a proxy point $(N,f)$ and a set $\mathcal{P}$ of pairs of model configurations,
+\begin{equation}
+\begin{aligned}
+&\mathrm{DA}_{b_\ell}(N,f)
+=
+\frac{1}{|\mathcal{P}|}
+\sum_{(\theta_a,\theta_b)\in\mathcal{P}}
+\mathbf{1}
+\Big[ \\
+&\quad\operatorname{sign}\!\left(Y_{b_\ell}(\theta_a,f)-Y_{b_\ell}(\theta_b,f)\right) \\
+&\quad=
+\operatorname{sign}\!\left(Y_{b_\ell}(\theta_a^{\mathrm{ref}},1)-Y_{b_\ell}(\theta_b^{\mathrm{ref}},1)\right)
+\Big],
+\end{aligned}
+\label{eq:decision-accuracy}
+\end{equation}
+where $\theta_a$ is a configuration at size $N$ and $\theta_a^{\mathrm{ref}}$ is the same configuration at the reference point. In the RA-size and RA-end-to-end settings the reference is the final checkpoint at $N_{\mathrm{ref}}$, and in the RA-checkpoint setting it is the final checkpoint at $N$. We write DA-size for DA in the RA-size setting and DA-ckpt for DA in the RA-checkpoint setting.
+
+\textbf{Ties and chance level.} A pair tied on both sides counts as agreement, and a pair tied on one side counts as disagreement. DA is one when every pairwise preference transfers. For random rankings without ties, its expected value is $0.5$.
+% DA and Kendall's $\tau$ differ only in how they treat ties: $2\,\mathrm{DA}-1 = \tau_a + (T_{\mathrm{both}}-T_{\mathrm{one}})/n$, where $T_{\mathrm{both}}$ and $T_{\mathrm{one}}$ count the pairs tied on both sides and on one side. A cell $(b_\ell, N, f)$ is reported if it has at least three pairs.
+
+\textbf{Reporting.} A cell $(b_\ell, N, f)$ is reported only if it has at least three pairs. We summarize a set of tasks in one of two ways. The \emph{mean} averages the cell values over the tasks, so every task weighs the same. This is our default. The \emph{pooled} value divides the number of matching pairs by the number of comparable pairs, both summed over the tasks, so a task weighs by its number of pairs. We label every pooled value as such. The two can differ by several points when the tasks with many pairs rank differently from the rest. For example, on the per-language BPB at 600M, on the pairs the reference separates by more than two seed standard deviations, the mean is 0.99 and the pooled value 0.95, because English holds 17\% of these pairs and reaches only 0.74. When we restrict an analysis to the tasks that rank reliably, we keep those whose median DA over the proxy cells reaches 0.66 for RA-size or for RA-checkpoint.

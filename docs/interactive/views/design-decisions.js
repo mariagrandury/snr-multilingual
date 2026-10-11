@@ -49,7 +49,8 @@
     const eff = (key, pop) => d.effect.find((e) => e.key === key && e.pop === pop);
     // rows of a population, ordered by the effect at the reference (largest first; unmeasured last)
     const keys = (pop) => {
-      // a data build read on benchmarks only (L1, L2) has no row on BPB; the two ladders rq05 does not read stay, with why
+      // a data build read on benchmarks only (L1, L2) has no row on BPB; the activation and optimizer ladders stay
+      // listed without a row (Muon has no 1.7B evaluation yet), with why
       const ks = Object.keys(d.names).filter((k) => k === "optimizer" || k === "activation" || d.rows.some((r) => r.key === k && r.pop === pop));
       return ks.sort((a, b) => (eff(b, pop)?.ratio ?? -1) - (eff(a, pop)?.ratio ?? -1)
         || (d.rows.some((r) => r.key === b && r.pop === pop) - d.rows.some((r) => r.key === a && r.pop === pop)));
@@ -68,7 +69,7 @@
     if (key === "optimizer") {
       const v = m.muon(0.9).sort((x, y) => PROX.indexOf(x.size) - PROX.indexOf(y.size));
       const lo = Math.min(...v.map((r) => r.da)), hi = Math.max(...v.map((r) => r.da));
-      return `Muon has no 1.7B run in this snapshot (${v.map((r) => r.size).join(", ")} trained), so no proxy can be read against the reference. `
+      return `Muon has no 1.7B evaluation in this snapshot (${v.map((r) => r.size).join(", ")} evaluated), so no proxy can be read against the reference. `
         + `Against their own final checkpoint the Muon proxies agree at ${fmt(lo)}–${fmt(hi)} by 4.5C.`;
     }
     if (key === "activation" && pop === "bpb_trained") return "No per-language BPB pair for SwiGLU at 1.7B yet; switch to benchmarks.";

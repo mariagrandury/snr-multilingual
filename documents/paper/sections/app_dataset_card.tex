@@ -1,0 +1,188 @@
+\clearpage
+\section{Hugging Face Dataset Card}
+\label{app:hf_dataset_card}
+
+This section gives the dataset card for the training data of the ladder. It documents the data builds that the models read.
+
+% https://huggingface.co/docs/hub/datasets-cards
+% Self-contained: this card refers only to its own sections, by title, and never to the rest of the
+% paper. Every number comes from the code or from the build records, checked 2026-10-10:
+% src/pretrain/launch_trainings.py (DATA_SCHEMES, fineweb_source, data_blend),
+% src/pretrain/data/{build_data_mixtures,create_data_mixture,generate_language_sets}.py,
+% src/pretrain/data/language_sets_scheme{A,B,ZH,ES}.json, plan/l1_third_family.md, plan/l100_data_mixture.md,
+% and, under the data master multilingual_data_mixtures/predictivity-data/, the .bin/.idx sizes (int32
+% tokens), the *.plan.json allocations, the *.languages and *.source sidecars and validation.manifest.json.
+% The upstream filters of the FineWeb-2 and DCLM-Edu copies are read from their processing logs
+% (logs/<language>/executor.json and stats.json beside each copy).
+
+\subsection*{Dataset Card for the Multilingual Signal-and-Noise Data Mixtures}
+
+These mixtures are the pretraining data of a ladder of decoder-only language models with 90M to 3B non-embedding parameters. Each mixture pairs an English half with a half in $K-1$ other languages, for $K \in \{1, 2, 8, 15, 30, 50\}$. The builds change one data decision at a time: the number of languages, which languages, the sampling temperature, the second language at $K=2$ and the English corpus at $K=1$.
+
+\subsection*{Dataset Details}
+
+\subsubsection*{Dataset Description}
+
+All text is web text from Common Crawl, taken from public corpora. English comes from DCLM-Edu \citep{allal_smollm2_2025}. The other languages come from a quality-filtered copy of FineWeb-2 \citep{penedo_fineweb2_2025,messmer_enhancing_2026}. Two alternative English builds at $K=1$ use DCLM before its educational filter \citep{li_datacomp-lm_2025} and FineWeb \citep{penedo_fineweb_2024}. We tokenize all text with the 131,072-token Apertus tokenizer and store it as token ids in the indexed format of Megatron-LM, one document per entry. A build fixes a language list, a sampling temperature and a token budget. At training time, the data loader blends the English build with the non-English build of the setting.
+
+\begin{itemize}[itemsep=1pt,topsep=2pt]
+    \item \textbf{Curated by:} Anonymous (removed for review)
+    \item \textbf{Funded by:} Anonymous (removed for review)
+    \item \textbf{Shared by:} Anonymous (removed for review)
+    \item \textbf{Language(s) (NLP):} English and 49 other languages in training, listed in the section on Dataset Structure. The validation set adds 50 languages that no build trains.
+    \item \textbf{License:} each build keeps the terms of its source, CC BY 4.0 for DCLM-Edu and ODC-By 1.0 for FineWeb-2 and FineWeb
+\end{itemize}
+
+\subsubsection*{Dataset Sources}
+
+\begin{itemize}[itemsep=1pt,topsep=2pt]
+    \item \textbf{Repository (build code and language lists):} Link removed for anonymity.
+    \item \textbf{Paper:} Link removed for anonymity.
+\end{itemize}
+
+\subsection*{Uses}
+
+\subsubsection*{Direct Use}
+
+The builds are for training and reproducing the ladder. They also support studies of how the number of languages, the choice of languages, the sampling temperature and the English corpus affect small models and the way benchmarks rank them. The shared validation set measures bits-per-byte on the same text for every model.
+
+\subsubsection*{Out-of-Scope Use}
+
+The builds are sized for models of up to 3B parameters, and the three builds at $K=2$ repeat data for the largest models. They are not a general corpus for training large or deployed models. The language lists follow FineWeb-2 data sizes, so they are not a representative sample of the world's languages. The data carries no safety filtering beyond that of its sources.
+
+\subsection*{Dataset Structure}
+
+\textbf{Schemes and builds.} A data scheme is a rule for choosing the data at a given $K$. Scheme A is the baseline. It takes the $K-1$ largest FineWeb-2 languages and samples them at temperature $T=1$. Scheme B chooses languages for script and family diversity at $K \in \{8, 15, 30\}$. At $K=2$ the second language changes instead: Russian in scheme A, Chinese in scheme B and Spanish in scheme C. At $K=1$ there is no second language, so the English corpus changes: DCLM-Edu in scheme A, DCLM before the educational filter in scheme B and FineWeb in scheme C. Build AT3 repeats the scheme-A lists at $T=3$. Seven builds trained models, and every run of them finished.
+
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lcclll@{}}
+\toprule
+Build & Scheme & $T$ & $K$ & English half & Other languages \\
+\midrule
+A & A & 1 & 1, 2, 8, 15, 30, 50 & DCLM-Edu & largest $K-1$ FineWeb-2 languages \\
+AT3 & A & 3 & 15, 30, 50 & DCLM-Edu & same lists as A \\
+B & B & 1 & 8, 15, 30 & DCLM-Edu & diversity-first lists \\
+ZH & B & 1 & 2 & DCLM-Edu & Chinese \\
+ES & C & 1 & 2 & DCLM-Edu & Spanish \\
+DCLMP & B & 1 & 1 & DCLM before the educational filter & none \\
+FWEB & C & 1 & 1 & FineWeb, crawls up to 2022 & none \\
+\bottomrule
+\end{tabular*}
+\caption{\textbf{Each build changes one data decision and keeps the English half at 50\%.} Scheme is the rule the build applies at its $K$, and $T$ is the sampling temperature within the non-English half. At $K=1$ the English half is the whole mixture.}
+\label{tab:dcard-builds}
+\end{table*}
+
+\textbf{Language lists.} The lists are nested within a scheme, so a larger setting contains every language of the smaller ones. Scheme A ranks the FineWeb-2 subsets by the UTF-8 bytes of their training split, without the subsets of undetermined language and without Hausa, which is missing from the filtered copy. Scheme B works within the 49 largest subsets. It takes the largest subset of each script not yet covered, then of each language family not yet covered, and then the remaining subsets by size. At $K=8$, the scheme-B list spans seven scripts against four for scheme A.
+
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lp{0.53\textwidth}p{0.36\textwidth}@{}}
+\toprule
+$K$ & Scheme A adds & Scheme B adds \\
+\midrule
+2 & Russian & Chinese (build ZH) or Spanish (build ES) \\
+8 & Chinese, German, Japanese, Spanish, French, Italian & Russian, Chinese, German, Japanese, Persian, Thai, Greek \\
+15 & Portuguese, Polish, Dutch, Indonesian, Vietnamese, Persian, Arabic & Korean, Hindi, Bengali, Hebrew, Tamil, Georgian, Malayalam \\
+30 & Turkish, Thai, Ukrainian, Greek, Korean, Czech, Swedish, Hungarian, Romanian, Norwegian Bokm\aa{}l, Danish, Bulgarian, Finnish, Hindi, Bengali & Indonesian, Vietnamese, Turkish, Hungarian, Spanish, French, Italian, Portuguese, Polish, Dutch, Arabic, Ukrainian, Czech, Swedish, Romanian \\
+50 & Slovak, Hebrew, Lithuanian, Bosnian, Slovenian, Estonian, Catalan, Tamil, Croatian, Latvian, Malay, Azerbaijani, Serbian, Georgian, Nepali, Marathi, Malayalam, Kazakh, Urdu, Albanian & not trained \\
+\bottomrule
+\end{tabular*}
+\caption{\textbf{Scheme A adds languages by size, and scheme B reaches more scripts and families with the same number of languages.} Each row gives the languages that a scheme adds to the list of the previous row, in addition to English. The scheme-B lists start at $K=8$. At $K=2$ the row gives the only non-English language of each build. Serbian is the Cyrillic subset.}
+\label{tab:dcard-languages}
+\end{table*}
+
+\textbf{The 50/50 blend.} English and the non-English languages live in separate builds. For $K \ge 2$, the data loader of Megatron-LM draws them with weights 0.5 and 0.5, so half of the training tokens are English. At $K=1$ the English build has weight 1. All models of a setting therefore see the same language proportions, and smaller models read a smaller, shuffled fraction of the same data.
+
+\textbf{Sampling temperature.} Within the non-English half, language $i$ receives a share $q_i \propto p_i^{1/T}$ of the build, where $p_i$ is its share of the estimated tokens of the $K-1$ languages. The builder estimates the tokens of a language from a sample of its files. It measures tokens per byte on 2,000 rows of five files and scales the ratio to the size of all files. At $K=50$ and $T=1$, Russian receives 19.2\% of the non-English half and Malayalam 0.09\%. At $T=3$, the targets range from 5.3\% for Russian to 0.89\% for Malayalam. A language that runs out before its target gives all of its data, and the build ends smaller. At $T=3$, this happens to 13 of the 49 languages at $K=50$, to Vietnamese and Persian at $K=15$ and to Hindi and Bengali at $K=30$.
+
+\textbf{Build sizes.} A non-English build targets half of the token budget of the largest model that reads it, plus 10\% headroom. A model of size $N$ trains on $D = 100N$ tokens, so the targets are 92B for the 1.7B model (167.2B tokens) and 165B for the 3B model (299.7B tokens). The English builds target 184B tokens, which covers the 1.7B model at $K=1$. The builder never repeats a document. Four settings were first built to 52B, when their largest model was 1B. Three of them were later rebuilt to 92B for the 1.7B model. The rebuild continues the token stream of each language where the 52B build stopped, so it adds documents from later crawls. The 3B models read separate 165B builds made the same way. The ZH build keeps its 52B size at every rung, and the 1.7B model repeats it. Each English build holds 184.0B tokens, in 137.7M documents for DCLM-Edu, 141.9M for DCLMP and 266.1M for FWEB. The 1.7B model at $K=1$ reads 0.91 of its English build.
+
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lcclrrrr@{}}
+\toprule
+ & & & & \multicolumn{3}{c}{Build read by (B tokens)} & \\
+\cmidrule(lr){5-7}
+Build & $K$ & $T$ & Languages & 90M--1B & 1.7B & 3B & Epochs at 1.7B \\
+\midrule
+A & 2 & 1 & Russian & 72.8 & 72.8 & -- & 1.15 \\
+A & 8 & 1 & scheme-A list & 92.0 & 92.0 & 165.0 & 0.91 \\
+A & 15 & 1 & scheme-A list & 52.0 & 92.0 & 165.0 & 0.91 \\
+A & 30 & 1 & scheme-A list & 92.0 & 92.0 & 165.0 & 0.91 \\
+A & 50 & 1 & scheme-A list & 52.0 & 92.0 & 165.0 & 0.91 \\
+AT3 & 15 & 3 & scheme-A list & 91.3 & 91.3 & -- & 0.92 \\
+AT3 & 30 & 3 & scheme-A list & 91.4 & 91.4 & -- & 0.92 \\
+AT3 & 50 & 3 & scheme-A list & 87.0 & 87.0 & -- & 0.96 \\
+B & 8 & 1 & scheme-B list & 92.0 & 92.0 & 165.0 & 0.91 \\
+B & 15 & 1 & scheme-B list & 52.0 & 92.0 & 165.0 & 0.91 \\
+B & 30 & 1 & scheme-B list & 92.0 & 92.0 & -- & 0.91 \\
+ZH & 2 & 1 & Chinese & 52.0 & 52.0 & -- & 1.61 \\
+ES & 2 & 1 & Spanish & 23.9 & 23.9 & -- & 3.51 \\
+\bottomrule
+\end{tabular*}
+\caption{\textbf{Every non-English build feeds its models in less than one pass, except the three builds at $K=2$.} Each cell gives the size of the build that the models of that size read, in billions of tokens. A 1.7B model draws 83.6B tokens from the non-English half, and Epochs gives how many times it passes over its build. The Russian and Spanish builds hold all the data the filtered source has, and the Chinese build was sized for the 1B model. At 1B, the three $K=2$ builds give 0.65, 0.91 and 1.98 passes. A 3B model draws 149.9B tokens and reads 0.91 of its build.}
+\label{tab:dcard-sizes}
+\end{table*}
+
+\textbf{Builds that trained no model.} Three more builds exist but trained no model. The first is a 92B build at $T=1$ of an early 100-language list. The second is an 88.5B build of the scheme-B list at $K=30$ and $T=3$. The third is a 165B scheme-B build at $K=30$, made for a 3B model that was dropped before training.
+
+\textbf{Shared validation set.} One validation set serves every model and every build. It has 100 subsets, English and 99 FineWeb-2 languages, with about 5M tokens each and 500.9M tokens in total. For each language, it takes the leading documents of the first source file in sorted order, up to 5M tokens and at most 30\% of the rows of that file, so that languages with a single file keep training data. It records the token count, the UTF-8 byte count and the number of leading rows it takes. Every training build reads this record and skips exactly those rows. The DCLMP and FWEB builds read other files, so they drop the 3,561 English validation documents by their Common Crawl record id instead. The 99 FineWeb-2 subsets are the 49 trained languages and 50 languages that no build trains. They come from the first version of a 100-language list, and eight of the 50 untrained subsets have no benchmark in the evaluation harness.
+
+\subsection*{Dataset Creation}
+
+\subsubsection*{Curation Rationale}
+
+The builds change one data decision at a time, and English stays at half of every multilingual mixture. The mixtures vary the number of languages, not the share of English. Scheme B against scheme A changes which languages fill the same $K$. $T=3$ against $T=1$ changes how evenly the languages are sampled. ZH and ES change the second language at $K=2$. At $K=1$ there is no language to vary, so DCLMP and FWEB vary the English corpus. DCLMP removes only the educational filter, and FWEB keeps the crawl window of DCLM, up to 2022, so that recency is not a second difference. The grid stops at $K=50$. A 92B build of the 100-language list at $T=1$ gives the median language 90M tokens and the smallest 3.5M. Flattening to $T=3$ raises the median to 373M tokens, but the smallest languages run out and the build would hold only 75.4B tokens. The temperature change is therefore trained at $K \in \{15, 30, 50\}$.
+
+\subsubsection*{Source Data}
+
+\paragraph{Data Collection and Processing}
+
+\textbf{Sources.} We read local copies of four corpora. Each one comes with processing done before our builds.
+\begin{itemize}[itemsep=1pt,topsep=2pt]
+    \item \textbf{DCLM-Edu} \citep{allal_smollm2_2025} is the part of DCLM \citep{li_datacomp-lm_2025} that the FineWeb-Edu classifier \citep{lozhkov_fineweb-edu_2024} rates as educational. Our copy also drops documents from domains whose robots.txt disallows AI crawlers, and it masks email and IP addresses.
+    \item \textbf{DCLM before the educational filter} (DCLMP) carries the same per-document metadata as our DCLM-Edu copy, minus the two educational scores.
+    \item \textbf{FineWeb} \citep{penedo_fineweb_2024} (FWEB) is the public release. We keep its 89 crawls up to 2022 and read one file per crawl in turn, because files in sorted order would fill the build from the first 2013 crawl.
+    \item \textbf{FineWeb-2} \citep{penedo_fineweb2_2025} comes as a copy processed with the pipeline of the Apertus pretraining corpus \citep{apertus_apertus_2025}. It drops documents from domains whose robots.txt disallows AI crawlers. It then keeps about one document in ten. For 20 of the 49 trained languages, a quality classifier on document embeddings \citep{messmer_enhancing_2026} chooses them, and for the other 29 a uniform random sample of 9.5\% does. A toxicity classifier also filters Chinese, German, Spanish, French, Italian, Portuguese, Polish and Dutch. Finally, the copy masks email addresses, IP addresses and bank account numbers.
+\end{itemize}
+
+\textbf{Our processing.} Our builds read only the text of each document and drop empty documents. For each source, the builder walks the files in sorted order and skips the validation rows of the first file. It tokenizes each document without special tokens and writes it as one entry. It stops a source at the first document that reaches its token target. The builds add no document separator, so the training documents follow each other with no end-of-document token. The builds do not shuffle, and Megatron-LM shuffles the documents at training time with the seed of the run. We apply no deduplication and no quality or language filter of our own. Deduplication and filtering are those of the sources.
+
+\paragraph{Who are the source data producers?}
+
+The text was written by the authors of the web pages that Common Crawl collected. The corpus teams of DCLM, DCLM-Edu, FineWeb and FineWeb-2 extracted and filtered it, and the Apertus pipeline processed the FineWeb-2 copy further.
+
+\subsubsection*{Personal and Sensitive Information}
+
+We add no step for personal information. The FineWeb-2 copy masks email addresses, IP addresses and bank account numbers, and the DCLM-Edu copy masks email and IP addresses. FineWeb anonymizes email and public IP addresses in its own release. We have no processing log for the DCLMP copy. Web text can still contain names, contact details and other personal or sensitive content.
+
+\subsection*{Bias, Risks, and Limitations}
+
+\textbf{Skew of FineWeb-2.} The language shares follow the size of FineWeb-2, so a few languages dominate. At $T=1$, Russian takes 29.9\% of the non-English half at $K=8$ and 19.2\% at $K=50$, where Malayalam takes 0.09\%.
+
+\textbf{Uneven filtering.} The quality classifier exists for 20 of the 49 trained languages, and the other 29 are a random sample. The toxicity filter covers 8 languages. Differences between languages therefore mix the language with the quality of its data.
+
+\textbf{Repetition at $K=2$.} No single filtered language can feed the 1.7B model. The 1.7B model sees Russian 1.15 times, Chinese 1.61 times and Spanish 3.51 times. For Spanish, the count grows with model size, from 0.72 at 350M to 3.51 at 1.7B. Comparisons of the three $K=2$ builds mix the language with these counts.
+
+\textbf{Extended builds.} At scheme A with $K \in \{15, 50\}$ and scheme B with $K=15$, the 1.7B model reads a 92B build, while the smaller models read the 52B build that it extends. The 1.7B model thus sees later crawls that its proxies never see. The 3B models read their own 165B builds.
+
+\textbf{English validation.} The English validation documents come from DCLM-Edu. English bits-per-byte therefore favors the DCLM-Edu models over the DCLMP and FWEB models.
+
+\textbf{Other limitations.} FWEB reads the public FineWeb, which lacks the robots.txt filter of the other copies. The shares of each build rest on token counts estimated from five files per language. The training stream has no document boundaries.
+
+\subsubsection*{Recommendations}
+
+Compare models within one build or across builds that differ in a single decision. Report the epoch counts whenever the $K=2$ builds are compared. Measure bits-per-byte on the shared validation set, and do not use English bits-per-byte to rank the three English corpora. When a result at 1.7B differs from the smaller models at the extended settings, check whether the later crawls explain it. A rebuild must keep the validation record, or training would overlap the validation text.
+
+\subsection*{Citation}
+
+Please cite the source corpora: DCLM \citep{li_datacomp-lm_2025}, DCLM-Edu \citep{allal_smollm2_2025}, the FineWeb-Edu classifier \citep{lozhkov_fineweb-edu_2024}, FineWeb \citep{penedo_fineweb_2024}, FineWeb-2 \citep{penedo_fineweb2_2025}, the FineWeb-2 quality filter \citep{messmer_enhancing_2026} and the Apertus processing pipeline \citep{apertus_apertus_2025}.
+
+\textbf{BibTeX:} removed for anonymity.
