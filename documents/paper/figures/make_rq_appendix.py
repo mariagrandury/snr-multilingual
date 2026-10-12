@@ -573,8 +573,13 @@ def rq09_levels_caption(d):
         f"between {lv['median'].min():.2f} and {lv['median'].max():.2f}.}} "
         + ("".join(f"{r.level[0].upper() + r.level[1:]} holds {r.size} task{'s' if r.size > 1 else ''} "
                    f"({r.median:.2f}). " for r in small.itertuples()))
-        + ("".join(f"{lab} has one level on these tasks. " for lab in one[one == 1].index))
-        + "Each block is one characteristic, a header row and "
+        + ("".join(f"{lab} has one level on these tasks" + (", since no task with lettered options passes the "
+                   "reliability filter. " if lab == "Task format" else ". ") for lab in one[one == 1].index))
+        + "The task category is the domain of each task (a suite's subtask has its own). No task with lettered "
+        "options passes the reliability filter, so every task format is a continuation format. "
+        "Item count and the two lengths are read in three bins, and the lengths exist only for the original "
+        f"benchmarks with sampled items ({d[d['characteristic'] == 'context_len_chars_median']['task'].nunique()} tasks). "
+        "Each block is one characteristic, a header row and "
         "then one row per level with the number of tasks at that level. A dot is one task (one benchmark in one "
         "language) at its DA-size minus 0.5, so the dotted line is chance agreement, and "
         f"{(t['x'] > 0).sum()} of the {len(t)} tasks sit to its right. The bar is the level's median and the "

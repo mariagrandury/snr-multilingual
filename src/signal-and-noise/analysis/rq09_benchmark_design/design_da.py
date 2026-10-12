@@ -74,7 +74,8 @@ This reads the same characteristics against DA-size instead of SNR:
     language modelling) against the rest, None for a suite whose subtasks fall in both.
     The quadrant figures colour a dot by its proxy size (the per-benchmark one draws one dot per
     benchmark and proxy, at the median over its tasks). The by-level figures group the levels under
-    a header row per characteristic.
+    a header row per characteristic, one row per task category, curation category and task format (not
+    their binary splits, and no source row), and the item count and the two lengths in three bins (`BINS`).
 
     python analysis/rq09_benchmark_design/design_da.py --pool predictivity
 """
@@ -106,7 +107,8 @@ from analysis.rq02_decision_accuracy.reliable_tasks import load_reliable, long_d
 from analysis.paths import SCALING_PREDICTABILITY  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import task_n_items  # noqa: E402
 from analysis.rq09_benchmark_design.analyze import (  # noqa: E402
-    DOMAINS, FAMILY_META, KNOWLEDGE_ETC, LM_LIKE, ORIGINAL, SUBTASK_DOMAIN, WAVE, WAVES, family_skill, untagged)
+    CATEGORY_ORDER, DOMAINS, FAMILY_META, KNOWLEDGE_ETC, LM_LIKE, ORIGINAL, SUBTASK_DOMAIN, WAVE, WAVES, family_skill, task_domain,
+    untagged)
 from analysis.utils import SMALL_SIZES, _is_language_aggregate, auto_tasks, benchmark_family, size_order  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
@@ -134,7 +136,7 @@ TRANSLATED_CURATION = {"human_translation", "mt_post_edited", "machine_translati
 LETTERED_FORMATS = {"mcq_question_only", "mrc_passage"}
 LEVEL_NAMES = {"translated": "translated", "native": "native", "continuation": "continuation",
                "original": "not translated", "english_original": "English original",
-               "translation_unknown": "translated, method unknown", "cloze_completion": "cloze",
+               "translation_unknown": "translated, unk.", "cloze_completion": "cloze",
                "last_word": "last word", 5: "5 options",
                "lettered MCQ": "lettered MCQ","originally_multilingual": "originally multilingual", "human_translation": "human translation",
                "template_generated": "template generated", "mt_post_edited": "MT post-edited",
@@ -144,6 +146,21 @@ LEVEL_NAMES = {"translated": "translated", "native": "native", "continuation": "
                "statement_continuation": "statement (LLM-RF)",
                2: "2 options", 3: "3 options", 4: "4 options", False: "no passage", True: "passage",
                "knowledge": "knowledge", "other": "other domains", LM_LIKE: LM_LIKE, KNOWLEDGE_ETC: KNOWLEDGE_ETC}
+# the by-level figures read a continuous characteristic in three bins: its bin edges and level names
+BINS = {"items": ([0, 1000, 5000, np.inf], ["< 1,000 items", "1,000–5,000 items", "> 5,000 items"]),
+        "context_len_chars_median": ([0, 100, 150, np.inf], ["< 100 characters", "100–150 characters", "> 150 characters"]),
+        "option_len_chars_median": ([0, 15, 50, np.inf], ["< 15 characters", "15–50 characters", "> 50 characters"])}
+# the by-level figures' rows: the task category (a task's domain, `analyze.DOMAINS`) in place of the binary
+# skill and domain splits, the curation category and the task format in place of their binary splits, no
+# source (curation already says whether a benchmark is translated), and every other characteristic, the
+# continuous ones binned; NOMINAL gives the level order of the three categorical rows
+NOMINAL = {"domain": list(DOMAINS), "curation_category": CATEGORY_ORDER,
+           "format": ["completion", "cloze_completion", "statement_continuation", "minimal_pair", "classification",
+                      "last_word", "mcq_question_only", "mrc_passage"]}
+LEVEL_ORDER = ["domain", "items", "curation_category", "format", "n_options", "passage",
+               "context_len_chars_median", "option_len_chars_median"]
+LEVEL_LABELS = {**{k: v[0] for k, v in CHARACTERISTICS.items()}, "domain": "Task category", "curation_category": "Curation",
+                "format": "Task format"}
 LENGTH_CSV = HERE / "length_features.csv"
 mpl.rcParams.update(S.RC)
 
@@ -337,22 +354,37 @@ def fig_correlation(c: pd.DataFrame, path: Path, paper: bool) -> None:
     S.save(fig, path)
 
 
-def level_table(units: pd.DataFrame, feat: pd.DataFrame) -> pd.DataFrame:
+def level_table(units: pd.DataFrame, feat: pd.DataFrame, binned: bool = False) -> pd.DataFrame:
     """One row per (population, characteristic, unit): its level, centred code and DA-size - 0.5.
     `units` has a row per benchmark, task or (task, proxy), with its `population`, `family` and
-    `da_size`; a level no source settles (FAMILY_META None) drops that unit from that row."""
+    `da_size`; a level no source settles (FAMILY_META None) drops that unit from that row. A
+    continuous characteristic is left out, or with `binned` (the by-level figures) read in its three `BINS`,
+    and the rows are `LEVEL_ORDER`'s: the task category (each task's domain) replaces skill and domain, the
+    curation category and the task format their binary splits, and source is left out."""
     rows = []
+    cols = LEVEL_ORDER if binned else list(CHARACTERISTICS)
     for pop in (FILTER, "unfiltered"):
         u = units[(units["population"] == pop) & units["da_size"].notna()]
-        for col, (label, kind, levels) in CHARACTERISTICS.items():
-            if kind == "continuous":
-                continue
-            lv = u["family"].map(feat[col])
+        for col in cols:
+            label = LEVEL_LABELS[col]
+            kind, levels = CHARACTERISTICS[col][1:] if col in CHARACTERISTICS else ("nominal", NOMINAL[col])
+            if col == "domain":
+                lv = (pd.Series([task_domain(t, f) for t, f in zip(u["task"], u["family"])], index=u.index)
+                      if "task" in u else u["family"].map(feat[col]))
+            elif kind == "continuous":
+                if not binned:
+                    continue
+                edges, levels = BINS[col]
+                bins = pd.cut(feat["n_items" if col == "items" else col], edges, labels=levels).astype(object)
+                lv = u["family"].map(bins)
+            else:
+                lv = u["family"].map(feat[col])
             g = u[lv.notna()]
             lv = lv[lv.notna()]
             rows.append(pd.DataFrame({
                 "population": pop, "characteristic": col, "label": label, "kind": kind,
-                "level": lv.map(LEVEL_NAMES), "level_rank": lv.map(levels.index), "code": lv.map(lambda v: encode(col, v)),
+                "level": lv.map(lambda v: LEVEL_NAMES.get(v, v)), "level_rank": lv.map(levels.index),
+                "code": lv.map(lambda v: 2 * levels.index(v) / (len(levels) - 1) - 1),
                 "family": g["family"], "name": g["family"].map(G.paper_name),
                 **{c: g[c] for c in ("task", "language", "size") if c in g},
                 "da_size": g["da_size"], "x": g["da_size"] - CHANCE}))
@@ -365,15 +397,15 @@ def example(t: pd.DataFrame) -> str:
     return f.loc[f["da_size"].idxmax(), "family"]
 
 
-def _group_labels(ax, rows: list, counts: dict, colours: dict) -> None:
-    """The y labels of a grouped level figure, left-aligned: a bold header row per characteristic
-    in its colour, then its levels indented under it with their counts."""
-    labels = [CHARACTERISTICS[c][0] if lv is None else f"    {lv[0].upper() + lv[1:]} ({counts[(c, lv)]})"
+def _group_labels(ax, rows: list, counts: dict) -> None:
+    """The y labels of a grouped level figure, left-aligned: a bold header row per characteristic,
+    then its levels indented under it with their counts."""
+    labels = [LEVEL_LABELS[c] if lv is None else f"    {lv[0].upper() + lv[1:]} ({counts[(c, lv)]})"
               for c, lv in rows]
     ax.set_yticks(range(len(rows))); ax.set_yticklabels(labels, fontsize=6.5)
     ax.tick_params(axis="y", length=0)
     for lab, (c, lv) in zip(ax.get_yticklabels(), rows):
-        lab.set_color(colours[c] if lv is None else S.INK)
+        lab.set_color(S.INK)
         lab.set_fontweight("bold" if lv is None else "normal")
     fig = ax.figure
     fig.canvas.draw()
@@ -391,7 +423,7 @@ def fig_levels(t: pd.DataFrame, path: Path, paper: bool) -> None:
     per_task = "task" in t
     top_fam = example(t)
     t = t[t["population"] == FILTER]
-    t = t.sort_values(["characteristic", "level_rank"], key=lambda s: s.map(list(CHARACTERISTICS).index)
+    t = t.sort_values(["characteristic", "level_rank"], key=lambda s: s.map(LEVEL_ORDER.index)
                       if s.name == "characteristic" else s)
     rows = []
     for c, lv in dict.fromkeys(zip(t["characteristic"], t["level"])):
@@ -423,7 +455,7 @@ def fig_levels(t: pd.DataFrame, path: Path, paper: bool) -> None:
     ax.set_xlim(lo - .05 * (hi - lo), hi + (.05 if per_task else .22) * (hi - lo))     # room for the name inside the frame
     ax.set_ylim(len(rows) - .5, -.5)
     ax.grid(axis="x", color=S.GRID, lw=.5); S.clean(ax)
-    _group_labels(ax, rows, counts, colours)
+    _group_labels(ax, rows, counts)
     ax.set_xlabel("DA-size minus 0.5")
     if paper:
         fig.tight_layout()
@@ -711,7 +743,8 @@ def generate_readme(pool: str, c: pd.DataFrame, fam: pd.DataFrame, tm: pd.DataFr
         "count) leaves that benchmark out of that row. BBH's curation method is unknown too, but its items were written "
         "in English, so the binary curation codes it native (`features`). The interval is a 95 % bootstrap over the families, "
         "which for the per-task readings resamples each benchmark with all of its tasks. The by-level figures group each "
-        "characteristic's levels under a header row. The quadrant figures draw one dot per proxy, coloured by its size, "
+        "characteristic's levels under a header row, with one row per task category, curation category and task format, no source row, and the "
+        "item count and the two lengths in three bins (`BINS`). The quadrant figures draw one dot per proxy, coloured by its size, "
         "with each size in a band of its own and its median marked. They read every task above chance, so "
         "benchmarks fall on both sides of chance agreement. Their "
         f"`{FILTER}` twins, where {n_fam - below} of the {n_fam} benchmarks sit right of 0.5, stay as analysis figures. "
@@ -833,7 +866,7 @@ def main(pool: str) -> None:
     bench = pd.concat([values[p].dropna().rename("da_size").rename_axis("family").reset_index().assign(population=p)
                        for p in (FILTER, "unfiltered")])
     # the by-level figures read a benchmark's (task's) mean over the proxies, the quadrants one dot per proxy
-    levels = {"": level_table(bench, feat), "_per_task": level_table(tm, feat)}
+    levels = {"": level_table(bench, feat, binned=True), "_per_task": level_table(tm, feat, binned=True)}
     quadrants = {"": level_table(fam, feat), "_per_task": level_table(tasks.rename(columns={"da": "da_size"}), feat)}
     for paper in (False, True):
         sfx = "_paper" if paper else ""
