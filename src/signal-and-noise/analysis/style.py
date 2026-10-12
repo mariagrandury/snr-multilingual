@@ -26,7 +26,8 @@ SERIES = ["#2a78d6", "#eb6834", "#1baf7a"]
 OKABE_ITO = {"black": "#000000", "orange": "#e69f00", "sky": "#56b4e9", "green": "#009e73",
              "blue": "#0072b2", "vermillion": "#d55e00", "purple": "#cc79a7"}
 SIZE_COLOR = {"90M": "#cde2fb", "175M": "#86b6ef", "350M": "#3987e5",
-              "600M": "#1c5cab", "1B": "#0d366b", "1.7B": "#061d3a"}
+              "600M": "#1c5cab", "1B": "#0d366b", "1.7B": "#061d3a",
+              "3B": "#1b5e20"}   # 3B, the rung above the 1.7B reference: dark green, outside the blue scale
 SIZES = ["90M", "175M", "350M", "600M", "1B", "1.7B"]
 # A cell's other two axes on a curve: its ladder (deep, shallow, swiglu, muon) takes
 # the line width, its data build (the frame's `data`) the dash pattern, so

@@ -65,12 +65,12 @@ def base(key) -> str:
 # key with the underscores as spaces. `paper_name` is what every `_paper`
 # figure labels a benchmark with, the twins as `Belebele RF` / `INCLUDE LLM-RF`.
 PAPER_NAMES = {
-    "hellaswag": "HellaSwag", "belebele": "Belebele", "global_mmlu_full": "Global-MMLU", "global_mmlu": "Global-MMLU",
-    "include_base_44": "INCLUDE", "include_v2_en": "INCLUDE v2 (EN)", "include_v2_og": "INCLUDE v2 (OG)",
+    "hellaswag": "HellaSwag (Okapi)", "belebele": "Belebele", "global_mmlu_full": "Global-MMLU", "global_mmlu": "Global-MMLU",
+    "include_base_44": "INCLUDE", "include_v2_en": "INCLUDE v2 RF (EN)", "include_v2_og": "INCLUDE v2 RF (OG)",
     "xnli": "XNLI", "xcopa": "XCOPA", "xstorycloze": "XStoryCloze", "xwinograd": "XWinograd", "paws": "PAWS-X",
-    "multiblimp": "MultiBLiMP", "arc": "ARC", "arc_mt": "ARC (MT)", "lambada_openai_mt": "LAMBADA",
+    "multiblimp": "MultiBLiMP", "arc": "ARC (Okapi)", "arc_mt": "ARC (MT)", "lambada_openai_mt": "LAMBADA",
     "global_piqa_parallel_cloze": "Global PIQA (parallel)", "global_piqa_nonparallel_cloze": "Global PIQA (non-parallel)",
-    "truthfulqa-multi_mc1": "TruthfulQA-Multi", "truthfulqa_mc2": "TruthfulQA (mc2)", "mmlu": "MMLU",
+    "truthfulqa-multi_mc1": "TruthfulQA-Multi (MC1)", "truthfulqa_mc2": "TruthfulQA (MC2)", "mmlu": "MMLU",
     "commonsense_qa": "CommonsenseQA", "bbh_mcq": "BBH (MCQ)", "bbh_cloze": "BBH (cloze)",
     "acp_bench_mcq": "ACP-Bench (MCQ)", "acp_bench_cloze": "ACP-Bench (cloze)", "cultural_bench_easy": "CulturalBench-easy",
     "cultural_bench_hard": "CulturalBench-hard", "blend_sample": "BLEnD", "mathqa": "MathQA", "openbookqa": "OpenBookQA",
@@ -82,13 +82,13 @@ PAPER_NAMES = {
     "headqa": "HEAD-QA", "ibero_arc": "ARC (IberoBench)", "ibero_cola": "CoLA (IberoBench)",
     "ibero_copa": "COPA (IberoBench)", "ibero_nli": "NLI (IberoBench)", "ibero_openbookqa": "OpenBookQA (IberoBench)",
     "ibero_paraphrase": "Paraphrase (IberoBench)", "ibero_piqa": "PIQA (IberoBench)", "ibero_siqa": "SIQA (IberoBench)",
-    "ibero_truthfulqa": "TruthfulQA (IberoBench)", "kmmlu": "KMMLU", "kobest": "KoBEST", "m_mmlu": "MMLU (Okapi)",
-    "m_truthfulqa_mc1": "TruthfulQA mc1 (Okapi)", "m_truthfulqa_mc2": "TruthfulQA mc2 (Okapi)", "mela": "MELA",
+    "ibero_truthfulqa": "TruthfulQA (IberoBench, MC1)", "ibero": "IberoBench", "kmmlu": "KMMLU", "kobest": "KoBEST", "m_mmlu": "MMLU (Okapi)",
+    "m_truthfulqa_mc1": "TruthfulQA (Okapi, MC1)", "m_truthfulqa_mc2": "TruthfulQA (Okapi, MC2)", "mela": "MELA",
     "mmmlu": "MMMLU", "multiblimp-extra": "MultiBLiMP (extra)", "noreval": "NorEval", "noreval_extra": "NorEval (extra)",
     "oall_acva": "ACVA (OALL)", "oall_alghafa": "AlGhafa (OALL)", "oall_arabic_mmlu": "Arabic MMLU (OALL)",
     "oall_exams": "Arabic EXAMS (OALL)", "oall_mt": "AlGhafa translated (OALL)", "toksuite": "TokSuite",
-    "toksuite_math": "TokSuite math", "toksuite_stem": "TokSuite STEM", "truthfulqa-multi_mc2": "TruthfulQA-Multi (mc2)",
-    "truthfulqa_mc1": "TruthfulQA (mc1)", "turblimp": "TurBLiMP", "turkishmmlu": "TurkishMMLU", "xquad": "XQuAD",
+    "toksuite_math": "TokSuite math", "toksuite_stem": "TokSuite STEM", "truthfulqa-multi_mc2": "TruthfulQA-Multi (MC2)",
+    "truthfulqa_mc1": "TruthfulQA (MC1)", "turblimp": "TurBLiMP", "turkishmmlu": "TurkishMMLU", "xquad": "XQuAD",
     "zhoblimp": "ZhoBLiMP",
 }
 _TWIN_NAMES = {"rf": "RF", "rfgm": "LLM-RF", "bbpb": "bBPB"}

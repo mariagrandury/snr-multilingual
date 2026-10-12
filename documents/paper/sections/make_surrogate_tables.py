@@ -86,8 +86,8 @@ call = call[(call["axes"] == "multi-axis") & (call["L"].astype(str) == "all") & 
 SNR_REF = "snr__rel_std__ckpt_rel"   # the relative-std SNR over the relative checkpoint noise
 MIN_UNITS = 10
 BENCH = {"hellaswag": "HellaSwag", "arc": "ARC", "arc_mt": "ARC (translated)", "xnli": "XNLI",
-         "multiblimp": "MultiBLiMP", "include_v2_og": "INCLUDE v2 (original language)",
-         "include_v2_en": "INCLUDE v2 (English)", "rf_belebele": "Belebele RF", "rfgm_belebele": "Belebele LLM-RF",
+         "multiblimp": "MultiBLiMP", "include_v2_og": "INCLUDE v2 RF (original language)",
+         "include_v2_en": "INCLUDE v2 RF (English)", "rf_belebele": "Belebele RF", "rfgm_belebele": "Belebele LLM-RF",
          "rf_global_mmlu_full": "Global-MMLU RF", "rf_include_base_44": "INCLUDE RF",
          "rfgm_include_base_44": "INCLUDE LLM-RF"}
 strata = [("all", "benchmarks", "every benchmark")]

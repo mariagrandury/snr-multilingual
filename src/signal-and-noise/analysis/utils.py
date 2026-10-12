@@ -101,6 +101,19 @@ _BENCHMARK_FAMILY_OVERRIDES = {
     "arc_easy": "arc",
 }
 
+# Benchmarks the paper shows as one row although tasks.json registers them in
+# parts (a later addition, or one suite's subsets): the paper's per-benchmark
+# tables and figures group by FAMILY_MERGE.get(family, family). Display only:
+# benchmark_family keeps the parts apart, since the gate's option counts and
+# chance levels (above_random) and rq09's characteristics are keyed by them.
+FAMILY_MERGE = {
+    "multiblimp-extra": "multiblimp", "noreval_extra": "noreval", "evalita_llm_extra": "evalita_llm",
+    "french_bench_extra": "french_bench", "rf_french_bench_extra": "rf_french_bench",
+    # IberoBench's Catalan / Spanish / Basque sets, one suite
+    **{f"ibero_{b}": "ibero" for b in ("arc", "cola", "copa", "nli", "openbookqa", "paraphrase", "piqa", "siqa",
+                                      "truthfulqa")},
+}
+
 # Trailing tokens allowed after the language token in a per-language aggregate
 # (ISO-15924 script codes + lm-eval format suffixes).
 _TRAILING_OK = {
