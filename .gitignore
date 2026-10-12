@@ -54,3 +54,7 @@ src/pretrain/azure/.quota_cache.json
 # Built by scripts/inline_artifact.py: the compendium with its figures inlined
 # for publishing. The source with relative paths is the one under version control.
 documents/build/
+
+# Overleaf exports (and their diff reports) stay local; only the folder's README is tracked
+documents/overleaf/*
+!documents/overleaf/README.md
