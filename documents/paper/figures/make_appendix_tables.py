@@ -13,18 +13,10 @@ is trained, not the one that was planned when the text was written.
     seeds       block in app_01_model_ladder.tex: seeds per (size, L) cell
     ladder      block in app_01_model_ladder.tex: the per-ladder, per-size
                 hyperparameters (hyperparams_*.json, at each rung's own batch)
-    benchmarks  block in app_03_evaluation.tex: the evaluated benchmarks
-                (configs/tasks.json `auto` group, `analysed_benchmarks`) with
-                their language and task counts on the sweep's trained
-                languages, the `discarded` tasks left out
-    screened    block in app_03_evaluation.tex: the benchmarks screened at 600M, 1B
-                and 1.7B and not analysed (`auto_probe` outside `auto`, and the
-                `auto` benchmarks whose ladder evals have not landed) and those of
-                the `discarded` tasks, per benchmark: trained languages, candidate
-                and discarded tasks
-    discarded   block in app_03_evaluation.tex: the screened probe tasks
-                dropped at the gate (configs/tasks.json `discarded` group),
-                per benchmark family
+    The benchmark list itself is tables/app_benchmarks_considered.tex
+    (make_benchmarks_considered_table.py); this script only counts it:
+    benchmark_table() reads the `auto` group (`analysed_benchmarks`) and
+    screened_table() the `auto_probe` and `discarded` groups.
     nbenchmarks block in main.tex: the setup counts the prose quotes, written
                 in the same run as the tables they count:
                 \\nbenchmarks   rows of the benchmarks table's multilingual block
@@ -243,8 +235,8 @@ def grid_table(runs: list[dict], done: int, missing: list[str]) -> str:
         r"deep (the baseline), shallow (about twice the width-to-depth ratio), deep + SwiGLU (the activation "
         r"axis) and deep + Muon (the optimizer axis). The Muon ladder trains with Muon and the other three with "
         r"AdEMAMix. Runs counts the runs of every seed, and Repl.\ the replicate-seed "
-        r"runs among them (Table~\ref{tab:grid})." + status + "}",
-        r"\label{tab:schemes}", r"\end{table*}"])
+        r"runs among them (Table~\ref{tab:grid-seeds})." + status + "}",
+        r"\label{tab:training-grid}", r"\end{table*}"])
 
 
 def seeds_table(runs: list[dict]) -> str:
@@ -269,7 +261,7 @@ def seeds_table(runs: list[dict]) -> str:
               r"\caption{\textbf{Random seeds.} Number of seeds per $(N, K)$ cell of the deep scheme-A grid "
               rf"({n_a} runs). The replicate seeds are "
               rf"{seeds_txt}. Each seed changes both the initialization and the data order.}}",
-              r"\label{tab:grid}", r"\end{table}"]
+              r"\label{tab:grid-seeds}", r"\end{table}"]
     return "\n".join(lines)
 
 
@@ -428,28 +420,6 @@ def benchmark_table() -> tuple[str, dict]:
               r"\label{tab:benchmark-families}", r"\end{table*}"]
     stats = {"multilingual": len(multi), "single": len(mono), "twins": len(twins), "tasks": total}
     return "\n".join(lines), stats
-
-
-def discarded_table() -> str:
-    """The `discarded` group per family: probe tasks not above chance at 1B nor
-    at 1.7B (the rule-1 gate on the cells that trained the language), so they
-    left `auto_probe` (plan/todos/probe-candidates-2026-10-08.md)."""
-    cfg = json.loads((REPO / "configs" / "tasks.json").read_text())
-    tasks, by = cfg["tasks"], {}
-    for t in cfg["groups"]["discarded"]:
-        by.setdefault(tasks[t]["benchmark"], []).append(canon(tasks[t]["language"]))
-    lines = [r"\begin{table}[t]", r"\centering", r"\small", r"\resizebox{\columnwidth}{!}{", r"\begin{tabular}{llrl}", r"\toprule",
-             r"\textbf{Benchmark} & \textbf{Languages} & \textbf{Tasks} & \textbf{Reason} \\", r"\midrule"]
-    for b, langs in sorted(by.items(), key=lambda kv: (-len(kv[1]), kv[0])):
-        name = re.sub(r" \(.*\)$", "", cfg["benchmarks"].get(b, {}).get("name", b))   # "C-Eval (Chinese)"
-        lines.append(f"{esc(name)} & {fmt_list(sorted(set(langs)))} & {len(langs)} & not above chance at 1B and 1.7B \\\\")
-    lines += [r"\midrule", f"Total & & {sum(map(len, by.values()))} & \\\\", r"\bottomrule", r"\end{tabular}", "}",
-              r"\caption{\textbf{Screened benchmark tasks that we discarded.} A task is discarded when, both at 1B and "
-              r"at 1.7B, fewer than half of the runs that trained its language have a one-sided 95\% Wilson lower "
-              r"bound above chance. Tasks counts the discarded tasks of the benchmark, whose other tasks stay in the "
-              r"screen. Languages are ISO 639-1 codes.}",
-              r"\label{tab:discarded-benchmarks}", r"\end{table}"]
-    return "\n".join(lines)
 
 
 CONSIDERED_COUNTS = (REPO / "src" / "signal-and-noise" / "analysis" / "rq00_gate_and_curves" / "pretraining"
@@ -613,11 +583,8 @@ def main():
     replace_block(SECTIONS / "app_01_model_ladder.tex", "grid", grid_table(runs, done, missing))
     replace_block(SECTIONS / "app_01_model_ladder.tex", "seeds", seeds_table(runs))
     replace_block(SECTIONS / "app_01_model_ladder.tex", "ladder", ladder_table(runs))
-    body, stats = benchmark_table()
-    replace_block(SECTIONS / "app_03_evaluation.tex", "benchmarks", body)
-    screened, sstats = screened_table()
-    replace_block(SECTIONS / "app_03_evaluation.tex", "screened", screened)
-    replace_block(SECTIONS / "app_03_evaluation.tex", "discarded", discarded_table())
+    _, stats = benchmark_table()
+    _, sstats = screened_table()
     # written in the same run as the tables they count, so text and tables cannot disagree
     per_K = tasks_per_K()
     if unnamed := sorted(set(per_K) - set(K_WORDS)):

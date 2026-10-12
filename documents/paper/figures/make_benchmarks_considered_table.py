@@ -232,18 +232,17 @@ body = "\n".join([
     rf"{n_tasks['s']:,} tasks)}} \\",
     *map(line, screened), r"\bottomrule", r"\end{tabular}",
     r"\caption{\textbf{Every benchmark we considered}, its reformulated variants folded into the row of their "
-    r"original. Analysed benchmarks are evaluated throughout pretraining (Table~\ref{tab:benchmark-families}), and "
+    r"original. Analysed benchmarks are evaluated throughout pretraining, and "
     r"a benchmark with any analysed task is listed with them. Screened benchmarks were evaluated only on the final "
-    r"checkpoints of the 600M, 1B and 1.7B models (Tables~\ref{tab:screened-benchmarks} "
-    r"and~\ref{tab:discarded-benchmarks}). Langs is the number of languages that the harness registers for the "
+    r"checkpoints of the 600M, 1B, 1.7B and 3B models. Langs is the number of languages that the harness registers for the "
     r"benchmark. Trained is the number of them that the sweep trains (English and the FineWeb-2 languages of "
     r"every trained build). Task is the capability the benchmark targets, and a mixed suite is a national "
     r"benchmark collection that covers several. Formats lists the scoring formats "
     r"of the original tasks with $K$ answer options, a range when $K$ differs across tasks (var.\ when it only varies across items). Letter scores the "
     r"labels (A, B, \ldots) of options listed in the prompt. Cloze scores each answer text as a continuation of "
     r"the prompt. Completion has no shared prompt (minimal pairs, sentence pairs, Winograd schemas) or a single "
-    r"target continuation (LAMBADA, XQuAD). RF and LLM-RF mark the reformulated variants of "
-    r"Table~\ref{tab:benchmark-families}. Low-Resource Language Examples lists the benchmark's languages among "
+    r"target continuation (LAMBADA, XQuAD). RF and LLM-RF mark the reformulated variants (\\S\\ref{subsec:rq1_factors}). "
+    r"Low-Resource Language Examples lists the benchmark's languages among "
     r"ranks 30 to 50 of our 50-language list, which orders English and the FineWeb-2 languages by resources, "
     r"from the least resourced (rank 50) up (ISO 639-1 codes).}",
     r"\label{tab:app_benchmarks_considered}", r"\end{table*}", ""])
