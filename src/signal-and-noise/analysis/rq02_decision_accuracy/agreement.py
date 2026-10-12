@@ -29,6 +29,11 @@ another (DA ≥ 0.66 maps to tau ≥ 0.32 through the identity).
                                     tied cells sit off it by exactly (T_both − T_one)/n
     agreement_da_size_cut_sensitivity_multi_axes.png / .csv   per size, the share of cells whose reliability verdict
                                     depends on the statistic
+    agreement_da_size_equivalence_multi_axes.tex       the paper's table: Pearson r between DA, tau_b and rho over
+                                    every cell and per size, Spearman over every cell, the shared verdicts
+    agreement_da_size_correlation_multi_axes_paper.png the correlation figure for the paper (two-column width)
+
+    python analysis/rq02_decision_accuracy/agreement.py --paper   # the two paper outputs, from the per-cell table
 
 DA-size under other definitions, on the same finals and gate, multi-axis and
 mono-axis pairs (rule 15): the current rule; a tied pair counting one half
@@ -172,12 +177,13 @@ def correlations(d: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def figure_correlation(d: pd.DataFrame, corr: pd.DataFrame, path: Path) -> None:
+def figure_correlation(d: pd.DataFrame, corr: pd.DataFrame, path: Path, paper: bool = False) -> None:
     """The three statistics against each other, one point per cell, the
-    correlation in the corner: the plain version of `agreement_da_size_identity_multi_axes`."""
+    correlation in the corner: the plain version of `agreement_da_size_identity_multi_axes`.
+    `paper`: the paper copy (`<stem>_paper`), two-column width, no header, the legend below."""
     sizes = size_order(d["size"].unique())
     colour = {s: S.SIZE_COLOR.get(s, S.MUTED) for s in sizes}   # RAMP has four steps; the ladder has more proxies
-    fig, axes = plt.subplots(1, 3, figsize=(12.6, 4.3))
+    fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.6) if paper else (12.6, 4.3))
     for ax, (x, y) in zip(axes, CORR_PAIRS):
         for s in sizes:
             g = d[d["size"] == s]
@@ -187,11 +193,20 @@ def figure_correlation(d: pd.DataFrame, corr: pd.DataFrame, path: Path) -> None:
         else:
             ax.plot([-1, 1], [-1, 1], color=S.MUTED, lw=.8, ls=":", zorder=1)
         c = corr[(corr["size"] == "all") & (corr["x"] == x) & (corr["y"] == y)].iloc[0]
-        ax.text(0.03, 0.97, f"Pearson r = {c['pearson_r']:.3f}\nSpearman ρ = {c['spearman_rho']:.3f}\n{int(c['cells'])} cells",
-                transform=ax.transAxes, va="top", ha="left", fontsize=7.5,
+        ax.text(0.03, 0.97, f"Pearson r = {c['pearson_r']:.2f}\nSpearman ρ = {c['spearman_rho']:.2f}"
+                + ("" if paper else f"\n{int(c['cells'])} cells"),
+                transform=ax.transAxes, va="top", ha="left", fontsize=6.5 if paper else 7.5,
                 bbox=dict(boxstyle="round,pad=0.3", fc=S.SURFACE, ec=S.GRID, lw=.6))
-        ax.set_xlabel(CORR_LABEL[x]); ax.set_ylabel(CORR_LABEL[y])
+        lab = (lambda k: (CORR_LABEL[k][0].upper() + CORR_LABEL[k][1:]).replace("τ_b", r"$\tau_b$")) if paper else CORR_LABEL.get
+        ax.set_xlabel(lab(x)); ax.set_ylabel(lab(y))
         ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    if paper:
+        h, labels = axes[0].get_legend_handles_labels()
+        fig.legend(h, [l.split(" proxy")[0] for l in labels], fontsize=6.5, frameon=False, ncol=len(sizes),
+                   loc="lower center", bbox_to_anchor=(0.5, 0), markerscale=2)
+        fig.tight_layout(rect=(0, 0.08, 1, 1))
+        S.save_paper(fig, path.with_suffix(""))
+        return
     axes[-1].legend(fontsize=6.5, frameon=False, loc="lower right")
     top = G._header(fig, "Three rank-agreement statistics on the same cells",
                     f"One point per (benchmark task, proxy size): the proxy's final ranking of the {GRID_SEED}-seed design "
@@ -408,14 +423,50 @@ def generate_readme(pool: str, out_dir: Path, d: pd.DataFrame, sens: pd.DataFram
     replace_block(OUT_ROOT / "README.md", "agreement-measures", body, f"agreement.py --pool {pool}")
 
 
+EQUIV_NAME = "agreement_da_size_equivalence_multi_axes"
+PAIR_TEX = {("da", "tau_b"): "DA and Kendall's $\\tau_b$", ("da", "rho"): "DA and Spearman's $\\rho$",
+            ("tau_b", "rho"): "Kendall's $\\tau_b$ and Spearman's $\\rho$"}
+
+
+def equivalence(d: pd.DataFrame, out_dir: Path) -> None:
+    """`agreement_da_size_equivalence_multi_axes.tex`, the paper's bare tabular: for each pair of
+    DA, Kendall's tau_b and Spearman's rho, Pearson r over every (task, proxy size) cell and per
+    proxy size, Spearman's rank correlation over every cell (`correlations`), and for DA and tau_b
+    the share of cells with the same reliability verdict (DA >= CUT <=> tau_b >= 2 CUT - 1,
+    `cut_sensitivity`): the evidence for reporting one statistic."""
+    corr, sens = correlations(d), cut_sensitivity(d)
+    sizes = [s for s in SMALL_SIZES if s in set(corr["size"])]
+    t = sens[sens["statistic"] == "tau_b"]
+    same = 1 - t["flip_vs_da"].sum() / t["cells"].sum()
+    lines = ["\\begin{tabular}{l" + "r" * (len(sizes) + 3) + "}", "\\toprule",
+             f" & \\multicolumn{{{len(sizes) + 1}}}{{c}}{{Pearson $r$ across cells}} & Spearman & Same \\\\",
+             f"\\cmidrule(lr){{2-{len(sizes) + 2}}}",
+             "Statistics & All & " + " & ".join(sizes) + " & All & verdict \\\\", "\\midrule"]
+    for x, y in CORR_PAIRS:
+        c = corr[(corr["x"] == x) & (corr["y"] == y)].set_index("size")
+        lines.append(" & ".join([PAIR_TEX[(x, y)]] + [f"{c.loc[s, 'pearson_r']:.2f}" for s in ["all"] + sizes]
+                                + [f"{c.loc['all', 'spearman_rho']:.2f}",
+                                   f"{same:.1%}".replace("%", "\\%") if (x, y) == ("da", "tau_b") else "--"])
+                     + " \\\\")
+    (out_dir / f"{EQUIV_NAME}.tex").write_text("\n".join(lines + ["\\bottomrule", "\\end{tabular}", ""]))
+    print(f"{EQUIV_NAME}.tex: {int(corr.loc[corr['size'] == 'all', 'cells'].iloc[0])} cells; same verdict DA / tau_b {same:.1%}")
+
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL_POOL, help="the pool whose gate applies and whose folder receives the outputs")
+    p.add_argument("--paper", action="store_true", help="only the equivalence table, from the per-cell table on disk")
     args = p.parse_args()
     out_dir = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
+    if args.paper:
+        d = pd.read_csv(out_dir / "agreement_da_size_per_cell_multi_axes.csv")
+        equivalence(d, out_dir)
+        figure_correlation(d, correlations(d), out_dir / "agreement_da_size_correlation_multi_axes_paper.png", paper=True)
+        sys.exit()
     frame = ladder_frame(POOL)
     d = per_cell(finals(frame), args.pool)
     d.to_csv(out_dir / "agreement_da_size_per_cell_multi_axes.csv", index=False)
+    equivalence(d, out_dir)
     resid = ((2 * d["da"] - 1) - d["tau_a"] - d["gap_pairs"]).abs().max()
     print(f"{len(d)} cells; identity 2·DA − 1 = τ_a + (T_both − T_one)/n to {resid:.1e}; "
           f"r(DA, τ_b) = {d['da'].corr(d['tau_b']):.4f}, r(DA, ρ) = {d['da'].corr(d['rho']):.4f}")
@@ -426,6 +477,7 @@ if __name__ == "__main__":
     corr = correlations(d)
     corr.to_csv(out_dir / "agreement_da_size_correlation_multi_axes.csv", index=False)
     figure_correlation(d, corr, out_dir / "agreement_da_size_correlation_multi_axes.png")
+    figure_correlation(d, corr, out_dir / "agreement_da_size_correlation_multi_axes_paper.png", paper=True)
     figure_identity(d, out_dir / "agreement_da_size_identity_multi_axes.png")
     figure_cuts(sens, d, out_dir / "agreement_da_size_cut_sensitivity_multi_axes.png")
     generate_readme(args.pool, out_dir, d, sens)
