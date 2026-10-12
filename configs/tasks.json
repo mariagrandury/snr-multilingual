@@ -1251,7 +1251,8 @@
         "gold": 0
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.7286
+      "majority": 0.7286,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_australia": {
       "language": "en",
@@ -1271,7 +1272,8 @@
         "gold": 0
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.75
+      "majority": 0.75,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_canada": {
       "language": "en",
@@ -1291,7 +1293,8 @@
         "gold": 1
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.6786
+      "majority": 0.6786,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_chile": {
       "language": "es",
@@ -1311,7 +1314,8 @@
         "gold": 0
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.6705
+      "majority": 0.6705,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_china": {
       "language": "zh",
@@ -1331,7 +1335,8 @@
         "gold": 1
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.7373
+      "majority": 0.7373,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_india": {
       "language": "hi",
@@ -1351,7 +1356,8 @@
         "gold": 0
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.6793
+      "majority": 0.6793,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_japan": {
       "language": "ja",
@@ -1371,7 +1377,8 @@
         "gold": 1
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.7264
+      "majority": 0.7264,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_mexico": {
       "language": "es",
@@ -1391,7 +1398,8 @@
         "gold": 0
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.7143
+      "majority": 0.7143,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_morocco": {
       "language": "ar",
@@ -1411,7 +1419,8 @@
         "gold": 1
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.7206
+      "majority": 0.7206,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_nigeria": {
       "language": "en",
@@ -1431,7 +1440,8 @@
         "gold": 0
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.7386
+      "majority": 0.7386,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_peru": {
       "language": "es",
@@ -1451,7 +1461,8 @@
         "gold": 1
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.7368
+      "majority": 0.7368,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_russia": {
       "language": "ru",
@@ -1471,7 +1482,8 @@
         "gold": 1
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.725
+      "majority": 0.725,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_saudi_arabia": {
       "language": "ar",
@@ -1491,7 +1503,8 @@
         "gold": 1
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.7206
+      "majority": 0.7206,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_south_africa": {
       "language": "en",
@@ -1511,7 +1524,8 @@
         "gold": 1
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.75
+      "majority": 0.75,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_spain": {
       "language": "es",
@@ -1531,7 +1545,8 @@
         "gold": 0
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.7438
+      "majority": 0.7438,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_united_kingdom": {
       "language": "en",
@@ -1551,7 +1566,8 @@
         "gold": 1
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.75
+      "majority": 0.75,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_united_states": {
       "language": "en",
@@ -1571,7 +1587,8 @@
         "gold": 1
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.75
+      "majority": 0.75,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_vietnam": {
       "language": "vi",
@@ -1591,7 +1608,8 @@
         "gold": 0
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.75
+      "majority": 0.75,
+      "metric": "acc_norm"
     },
     "cultural_bench_hard_zimbabwe": {
       "language": "en",
@@ -1611,7 +1629,8 @@
         "gold": 0
       },
       "source": "kellycyy/CulturalBench (CulturalBench-Hard)",
-      "majority": 0.75
+      "majority": 0.75,
+      "metric": "acc_norm"
     },
     "drop": {
       "language": "en",
@@ -3506,7 +3525,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (arb)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_eng": {
       "language": "en",
@@ -3525,7 +3545,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (eng)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_eus": {
       "language": "eu",
@@ -3544,7 +3565,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (eus)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_hin": {
       "language": "hi",
@@ -3563,7 +3585,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (hin)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_rus": {
       "language": "ru",
@@ -3582,7 +3605,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (rus)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_spa": {
       "language": "es",
@@ -3601,7 +3625,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (spa)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_tur": {
       "language": "tr",
@@ -3620,7 +3645,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (tur)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "openbookqa": {
       "language": "en",
@@ -3835,7 +3861,8 @@
         "gold": 1
       },
       "source": "skg/toxigen-data (annotated)",
-      "majority": 0.5681
+      "majority": 0.5681,
+      "metric": "acc_norm"
     },
     "triviaqa": {
       "language": "en",
@@ -6185,7 +6212,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (heb)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_ars_Arab": {
       "language": "ar",
@@ -6246,7 +6274,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (mkd)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_fas": {
       "language": "fa",
@@ -6265,7 +6294,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (fas)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_bul": {
       "language": "bg",
@@ -6284,7 +6314,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (bul)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_ron": {
       "language": "ro",
@@ -6303,7 +6334,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (ron)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_fin": {
       "language": "fi",
@@ -6322,7 +6354,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (fin)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_uzn_Latn": {
       "language": "uz",
@@ -6404,7 +6437,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (urd)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_lat": {
       "language": "la",
@@ -6423,7 +6457,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (lat)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_kat_Geor": {
       "language": "ka",
@@ -6526,7 +6561,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (kat)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_slv_Latn": {
       "language": "sl",
@@ -6713,7 +6749,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (kmr)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_por_Latn": {
       "language": "pt",
@@ -6753,7 +6790,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (slk)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_tam": {
       "language": "ta",
@@ -6772,7 +6810,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (tam)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_som_Latn": {
       "language": "so",
@@ -6854,7 +6893,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (glg)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_urd_Latn": {
       "language": "ur",
@@ -6936,7 +6976,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (hye)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_lvs_Latn": {
       "language": "lv",
@@ -7081,7 +7122,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (lit)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_pol_Latn": {
       "language": "pl",
@@ -7163,7 +7205,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (nld)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_ary_Arab": {
       "language": "ar",
@@ -7203,7 +7246,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (swe)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_ukr": {
       "language": "uk",
@@ -7222,7 +7266,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (ukr)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_bod_Tibt": {
       "language": "bo",
@@ -7346,7 +7391,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (guj)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_hau_Latn": {
       "language": "ha",
@@ -7428,7 +7474,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (hun)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_dan": {
       "language": "da",
@@ -7447,7 +7494,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (dan)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_ces": {
       "language": "cs",
@@ -7466,7 +7514,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (ces)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_slv": {
       "language": "sl",
@@ -7485,7 +7534,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (slv)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_kaz": {
       "language": "kk",
@@ -7504,7 +7554,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (kaz)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_urd_Arab": {
       "language": "ur",
@@ -7607,7 +7658,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (deu)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_ron_Latn": {
       "language": "ro",
@@ -7773,7 +7825,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (fra)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_kaz_Cyrl": {
       "language": "kk",
@@ -7813,7 +7866,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (cym)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_lao_Laoo": {
       "language": "lo",
@@ -7874,7 +7928,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (kir)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_ind_Latn": {
       "language": "id",
@@ -7914,7 +7969,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (cat)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_mar": {
       "language": "mr",
@@ -7933,7 +7989,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (mar)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_kan_Knda": {
       "language": "kn",
@@ -7994,7 +8051,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (pol)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_dan_Latn": {
       "language": "da",
@@ -8097,7 +8155,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (isl)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_bel": {
       "language": "be",
@@ -8116,7 +8175,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (bel)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_hrv_Latn": {
       "language": "hr",
@@ -8240,7 +8300,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (ben)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_zsm_Latn": {
       "language": "ms",
@@ -8280,7 +8341,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (ita)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_por": {
       "language": "pt",
@@ -8299,7 +8361,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (por)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_mlt_Latn": {
       "language": "mt",
@@ -8402,7 +8465,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (ell)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "belebele_arz_Arab": {
       "language": "ar",
@@ -8442,7 +8506,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (uig)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_amh": {
       "language": "am",
@@ -8461,7 +8526,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (amh)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_gle": {
       "language": "ga",
@@ -8480,7 +8546,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (gle)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "global_mmlu_full_he": {
       "language": "he",
@@ -11326,7 +11393,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (est)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_fao": {
       "language": "fo",
@@ -11345,7 +11413,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (fao)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_gla": {
       "language": "gd",
@@ -11364,7 +11433,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (gla)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_grc": {
       "language": "grc",
@@ -11383,7 +11453,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (grc)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_hbo": {
       "language": "hbo",
@@ -11402,7 +11473,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (hbo)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_hyw": {
       "language": "hyw",
@@ -11421,7 +11493,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (hyw)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_nds": {
       "language": "nds",
@@ -11440,7 +11513,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (nds)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_sah": {
       "language": "sah",
@@ -11459,7 +11533,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (sah)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_san": {
       "language": "sa",
@@ -11478,7 +11553,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (san)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "multiblimp_sme": {
       "language": "se",
@@ -11497,7 +11573,8 @@
         "gold": 0
       },
       "source": "jumelet/multiblimp (sme)",
-      "majority": 1.0
+      "majority": 1.0,
+      "metric": "acc_norm"
     },
     "xstorycloze_ca": {
       "language": "ca",
