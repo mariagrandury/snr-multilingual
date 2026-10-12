@@ -354,6 +354,8 @@ lane rq13 rq00 rq01 rq02 rq03 rq07
 run $PY analysis/rq13_english_only/english_only.py --pool predictivity
 # the K = 1 cells of each English corpus under rq01's scaling-regime fits (reads rq01's scaling_regimes.csv)
 run $PY analysis/rq13_english_only/english_regimes.py --pool predictivity
+# SNR -> DA-size on the AllenAI benchmarks: DataDecide, the K = 1 cells and the multilingual groups (reads the tables above and rq07's)
+run $PY analysis/rq13_english_only/allenai_snr.py
 
 pass "rq08 — subset selection"
 lane rq08 gate

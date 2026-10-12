@@ -90,6 +90,8 @@ comes from). The .tex carries the source path as a comment next to the
     app_rq13_english_scaling_regimes <- rq13_english_only/english_regimes.py   english_only_scaling_regimes_paper
     app_rq13_english_scaling_regimes_l1_accuracy <- the same   english_only_scaling_regimes_l1_accuracy_paper
     app_rq13_english_scaling_regimes_l1_accuracy_tagged <- the same   english_only_scaling_regimes_l1_accuracy_tagged_paper
+    app_snr_monolingual        <- rq13_english_only/allenai_snr.py    english_only_allenai_snr_da_paper
+    app_snr_monolingual_table  <- the same (a LaTeX table)             english_only_allenai_snr_da
                              (these three: the extra figures of the English-only appendix page)
     app_rq02_permutation_null  <- rq02_permutation_null/permutation_null.py       permutation_null_da_size_paper
     app_rq02_decisive_pairs    <- rq02_decisive_pairs/decisive_pairs.py           decisive_pairs_da_size_paper
@@ -221,6 +223,8 @@ FIGURES = {
         "rq13_english_only", *PRED, "english_only_scaling_regimes_l1_accuracy_paper"), ("png",)),
     "app_rq13_english_scaling_regimes_l1_accuracy_tagged": (ANALYSIS.joinpath(
         "rq13_english_only", *PRED, "english_only_scaling_regimes_l1_accuracy_tagged_paper"), ("png",)),
+    "app_snr_monolingual": (ANALYSIS.joinpath("rq13_english_only", *PRED, "english_only_allenai_snr_da_paper"), ("png",)),
+    "app_snr_monolingual_table": (ANALYSIS.joinpath("rq13_english_only", *PRED, "english_only_allenai_snr_da"), ("tex",)),
     "app_rq02_definition_sensitivity": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED,
                                                           "da_size_definition_sensitivity_multi_axes"), ("tex",)),
     "app_rq02_agreement_measures": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED,

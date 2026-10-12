@@ -458,6 +458,38 @@ Follow-ups:
 - Next: whether the L1 numbers land where an external English ladder puts the
   same tasks, [Next to AllenAI DataDecide](#next-to-allenai-datadecide).
 
+## SNR against decision accuracy on the AllenAI benchmarks
+
+The surrogates find no statistic that predicts decision accuracy well on the
+ladder. Is that multilinguality or our code? `allenai_snr.py` reads the SNR →
+DA-size relation with one implementation on DataDecide, on L1 and on the
+multilingual mirrored groups, all on the nine OLMES benchmarks we evaluate
+(ARC-Easy, ARC-Challenge, BoolQ, CommonsenseQA RF, HellaSwag, MMLU RF,
+OpenBookQA, PIQA, WinoGrande).
+
+**SNR (`rel_std`) and multi-axis DA-size · our side: the mirrored four-family
+groups, seed 1904, proxies 90M–1B against 1.7B, gated (rule 1), 6 pairs ·
+DataDecide: 25 recipes, 150M–750M against 1B (rq07's table).** Statistic:
+Spearman ρ of log10 SNR against DA-size over the (benchmark, proxy) points,
+95 % bootstrap over benchmarks. Snapshot: the committed rq13 and rq07 tables
+(2026-10-11 refresh).
+
+![SNR against DA-size](pretraining/predictivity/english_only_allenai_snr_da_paper.png)
+
+Key findings (`english_only_allenai_snr_da_summary.csv`):
+
+- **The code reproduces the English result.** DataDecide: ρ = 0.89 [0.57, 0.96] over 27 points.
+- **L1 keeps a positive relation, the many-language groups lose it.** L1 0.46 [−0.08, 0.81], L2 0.43 [−0.06, 0.75], L15 0.04 [−0.39, 0.33], L30 −0.10 [−0.40, 0.16] (39 points each).
+- **SNR and DA fall with K on the same benchmarks.** Median SNR 6.0 (DataDecide), 2.9, 2.2, 1.7, 1.8; median DA-size 0.76, 0.67, 0.67, 0.50, 0.50.
+
+Follow-ups:
+
+- The decisions differ by group (recipes, English corpora, language lists), so
+  a like-for-like reading needs one decision at every K: deep against shallow
+  has one pair per cell, too few for a DA-size distribution.
+
+[english_only_allenai_snr_da_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_allenai_snr_da_paper.png) · [english_only_allenai_snr_da.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_allenai_snr_da.csv) · [english_only_allenai_snr_da_summary.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_allenai_snr_da_summary.csv)
+
 ## Next to AllenAI DataDecide
 
 The L1 numbers next to DataDecide's on the English tasks both evaluate:
