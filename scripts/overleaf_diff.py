@@ -28,6 +28,7 @@ export) is summarised in one line.
     python3 scripts/overleaf_diff.py EXPORT --diff 04_analysis   # word diff in the terminal
     python3 scripts/overleaf_diff.py EXPORT --code               # VS Code diff tab per differing file
     python3 scripts/overleaf_diff.py EXPORT --html               # one HTML report next to the export
+    python3 scripts/overleaf_diff.py EXPORT --merge              # three-way merge the diverged files into the repo
 
 The export may also be the .zip Overleaf downloads: it is unpacked next to
 it, into a folder of the same name. In every diff, red is the Overleaf text
@@ -40,6 +41,7 @@ import html
 import re
 import subprocess
 import sys
+import tempfile
 import zipfile
 from collections import defaultdict
 from pathlib import Path
@@ -144,6 +146,27 @@ def provenance(rel_repo, ov_text, repo_text):
             f"{changed_lines(base[2], repo_text)} in the repo, against repo {base[0]} of {base[1]})")
 
 
+def merge(rel_repo, ov_text, repo_text):
+    """Three-way merge of a diverged file into the repo copy: base = the repo
+    version closest to the Overleaf copy (as `provenance` reads it), ours = the
+    repo file, theirs = Overleaf. Writes the result, conflict markers
+    included, and returns the number of conflicts (None when the Overleaf copy
+    is an old repo version, which leaves the repo file alone)."""
+    versions = history(rel_repo)
+    if not versions or any(text == ov_text for _, _, text in versions):
+        return None
+    base = min(versions, key=lambda v: changed_lines(v[2], ov_text))
+    with tempfile.TemporaryDirectory() as tmp:
+        paths = []
+        for name, text in (("repo", repo_text), ("base", base[2]), ("overleaf", ov_text)):
+            (Path(tmp) / name).write_text(text)
+            paths.append(str(Path(tmp) / name))
+        out = subprocess.run(["git", "merge-file", "-p", "-L", "repo", "-L", f"base {base[0]}", "-L", "overleaf", *paths],
+                             stdout=subprocess.PIPE)
+    (PAPER / rel_repo).write_bytes(out.stdout)
+    return out.returncode
+
+
 def word_diff(a, b, color=True):
     """git's word diff of two files, without its four header lines."""
     flag = "--color-words" if color else "--word-diff=porcelain"
@@ -196,6 +219,8 @@ def main():
     ap.add_argument("--diff", metavar="NAME", nargs="*", help="print the word diff of the differing text files (or those whose name contains NAME)")
     ap.add_argument("--code", metavar="NAME", nargs="*", help="open a VS Code diff per differing text file (or those whose name contains NAME)")
     ap.add_argument("--html", nargs="?", const="", metavar="OUT", help="write one HTML report (default: next to the export)")
+    ap.add_argument("--merge", action="store_true", help="three-way merge every diverged text file into the repo copy "
+                    "(conflict markers where both sides changed the same lines)")
     a = ap.parse_args()
     ov = export_dir(a.export)
     pairs, only_ov, only_repo = pair(files(ov, False), files(PAPER, True))
@@ -236,6 +261,12 @@ def main():
         for d, n in sorted(absent.items()):
             print(f"  {d}/: {n} files (the export has no {d}/ folder)")
 
+    if a.merge:
+        print("\nmerge (repo <- Overleaf, base = the repo version closest to the Overleaf copy):")
+        for o, r in differing:
+            n = merge(r, (ov / o).read_text(errors="replace"), (PAPER / r).read_text(errors="replace"))
+            print(f"  {r}: " + ("left alone (Overleaf is an old repo version)" if n is None
+                                else "merged cleanly" if n == 0 else f"{n} conflict(s)"))
     pick = lambda names: [d for d in differing if not names or any(n in str(d[1]) for n in names)]
     if a.diff is not None:
         for o, r in pick(a.diff):
