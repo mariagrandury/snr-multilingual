@@ -97,6 +97,8 @@ comes from). The .tex carries the source path as a comment next to the
                              (these three: the main figure of an appendix page; the last needs the
                              cluster-only per-item store and is PENDING, not MISSING, until it is drawn)
     app_rq02_definition_sensitivity <- rq02_decision_accuracy/agreement.py  da_size_definition_sensitivity_multi_axes.tex (a LaTeX table)
+    app_rq02_agreement_measures <- the same                         agreement_da_size_equivalence_multi_axes.tex (a LaTeX table)
+    app_rq02_agreement_correlation <- the same                      agreement_da_size_correlation_multi_axes_paper (the table as a figure)
     app_rq02_seed_uncertainty  <- rq02_decision_accuracy/seed_uncertainty.py  seed_uncertainty_da_all_seed_null_paper
                              (these two: extra floats of the decision-accuracy appendix page)
     app_rq02_rq2_crossfit      <- rq02_decision_accuracy/crossfit_reliable.py  rq2_da_all_above_66_either_crossfit_transformation_mono_axis
@@ -221,6 +223,10 @@ FIGURES = {
         "rq13_english_only", *PRED, "english_only_scaling_regimes_l1_accuracy_tagged_paper"), ("png",)),
     "app_rq02_definition_sensitivity": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED,
                                                           "da_size_definition_sensitivity_multi_axes"), ("tex",)),
+    "app_rq02_agreement_measures": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED,
+                                                      "agreement_da_size_equivalence_multi_axes"), ("tex",)),
+    "app_rq02_agreement_correlation": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED,
+                                                         "agreement_da_size_correlation_multi_axes_paper"), ("png",)),
     "app_rq02_seed_uncertainty": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED, "seed_uncertainty_da_all_seed_null_paper"),
                                   ("png",)),
     "app_rq02_permutation_null": (ANALYSIS.joinpath("rq02_permutation_null", *PRED, "permutation_null_da_size_paper"), ("png",)),

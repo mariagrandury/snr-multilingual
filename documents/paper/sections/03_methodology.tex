@@ -164,7 +164,7 @@ We consider the three transfer settings defined in Table~\ref{tab:ra_defs}.
 
 We quantify ranking agreement using three complementary metrics. Spearman's rank correlation $\rho$ measures agreement between the complete proxy and reference rankings.
 Kendall's $\tau_a = (C-D)/n$ counts the concordant ($C$) minus the discordant ($D$) pairs among the $n$ pairs of variants.
-Decision accuracy (DA, \citealp{heineman_signal_2025}) measures the fraction of pairwise preferences that agree between them.
+Decision accuracy (DA, \citealp{heineman_signal_2025}) measures the fraction of pairwise preferences that agree between them. The three measure nearly the same agreement: across cells, DA correlates with Kendall's $\tau_b$ at $r=0.99$ and with Spearman's $\rho$ at $r=0.97$, and DA and $\tau_b$ give the same reliability verdict on 98\% of cells (Table~\ref{tab:app_rq02_agreement_measures}). We therefore report DA.
 A cell task-size-checkpoint is reported if it has at least three pairs.
 We summarize a benchmark or a suite by the mean of the cell values over its gated tasks. Some analyses instead pool the decisions, dividing the matching pairs by the comparable pairs summed over tasks, so that a task weighs by its number of pairs. We label these values as pooled (Appendix~\ref{app:ranking-agreement}). Where we restrict to reliably ranking tasks, we keep those whose median DA over the proxy cells reaches 0.66 for RA-size or for RA-checkpoint. Such a reading is conditional on the selection. Formal definitions can be found in Appendix~\ref{app:ranking-agreement}.
 

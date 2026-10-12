@@ -781,16 +781,7 @@ PAGES = {
         None,
         None, 0,
         (("rq00_thresholds",
-          "\\textbf{Training tokens of the language from which a benchmark is above chance.} For each multilingual "
-          "benchmark (trained in at least two languages) and answer format, the lower edge of the token bin from which "
-          "the share of (language, $K$, checkpoint) cells above chance is at least 50\\% or 90\\% in that bin and in "
-          "every larger bin, pooled over the model sizes 90M--1.7B and for the 90M and 1.7B models alone. Bins are three "
-          "per decade of the training tokens of the language that the checkpoint had seen, and a bin counts only with at "
-          "least 20 cells. $\\leq$ marks a level already met in the first bin, never a level that is not reached. Lang. is "
-          "the number of trained languages. Margin is the median accuracy above chance that a task needs for its Wilson "
-          "bound to clear chance, and Items its median item count. Seed-1904 runs of every data build and ladder, every "
-          "evaluated tenth of a run. The pooled bins mix sizes, and from $10^{10}$ tokens on, most of their cells are "
-          "English.",
+          "\\textbf{Training tokens of the language a model of each size needs before a benchmark is above chance.} For each multilingual benchmark (non-English cells in at least two trained languages) and answer format, the training tokens of the language at which 50\\% / 90\\% of its (language, $K$, checkpoint) cells are above chance, read off a logistic fit of the cells' verdict on the log of those tokens, separately for each model size. One value is shown when both levels read the same. $\\leq$X: the level holds from the fewest tokens that size saw (X) on. $>$X: the level is not reached by the most tokens that size saw (X), or is reached early and lost. English is left out, since it is half of every mixture. $^\\dagger$: the text is English while the task carries a country's language. Lang. is the number of non-English trained languages, Margin the median accuracy above chance that a task needs for its Wilson bound to clear chance, and Items its median item count. Seed-1904 runs of every data build and ladder, every evaluated tenth of a run. A cell's tokens are the mean over its runs, and a size needs at least 40 cells.",
           "tab:rq0_thresholds"),
          ("app_rq00_token_exclusion",
           "\\textbf{Leaving out the cells below the token threshold lowers the decision accuracy of an aggregate "
@@ -845,6 +836,9 @@ PAGES = {
           "proxy sizes. The task set moves across rows, since a cell needs three kept pairs: on accuracy it holds "
           "359--553 tasks per proxy under Eq.~\\ref{eq:decision-accuracy} and 243--387 under the strictest filter. A value is a mean over tasks, so it can differ from the pooled lines of Figures~\\ref{fig:app_rq02_decision_accuracy} and \\ref{fig:app_rq02_decisive_pairs}, which weigh a task by its pairs.",
           "tab:app_rq02_definition_sensitivity"),
+         ("app_rq02_agreement_measures",
+          "\\textbf{Decision accuracy, Kendall's $\\tau$ and Spearman's $\\rho$ measure nearly the same ranking agreement.} Correlation between the three statistics over the 6,803 (benchmark task, proxy size) cells of DA-size: the final checkpoint of each proxy against the 1.7B final checkpoint, on the multi-axis pairs of the seed-1904 runs of every data build, over the tasks above chance at the proxy and at 1.7B, benchmark accuracy and bBPB twins together. Pearson $r$ is given over every cell and per proxy size, Spearman's rank correlation over every cell. Same verdict is the share of cells that the reliability cut DA $\\geq 0.66$ and its image $\\tau_b \\geq 0.32$ classify alike, since $2\\,\\mathrm{DA}-1=\\tau_a+(T_{\\mathrm{both}}-T_{\\mathrm{one}})/n$. Spearman's $\\rho$ has no equivalent cut.",
+          "tab:app_rq02_agreement_measures"),
          ("app_rq02_seed_uncertainty",
           "\\textbf{Two seeds of one design agree with each other about as often as a proxy agrees with the "
           "reference.} Left and middle: the replicated cells only, English at 175M, 600M and 1B and Russian at 1B, the deep "

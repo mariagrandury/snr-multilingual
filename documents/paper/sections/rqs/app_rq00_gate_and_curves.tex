@@ -52,6 +52,14 @@
 \label{fig:app_rq00_chance_considered}
 \end{figure*}
 
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq00_chance_share_considered_counts_3b.png}
+% source: documents/paper/figures/make_considered_figures.py (not in make_rq_appendix.py's FIGURES: add it there before regenerating this page)
+\caption{\textbf{Most popular letter-format benchmarks leave chance only at 3B, while cloze benchmarks pass from 90M.} For every benchmark we considered, the number of its trained languages in which it is above chance, coloured by the smallest model size from which it stays above chance (blue, 90M to 1.7B; green, 3B), or red when it never is. Benchmarks in bold are scored in cloze format. A * marks a benchmark that we only screened: it was evaluated on the final checkpoints of the 600M, 1B, 1.7B and 3B models, and we count it at chance at the smaller sizes. The analysed benchmarks read the gate of the 90M--1.7B runs and, at 3B, the six configurations trained at 3B. Bars are ordered by the share of languages above chance at 90M, then by the number above chance at any size, the smallest size with a pass, the number of languages, and analysed before screened.}
+\label{fig:app_rq00_chance_considered_counts}
+\end{figure*}
+
 \begin{table*}[p]
 \centering
 \small

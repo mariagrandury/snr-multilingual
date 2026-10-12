@@ -84,6 +84,17 @@
 \label{tab:app_rq02_definition_sensitivity}
 \end{table*}
 
+\begin{table*}[p]
+\centering
+\small
+\begin{adjustbox}{max width=\textwidth}
+\input{tables/app_rq02_agreement_measures}
+\end{adjustbox}
+% source: src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_da_size_equivalence_multi_axes.tex
+\caption{\textbf{Decision accuracy, Kendall's $\tau$ and Spearman's $\rho$ measure nearly the same ranking agreement.} Correlation between the three statistics over the 6,803 (benchmark task, proxy size) cells of DA-size: the final checkpoint of each proxy against the 1.7B final checkpoint, on the multi-axis pairs of the seed-1904 runs of every data build, over the tasks above chance at the proxy and at 1.7B, benchmark accuracy and bBPB twins together. Pearson $r$ is given over every cell and per proxy size, Spearman's rank correlation over every cell. Same verdict is the share of cells that the reliability cut DA $\geq 0.66$ and its image $\tau_b \geq 0.32$ classify alike, since $2\,\mathrm{DA}-1=\tau_a+(T_{\mathrm{both}}-T_{\mathrm{one}})/n$. Spearman's $\rho$ has no equivalent cut.}
+\label{tab:app_rq02_agreement_measures}
+\end{table*}
+
 \begin{figure*}[p]
 \centering
 \includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq02_seed_uncertainty.png}
