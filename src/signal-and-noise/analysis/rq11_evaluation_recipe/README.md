@@ -61,7 +61,7 @@ the full refresh of 2026-10-10 (detrended checkpoint noise).
 
 Population: DA-size against the 1.7B final, multi-axis pairs of `predictivity` (seed 1904), gate `predictivity` at the proxy and the reference (a bBPB task has no chance level and passes), ≥ 3 pairs, no filter, every task. Per proxy this is 193–304 original, 97–165 RF and 69–84 LLM-RF accuracy tasks, plus 273 original, 139 RF and 89 LLM-RF bBPB twins at every proxy, and 860–1,054 tasks pooled under "all variants". bBPB is read against the 1.7B accuracy, at the final checkpoint of every proxy 90M–1B. A point on fewer than 5 tasks is not drawn.
 
-**Key finding.** **No way of evaluating a benchmark reaches a mean DA-size of τ = 0.75 against the reference's accuracy decision at any proxy up to 1B: the best mean is 0.63 (LLM-RF bBPB at 90M).** Only the easier target, bBPB → 1.7B bBPB, clears τ (LLM-RF at 0.76–0.88 on 35 tasks, [section 2](#2-every-variant-together-and-apart)). Against the same truth, bBPB beats the original accuracy at all five proxies (0.57–0.60 against 0.53–0.57 over every task, and 0.59–0.64 against 0.54–0.58 on the paired tasks). The rewrites help only when scored by bBPB: RF and LLM-RF accuracy reach 0.48–0.56 across the five proxies, and their bBPB 0.57–0.63. The eight benchmarks with the highest DA-size are drawn per variant along size and training (figure: app_rq11_recipe_by_benchmark).
+**Key finding.** **No way of evaluating a benchmark reaches a mean DA-size of τ = 0.75 against the reference's accuracy decision at any proxy up to 1B: the best mean is 0.63 (LLM-RF bBPB at 90M).** Only the easier target, bBPB → 1.7B bBPB, clears τ (LLM-RF at 0.76–0.88 on 35 tasks, [section 2](#2-every-variant-together-and-apart)). Against the same truth, bBPB beats the original accuracy at all five proxies (0.57–0.60 against 0.53–0.57 over every task, and 0.59–0.64 against 0.54–0.58 on the paired tasks). The rewrites help only when scored by bBPB: RF and LLM-RF accuracy reach 0.48–0.56 across the five proxies, and their bBPB 0.57–0.63. The five benchmarks with the highest DA-size other than LAMBADA are drawn per variant along size and training (figure: app_rq11_recipe_by_benchmark).
 
 GitHub: [recipe_da_size_variants_multi_axes_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_variants_multi_axes_paper.png) · [recipe_da_size_variants_multi_axes_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_variants_multi_axes_paper.csv). Variants together and apart, and the recommendation per benchmark: [Results](#results).
 
@@ -409,7 +409,7 @@ GitHub: [recipe_da_size_profiles_multi_axes.png](https://github.com/mariagrandur
 ### 5. The best benchmarks along size and training (paper figure)
 
 The profiles use one decision accuracy, at final checkpoints. This figure
-follows the eight best benchmarks through all three (DA-size, DA-ckpt and
+follows the five best benchmarks through all three (DA-size, DA-ckpt and
 DA-goal), so a variant that wins at the 90M final can also be checked early
 in the run.
 
@@ -420,7 +420,7 @@ bBPB → 1.7B accuracy is gated on the accuracy of the same items at 1.7B, and
 bBPB → 1.7B bBPB is never gated. Snapshot: the 2026-10-10 04:31 ladder report
 and the 2026-10-10 refresh, the one rq02's tables on disk were computed on.
 Rows: Overall (BPB of the 50 trained languages, accuracy over every format,
-every twin against the 1.7B bBPB), then the eight benchmarks with the highest
+every twin against the 1.7B bBPB), then the five benchmarks other than LAMBADA (left out, `SKIP_PAPER`) with the highest
 `mean_da_size` (`recipe_da_size_by_variant_multi_axes.csv`: the mean over
 tasks per proxy, then over the proxies 90M–1B with a value). Each benchmark
 is shown in the better of its original and RF formats, among the formats with
@@ -442,20 +442,18 @@ drawn. Task counts differ across lines and, for accuracy, across proxies
 - **HellaSwag and LAMBADA lead the ranking.** The order is HellaSwag 0.72,
   LAMBADA 0.71, MultiBLiMP 0.65, XStoryCloze 0.64, ARC 0.62 (original), MMMLU
   0.59 (RF), NorEval 0.57 (original) and ARC (MT) 0.56 (original), with
-  Global-MMLU (RF) next at 0.56. ARC (MT) and Global-MMLU differ only in the
-  third decimal (0.560 against 0.558).
+  Global-MMLU (RF) next at 0.56. The figure leaves LAMBADA out, so MMMLU is its fifth row.
 - **At the 90M proxy, bBPB → 1.7B accuracy beats the benchmark's accuracy on
-  both benchmarks where both are drawn.** HellaSwag reaches 0.83 against 0.62
-  and MultiBLiMP 0.65 against 0.63. At 1B, accuracy catches up only on
+  the three benchmarks where both are drawn.** HellaSwag reaches 0.83 against 0.62,
+  MultiBLiMP 0.65 against 0.63 and MMMLU 0.64 against 0.49 (RF). At 1B, accuracy catches up only on
   HellaSwag (0.82 against 0.80).
-- **DA-goal keeps that order along the run.** On the five benchmarks with a
-  twin, bBPB → 1.7B accuracy is above every accuracy format at 50–100 % of
-  the tenths of the run (all ten on HellaSwag and XStoryCloze, nine on
-  ARC (MT), eight on MultiBLiMP and half on ARC). HellaSwag accuracy climbs
+- **DA-goal keeps that order along the run.** On the five drawn benchmarks,
+  all with a twin, bBPB → 1.7B accuracy is above every accuracy format at
+  50–100 % of the tenths of the run (all ten on HellaSwag, XStoryCloze and
+  MMMLU, six on MultiBLiMP and half on ARC). HellaSwag accuracy climbs
   from 0.51 at 0.5C to 0.72 at 5C and stays under its twin (0.74–0.80).
-- **DA-ckpt is highest for bBPB → 1.7B bBPB on every benchmark and tenth but
-  one.** It is −0.01 to +0.28 above the best accuracy format, and below it
-  only on ARC (MT) at 80 % of the run (−0.01), as in rq02. A twin's ranking
+- **DA-ckpt is highest for bBPB → 1.7B bBPB on every drawn benchmark and
+  tenth.** It is +0.06 to +0.27 above the best accuracy format, as in rq02. A twin's ranking
   persists within its own run more than accuracy's does, but persistence is
   not a decision.
 - **In the Overall row, BPB is highest and accuracy lowest.** DA-size on

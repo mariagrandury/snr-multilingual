@@ -79,7 +79,7 @@ without a twin (LAMBADA, MMMLU, NorEval, ...) is left out of both sides).
                                                                 the moving line dashed behind it
     recipe_da_goal_per_task{...}.csv                            the early-small cells behind every table: per task, reading,
                                                                 proxy and tenth, rule 5 applied, the gate verdict in `gated`
-    recipe_da_all_by_benchmark_multi_axes_paper.png/.csv   the paper's per-benchmark page: Overall and the TOP benchmarks
+    recipe_da_all_by_benchmark_multi_axes_paper.png/.csv   the paper's per-benchmark page: Overall and the TOP benchmarks (SKIP_PAPER left out)
                                                                 by DA-size (`ranking`), DA-size, DA-ckpt and DA-goal, one line
                                                                 per variant and reading, 95 % bootstrap bands over the tasks
 
@@ -518,7 +518,8 @@ def variants_paper(ov: pd.DataFrame, path: Path) -> None:
 
 
 PAPER_AXES = "multi-axis"   # rq11's headline pair set, the one its paper figures read
-TOP = 8                 # the benchmarks the per-benchmark paper figure draws
+TOP = 5                 # the benchmarks the per-benchmark paper figure draws
+SKIP_PAPER = {"LAMBADA"}  # left out of that figure (the authors' call, 2026-10-12), by paper name
 # line -> (legend label, style): one Okabe-Ito colour per kind of line in every row of the
 # figure, solid for accuracy and dashed for BPB and bBPB
 _C = S.OKABE_ITO
@@ -609,7 +610,8 @@ def benchmarks_paper(pool: str, path: Path) -> None:
     from analysis.rq02_decision_accuracy.paper_rq2 import _self_reference
     d = EVALUATION_RECIPE / load_pools()[pool].get("stage", "pretraining") / pool
     rank = ranking(pd.read_csv(d / f"recipe_da_size_by_variant{AXES_SUFFIX[PAPER_AXES]}.csv"))
-    top = rank.head(TOP)
+    top = rank[~rank["benchmark"].map(G.paper_name).isin(SKIP_PAPER)].head(TOP)
+    top = top.assign(rank=range(1, len(top) + 1))
     summ = benchmarks_summary(benchmarks_cells(pool, top))
     rows = [OVERALL_ROW] + list(top["benchmark"])
     kinds = [("size", "DA-size"), ("ckpt", "DA-ckpt"), ("goal", "DA-goal")]
