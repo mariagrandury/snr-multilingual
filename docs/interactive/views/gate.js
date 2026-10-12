@@ -133,7 +133,7 @@
         y: { domain: benches, label: null, tickFormat: (b) => name(x.names, b), tickSize: 0 },
         color: { domain: dom, range: [css("--viz-s1"), css("--viz-muted"), css("--viz-bad")], legend: true, label: "at the chosen token count" },
         marks: [
-          Plot.ruleY(rows.filter((r) => r.lowest_bin_lo != null), { y: "b", x1: "lowest_bin_lo", x2: (r) => Math.min(r.highest_bin_hi, 1.5e11), stroke: css("--viz-grid"), strokeWidth: 7, strokeLinecap: "round" }),
+          Plot.ruleY(rows.filter((r) => r.lowest_tokens != null), { y: "b", x1: "lowest_tokens", x2: (r) => Math.min(r.highest_tokens, 1.5e11), stroke: css("--viz-grid"), strokeWidth: 7, strokeLinecap: "round" }),
           Plot.ruleX([t], { stroke: css("--md-default-fg-color"), strokeWidth: 1.5 }),
           Plot.dot(rows.filter((r) => r.bin_lo != null), { x: "bin_lo", y: "b", r: 5, fill: "status", stroke: css("--viz-surface"), strokeWidth: 1.5, tip: true,
             title: (r) => `${name(x.names, r.b)} (${r.n_languages} languages, ${r.sizes === "all" ? "sizes pooled" : r.sizes})\n` +
@@ -141,7 +141,7 @@
               `margin a run needs over chance: ${fmt(r.margin_median, 3)} (${d3.format(",")(r.n_items_median)} items)` }),
           Plot.text(rows.filter((r) => r.status === SC.never || r.status === SC.nodata), { y: "b", frameAnchor: "right", dx: 74, textAnchor: "end",
             fill: (r) => (r.status === SC.never ? css("--viz-bad") : css("--viz-muted")), text: (r) => r.status,
-            tip: true, title: (r) => `${name(x.names, r.b)}: ${r.status === SC.never ? `never ${st.level * 100} % of cells above chance at any token count the sweep reached` : "no token bin with 20 cells at this size"}` }),
+            tip: true, title: (r) => `${name(x.names, r.b)}: ${r.status === SC.never ? `never ${st.level * 100} % of cells above chance at any token count the sweep reached` : "fewer than 40 non-English cells at this size"}` }),
         ],
       }), note("Each row is one benchmark in one format. The grey bar spans the token counts the sweep covers for it; the dot is the token count from which at least the chosen share of its cells stays above chance in every higher bin. Drag the slider: a dot left of the black line is reached. Pick a model size to see how far the threshold moves with size.")];
     });

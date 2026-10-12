@@ -99,7 +99,7 @@ def build() -> dict:
 
     thr = pd.read_csv(tok / "predictivity_seeds/pass_threshold_tokens_by_benchmark_1904_ckpts.csv")
     thr = thr[["benchmark", "name", "format", "n_languages", "margin_median", "n_items_median", "sizes", "level",
-               "status", "bin_lo", "lowest_bin_lo", "highest_bin_hi", "share_in_bin"]]
+               "status", "bin_lo", "lowest_tokens", "highest_tokens", "share_above"]]
 
     ext = pd.read_csv(g / "above_random_external_lines.csv")
     ext = ext[~ext["line"].str.contains(UNRELEASED, case=False) & ~ext["model"].str.contains(UNRELEASED, case=False)]
