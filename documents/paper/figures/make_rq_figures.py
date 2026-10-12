@@ -13,7 +13,7 @@ comes from). The .tex carries the source path as a comment next to the
     rq0  INCLUDE vs its RF twin <- rq01_scaling_predictability/tokens_seen.py --paper (pool predictivity_seeds,
                              written to rq00_chance_vs_train_tokens/)
                              pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_include_rf_paper_vertical
-    rq00_thresholds  token thresholds per benchmark and format <- the same tokens_seen.py (a LaTeX table,
+    app_rq00_thresholds  token thresholds per benchmark and format <- the same tokens_seen.py (a LaTeX table,
                              the extra float of the rq00_chance_vs_train_tokens appendix page)
                              pass_threshold_tokens_by_benchmark_1904_ckpts
     rq1  scaling regimes  <- rq01_scaling_predictability/regimes.py  (pool predictivity_seeds)
@@ -137,7 +137,7 @@ PRED, SEEDS = ("pretraining", "predictivity"), ("pretraining", "predictivity_see
 # paper stem -> (the analysis stem it is a copy of, the formats copied)
 FIGURES = {
     "rq0": (CHANCE_TOKENS / "pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_include_rf_paper_vertical", ("png",)),
-    "rq00_thresholds": (CHANCE_TOKENS / "pass_threshold_tokens_by_benchmark_1904_ckpts", ("tex",)),
+    "app_rq00_thresholds": (CHANCE_TOKENS / "pass_threshold_tokens_by_benchmark_1904_ckpts", ("tex",)),
     "app_rq00_token_exclusion": (ANALYSIS.joinpath("rq00_chance_vs_train_tokens", *PRED, "token_exclusion_da_size_mono_axis"),
                                  ("tex",)),
     "app_rq00_early_passes": (GATE / "early_passes", ("tex",)),

@@ -37,20 +37,9 @@
 \centering
 \small
 \begin{adjustbox}{max width=\textwidth}
-\input{tables/rq00_thresholds}
+\input{tables/app_rq00_thresholds}
 \end{adjustbox}
 % source: src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_seeds/pass_threshold_tokens_by_benchmark_1904_ckpts.tex
 \caption{\textbf{Training tokens of the language a model of each size needs before a benchmark is above chance.} For each multilingual benchmark (non-English cells in at least two trained languages) and answer format, the training tokens of the language at which 50\% / 90\% of its (language, $K$, checkpoint) cells are above chance, read off a logistic fit of the cells' verdict on the log of those tokens, separately for each model size. One value is shown when both levels read the same. $\leq$X: the level holds from the fewest tokens that size saw (X) on. $>$X: the level is not reached by the most tokens that size saw (X), or is reached early and lost. English is left out, since it is half of every mixture. $^\dagger$: the text is English while the task carries a country's language. Lang. is the number of non-English trained languages, Margin the median accuracy above chance that a task needs for its Wilson bound to clear chance, and Items its median item count. Seed-1904 runs of every data build and ladder, every evaluated tenth of a run. A cell's tokens are the mean over its runs, and a size needs at least 40 cells.}
 \label{tab:rq0_thresholds}
-\end{table*}
-
-\begin{table*}[p]
-\centering
-\small
-\begin{adjustbox}{max width=\textwidth}
-\input{tables/app_rq00_token_exclusion}
-\end{adjustbox}
-% source: src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity/token_exclusion_da_size_mono_axis.tex
-\caption{\textbf{Leaving out the cells below the token threshold lowers the decision accuracy of an aggregate score.} For each benchmark and each seed-1904 run at its final checkpoint, the aggregate is the mean of the benchmark's tasks over the languages the run trains. We compute it on every cell, on the cells at or above the benchmark's pooled 50\% token threshold (Table~\ref{tab:rq0_thresholds}), and on the cells above chance at the run's size and at 1.7B. SE is the median over runs of the standard deviation of the per-language values divided by the square root of their number. DA-size compares the aggregate of each proxy with the 1.7B aggregate under the same rule, on single-axis pairs, pooled over the 18 benchmarks that keep an aggregate under every rule. The nine benchmarks that never reach their threshold lose every cell.}
-\label{tab:app_rq00_token_exclusion}
 \end{table*}

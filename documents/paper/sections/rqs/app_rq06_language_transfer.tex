@@ -8,7 +8,7 @@
 \vspace{0pt}
 \paragraph{Research Question.} \emph{If a language's BPB is measured on only one or two small rungs, can the exponent pooled over the other languages predict its BPB at the reference size, also for languages the model never trained on? Does a design decision a proxy reads on its trained languages carry over to untrained ones? Which languages must a developer evaluate to recover the multilingual decision?}
 
-\paragraph{Setup.} We test whether the language-list decision, read on a language's BPB, carries over to languages the lists do not train. We read the scheme A versus B decision at K $\in$ \{8, 15, 30\} on single-axis pairs, on the seed-1904 runs and sizes 90M--1.7B. The tasks are the per-language BPB of the 100 evaluation languages, grouped by whether both lists, one or neither trains them, and the untrained ones by whether a list trains their script. BPB has no chance level, so nothing is gated. DA-size compares the final checkpoint of each proxy (90M--1B) with that of the 1.7B run, and DA-ckpt the 1.7B run's checkpoints with its final one. Both are averaged over the three K. Per language family, we also measure how often tasks in untrained languages clear chance, against the English-only cell on the same tasks (Figures~\ref{fig:app_rq06_family_transfer} and~\ref{fig:app_rq06_family_lift}).
+\paragraph{Setup.} We test whether the language-list decision, read on a language's BPB, carries over to languages the lists do not train. We read the scheme A versus B decision at K $\in$ \{8, 15, 30\} on single-axis pairs, on the seed-1904 runs and sizes 90M--1.7B. The tasks are the per-language BPB of the 100 evaluation languages, grouped by whether both lists, one or neither trains them, and the untrained ones by whether a list trains their script. BPB has no chance level, so nothing is gated. DA-size compares the final checkpoint of each proxy (90M--1B) with that of the 1.7B run, and DA-ckpt the 1.7B run's checkpoints with its final one. Both are averaged over the three K. Per language family, we also measure how often tasks in untrained languages clear chance, against the English-only cell on the same tasks (Figure~\ref{fig:app_rq06_family_transfer}).
 \end{minipage}\hfill
 \begin{minipage}[t]{0.485\textwidth}
 \vspace{0pt}
@@ -35,7 +35,7 @@
 
 \begin{figure*}[p]
 \centering
-\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq06_cross_task_hellaswag.png}
+\includegraphics[width=0.8\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq06_cross_task_hellaswag.png}
 % source: src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/cross_task_da_size_by_language_hellaswag_all_languages_mono_axis_paper.png
 \caption{\textbf{On HellaSwag, German, Spanish, French and Italian, which the $K$ = 8 list trains together, predict each other's 1.7B ranking at 0.78, as well as each predicts its own (0.79), while English ranks the other languages at 0.45.} Each cell is the DA-size of the ranking of the design variants on the HellaSwag task of one language at a proxy size (rows) against the ranking on the task of another language at the 1.7B final checkpoint (columns), averaged over the proxies 90M--1B. The diagonal is the task's own DA-size. The pairs are the mono-axis design pairs of the seed-1904 runs, at least three per size, each task gated above chance at the size it is read at. A model's score on a language it does not train counts here. The scheme-A runs are evaluated on every language, so a language that no list trains, such as Basque (its column averages 0.44), is read on those runs alone. A cell averages the pairs both tasks have, so two cells may average different decisions. The colour is centred at 0.5, the agreement expected by chance. Languages follow the resource order of the training lists.}
 \label{fig:app_rq06_cross_task_hellaswag}
@@ -49,10 +49,3 @@
 \label{fig:app_rq06_family_transfer}
 \end{figure*}
 
-\begin{figure*}[p]
-\centering
-\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq06_family_lift.png}
-% source: src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/above_chance_untrained_lift_by_subfamily_paper.png
-\caption{\textbf{Of the 8 subfamilies that a cell trains, 7 clear chance more often than under English-only training (+0.00 to +0.05), while the 115 others centre on zero (median -0.01).} Romance under the $K$ = 8 scheme-A cell, which trains Spanish, French and Italian, puts 56\% of the Catalan, Galician, Portuguese and Romanian tasks above chance against 52\% for the English-only cell. The exception is Germanic under the $K$ = 8 scheme-A cell (-0.03). Each row is one subfamily of the untrained languages, read on the benchmarks every cell is evaluated on, not on the candidates still being screened. A dot is the share of a cell's tasks in those languages above chance minus the share of the English-only $K$ = 1 cell on the same tasks and sizes, pooled over the sizes both have (the $K$ = 1 cell has no 350M evaluation), drawn where it rests on at least 20 verdicts. A filled dot marks a subfamily of one of the cell's trained languages. Weighted by verdicts, the trained subfamilies gain +0.02 and the others -0.02. Rows follow their mean over the cells.}
-\label{fig:app_rq06_family_lift}
-\end{figure*}

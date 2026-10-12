@@ -10,7 +10,7 @@
 \subsection*{A. For every submission}
 
 \paragraph{A1. Did you describe the limitations of your work?}
-Yes. Limitations section (unnumbered). The analysis states its own caveats where they apply: the single 1.7B reference run per configuration and the seed null (\S\ref{subsec:rq2}, Appendix~\ref{app:rq02_decision_accuracy}), the 600M depth pairs that are not size-matched (Table~\ref{tab:app_rq03_flip_attribution}), and the moving task populations (Appendix~\ref{app:fixed_populations}).
+Yes. Limitations section (unnumbered). The analysis states its own caveats where they apply: the single 1.7B reference run per configuration and the seed null (\S\ref{sec:rq2}, Appendix~\ref{app:rq02_decision_accuracy}), the 600M depth pairs that are not size-matched (Table~\ref{tab:app_rq03_flip_attribution}), and the moving task populations (Appendix~\ref{app:fixed_populations}).
 \TODO{The Limitations section is still a list of notes. Write it as prose before submission.}
 % Point out any strong assumptions and how robust your results are to violations of these assumptions
 % (e.g., independence assumptions, noiseless settings, model well-specification, asymptotic
@@ -34,7 +34,7 @@ Yes. We use pretraining corpora, benchmarks, a tokenizer and an evaluation harne
 % Scientific artifacts may include code, data, models or other artifacts.
 
 \paragraph{B1. Did you cite the creators of artifacts you used?}
-Yes. Corpora: DCLM-Edu and FineWeb-2 (\S\ref{subsec:models}, Appendix~\ref{app:data-mixtures}). Benchmarks: Table~\ref{tab:benchmark-families} (Appendix~\ref{app:evaluation-protocol}). Harness: \S\ref{subsec:evaluation} and Appendix~\ref{app:evaluation-protocol}. Architecture recipe and tokenizer: Apertus (Appendix~\ref{app:model-configurations}). Reformulation model: \S\ref{subsec:rq0}.
+Yes. Corpora: DCLM-Edu and FineWeb-2 (\S\ref{subsec:models}, Appendix~\ref{app:data-mixtures}). Benchmarks: Table~\ref{tab:benchmark-families} (Appendix~\ref{app:evaluation-protocol}). Harness: \S\ref{subsec:evaluation} and Appendix~\ref{app:evaluation-protocol}. Architecture recipe and tokenizer: Apertus (Appendix~\ref{app:model-configurations}). Reformulation model: \S\ref{sec:rq1}.
 \TODO{State the versions (dataset revisions, harness commit) once anonymity allows. Check that every benchmark in Table~\ref{tab:benchmark-families} carries a citation.}
 % For composite artifacts like GLUE, cite all creators. Cite the original paper that produced the code
 % package or dataset. State which version of the asset you are using. If possible, include a URL.
@@ -81,7 +81,7 @@ Yes. Parameters per size: Table~\ref{tab:ladder} (Appendix~\ref{app:model-config
 % GPU size, for all experiments, not only the final runs. An estimate is better than nothing.
 
 \paragraph{C2. Did you discuss the experimental setup, including hyperparameter search and best-found hyperparameter values?}
-Yes. \S\ref{subsec:models} and Appendix~\ref{app:methodology} (grid, optimizer, schedule and per-size hyperparameters in Table~\ref{tab:ladder}). The architecture and optimizer follow the Apertus recipe (Appendix~\ref{app:model-configurations}).
+Yes. \S\ref{subsec:models} and Appendix~\ref{app:model-ladder} (grid, optimizer, schedule and per-size hyperparameters in Table~\ref{tab:ladder}). The architecture and optimizer follow the Apertus recipe (Appendix~\ref{app:model-configurations}).
 \TODO{State whether any hyperparameter search was run, and how the per-size learning rates were set.}
 % Describe model selection and preprocessing. Report hyperparameter search results, even if stopped
 % early, and the best-found values. Report which dataset was used to determine the hyperparameters.
@@ -119,6 +119,6 @@ Not applicable.
 
 \paragraph{E1. If you used any AI assistants, did you include information about your use?}
 Yes. AI use Statement (unnumbered).
-\TODO{The statement covers writing and code review. Add that a language model rewrote the INCLUDE and Belebele items for the model-based reformulation (\S\ref{subsec:rq0}), as a research tool rather than an assistant.}
+\TODO{The statement covers writing and code review. Add that a language model rewrote the INCLUDE and Belebele items for the model-based reformulation (\S\ref{sec:rq1}), as a research tool rather than an assistant.}
 % For yes, provide a section number or include the elaboration directly. For no, justify why not. Any
 % use of AI assistants has to conform with the ACL publications ethics policy.

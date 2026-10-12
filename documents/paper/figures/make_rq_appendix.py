@@ -39,7 +39,7 @@ sentence for the extras. Every caption sits below its figure or table.
                  numbers follow each refresh
 
 The setup bullet or finding of the README that an extra supports cites it by its paper stem:
-"(figure: app_rq02_bbpb_acc_gate)", "(table: rq00_thresholds)", or several stems in one
+"(figure: app_rq02_bbpb_acc_gate)", "(table: app_rq00_thresholds)", or several stems in one
 token, "(figures: a, b)" or "(figure: a, table: b)". The README shows the token as written,
 and to_tex turns it into "(Figure~\\ref{...})" with the float's label. A page warns about
 every extra that its setup and findings leave uncited, so each float is referred to in the text.
@@ -780,7 +780,7 @@ PAGES = {
         "Above chance against the training tokens of the language", "app_rq00_chance_vs_train_tokens",
         None,
         None, 0,
-        (("rq00_thresholds",
+        (("app_rq00_thresholds",
           "\\textbf{Training tokens of the language a model of each size needs before a benchmark is above chance.} For each multilingual benchmark (non-English cells in at least two trained languages) and answer format, the training tokens of the language at which 50\\% / 90\\% of its (language, $K$, checkpoint) cells are above chance, read off a logistic fit of the cells' verdict on the log of those tokens, separately for each model size. One value is shown when both levels read the same. $\\leq$X: the level holds from the fewest tokens that size saw (X) on. $>$X: the level is not reached by the most tokens that size saw (X), or is reached early and lost. English is left out, since it is half of every mixture. $^\\dagger$: the text is English while the task carries a country's language. Lang. is the number of non-English trained languages, Margin the median accuracy above chance that a task needs for its Wilson bound to clear chance, and Items its median item count. Seed-1904 runs of every data build and ladder, every evaluated tenth of a run. A cell's tokens are the mean over its runs, and a size needs at least 40 cells.",
           "tab:rq0_thresholds"),
          ("app_rq00_token_exclusion",

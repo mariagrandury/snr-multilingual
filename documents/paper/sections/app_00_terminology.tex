@@ -1,49 +1,21 @@
 \section{Terminology}
 
-This appendix defines the terms that recur in the paper and its appendices. Table~\ref{tab:notation-symbols} then lists the symbols for the training grid (top) and for the evaluation (bottom).
+A PRIORI EVERYTHING SHOULD BE CLEARLY DEFINED IN THE CORRESPONDING SECTIONS, THIS IS TO ALIGN INTERNALLY ABOUT CONCEPTS
 
-\begin{description}[leftmargin=0pt,itemsep=2pt,topsep=4pt]
-\item[Scaling predictability.] The property that ``evaluation results from small-scale models reliably predict ablation effects in their larger-scale counterparts''\citeneeded{source of the quote}.
-\item[Model configuration and model variant.] A configuration $\theta$ records the design choices of a training run (Table~\ref{tab:notation-symbols}). The variants of one design choice are configurations that differ in exactly one of these choices.
-\item[Run.] A run is one trained model, given by its configuration and its random seed $S$.
-\item[Ladder and rung.] A ladder is a series of runs that share one recipe and differ only in size $N$. Each size is a rung. We train four ladders: deep (the baseline), shallow, deep + SwiGLU and deep + Muon (Appendix~\ref{app:methodology}).
-\item[Data build.] A data build is one training-data recipe: the list of training languages, the English corpus and the sampling temperature. We train seven builds, named A, AT3, B, ZH, ES, DCLMP and FWEB (Appendix~\ref{app:data-mixtures}). Each build sets a language-selection scheme $M$ and a temperature $T$.
-\item[Language task.] A language task $b_\ell$ is one benchmark $b$ in one language $\ell$, for example HellaSwag-es.
-\item[Proxy and reference point.] A proxy point $(N, f)$ is a cheaper place to rank the variants: a smaller size, an earlier checkpoint, or both. The reference point is the final checkpoint at the reference size, 1.7B unless stated otherwise.
-\item[Chinchilla multiple.] One Chinchilla multiple (1C) is a budget of $20N$ tokens. Every run trains on $100N$ tokens, which is 5C, so 20\% of a run is 1C.
-\item[Above-chance gate.] A language task enters the analysis at a size only if at least half of the seed-1904 runs of that size score above chance on it (Appendix~\ref{app:chance-threshold}).
-\item[Ranking agreement and decision accuracy.] Ranking agreement (RA) asks whether a proxy point ranks the variants as the reference point does. Decision accuracy (DA) is the share of variant pairs on which the two agree (Appendix~\ref{app:ranking-agreement}). DA-size compares a smaller final model with the reference size, and DA-ckpt compares an earlier checkpoint with the final checkpoint of the same size.
-\item[BPB and bBPB.] Bits-per-byte (BPB) is the negative log-likelihood of held-out text in bits, divided by the text's UTF-8 byte count. Benchmark BPB (bBPB) applies the same measure to the gold answer of each benchmark item (Appendix~\ref{app:evaluation-protocol}).
-\item[Seed noise.] Seed noise is the spread between runs that differ only in their random seed. The replicate seeds of Appendix~\ref{app:training-grid} measure it.
-\end{description}
+\textbf{Scaling predictability.} The property that ``evaluation results from small-scale models reliably predict ablation effects in their larger-scale counterparts''.
 
-\begin{table*}[th]
-    \centering
-    \small
-    \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lll}
-        \toprule
-        \textbf{Symbol} & \textbf{Meaning} & \textbf{Values} \\
-        \midrule
-        \(N\) & Non-embedding parameter count & 90M, 175M, 350M, 600M, 1B, 1.7B, 3B \\
-        \(A\) & Architecture & deep or shallow \\
-        \(O\) & Optimizer & AdEMAMix or Muon \\
-        \(A_f\) & Activation function & xIELU or SwiGLU \\
-        \(K\) & Number of training languages & 1, 2, 8, 15, 30, 50 \\
-        \(M\) & Language-selection scheme & availability first (A), diversity first (B), or the third option at $K \le 2$ (C) \\
-        \(T\) & Sampling temperature & 1 or 3 \\
-        \(S\) & Random seed & 1904 (default), 64 and 313 (175M, 600M), 28 and 1797 (1B) \\
-        \(f\) & Fraction of training completed & 0.10, 0.20, \ldots, 0.70, 0.80, 0.85, 0.90, 0.95, 1.00 \\
-        \midrule
-        \textbf{Symbol} & \textbf{Meaning} & \textbf{Example} \\
-        \midrule
-        \(b\) & Benchmark & HellaSwag \\
-        \(\ell\) & Evaluation language & Spanish \\
-        \(b_\ell\) & Language task & HellaSwag-es \\
-        \({b_\ell}_i\) & Item & One item of HellaSwag-es \\
-        \(Y_{b_\ell}\) & Raw task score & accuracy (length-normalised for cloze tasks), bBPB or BPB \\
-        \(B\) & Evaluation suite & The complete collection of benchmarks \\
-        \bottomrule
-    \end{tabular*}
-    \caption{\textbf{Notation.} Symbols of the training grid (top) and of the evaluation (bottom). The values of $f$ are the twelve evaluated checkpoints.}
-    \label{tab:notation-symbols}
-\end{table*}
+\textbf{Model configuration and model variant.} A configuration $\theta$ records the design choices of a training run (Table~\ref{tab:notation-models}). The variants of one design choice are configurations that differ in exactly one of these choices.
+
+\textbf{Run.} A run is one trained model, given by its configuration and its random seed $S$.
+
+\textbf{Ladder and rung.} A ladder is a series of runs that share one recipe and differ only in size $N$. Each size is a rung. We train four ladders: deep + ademamix (the baseline), shallow + ademamix, deep + SwiGLU, and deep + Muon (Appendix~\ref{app:model-ladder}).
+
+\textbf{Data build.} A data build is one training-data recipe: the list of training languages, the English corpus and the evaluation.sampling temperature. We train seven builds, named A, AT3, B, ZH, ES, DCLMP and FWEB (Appendix~\ref{app:data-mixtures}). Each build sets a language-selection scheme $M$ and a temperature $T$.
+
+\textbf{Proxy and reference point.} A proxy point $(N, f)$ is a cheaper place to rank the variants: a smaller size, an earlier checkpoint, or both. The reference point is the final checkpoint at the reference size, 1.7B unless stated otherwise.
+
+\textbf{Chinchilla multiple.} One Chinchilla multiple (1C) is a budget of $20N$ tokens. Every run trains on $100N$ tokens, which is 5C, so 20\% of a run is 1C.
+
+\textbf{Above-chance threshold.} A language task enters the analysis at a size only if at least half of the seed-1904 runs of that size score above chance on it (Appendix~\ref{app:chance-threshold}).
+
+\textbf{Ranking agreement and decision accuracy.} Ranking agreement (RA) asks whether a proxy point ranks the variants as the reference point does. Decision accuracy (DA) is one measure of RA, it is the share of variant pairs on which the two agree (Appendix~\ref{app:ranking-agreement}). DA-size compares a smaller final model with the reference size, and DA-ckpt compares an earlier checkpoint with the final checkpoint of the same size.

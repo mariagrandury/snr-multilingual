@@ -1,4 +1,4 @@
-"""The three correlation tables of app_snr.tex, from rq04's search outputs.
+"""The three correlation tables of app_06_snr_new.tex, from rq04's search outputs.
 
 Rewrites the block between `% BEGIN generated: surrogate-tables` and its END
 marker: the catalogue statistics and the signal x noise grid against DA-size,
@@ -18,7 +18,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[3]
 D = ROOT / "src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity"
-TEX = ROOT / "documents/paper/sections/app_snr.tex"   # app_snr_new.tex was merged into it on 2026-10-08
+TEX = ROOT / "documents/paper/sections/app_06_snr_new.tex"   # the surrogates appendix (app_06_snr.tex defines signal and noise)
 c = pd.read_csv(D / "surrogate_correlations.csv", low_memory=False)
 c = c[(c["subset"] == "benchmarks") & (c["subset_type"] == "all") & (c["axes"] == "multi-axis")
       & (c["L"].astype(str) == "all") & (c["metric"] == "da")]

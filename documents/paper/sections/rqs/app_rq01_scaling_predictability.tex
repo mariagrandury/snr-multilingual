@@ -48,3 +48,11 @@
 \caption{\textbf{Along training, the letter-format originals stay at chance for the whole run while their reformulated twins climb steadily.} Benchmark accuracy along training. For each benchmark family, we plot the accuracy of every run at the ten evaluated tenths of the run. This accuracy is the mean over the tasks in the languages the run trains on. Training progress is given in Chinchilla multiples of the run's token budget. The figure covers every seed and data build, 90M--1.7B. Colour gives the model size, line width the ladder and line style the data build. The dotted red line is chance. The curves are not gated.}
 \label{fig:app_training_scaling}
 \end{figure*}
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq13_english_scaling_regimes_l1_accuracy_tagged.png}
+% source: src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_scaling_regimes_l1_accuracy_tagged_paper.png
+\caption{\textbf{The commonly used English benchmarks are the ones that scale predictably.} ARC-Challenge, ARC-Easy, HellaSwag, LAMBADA, OpenBookQA, Belebele RF, CommonsenseQA RF, Global-MMLU RF, MMLU RF, XNLI, XStoryCloze and XWinograd are predictable across both size and training in all three corpora. Belebele, CommonsenseQA, Global-MMLU, MMLU and TruthfulQA (mc2) never pass the above-chance filter in their original format, and Global PIQA is the one above chance that does not scale. The bottom row of Figure~\ref{fig:app_rq13_english_scaling_regimes_l1_accuracy}, one panel per English corpus ($K$ = 1), with every task named beside its panel, on the left when the $R^2$ of its model-size fit is below 0.5 and on the right otherwise. A name takes the colour of its regime (blue predictable across both, green during training only, slate across size only, brown weak in both, black declines with size). The 74 English accuracy tasks that the filter removes have no point.}
+\label{fig:app_rq13_english_scaling_regimes_l1_accuracy_tagged}
+\end{figure*}

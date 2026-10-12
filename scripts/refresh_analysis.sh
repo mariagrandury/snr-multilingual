@@ -105,7 +105,7 @@ step "paper tables"
 # 2d. The paper's generated blocks (rule 17): the setup appendices' tables (the
 #     training grid, seeds, per-ladder hyperparameters, evaluated benchmarks and
 #     languages (sections/rqs/app_02_table_languages.tex), read from DATA_SCHEMES / hyperparams / tasks.json and the ladder
-#     report), and the surrogate correlation tables of app_snr.tex.
+#     report), and the surrogate correlation tables of app_06_snr_new.tex.
 ( cd documents/paper/figures && $PY make_appendix_tables.py ) || FAILED+=("make_appendix_tables.py")
 ( cd documents/paper/sections && $PY make_surrogate_tables.py ) || FAILED+=("make_surrogate_tables.py")
 
