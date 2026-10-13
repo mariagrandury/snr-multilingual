@@ -211,6 +211,44 @@ problems judged by log-probability comparison between the two
 candidate completions. Apertus uses 4 of those subsets (en, jp, ru,
 zh).
 
+### Families added on 2026-10-08
+
+Every accuracy family of the `auto` group now has a `FAMILY_META` entry
+([analyze.py](analyze.py)); before, rq09 read 17 of the 29 SNR survivors and 13
+families in the DA-size figures. Each line gives the source the annotation
+rests on: the harness task (pinned `msnr-harness`, or `src/evals/tasks/` for the
+`rf_` and `include_v2_` tasks), the prompt `configs/tasks.json` records
+(`example`), `configs/multilingual_benchmarks.csv` and the dataset card.
+
+| family | curation | source | format (from the harness prompt) | options | passage | evidence |
+|---|---|---|---|---|---|---|
+| `arc_mt` | machine translation | translated from English | cloze: `Question: … Answer:`, option strings scored | 4 | no | LumiOpen/arc_challenge_mt card: "Translated with DeepL" |
+| `lambada_openai_mt` | machine translation (en original) | translated from English | last word of a narrative passage | none | yes | EleutherAI/lambada_openai card: de/es/fr/it "produced by Google Translate" |
+| `global_piqa_nonparallel_cloze` | native authoring | originally multilingual | completion, `solution0/1` | 2 | no | Chang et al. 2025 §3, harness `_template` |
+| `include_v2_og` | natively sourced exams | originally multilingual | cloze, the item's own language | 4 | no | `make_include_v2_tasks.py`, include-128 `question`/`choices` |
+| `include_v2_en` | translation, **method unknown** | originally multilingual | cloze, the English columns | 4 | no | include-128 `question_en`/`choices_en`; the dataset card is empty |
+| `openbookqa` | English original (crowdsourced) | English | completion: `question_stem` + options | 4 | no | harness `openbookqa.yaml` |
+| `mathqa` | English original | English | cloze | 5 | no | harness `mathqa.yaml`, tasks.json |
+| `rf_mmlu` | English original (exam questions) | English | cloze | 4 | no | `src/evals/tasks/rf/mmlu` |
+| `rf_commonsense_qa` | English original (crowdsourced) | English | cloze | 5 | no | `src/evals/tasks/rf/commonsense_qa` |
+| `rf_cultural_bench_easy` | English original (human-written, human-verified) | English | cloze | 4 | no | kellycyy/CulturalBench card |
+| `rf_acp_bench_mcq` | template-generated from PDDL problems | English | cloze, the domain and state as context | 4 | yes | ACPBench (Kokel et al. 2025), tasks.json prompts of 550–600 characters |
+| `rf_bbh_mcq` | **unknown** (human-written and generated subtasks) | English | cloze | **unknown** (2–8 by subtask) | **unknown** (55–549-character stems) | tasks.json per subtask |
+
+Two existing entries were corrected the same day, from the same sources:
+
+- `arc` is `cloze_completion`, not `mcq_question_only`: `okapi/arc_multilingual`
+  builds `Question: … Answer:` and scores the option strings, with no letters
+  (the English `arc_challenge` / `arc_easy` the family includes do the same).
+- `global_piqa_parallel_cloze` has 4 options and is machine-translated with
+  human correction from English, not 2 options natively authored: the harness
+  template scores `solution0`…`solution3`, and the
+  mrlbenchmarks/global-piqa-parallel card says the items were "originally
+  written in English … machine-translated with human corrections".
+
+The `bbpb_` benchmark-BPB twins stay untagged: they are their original's items
+read with another metric, so a row of their own would repeat the original's.
+
 ---
 
 ## Schema-encoded table

@@ -35,6 +35,7 @@ applying that formula.
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from pathlib import Path
 from collections import defaultdict
@@ -198,7 +199,12 @@ def sweep_subset_snrs(
     best_idx = _argmax_safe(cumulative)
     k = best_idx + 1
     null = []
-    if 0 < k < len(ordered):
+    # No null where the test has no power. k = 1: the best prefix is the language with
+    # the highest SNR, the maximum of the null's own population, so it ties the 95th
+    # percentile whenever N <= 19 (gain exactly 0) and clears it whenever the 100 draws
+    # miss it (N >= 20). C(N, k) <= 1/0.05 = 20: the chosen subset is drawn in >= 5 % of
+    # the draws, so it can at best tie the 95th percentile.
+    if 1 < k < len(ordered) and math.comb(len(ordered), k) > 20:
         for _ in range(NULL_DRAWS):
             null.append(snr_for_subset(df, list(rng.choice(ordered, k, replace=False)), size))
     null = np.asarray([v for v in null if np.isfinite(v)], dtype=float)
@@ -614,25 +620,31 @@ def generate_readme(stage: str, pool: str) -> None:
     bullets = []
     for _, r in top.iterrows():
         bullets.append(
-            f"- **`{r.task}` {r['size']} ({_short_case(r.case)})** — a subset beats "
-            f"the full set: SNR **{fmt(r.full_set_snr)} → {fmt(r.best_snr)}** "
-            f"(**+{fmt(r.snr_gain)}**) with `{r.best_subset_short}`."
+            f"- **`{r.task}` {r['size']} ({_short_case(r.case)}).** A subset beats "
+            f"the full set, with SNR **{fmt(r.full_set_snr)} → {fmt(r.best_snr)}** "
+            f"(**+{fmt(r.snr_gain)}**) on `{r.best_subset_short}`."
         )
     by_case = (summary.groupby("case")["snr_gain"].median().sort_values(ascending=False))
     bullets.append(
-        "- **Median gain by case** — "
-        + "; ".join(f"{_short_case(c)} {fmt(v)}" for c, v in by_case.items())
-        + " (SNR units; a subset only helps where the gain clears the seed noise "
-        "reported in rq03)."
+        "- **Median gain by case.** "
+        + ", ".join(f"{_short_case(c)} {fmt(v)}" for c, v in by_case.items())
+        + " (in SNR units). A subset helps only where its gain clears the seed noise "
+        "reported in rq03."
     )
     tested = summary.dropna(subset=["gain_over_null"])
     if not tested.empty:
         above = tested[tested["gain_over_null"] > 0]
+        c1 = tested["case"].str.startswith("case1")
         bullets.append(
-            f"- **Selection null** — the best prefix is chosen on the numbers it is scored on, so "
-            f"`best ≥ full` always; against {NULL_DRAWS} random subsets of the same size, "
-            f"**{len(above)} of {len(tested)}** swept cells beat the null's 95th percentile"
-            + (": " + ", ".join(f"`{r.task}` {r['size']}" for _, r in above.head(5).iterrows()) if len(above) else "")
+            f"- **Selection null.** The best prefix is chosen on the numbers it is scored on, so "
+            f"`best ≥ full` always. A cell gets a null only where a win is possible: the best prefix beats the "
+            f"full set, holds two or more subtasks, and there are more than 20 subsets of its size (a single "
+            f"subtask is the maximum of the null's own draws, and with 20 subsets or fewer the chosen one is "
+            f"drawn too often to clear the 95th percentile). "
+            f"Against {NULL_DRAWS} random subsets of the same size, **{len(above)} of the {len(tested)}** "
+            f"testable cells (every case) beat the null's 95th percentile, "
+            f"{int((tested['gain_over_null'] > 0)[c1].sum())} of {int(c1.sum())} in Case 1"
+            + (". They include " + ", ".join(f"`{r.task}` {r['size']}" for _, r in above.head(5).iterrows()) if len(above) else "")
             + ".")
     highlight = "## Highlighted result\n\n" + "\n".join(bullets)
 
@@ -655,7 +667,7 @@ def generate_readme(stage: str, pool: str) -> None:
     results = "\n\n".join([
         f"## Results\n\nHeadline numbers from the `{pool}` pool. Regenerate with "
         f"`python analysis/rq08_subset_selection/smooth_subtasks.py --pool {pool}`.",
-        "**Top subset gains** — every (case, task, size) ranked by `snr_gain = best − full`:",
+        "**Top subset gains.** The twelve (case, task, size) cells with the largest `snr_gain = best − full`:",
         table,
         *images,
     ])
@@ -707,6 +719,9 @@ def main(stage: str, pool: str, out_dir: Path):
     _AT_CHANCE.clear()
     _AT_CHANCE.update((t, b) for b in mask.columns for t in mask.index[(mask[b] == 0).fillna(False)])
     print(f"gate: {len(_AT_CHANCE)} (task, bucket) cells at chance are not swept")
+    print("!!! RULE 4: the subset SNR is upstream's small-scale SNR (compute_snr_small_scale): its noise is the "
+          "standard deviation of every run's noise-window scores pooled, between-run spread included, not the "
+          "detrended per-run checkpoint noise (utils.checkpoint_noise)")
     pool_n_models = df.groupby("bucket")["model"].nunique().to_dict()
     print(f"Pool '{pool}': {len(df):,} rows | {df['model'].nunique()} models | "
           f"models per bucket in SNR pool: {pool_n_models}")

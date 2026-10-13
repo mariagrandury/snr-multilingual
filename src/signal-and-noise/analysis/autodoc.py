@@ -20,6 +20,7 @@ on its canonical pool (see ``CANONICAL_POOL``) — only that pool writes docs.
 
 from __future__ import annotations
 
+import fcntl
 import re
 from pathlib import Path
 
@@ -53,12 +54,25 @@ def replace_block(path: Path, key: str, body: str, generator: str = "") -> Path:
     # merely starts with KEY (`scale-convergence-L8`) and swallowed everything up to KEY's END
     pat = re.compile(rf"<!-- BEGIN auto:{re.escape(key)}(?: \([^\n]*?\))? -->.*?<!-- END auto:{re.escape(key)} -->",
                      flags=re.DOTALL)
-    text = path.read_text()
-    if pat.search(text):
-        text = pat.sub(lambda _m: block, text)
-    else:
-        text = text.rstrip() + "\n\n" + block + "\n"
-    path.write_text(text)
+    def edit(text: str) -> str:
+        if pat.search(text):
+            return pat.sub(lambda _m: block, text)
+        return text.rstrip() + "\n\n" + block + "\n"
+    return rewrite(path, edit)
+
+
+def rewrite(path: Path, edit) -> Path:
+    """``path.write_text(edit(path.read_text()))`` under an exclusive lock on the
+    file: steps that run side by side (run_all_predictivity.sh PARALLEL=1) share
+    READMEs and slides.md, and an unlocked read-modify-write drops the block the
+    other step wrote in between."""
+    path = Path(path)
+    with open(path, "r+") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)              # released when the file closes
+        text = edit(f.read())
+        f.seek(0)
+        f.write(text)
+        f.truncate()
     return path
 
 

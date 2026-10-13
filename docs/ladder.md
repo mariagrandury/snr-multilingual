@@ -12,6 +12,10 @@ evaluated.
 
 ## Model ladder
 
+The grid holds **218 runs**: 122 deep and 60 shallow models, 18 with the
+SwiGLU activation and 18 trained with the Muon optimizer; 198 at seed 1904
+and 20 seed replicates.
+
 - **Size.** Seven rungs: 90M, 175M, 350M, 600M, 1B, 1.7B and 3B
   non-embedding parameters. Each run trains on 100 tokens per parameter
   (5× Chinchilla) with a warmup-stable-decay schedule and evenly spaced
@@ -20,22 +24,27 @@ evaluated.
   50. L = 1 is English only. From L = 2 on, half of the training tokens are
   English and the other half are split over the other L − 1 languages, so
   the mixture changes the *number* of languages, never the English share.
-  The 3B rung trains at L = 8, 15, 30 and 50 only.
 - **Interventions.** Each one changes a single choice with respect to the
-  baseline (deep model, xIELU activation, language list A, temperature
-  T = 1):
-    - *Depth*: deep or shallow at the same size.
-    - *Activation*: xIELU or SwiGLU, at L = 8, 15 and 30.
+  baseline (deep model, xIELU activation, AdEMAMix optimizer, language list
+  A, temperature T = 1):
+    - *Depth*: deep or shallow at the same non-embedding size, at every
+      size from 90M to 1.7B and every L. The 600M shallow model is not
+      exactly size-matched (3.7 % more non-embedding parameters, about
+      15 % more compute); the analysis keeps and flags it.
+    - *Activation*: xIELU or SwiGLU, on the deep model at L = 8, 15 and 30.
+    - *Optimizer*: AdEMAMix or Muon, on the deep model at L = 8, 15 and 30.
     - *Language list*: A (languages ranked by available data) or B (chosen
-      for diversity), at L = 8, 15 and 30.
-    - *Sampling temperature*: T = 1 or T = 3, at L = 15, 30 and 50 (see
-      [Data mixtures](#data-mixtures)).
+      for diversity), at L = 8, 15 and 30, deep and shallow.
+    - *Sampling temperature*: T = 1 or T = 3, at L = 15 and 30 (deep) and
+      L = 50 (deep and shallow); see [Data mixtures](#data-mixtures).
     - *Second language*: Russian, Chinese or Spanish, at L = 2.
-    - *English data*: DCLM with or without its educational-quality filter, or
-      FineWeb, at L = 1.
-- **Seeds.** Three seeds at selected cells (175M and 600M at L = 1, 2 and 50;
-  1B at L = 1, 2 and 30) measure seed noise, the yardstick every design
-  decision is compared with.
+    - *English data*: at L = 1, DCLM with its educational-quality filter
+      (the baseline), DCLM without that filter, or FineWeb.
+- **Seeds.** Two more seeds at ten cells (175M and 600M at L = 1, 2 and 50;
+  1B at L = 1, 2 and 30, and at L = 30 with list B) measure seed noise, the
+  yardstick every design decision is compared with.
+- **The 3B rung.** Six deep runs at seed 1904: L = 8 and 15 with lists A
+  and B, and L = 30 and 50 with list A.
 
 The analysis reads 90M–1.7B, with 1.7B as the reference model; 3B sits
 above the reference and serves as the extrapolation check.
@@ -48,6 +57,14 @@ of an intervention, and click a square to see its data, its training budget
 and its per-language results.
 
 <div class="viz" data-viz="ladder"></div>
+
+### One design decision at a time
+
+The same runs, read as the comparisons the analysis makes: pick a decision,
+and each row shows the runs that differ only in that choice, size by size,
+with one dot per run (colour = the choice, filled = trained and evaluated).
+
+<div class="viz" data-viz="ladderPairs"></div>
 
 ### Per-language bits per byte
 
@@ -87,6 +104,14 @@ it finds each answer option as the continuation, and the most likely option is
 its answer. The score is the share of items answered correctly. Guessing at
 random gives the **chance** level: one over the number of options.
 
+We considered 95 benchmarks (1,488 benchmark-language tasks in the trained
+languages). The analysis follows 52 of them (938 tasks) through training,
+together with the per-language bits per byte. The other 43 (550 tasks) were screened on
+the final checkpoints of the 600M, 1B and 1.7B models only, and 229 of their
+tasks, at chance at both 1B and 1.7B, were discarded. Several benchmarks are
+also scored in a reformulated version, with the answer text in place of an
+answer letter (see [RQ0](findings/gate.md)).
+
 Pick a language, a benchmark and the x axis. Each line is one model size. A
 useful benchmark separates the sizes and rises above chance early. A benchmark
 whose lines stay on the chance line tells a small-scale experiment nothing.
@@ -102,7 +127,7 @@ passages are cut at the start).
 
 | What | Where |
 |---|---|
-| Checkpoints (Hugging Face format) | *{{ anonymity_notice }}* — one repository per run, named like the run (`lm-<size>-L<L>[-scheme]-<arch>-seed<seed>`) |
+| Checkpoints (Hugging Face format) | *{{ anonymity_notice }}* — one repository per run, named like the run (`lm-<size>-L<L>[-<data build>][-b<batch>]-<deep|shallow|swiglu|muon>-seed<seed>`); 213 models from 90M to 1.7B and 4,412 intermediate checkpoints |
 | Per-checkpoint measurements | the ladder report (*{{ anonymity_notice }}*) |
 | Training logs | W&B project (*{{ anonymity_notice }}*) |
 | How the runs were trained | [Pretraining docs](pretraining.md), `plan/` (*{{ anonymity_notice }}*) |

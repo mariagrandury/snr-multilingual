@@ -10,7 +10,7 @@ curves of every cell (the progress report's BPB figure on the analysis' cells).
 
     rq5_transfer.csv          one row per (L, language, k)
     rq5_transfer_summary.csv  median |relative error| per (trained, k) and method
-    rq5_transfer.png/.pdf     the paper figure
+    rq5_transfer.png     the paper figure
     bpb_curves.png            per cell: per-language BPB vs fraction of run
     transfer_da_all_by_group_mono_axis.csv
                               rq05's interventions read on every language's BPB at every
@@ -45,7 +45,7 @@ from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import LANGUAGE_TRANSFER  # noqa: E402
 from analysis.rq05_design_decisions.analyze import LANGUAGE_GROUPS, intervention_da  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    GRID_SEED, LADDER_SIZES, NON_EMB, finals, ladder_frame, size_order, trained_bpb_tasks)
+    GRID_SEED, LADDER_SIZES, NON_EMB, TARGET_SIZE, finals, ladder_frame, size_order, trained_bpb_tasks)
 
 OUT_ROOT = LANGUAGE_TRANSFER
 CANONICAL = "predictivity_seeds"
@@ -61,10 +61,10 @@ def transfer(fin: pd.DataFrame) -> pd.DataFrame:
     for L, g in g0.groupby("L"):
         piv = g.pivot_table(index="task", columns="size", values="primary_score")
         sizes = size_order(piv.columns)
-        if len(sizes) < MIN_SIZES:
+        if len(sizes) < MIN_SIZES or TARGET_SIZE not in sizes:      # rule 9: never a smaller rung as the reference
             continue
         piv = piv[sizes].dropna()
-        ref, proxies = sizes[-1], sizes[:-1]
+        ref, proxies = TARGET_SIZE, [s for s in sizes if s != TARGET_SIZE]
         x = np.log(np.array([NON_EMB[s] for s in proxies]))
         Y = np.log(piv[proxies].to_numpy())
         alpha = np.array([-np.polyfit(x, yy, 1)[0] for yy in Y])       # own exponent, all proxy rungs
@@ -175,12 +175,13 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, agg: pd.DataFrame
                 continue
             k1, kmax = g.iloc[0], g.iloc[-1]
             bullets.append(
-                f"- **{lab} languages ({int(k1.n)} (L, language) cases)** — one {LADDER_SIZES[1]} rung plus the "
-                f"pooled exponent predicts the reference within {fmt(100 * k1.transfer, 1)} % (median); "
-                f"with every proxy rung, transferred {fmt(100 * kmax.transfer, 1)} % vs own fit "
-                f"{fmt(100 * kmax.own, 1)} % vs largest proxy as is {fmt(100 * kmax.last, 1)} %.")
+                f"- **{lab[:1].upper()}{lab[1:]} languages ({int(k1.n)} (L, language) cases).** One {LADDER_SIZES[1]} rung "
+                f"plus the pooled exponent predicts the reference within {fmt(100 * k1.transfer, 1)} % (median). "
+                f"With every proxy rung, the median error is {fmt(100 * kmax.transfer, 1)} % for the transferred "
+                f"exponent, {fmt(100 * kmax.own, 1)} % for the language's own fit and {fmt(100 * kmax.last, 1)} % for "
+                "the largest proxy's BPB taken as is.")
         ap = t.groupby("L")["alpha_pooled"].first()
-        bullets.append("- **Pooled exponent α by L**: " + ", ".join(f"L{L} {fmt(v, 3)}" for L, v in ap.items()) + ".")
+        bullets.append("- **Pooled exponent α by L.** " + ", ".join(f"L{L} {fmt(v, 3)}" for L, v in ap.items()) + ".")
         rows = [[("trained" if r.trained else "never trained"), int(r.k), fmt(r.transfer, 3), fmt(r.own, 3),
                  fmt(r.last, 3), int(r.n)] for r in agg.itertuples()]
         blocks += ["**Median |relative error| of the reference's BPB** (k = rungs measured for the held-out language):",
@@ -190,7 +191,7 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, agg: pd.DataFrame
         rows = [[r.group, r.proxy_size, fmt(r.da), int(r.cells)] for r in dd.itertuples()]
         blocks += ["**Decision transfer** (DA-size of rq05's interventions on per-language BPB: the share of a group's "
                    "languages on which the proxy's final ranking of the two levels matches the reference's, mean over "
-                   "interventions and L; the group says what the two levels' lists do with the language):",
+                   "interventions and L. The group says what the two levels' lists do with the language):",
                    md_table(["language group", "proxy", "DA-size", "cells"], rows)]
     blocks.append(f"![BPB curves]({stage}/{pool}/bpb_curves.png)")
     readme = OUT_ROOT / "README.md"

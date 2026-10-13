@@ -1,7 +1,7 @@
 """RQ1 (paper RQ1) — What scales predictably?
 
 Per (task, L), the final-checkpoint score of the deep, data-A (scheme A at
-T=1), seed-1904 ladder against log10 N over the rungs from 175M up: the R² of the log-linear
+T=1), seed-1904 ladder against log10 N over the rungs 90M–1.7B: the R² of the log-linear
 fit and the Spearman ρ with size, then medians per benchmark family. A family
 whose scores do not move with size has no trend to extrapolate, whatever its
 provenance. The above-random gate (analysis/RULES.md, rule 1) is applied per
@@ -14,7 +14,7 @@ the ladder health check's power law on the seed-1904 cell of every (L, ladder,
 data build); `scaling_law_error.py` next to this script asks how well such a fit
 on the proxy rungs predicts the reference rung's per-language BPB.
 
-    rq1_scaling.png/.pdf/.csv  above-chance curves at L=30 (ungated, so a task at chance is visible at 0),
+    rq1_scaling.png/.csv  above-chance curves at L=30 (ungated, so a task at chance is visible at 0),
                                R²/ρ per family over the gated fits; the CSV holds both panels' plotted values
     rq1_fits.csv           one row per (task, L): n_rungs (fitted), gated_rungs, gated, the fit;  rq1_families.csv  the family medians
     scaling_fit.png/.csv   final loss vs N per L, one power-law fit per (ladder, data build), the rung count in the legend
@@ -71,13 +71,15 @@ def _line_style(size, ladder, data) -> dict:
 
 # --- the paper's RQ1: log-N fits ------------------------------------------------
 
-def fit_table(fin: pd.DataFrame, pool: str, mask: pd.DataFrame | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+def fit_table(fin: pd.DataFrame, pool: str, mask: pd.DataFrame | None = None,
+              cells=_grid) -> tuple[pd.DataFrame, pd.DataFrame]:
     """One row per (task, L) of the grid: the log-N fit over the rungs where
     the task is above chance (rule 1, `grids.mark_gated`, `mask` replacing the
     pool's); `n_rungs` counts them, `gated_rungs` the rungs the gate removed,
     and `gated` marks a series the gate left with fewer than MIN_RUNGS (its
-    statistics are NaN)."""
-    g0 = G.mark_gated(_grid(fin), pool, "size", "primary_score", mask=mask)
+    statistics are NaN). `cells` picks the cells fitted (the deep data-A
+    seed-1904 grid by default)."""
+    g0 = G.mark_gated(cells(fin), pool, "size", "primary_score", mask=mask)
     rows = []
     for (task, L), g_all in g0.groupby(["task", "L"]):
         g_all = g_all.assign(N=g_all["size"].map(NON_EMB)).dropna(subset=["N"]).sort_values("N")
@@ -222,18 +224,19 @@ def generate_readme(pool: str, out_dir: Path, fits: pd.DataFrame, fam: pd.DataFr
     top = fam.sort_values("r2", ascending=False)
     no_fit = sorted(set(fits.loc[fits["gated"], "task"]) - set(fitted["task"]))
     bullets = [
-        f"- **{len(fitted)} (task, L) fits over {fitted['task'].nunique()} tasks**, each on the rungs where the task is above "
-        f"chance (rule 1, rq00's mask): the gate removed {int(fitted['gated_rungs'].sum())} rungs from the fitted series and left "
-        f"{int(fits['gated'].sum())} (task, L) series with fewer than {MIN_RUNGS} rungs (no fit, `gated` in `rq1_fits.csv`), "
-        f"{len(no_fit)} tasks without any fit. Best-scaling families (median R²): "
+        f"- **{len(fitted)} (task, L) fits over {fitted['task'].nunique()} tasks.** Each fit uses only the rungs where the task "
+        f"is above chance (rule 1, rq00's mask). The gate removed {int(fitted['gated_rungs'].sum())} rungs from the fitted series "
+        f"and left {int(fits['gated'].sum())} (task, L) series with fewer than {MIN_RUNGS} rungs (no fit, `gated` in "
+        f"`rq1_fits.csv`), so {len(no_fit)} tasks have no fit at all. The best-scaling families (median R²) are "
         + ", ".join(f"`{f}` {fmt(r.r2)}" for f, r in top.head(4).iterrows())
-        + "; worst: " + ", ".join(f"`{f}` {fmt(r.r2)}" for f, r in top.tail(3).iterrows()) + ".",
-        "- **Median R² by answer count** (over the gated benchmark fits): "
+        + ", and the worst are " + ", ".join(f"`{f}` {fmt(r.r2)}" for f, r in top.tail(3).iterrows()) + ".",
+        "- **Median R² by answer count.** Over the gated benchmark fits: "
         + ", ".join(f"{fmt(v)} over the {int(k)}-option fits" for k, v in by_opt.items()) + ".",
     ]
     if not sf.empty:
         al = sf.dropna(subset=["alpha"]).groupby(["L", "ladder", "data"]).agg(alpha=("alpha", "first"), n=("n_rungs", "first"))
-        bullets.append(f"- **Loss exponent α per (L, ladder, data build)**, the seed-{GRID_SEED} cells, sizes in the fit in brackets: "
+        bullets.append(f"- **Loss exponent α per (L, ladder, data build).** Seed-{GRID_SEED} cells, with the number of sizes in "
+                       f"the fit in brackets: "
                        + ", ".join(f"L{L} {a}/{s} {fmt(r.alpha, 3)} ({int(r.n)})" for (L, a, s), r in al.iterrows()) + ".")
     rows = [[f, fmt(r.r2), fmt(r.rho), int(r.n), "" if not np.isfinite(r.n_options) else int(r.n_options)]
             for f, r in fam.iterrows()]

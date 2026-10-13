@@ -1,0 +1,307 @@
+% Surrogates of decision accuracy: every statistic the analysis scores, defined in plain terms.
+% The definitions as implemented, with the comparison to each source paper, live in the code:
+% src/signal-and-noise/snr/snr_variants.py (the 22 signals, upstream), analysis/rq03_noise_and_snr/
+% run_apertus_snr_variants.py (their noises), analysis/rq04_surrogates/{finetasks_criteria,catalogue,search}.py.
+% The result tables are generated (make_surrogate_tables.py); everything else is prose.
+
+\clearpage
+
+\section{Surrogates of Decision Accuracy}
+\label{app:surrogates}
+\label{subsec:methodology-snr}
+
+Decision accuracy (DA) needs the reference: it compares the ranking of the proxies with the ranking of the large models. A \emph{surrogate} is a statistic computed on the proxy alone that aims to predict this DA, so that a developer can tell whether the proxy's ranking can be trusted without training the reference. This appendix defines every surrogate we score (\S\ref{app:sur-snr}--\ref{app:sur-catalogue}), how we score them (\S\ref{app:sur-scoring}) and the results (\S\ref{app:sur-results}).
+
+\subsection{Truths and scoring}
+\label{app:sur-scoring}
+\label{app:sur-notation}
+
+A task is scored on the $V$ design variants of one proxy size. Each variant has a final score and a training curve evaluated at ten tenths of its run. Its \emph{noise window} is its scores at 80, 85, 90, 95 and 100\% of the run.
+
+We score each surrogate against three DA readings, which we call \emph{truths} (Appendix~\ref{app:ranking-agreement}): DA-size, the final ranking of the proxy against the final ranking of the reference; DA-goal, an intermediate checkpoint of the proxy against the final ranking of the reference; and DA-ckpt, an intermediate checkpoint of the proxy against its own final ranking. A cell is a (task, proxy size, fraction of the run), and a truth is read only on cells above chance with at least three pairs.
+
+For each surrogate and truth, we report Spearman's $\rho$ over one point per (benchmark, language) cluster: the mean surrogate of the cluster against its mean truth, pooled over proxy sizes and checkpoints. A task and its reformulated versions form one cluster. The Benjamini--Hochberg correction runs over every configuration we search. As a \emph{ceiling}, we correlate each truth with itself when the reference is read at 90\% of its run instead of 100\%: no surrogate can be expected to track a truth better than the truth tracks its own re-measurement.
+
+\subsection{Signal-to-noise ratios}
+\label{app:sur-snr}
+\label{app:sur-signals}
+\label{app:sur-noise}
+
+\citet{heineman_signal_2025} define a benchmark's signal-to-noise ratio as the spread of the final scores of models of similar compute (signal) divided by the variability of one model's score across its last checkpoints (noise). Their headline definition is the relative dispersion over the relative checkpoint noise, which they find to correlate with DA at $R = 0.79$. We compute every signal and noise of their released code and score all $22 \times 6 = 132$ ratios, as well as each signal and each noise alone.
+
+\textbf{Signals.} Table~\ref{tab:sur-signals} defines the 22 signals. With $c_1, \dots, c_V$ the final scores of the variants and $\bar{c}$ their mean, most of them measure the spread of the $c_i$, either in score units or divided by the mean score (the ``relative'' signals). A few treat the scores as points in $[0, 1]$ and measure how evenly they cover it, and two measure how central each variant is among the others.
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\begin{tabular}{@{}p{0.2\linewidth}p{0.75\linewidth}@{}}
+\toprule
+\textbf{Signal} & \textbf{Definition} \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Spread in score units}} \\
+\texttt{range}, \texttt{dispersion} & the largest score minus the smallest, $\max c - \min c$ (identical) \\
+\texttt{mpd} & the mean absolute difference over all pairs of variants \\
+\texttt{mpsd} & the mean squared difference over all pairs of variants \\
+\texttt{rms\_deviation} & the standard deviation of the scores \\
+\texttt{aad} & the mean absolute deviation from the mean score \\
+\texttt{mad} & the median absolute deviation from the median score \\
+\texttt{quartile\_deviation} & half the interquartile range \\
+\texttt{dist\_std} & the standard deviation of the pairwise differences $|c_i - c_j|$ \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Spread relative to the mean score}} \\
+\texttt{rel\_dispersion} & the range divided by the mean score (the headline signal of \citealp{heineman_signal_2025}) \\
+\texttt{rel\_std} & the standard deviation divided by the mean score (the coefficient of variation) \\
+\texttt{rel\_mpd}, \texttt{rel\_mpsd}, \texttt{iqr} & \texttt{mpd}, \texttt{mpsd} and the interquartile range divided by the mean score \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Coverage of $[0,1]$}} \\
+\texttt{gini} & the Gini coefficient of the scores rescaled to $[0, 1]$ \\
+\texttt{discrepancy} & the centred $L_2$ discrepancy of the scores, a measure of how unevenly they fill $[0, 1]$ \\
+\texttt{star\_discrepancy} & the mean gap between the sorted scores and an even grid; \texttt{\_shifted} computes it on the rescaled scores and \texttt{rel\_} divides it by the mean score \\
+\texttt{dispersion\_shifted} & the range of the rescaled scores, always 1, so its ratios are the inverse noise \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Depth}} \\
+\texttt{tukey}, \texttt{projection} & the spread of how central each variant is among the others (halfspace and projection depth), divided by the mean score \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{The 22 signal definitions} of the code released with \citet{heineman_signal_2025} (\texttt{snr/snr\_variants.py}). The coverage signals read the scores as points of $[0, 1]$ and are computed on benchmarks only.}
+\label{tab:sur-signals}
+\end{table*}
+
+\textbf{Noises.} Six noises enter the grid.
+\emph{Checkpoint noise} is the standard deviation of a variant's score over its noise window, averaged over variants. We remove the linear trend of the window before taking it, because scores still rise during the learning-rate decay and the raw deviation would count that rise as noise. \texttt{ckpt\_abs} is this noise in score units, and \texttt{ckpt\_rel} divides it by the mean score, as in the released code.
+\emph{Benchmark noise} is the standard deviation of a variant's score across $k = 5$ disjoint folds of the test items, averaged over variants. It needs a single evaluation run and no intermediate checkpoint. We use its expected value over random folds, $\sqrt{p(1-p)(k-1)/(n-1)}$ for accuracy $p$ on $n$ items, and the same with the variance of the item scores for the bBPB twins. \texttt{kfold\_abs} is this noise in score units, and \texttt{kfold\_rel} divides it by the score.
+The two \emph{depth noises} pair with the depth signals: the checkpoint noise divided by the mean depth of the window scores.
+\citet{heineman_signal_2025} also define seed noise, data-order noise and total variation, which they use only to validate the checkpoint noise. We use the seed noise to size effects, not as a surrogate.
+
+\subsection{Other surrogates}
+\label{app:sur-finetasks}
+\label{app:sur-catalogue}
+
+\textbf{FineTasks criteria.} FineTasks \citep{kydlicek_finetasks_nodate, penedo_fineweb2_2025} keeps a task when four statistics computed along training pass a threshold: \emph{monotonicity}, the mean Spearman correlation between training step and score; \emph{low noise}, the mean final score divided by the mean spread across runs; \emph{non-randomness}, the best final score above the random baseline in units of the spread; and \emph{ordering consistency}, the mean Kendall's $\tau$ between the run rankings at consecutive steps.
+
+\textbf{Catalogue from the literature.} Table~\ref{tab:sur-catalogue} defines the remaining statistics, grouped by the question they ask. Most were proposed for another unit of replication, such as test items, topics or seeds, and we read each on what one proxy size offers: its noise window, its training curve and the smaller rungs. Throughout, a pair's gap is measured in units of the two variants' checkpoint noise.
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\begin{tabular}{@{}p{0.2\linewidth}p{0.55\linewidth}p{0.2\linewidth}@{}}
+\toprule
+\textbf{Statistic} & \textbf{What it measures} & \textbf{Source} \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Separation: is the spread across variants large against the noise?}} \\
+\texttt{gap\_over\_noise} & the median gap of a pair over its noise & \citet{heineman_signal_2025} \\
+\texttt{resolved\_pairs\_noise} & the share of pairs whose gap exceeds 1.96 times its noise & \citet{sakai_evaluating_2006} \\
+\texttt{retest\_agreement} & the probability that a pair keeps its order when re-measured, under a normal model & \citet{voorhees_effect_2002} \\
+\texttt{mde\_resolved} & the share of pairs whose gap exceeds the minimum effect detectable at 80\% power & \citet{miller_adding_2024} \\
+\texttt{icc\_window}, \texttt{g\_coefficient}, \texttt{cronbach\_alpha}, \texttt{eta2\_window} & the share of the window-score variance that lies between variants rather than within them (four classical reliability coefficients) & \citet{shrout_intraclass_1979, cronbach_coefficient_1951} \\
+\texttt{binomial\_snr}, \texttt{noise\_to\_binomial} & the spread across variants, and the checkpoint noise, over the binomial standard error of the mean score & \citet{card_little_2020, miller_adding_2024} \\
+\texttt{resolved\_pairs\_binomial} & the share of pairs a two-proportion test on the items separates & \citet{card_little_2020} \\
+\texttt{tie\_rate\_items} & the share of pairs closer than one item & \citet{schaeffer_are_2023} \\
+\texttt{prob\_outperform} & how far from a coin flip each pair's order is across the window checkpoints & \citet{bouthillier_accounting_2021} \\
+\texttt{dior} & the lower bound of Kendall's $\tau$ between the final ranking and rankings read at random window checkpoints & \citet{perlitz_efficient_2024} \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Rank stability: does the proxy's ranking hold still inside its own run?}} \\
+\texttt{consecutive\_kendall}(\texttt{\_late}) & the mean Kendall's $\tau$ between the rankings at consecutive tenths (from 50\% on) & \citet{kydlicek_finetasks_nodate} \\
+\texttt{window\_kendall}, \texttt{kendall\_w\_window} & the agreement of the rankings inside the noise window (mean $\tau$ with the final ranking, Kendall's $W$) & \citet{kendall_problem_1939} \\
+\texttt{sign\_consistency\_window} & the share of pairs ordered the same way at all five window checkpoints & \citet{buckley_evaluating_2000} \\
+\texttt{sign\_persistence} & the mean share of the nine early tenths at which a pair is ordered as at the end & \citet{buckley_evaluating_2000} \\
+\texttt{crossings} & the mean number of times a pair's order flips along the run & \citet{magnusson_datadecide_2025} \\
+\texttt{settling\_time} & the first tenth after which the ranking stays close to the final one ($\tau \geq 0.8$) & \citet{magnusson_datadecide_2025} \\
+\texttt{da\_ckpt\_mean}, \texttt{da\_ckpt\_half} & the proxy's DA-ckpt, averaged over the run or at its midpoint & \citet{heineman_signal_2025} \\
+\texttt{split\_half} & the agreement between the variants' means over two halves of the window & \citet{spearman_correlation_1910} \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Curve shape: does the task behave like a learnable, unsaturated measurement?}} \\
+\texttt{monotonicity}(\texttt{\_steps}) & how consistently the score rises along training & \citet{kydlicek_finetasks_nodate, heineman_signal_2025} \\
+\texttt{total\_variation}, \texttt{autocorr} & how jagged the training curve is & \citet{heineman_signal_2025, yagoubi_e2lm_2025} \\
+\texttt{gain\_over\_noise}, \texttt{late\_slope\_to\_noise} & the improvement over the run, and over its second half, in units of the noise & \citet{madaan_quantifying_2024, hofmann_fluid_2025} \\
+\texttt{nonrandom}, \texttt{z\_above\_chance}, \texttt{emerged\_share} & how far the mean score is above chance, and the share of variants clearly above it & \citet{kydlicek_finetasks_nodate, schaeffer_are_2023} \\
+\texttt{item\_information} & how informative the items are at the current accuracy & \citet{rodriguez_evaluation_2021} \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Agreement with the smaller rungs, the loss and other benchmarks}} \\
+\texttt{prev\_rung\_da}, \texttt{ladder\_da} & DA between the proxy and the rung below it, or over every pair of rungs up to the proxy & \citet{magnusson_datadecide_2025} \\
+\texttt{rung\_sign\_consistency}, \texttt{rung\_gap\_corr} & whether the pairs keep their order, and their gaps, from one rung to the next & \citet{liu_regmix_2025} \\
+\texttt{projected\_flip\_rate}, \texttt{size\_monotonicity}, \texttt{scale\_gain\_over\_noise} & whether the pair gaps extrapolate to the reference without flipping, and whether scores rise with size & \citet{magnusson_datadecide_2025, bhagia_establishing_2025} \\
+\texttt{pseudo\_ref\_da} & DA against the largest rung below the reference (the only statistic that reads beyond the proxy) & \citet{magnusson_datadecide_2025} \\
+\texttt{bpb\_rank\_agreement}, \texttt{bpb\_corr\_training} & agreement with the ranking by bits per byte in the task's language & \citet{thrush_improving_2025} \\
+\texttt{language\_consensus}, \texttt{benchmark\_consensus}, \texttt{item\_total\_corr} & agreement with the other benchmarks of the language, with the same benchmark in other languages, or with all other benchmarks & \citet{perlitz_benchbench_2024, ruan_observational_2024} \\
+\texttt{n\_pairs}, \texttt{n\_items}, \texttt{chance} & the number of pairs and of items, and the chance level (controls) & -- \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{The catalogue of proxy-only statistics} (\texttt{rq04\_surrogates/catalogue.py}), grouped by the question each asks. A pair's gap is measured in units of the two variants' checkpoint noise. Statistics that compare an early ranking with the final one are not scored against DA-ckpt, which they would reproduce.}
+\label{tab:sur-catalogue}
+\end{table*}
+
+We cannot compute statistics that need per-item log-probabilities, such as item response models or paired significance tests, because the ladder report holds one aggregate score per checkpoint.
+
+\subsection{Results}
+\label{app:sur-results}
+
+Tables~\ref{tab:sur-corr-catalogue} and~\ref{tab:sur-corr-snr} give the correlation of every surrogate with the three truths, and Table~\ref{tab:sur-corr-strata} gives the correlation with DA-size within single strata. Three findings stand out.
+First, no surrogate reaches the ceiling: DA-size correlates with its own re-measurement at 0.90, and the best proxy-only statistics reach 0.81.
+Second, the statistics that track DA best describe whether the proxy's ranking holds still, such as the proxy's own DA-ckpt and sign persistence (both 0.81), or agrees with the rung below (0.77). The spread of the final scores alone carries almost no information ($\rho$ between $-0.04$ and $0.07$ for \texttt{range} and \texttt{rel\_std} against DA-size). It becomes informative only once divided by the checkpoint noise: the relative-standard-deviation SNR reaches 0.75 and the headline SNR of \citet{heineman_signal_2025} 0.65, against $R = 0.79$ in their setting, while dividing by the $k$-fold benchmark noise instead gives 0.21.
+Third, the pooled correlations hide large differences between strata. Within one proxy size the relative-standard-deviation SNR reaches only 0.60--0.62, within HellaSwag 0.80 and on the per-language bits per byte 0.46.
+
+% BEGIN generated: surrogate-tables (make_surrogate_tables.py)
+\begin{table*}[t]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+\textbf{Family} & \textbf{Statistic} & \textbf{DA-size} & \textbf{DA-goal} & \textbf{DA-ckpt} \\
+\midrule
+ceiling & the truth re-read at 90\,\% & 0.90 & 0.95 & 0.98 \\
+\midrule
+separation & \texttt{mde\_resolved} & \textbf{0.74} & \textbf{0.82} & \textbf{0.90} \\
+ & \texttt{retest\_agreement} & \textbf{0.73} & \textbf{0.80} & \textbf{0.89} \\
+ & \texttt{resolved\_pairs\_noise} & \textbf{0.72} & \textbf{0.80} & \textbf{0.90} \\
+ & \texttt{gap\_over\_noise} & \textbf{0.70} & \textbf{0.79} & \textbf{0.85} \\
+ & \texttt{cronbach\_alpha} & \textbf{0.63} & \textbf{0.65} & \textbf{0.72} \\
+ & \texttt{icc\_window} & \textbf{0.60} & \textbf{0.64} & \textbf{0.74} \\
+ & \texttt{eta2\_window} & \textbf{0.60} & \textbf{0.62} & \textbf{0.72} \\
+ & \texttt{g\_coefficient} & \textbf{0.56} & \textbf{0.57} & \textbf{0.66} \\
+ & \texttt{prob\_outperform} & \textbf{0.53} & \textbf{0.59} & \textbf{0.73} \\
+ & \texttt{binomial\_snr} & \textbf{0.51} & \textbf{0.53} & \textbf{0.58} \\
+ & \texttt{resolved\_pairs\_binomial} & \textbf{0.50} & \textbf{0.53} & \textbf{0.54} \\
+ & \texttt{tie\_rate\_items} & \textbf{$-$0.45} & \textbf{$-$0.43} & \textbf{$-$0.60} \\
+ & \texttt{dior} & \textbf{0.37} & \textbf{0.36} & \textbf{0.44} \\
+ & \texttt{noise\_to\_binomial} & \textbf{0.22} & \textbf{0.23} & \textbf{0.21} \\
+\midrule
+rank stability & \texttt{da\_ckpt\_mean} & \textbf{0.81} & \textbf{0.88} & -- \\
+ & \texttt{sign\_persistence} & \textbf{0.81} & \textbf{0.88} & -- \\
+ & \texttt{da\_ckpt\_half} & \textbf{0.78} & \textbf{0.85} & -- \\
+ & \texttt{consecutive\_kendall} & \textbf{0.78} & \textbf{0.86} & -- \\
+ & \texttt{consecutive\_kendall\_late} & \textbf{0.76} & \textbf{0.83} & -- \\
+ & \texttt{crossings} & \textbf{$-$0.76} & \textbf{$-$0.84} & -- \\
+ & \texttt{sign\_consistency\_window} & \textbf{0.74} & \textbf{0.82} & \textbf{0.92} \\
+ & \texttt{window\_kendall} & \textbf{0.70} & \textbf{0.77} & \textbf{0.88} \\
+ & \texttt{kendall\_w\_window} & \textbf{0.69} & \textbf{0.74} & \textbf{0.84} \\
+ & \texttt{settling\_time} & \textbf{$-$0.60} & \textbf{$-$0.68} & -- \\
+ & \texttt{split\_half} & \textbf{0.54} & \textbf{0.56} & \textbf{0.63} \\
+\midrule
+curve shape & \texttt{late\_slope\_to\_noise} & \textbf{0.62} & \textbf{0.66} & \textbf{0.66} \\
+ & \texttt{gain\_over\_noise} & \textbf{0.62} & \textbf{0.69} & \textbf{0.70} \\
+ & \texttt{monotonicity\_steps} & \textbf{0.59} & \textbf{0.62} & \textbf{0.64} \\
+ & \texttt{autocorr} & \textbf{0.53} & \textbf{0.54} & \textbf{0.58} \\
+ & \texttt{total\_variation} & \textbf{$-$0.49} & \textbf{$-$0.51} & \textbf{$-$0.57} \\
+ & \texttt{monotonicity} & \textbf{0.47} & \textbf{0.47} & \textbf{0.53} \\
+ & \texttt{z\_above\_chance} & \textbf{0.32} & \textbf{0.40} & \textbf{0.51} \\
+ & \texttt{emerged\_share} & \textbf{0.21} & \textbf{0.27} & \textbf{0.37} \\
+ & \texttt{nonrandom} & 0.04 & 0.09 & 0.12 \\
+ & \texttt{item\_information} & 0.03 & 0.09 & 0.10 \\
+\midrule
+small ladder & \texttt{prev\_rung\_da} & \textbf{0.77} & \textbf{0.83} & \textbf{0.85} \\
+ & \texttt{ladder\_da} & \textbf{0.76} & \textbf{0.84} & \textbf{0.87} \\
+ & \texttt{rung\_sign\_consistency} & \textbf{0.75} & \textbf{0.83} & \textbf{0.86} \\
+ & \texttt{rung\_gap\_corr} & \textbf{0.73} & \textbf{0.79} & \textbf{0.79} \\
+ & \texttt{scale\_gain\_over\_noise} & \textbf{0.54} & \textbf{0.57} & \textbf{0.57} \\
+ & \texttt{size\_monotonicity} & \textbf{0.40} & \textbf{0.41} & \textbf{0.45} \\
+ & \texttt{projected\_flip\_rate} & \textbf{$-$0.18} & \textbf{$-$0.15} & \textbf{$-$0.14} \\
+\midrule
+pseudo-reference & \texttt{pseudo\_ref\_da} & \textbf{0.78} & \textbf{0.81} & \textbf{0.83} \\
+\midrule
+agreement & \texttt{bpb\_rank\_agreement} & \textbf{0.78} & \textbf{0.82} & \textbf{0.87} \\
+ & \texttt{language\_consensus} & \textbf{0.74} & \textbf{0.77} & \textbf{0.81} \\
+ & \texttt{item\_total\_corr} & \textbf{0.58} & \textbf{0.60} & \textbf{0.62} \\
+ & \texttt{bpb\_corr\_training} & \textbf{0.56} & \textbf{0.57} & \textbf{0.62} \\
+ & \texttt{benchmark\_consensus} & \textbf{0.33} & \textbf{0.34} & \textbf{0.32} \\
+\midrule
+control & \texttt{n\_items} & \textbf{0.35} & \textbf{0.37} & \textbf{0.47} \\
+ & \texttt{n\_pairs} & \textbf{$-$0.24} & \textbf{$-$0.32} & \textbf{$-$0.35} \\
+ & \texttt{chance} & \textbf{0.16} & \textbf{0.20} & \textbf{0.29} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{\textbf{Correlation of each catalogue statistic with decision accuracy.} Spearman $\rho$ over the benchmark tasks, one point per (benchmark, language) cluster (370--475 clusters for DA-size, 370--475 for DA-goal, 376--475 for DA-ckpt). We use every pair of variants and pool over the proxy sizes 90M--1B. For DA-goal and DA-ckpt, we also pool over the nine early checkpoints. Bold marks Benjamini-Hochberg $q < 0.05$ over every configuration of the search. A statistic without a value is circular for that truth or has too few clusters. Within a family, rows are ordered by $|\rho|$ with DA-size.}
+\label{tab:sur-corr-catalogue}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lrrrrrrrrr@{}}
+\toprule
+ & \multicolumn{3}{c}{\textbf{DA-size}} & \multicolumn{3}{c}{\textbf{DA-goal}} & \multicolumn{3}{c}{\textbf{DA-ckpt}} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}
+\textbf{Signal} & alone & /ckpt & /$k$-fold & alone & /ckpt & /$k$-fold & alone & /ckpt & /$k$-fold \\
+\midrule
+\texttt{rel\_std} & 0.07 & \textbf{0.75} & \textbf{0.21} & 0.11 & \textbf{0.81} & \textbf{0.21} & 0.04 & \textbf{0.86} & \textbf{0.17} \\
+\texttt{rel\_mpd} & 0.10 & \textbf{0.74} & \textbf{0.24} & \textbf{0.15} & \textbf{0.82} & \textbf{0.24} & 0.09 & \textbf{0.88} & \textbf{0.21} \\
+\texttt{iqr} & 0.09 & \textbf{0.70} & \textbf{0.24} & \textbf{0.14} & \textbf{0.78} & \textbf{0.25} & 0.08 & \textbf{0.82} & \textbf{0.21} \\
+\texttt{rel\_dispersion} & $-$0.06 & \textbf{0.65} & \textbf{0.14} & $-$0.05 & \textbf{0.67} & \textbf{0.12} & \textbf{$-$0.12} & \textbf{0.70} & 0.07 \\
+\texttt{aad} & 0.08 & \textbf{0.55} & \textbf{0.18} & \textbf{0.14} & \textbf{0.63} & \textbf{0.19} & \textbf{0.14} & \textbf{0.71} & \textbf{0.18} \\
+\texttt{dist\_std} & 0.05 & \textbf{0.54} & \textbf{0.15} & 0.11 & \textbf{0.62} & \textbf{0.15} & 0.10 & \textbf{0.70} & \textbf{0.14} \\
+\texttt{rms\_deviation} & 0.05 & \textbf{0.54} & \textbf{0.15} & 0.11 & \textbf{0.62} & \textbf{0.16} & 0.11 & \textbf{0.71} & \textbf{0.15} \\
+\texttt{mpd} & 0.07 & \textbf{0.54} & \textbf{0.17} & \textbf{0.14} & \textbf{0.62} & \textbf{0.18} & \textbf{0.15} & \textbf{0.71} & \textbf{0.18} \\
+\texttt{dispersion\_shifted} & -- & \textbf{0.52} & \textbf{0.18} & -- & \textbf{0.55} & \textbf{0.15} & -- & \textbf{0.62} & \textbf{0.16} \\
+\texttt{gini} & \textbf{0.12} & \textbf{0.51} & \textbf{0.20} & \textbf{0.19} & \textbf{0.57} & \textbf{0.18} & \textbf{0.22} & \textbf{0.64} & \textbf{0.21} \\
+\texttt{quartile\_deviation} & 0.08 & \textbf{0.50} & \textbf{0.18} & \textbf{0.14} & \textbf{0.58} & \textbf{0.19} & \textbf{0.14} & \textbf{0.66} & \textbf{0.19} \\
+\texttt{mad} & 0.06 & \textbf{0.48} & \textbf{0.17} & \textbf{0.12} & \textbf{0.56} & \textbf{0.18} & \textbf{0.12} & \textbf{0.64} & \textbf{0.17} \\
+\texttt{dispersion} & $-$0.04 & \textbf{0.48} & 0.09 & $-$0.00 & \textbf{0.52} & 0.08 & $-$0.02 & \textbf{0.61} & 0.06 \\
+\texttt{range} & $-$0.04 & \textbf{0.48} & 0.09 & $-$0.00 & \textbf{0.52} & 0.08 & $-$0.02 & \textbf{0.61} & 0.06 \\
+\texttt{rel\_mpsd} & 0.06 & \textbf{0.37} & \textbf{0.18} & \textbf{0.12} & \textbf{0.45} & \textbf{0.19} & 0.09 & \textbf{0.47} & \textbf{0.16} \\
+\texttt{star\_discrepancy\_shifted} & 0.06 & \textbf{0.36} & \textbf{0.44} & 0.07 & \textbf{0.40} & \textbf{0.47} & \textbf{0.19} & \textbf{0.54} & \textbf{0.64} \\
+\texttt{discrepancy} & \textbf{0.22} & \textbf{0.34} & \textbf{0.42} & \textbf{0.20} & \textbf{0.37} & \textbf{0.45} & \textbf{0.24} & \textbf{0.46} & \textbf{0.57} \\
+\texttt{star\_discrepancy} & 0.10 & \textbf{0.32} & \textbf{0.44} & 0.08 & \textbf{0.35} & \textbf{0.48} & 0.09 & \textbf{0.46} & \textbf{0.60} \\
+\texttt{rel\_star\_discrepancy} & $-$0.01 & \textbf{0.26} & \textbf{0.35} & $-$0.06 & \textbf{0.27} & \textbf{0.36} & $-$0.11 & \textbf{0.34} & \textbf{0.46} \\
+\texttt{mpsd} & 0.03 & \textbf{0.25} & \textbf{0.12} & 0.08 & \textbf{0.33} & \textbf{0.14} & 0.08 & \textbf{0.36} & \textbf{0.13} \\
+\texttt{tukey} & \textbf{$-$0.15} & \textbf{0.25} & \textbf{0.12} & \textbf{$-$0.23} & \textbf{0.21} & 0.07 & \textbf{$-$0.31} & \textbf{0.19} & 0.05 \\
+\texttt{projection} & \textbf{$-$0.20} & 0.07 & 0.01 & \textbf{$-$0.29} & 0.02 & $-$0.05 & \textbf{$-$0.38} & 0.00 & $-$0.09 \\
+\midrule
+\multicolumn{10}{@{}l}{\emph{Each noise alone}} \\
+\texttt{ckpt\_rel} & \multicolumn{3}{c}{\textbf{$-$0.45}} & \multicolumn{3}{c}{\textbf{$-$0.44}} & \multicolumn{3}{c}{\textbf{$-$0.52}} \\
+\texttt{ckpt\_abs} & \multicolumn{3}{c}{\textbf{$-$0.35}} & \multicolumn{3}{c}{\textbf{$-$0.32}} & \multicolumn{3}{c}{\textbf{$-$0.34}} \\
+\texttt{tukey\_depth} & \multicolumn{3}{c}{\textbf{$-$0.32}} & \multicolumn{3}{c}{\textbf{$-$0.29}} & \multicolumn{3}{c}{\textbf{$-$0.31}} \\
+\texttt{projection\_depth} & \multicolumn{3}{c}{\textbf{$-$0.34}} & \multicolumn{3}{c}{\textbf{$-$0.31}} & \multicolumn{3}{c}{\textbf{$-$0.33}} \\
+\texttt{kfold\_rel} & \multicolumn{3}{c}{\textbf{$-$0.20}} & \multicolumn{3}{c}{\textbf{$-$0.17}} & \multicolumn{3}{c}{\textbf{$-$0.21}} \\
+\texttt{kfold\_abs} & \multicolumn{3}{c}{\textbf{$-$0.14}} & \multicolumn{3}{c}{$-$0.10} & \multicolumn{3}{c}{$-$0.07} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{\textbf{The signal $\times$ noise grid.} Spearman $\rho$ with decision accuracy of each signal alone, of its ratio to the relative checkpoint noise (/ckpt, where \texttt{rel\_dispersion} / \texttt{ckpt\_rel} is the SNR of \citet{heineman_signal_2025} as released, with the detrended checkpoint noise) and of its ratio to the relative $k$-fold benchmark noise (/$k$-fold). The last rows give each noise alone. The population and conventions are the same as in Table~\ref{tab:sur-corr-catalogue}. Rows are ordered by $|\rho|$ of the checkpoint-noise SNR with DA-size. The strongest of the 132 ratios is \texttt{rms\_deviation} / \texttt{ckpt\_abs}, $\rho = 0.75$ for DA-size, \texttt{aad} / \texttt{ckpt\_abs}, $\rho = 0.82$ for DA-goal and \texttt{mpd} / \texttt{ckpt\_abs}, $\rho = 0.88$ for DA-ckpt.}
+\label{tab:sur-corr-snr}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lrrlrlr@{}}
+\toprule
+\textbf{Stratum} & \textbf{Clusters} & \textbf{SNR} & \textbf{Best SNR definition} & $\rho$ & \textbf{Best statistic} & $\rho$ \\
+\midrule
+every benchmark & 475 & \textbf{0.75} & \texttt{rms\_deviation} / \texttt{ckpt\_abs} & \textbf{0.75} & \texttt{da\_ckpt\_mean} & \textbf{0.81} \\
+\midrule
+proxy 90M & 471 & \textbf{0.49} & \texttt{mpd} / \texttt{ckpt\_abs} & \textbf{0.50} & \texttt{pseudo\_ref\_da} & \textbf{0.61} \\
+proxy 175M & 473 & \textbf{0.62} & \texttt{rms\_deviation} / \texttt{ckpt\_abs} & \textbf{0.62} & \texttt{pseudo\_ref\_da} & \textbf{0.67} \\
+proxy 350M & 473 & \textbf{0.61} & \texttt{mpd} / \texttt{projection\_depth} & \textbf{0.63} & \texttt{da\_ckpt\_mean} & \textbf{0.67} \\
+proxy 600M & 475 & \textbf{0.60} & \texttt{rms\_deviation} / \texttt{ckpt\_abs} & \textbf{0.60} & \texttt{da\_ckpt\_mean} & \textbf{0.64} \\
+proxy 1B & 475 & \textbf{0.62} & \texttt{rel\_std} / \texttt{ckpt\_rel} & \textbf{0.62} & \texttt{ladder\_da} & \textbf{0.71} \\
+\midrule
+$K$ = 8 tier & 136 & \textbf{0.61} & \texttt{star\_discrepancy\_shifted} / \texttt{kfold\_abs} & \textbf{0.70} & \texttt{pseudo\_ref\_da} & \textbf{0.85} \\
+$K$ = 15 tier & 78 & \textbf{0.57} & \texttt{dispersion} / \texttt{ckpt\_abs} & \textbf{0.59} & \texttt{sign\_persistence} & \textbf{0.72} \\
+$K$ = 30 tier & 128 & \textbf{0.72} & \texttt{aad} / \texttt{ckpt\_abs} & \textbf{0.73} & \texttt{sign\_persistence} & \textbf{0.78} \\
+$K$ = 50 tier & 133 & \textbf{0.80} & \texttt{dispersion} / \texttt{ckpt\_abs} & \textbf{0.82} & \texttt{consecutive\_kendall} & \textbf{0.82} \\
+\midrule
+HellaSwag & 26 & \textbf{0.80} & \texttt{rel\_mpd} / \texttt{kfold\_abs} & \textbf{0.93} & \texttt{rel\_mpd} / \texttt{kfold\_abs} & \textbf{0.93} \\
+ARC & 16 & 0.32 & \texttt{rel\_std} / \texttt{ckpt\_abs} & 0.37 & \texttt{icc\_window} & 0.59 \\
+ARC (translated) & 10 & 0.10 & \texttt{dispersion\_shifted} / \texttt{kfold\_rel} & 0.48 & \texttt{pseudo\_ref\_da} & 1.00 \\
+XNLI & 13 & 0.03 & \texttt{rel\_dispersion} / \texttt{tukey\_depth} & 0.28 & \texttt{size\_monotonicity} & 0.56 \\
+MultiBLiMP & 34 & \textbf{0.79} & \texttt{rel\_mpd} / \texttt{ckpt\_abs} & \textbf{0.88} & \texttt{mde\_resolved} & \textbf{0.89} \\
+INCLUDE v2 (original language) & 31 & 0.38 & \texttt{dist\_std} / \texttt{kfold\_rel} & \textbf{0.47} & \texttt{pseudo\_ref\_da} & \textbf{0.76} \\
+INCLUDE v2 (English) & 41 & $-$0.14 & \texttt{rel\_dispersion} / \texttt{kfold\_abs} & 0.29 & \texttt{language\_consensus} & \textbf{0.55} \\
+Belebele RF & 49 & 0.25 & \texttt{quartile\_deviation} / \texttt{tukey\_depth} & 0.30 & \texttt{pseudo\_ref\_da} & \textbf{0.61} \\
+Belebele LLM-RF & 49 & 0.12 & \texttt{dispersion} / \texttt{kfold\_rel} & \textbf{0.36} & \texttt{monotonicity\_steps} & \textbf{0.45} \\
+Global-MMLU RF & 28 & \textbf{0.47} & \texttt{quartile\_deviation} / \texttt{ckpt\_abs} & \textbf{0.55} & \texttt{window\_kendall} & \textbf{0.71} \\
+INCLUDE RF & 26 & 0.36 & \texttt{dispersion} / \texttt{kfold\_rel} & 0.46 & \texttt{sign\_persistence} & \textbf{0.79} \\
+INCLUDE LLM-RF & 25 & 0.36 & \texttt{dist\_std} / \texttt{kfold\_abs} & 0.43 & \texttt{bpb\_rank\_agreement} & \textbf{0.77} \\
+\midrule
+per-language BPB & 50 & \textbf{0.46} & \texttt{mad} / \texttt{ckpt\_rel} & \textbf{0.69} & \texttt{retest\_agreement} & \textbf{0.81} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{\textbf{Correlation with DA-size within one stratum.} Spearman $\rho$ of a surrogate with DA-size within one stratum of the benchmark tasks: one proxy size, one language-count tier (the tasks in the languages that first enter the scheme-A lists at that $K$), one benchmark, or the per-language bits per byte. \emph{SNR} is the relative standard deviation over the relative checkpoint noise. The next columns give the strongest of the 132 signal $\times$ noise ratios and the strongest statistic of the whole catalogue in the stratum. The population and conventions are those of Table~\ref{tab:sur-corr-catalogue}: one point per (benchmark, language) cluster, every pair of variants, the proxies 90M--1B pooled except in the proxy rows. Strata with fewer than 10 clusters are not shown. The best of many $\rho$ in a small stratum is optimistic, so the SNR column is the fair comparison across rows. Bold marks Benjamini-Hochberg $q < 0.05$.}
+\label{tab:sur-corr-strata}
+\end{table*}
+% END generated: surrogate-tables

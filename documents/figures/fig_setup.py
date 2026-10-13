@@ -15,26 +15,20 @@ ANALYSIS = REPO / "src" / "signal-and-noise" / "analysis"
 
 
 def grid_status(out):
-    """What the ladder actually contains: one square per planned cell."""
+    """What the ladder actually contains: one square per (L, size) of the grid."""
     w = data.wide()
     c = data.cells(w)
-    Ls = [1, 2, 8, 15, 30, 50, 100]
+    Ls = [1, 2, 8, 15, 30, 50]
     sizes = S.SIZES
-    state = np.zeros((len(Ls), len(sizes)))          # 0 nothing, 1 running, 2 done, 3 broken
+    state = np.zeros((len(Ls), len(sizes)))          # 0 nothing, 1 running, 2 done
     for (L, s), g in c.groupby([c["L"].astype(int), "size"]):
         if L not in Ls or s not in sizes:
             continue
-        i, j = Ls.index(L), sizes.index(s)
         done = g[(g["run__complete"] == 1) & (g["run__diverged"] != 1)]
-        if (g["run__diverged"] == 1).all():
-            state[i, j] = 3
-        elif len(done):
-            state[i, j] = 2
-        else:
-            state[i, j] = 1
-    colours = {0: "#f6f5f3", 1: "#cde2fb", 2: S.RAMP[2], 3: "#ded9d3"}
+        state[Ls.index(L), sizes.index(s)] = 2 if len(done) else 1
+    colours = {0: "#f6f5f3", 1: "#cde2fb", 2: S.RAMP[2]}
 
-    fig, ax = plt.subplots(figsize=(6.6, 4.0))
+    fig, ax = plt.subplots(figsize=(6.6, 3.6))
     for i in range(len(Ls)):
         for j in range(len(sizes)):
             ax.add_patch(plt.Rectangle((j, i), .92, .92, facecolor=colours[state[i, j]],
@@ -47,22 +41,33 @@ def grid_status(out):
     ax.xaxis.set_ticks_position("top")
     S.clean(ax, spines=()); ax.tick_params(length=0, colors=S.INK)
     ax.legend(handles=[Patch(facecolor=colours[2], label="finished"),
-                       Patch(facecolor=colours[3], label="diverged (90M)"),
                        Patch(facecolor=colours[1], label="started"),
                        Patch(facecolor=colours[0], label="not started")],
-              frameon=False, fontsize=8.5, labelcolor=S.MUTED, ncol=4,
+              frameon=False, fontsize=8.5, labelcolor=S.MUTED, ncol=3,
               loc="upper center", bbox_to_anchor=(.5, -.03))
-    S.title(fig, "The ladder as it stands: the top right corner is missing", y=1.05)
+    n_done = int((state == 2).sum())
+    S.title(fig, f"The ladder as it stands: {n_done} of {state.size} (L, size) cells finished",
+            y=1.05)
     S.save(fig, out / "grid_status.png")
 
 
 def optimizer_timescale(out):
-    """Why 90M diverged: run length against the optimizer's memory."""
+    """Why the old 90M runs diverged: run length against the optimizer's memory.
+
+    Filled bars are the original runs (90M and 175M at batch 504). The outlines are
+    the 2026-09-23 retrain of those two rungs at their own batch (84 / 168), which
+    gives them 27,000 / 25,620 steps (plan/90M-175M-batch-retrain.md)."""
     steps = {"90M": 4500, "175M": 8540, "350M": 16660, "600M": 28800,
              "1B": 45740, "1.7B": 81000}
+    retrained = {"90M": 27000, "175M": 25620}
     ratio = {k: v / 10000 for k, v in steps.items()}
     names = list(steps)
     fig, ax = plt.subplots(figsize=(7.2, 3.0))
+    ax.bar(list(retrained), [v / 10000 for v in retrained.values()], width=.62,
+           facecolor="none", edgecolor=S.SERIES[0], lw=1.3, ls="--")
+    for n, v in retrained.items():
+        ax.annotate(f"{v / 10000:.2f}×", (n, v / 10000), textcoords="offset points",
+                    xytext=(0, 3), ha="center", fontsize=8.5, color=S.SERIES[0])
     bars = ax.bar(names, [ratio[n] for n in names],
                   color=[S.SERIES[1] if n == "90M" else S.RAMP[1] for n in names], width=.62)
     ax.axhline(1, color=S.MUTED, ls="--", lw=1.2)
@@ -74,12 +79,14 @@ def optimizer_timescale(out):
     ax.set_ylim(0, 9.4)
     ax.grid(axis="y", color=S.GRID, lw=.8); ax.set_axisbelow(True)
     S.clean(ax); ax.tick_params(length=0, labelsize=9.5)
-    ax.legend(handles=[Patch(facecolor=S.SERIES[1], label="90M, 9 of 10 runs diverged"),
-                       Patch(facecolor=S.RAMP[1], label="trains cleanly"),
+    ax.legend(handles=[Patch(facecolor=S.SERIES[1], label="old 90M runs, 9 of 10 diverged"),
+                       Patch(facecolor=S.RAMP[1], label="original runs"),
+                       Patch(facecolor="none", edgecolor=S.SERIES[0], ls="--",
+                             label="90M and 175M retrained, 2026-09-23"),
                        Line2D([], [], color=S.MUTED, ls="--", lw=1.2,
                               label="the optimizer's memory, 10,000 steps")],
               frameon=False, fontsize=8.5, labelcolor=S.MUTED, loc="upper left")
-    S.title(fig, "The 90M run is shorter than the optimizer it was given")
+    S.title(fig, "The old 90M run was shorter than the optimizer's memory")
     S.save(fig, out / "optimizer_timescale.png")
 
 
@@ -108,8 +115,11 @@ def seed_holdout(out):
                                         color=S.MUTED)
     ax.grid(axis="x", color=S.GRID, lw=.8); ax.set_axisbelow(True)
     S.clean(ax, spines=("bottom",)); ax.tick_params(length=0)
-    ax.legend(frameon=False, fontsize=8.5, labelcolor=S.MUTED, loc="lower right")
-    S.title(fig, "Swap the seeds and only the checkpoint-based ranking survives")
+    ax.legend(frameon=False, fontsize=8.5, labelcolor=S.MUTED, ncol=2,
+              loc="lower center", bbox_to_anchor=(.5, 1.0))
+    rho = v[("spearman_rank_global", "ckpt")], v[("spearman_rank_global", "size")]
+    S.title(fig, f"Swap the seeds and both variant rankings hold "
+                 f"(Spearman {rho[0]:.2f} and {rho[1]:.2f})", y=1.08)
     S.save(fig, out / "seed_holdout.png")
 
 

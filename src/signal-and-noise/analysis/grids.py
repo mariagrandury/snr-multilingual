@@ -65,16 +65,31 @@ def base(key) -> str:
 # key with the underscores as spaces. `paper_name` is what every `_paper`
 # figure labels a benchmark with, the twins as `Belebele RF` / `INCLUDE LLM-RF`.
 PAPER_NAMES = {
-    "hellaswag": "HellaSwag", "belebele": "Belebele", "global_mmlu_full": "Global-MMLU", "global_mmlu": "Global-MMLU",
-    "include_base_44": "INCLUDE", "include_v2_en": "INCLUDE v2 (EN)", "include_v2_og": "INCLUDE v2 (OG)",
+    "hellaswag": "HellaSwag (Okapi)", "belebele": "Belebele", "global_mmlu_full": "Global-MMLU", "global_mmlu": "Global-MMLU",
+    "include_base_44": "INCLUDE", "include_v2_en": "INCLUDE v2 RF (EN)", "include_v2_og": "INCLUDE v2 RF (OG)",
     "xnli": "XNLI", "xcopa": "XCOPA", "xstorycloze": "XStoryCloze", "xwinograd": "XWinograd", "paws": "PAWS-X",
-    "multiblimp": "MultiBLiMP", "arc": "ARC", "arc_mt": "ARC (MT)", "lambada_openai_mt": "LAMBADA",
+    "multiblimp": "MultiBLiMP", "arc": "ARC (Okapi)", "arc_mt": "ARC (MT)", "lambada_openai_mt": "LAMBADA",
     "global_piqa_parallel_cloze": "Global PIQA (parallel)", "global_piqa_nonparallel_cloze": "Global PIQA (non-parallel)",
-    "truthfulqa-multi_mc1": "TruthfulQA-Multi", "truthfulqa_mc2": "TruthfulQA (mc2)", "mmlu": "MMLU",
+    "truthfulqa-multi_mc1": "TruthfulQA-Multi (MC1)", "truthfulqa_mc2": "TruthfulQA (MC2)", "mmlu": "MMLU",
     "commonsense_qa": "CommonsenseQA", "bbh_mcq": "BBH (MCQ)", "bbh_cloze": "BBH (cloze)",
     "acp_bench_mcq": "ACP-Bench (MCQ)", "acp_bench_cloze": "ACP-Bench (cloze)", "cultural_bench_easy": "CulturalBench-easy",
     "cultural_bench_hard": "CulturalBench-hard", "blend_sample": "BLEnD", "mathqa": "MathQA", "openbookqa": "OpenBookQA",
-    "toxigen": "ToxiGen", "bbq": "BBQ", "bpb": "BPB", "loss": "training loss",
+    "toxigen": "ToxiGen", "piqa": "PIQA", "winogrande": "WinoGrande", "boolq": "BoolQ", "bbq": "BBQ", "social_iqa": "Social IQa", "bpb": "BPB", "loss": "training loss",
+    # the screened benchmarks (`auto_probe` outside `auto`, and `discarded`): rq00's "all considered" variant
+    "arabicmmlu": "ArabicMMLU", "bangla": "Bangla", "blimp_nl": "BLiMP-NL", "careqa": "CareQA", "ceval": "C-Eval",
+    "copal_id": "COPAL-ID", "evalita_llm": "EVALITA-LLM", "evalita_llm_extra": "EVALITA-LLM (extra)",
+    "french_bench": "FrenchBench", "french_bench_extra": "FrenchBench (extra)", "haerae": "HAE-RAE Bench",
+    "headqa": "HEAD-QA", "ibero_arc": "ARC (IberoBench)", "ibero_cola": "CoLA (IberoBench)",
+    "ibero_copa": "COPA (IberoBench)", "ibero_nli": "NLI (IberoBench)", "ibero_openbookqa": "OpenBookQA (IberoBench)",
+    "ibero_paraphrase": "Paraphrase (IberoBench)", "ibero_piqa": "PIQA (IberoBench)", "ibero_siqa": "SIQA (IberoBench)",
+    "ibero_truthfulqa": "TruthfulQA (IberoBench, MC1)", "ibero": "IberoBench", "kmmlu": "KMMLU", "kobest": "KoBEST", "m_mmlu": "MMLU (Okapi)",
+    "m_truthfulqa_mc1": "TruthfulQA (Okapi, MC1)", "m_truthfulqa_mc2": "TruthfulQA (Okapi, MC2)", "mela": "MELA",
+    "mmmlu": "MMMLU", "multiblimp-extra": "MultiBLiMP (extra)", "noreval": "NorEval", "noreval_extra": "NorEval (extra)",
+    "oall_acva": "ACVA (OALL)", "oall_alghafa": "AlGhafa (OALL)", "oall_arabic_mmlu": "Arabic MMLU (OALL)",
+    "oall_exams": "Arabic EXAMS (OALL)", "oall_mt": "AlGhafa translated (OALL)", "toksuite": "TokSuite",
+    "toksuite_math": "TokSuite math", "toksuite_stem": "TokSuite STEM", "truthfulqa-multi_mc2": "TruthfulQA-Multi (MC2)",
+    "truthfulqa_mc1": "TruthfulQA (MC1)", "turblimp": "TurBLiMP", "turkishmmlu": "TurkishMMLU", "xquad": "XQuAD",
+    "zhoblimp": "ZhoBLiMP",
 }
 _TWIN_NAMES = {"rf": "RF", "rfgm": "LLM-RF", "bbpb": "bBPB"}
 
@@ -259,7 +274,7 @@ def benchmark_and_language_panels(cells: pd.DataFrame, out_dir: Path, name: str,
 def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "", cbar: str = "",
                   level_label=str, never: str = "—", xlabel: str = "language", ylabel: str = "benchmark",
                   rows: list | None = None, cols: list | None = None, separators: list = (),
-                  names: tuple = ("family", "language"), also: tuple = (), name=display,
+                  names: tuple = ("family", "language"), name=display,
                   cell_text: bool = True, cell_w: float = 0.30) -> None:
     """Language x benchmark maps whose cell is a *level* (the smallest size,
     Chinchilla multiple or compute at which something holds). `mats` is one
@@ -269,11 +284,11 @@ def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "",
     NaN where there is no value (white). Rows follow the panel order, bits
     per byte first; every subplot keeps the same rows and columns. Writes
     `<name>.csv` next to the figure, its row and column keys under `names`;
-    `also` adds formats (".svg") beside the PNG; `name` labels the ticks,
-    `cell_text` writes the level into every cell, `cell_w` is a column's
-    width in inches; an empty `xlabel` / `ylabel` is not drawn. A path whose
-    stem ends in `_paper` is a paper figure (rule 18): capitalized legend
-    entries, no dash glyph, written through `S.save_paper`, which lints it."""
+    `name` labels the ticks, `cell_text` writes the level into every cell,
+    `cell_w` is a column's width in inches; an empty `xlabel` / `ylabel` is
+    not drawn. A path whose stem ends in `_paper` is a paper figure (rule
+    18): capitalized legend entries, no dash glyph, written through
+    `S.save_paper`, which lints it."""
     paper = path.stem.endswith("_paper")
     if isinstance(mats, pd.DataFrame):
         mats = {"": mats}
@@ -324,9 +339,9 @@ def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "",
     path.parent.mkdir(parents=True, exist_ok=True)
     pd.concat(long)[["panel", *names, "level_index", "level"]].to_csv(path.with_suffix(".csv"), index=False)
     if paper:
-        S.save_paper(fig, path.with_suffix(""), exts=("png", *(e.lstrip(".") for e in also)), dpi=130)
+        S.save_paper(fig, path.with_suffix(""), dpi=130)
     else:
-        S.save(fig, path, dpi=130, also=also)
+        S.save(fig, path, dpi=130)
     print(f"Wrote {path.name} ({len(mats)} panel(s), {len(rows)} benchmarks x {len(cols)} languages)")
 
 
@@ -380,11 +395,13 @@ def matrix_ax(ax, mat: pd.DataFrame, title: str, *, cnt: pd.DataFrame | None = N
 
 
 def stack_ax(ax, level: pd.DataFrame, title: str, *, levels: list, level_label=str, xlabel: str = "share of languages",
-             rows: list | None = None, name=display, legend_cols: int = 4) -> pd.DataFrame:
+             rows: list | None = None, name=display, legend_cols: int = 4, upright: bool = False) -> pd.DataFrame:
     """A level map condensed: per benchmark, the share of its languages at
     each level (never in red, filtered out by the gate in grey, only where
     the map has such cells). `rows` is the benchmark order (default: the
-    panel order), `name` labels the bars."""
+    panel order), `name` labels the bars. `upright`: the bars stand along the
+    x axis (benchmark names under them, `xlabel` on the y axis) and the caller
+    draws the legend."""
     level = level.reindex(index=rows if rows is not None else panel_order(level.index))
     gated = bool((level == GATED).any().any())
     codes = [float(i) for i in range(len(levels))] + [NEVER_CODE] + ([GATED] if gated else [])
@@ -393,14 +410,23 @@ def stack_ax(ax, level: pd.DataFrame, title: str, *, levels: list, level_label=s
     share = pd.DataFrame({n: (level == c).sum(axis=1) for n, c in zip(names, codes)})
     total = share.sum(axis=1)
     share = share.div(total.where(total > 0), axis=0)
-    left = np.zeros(len(share))
+    base = np.zeros(len(share))
+    labels = [f"{name(f)} ({int(n)})" for f, n in zip(share.index, total)]
     for n, c in zip(names, colours):
-        ax.barh(range(len(share)), share[n].fillna(0), left=left, color=c, label=n, height=0.8)
-        left += share[n].fillna(0).to_numpy()
-    ax.set_yticks(range(len(share))); ax.set_yticklabels([f"{name(f)} ({int(n)})" for f, n in zip(share.index, total)], fontsize=6.5)
-    ax.invert_yaxis(); ax.set_xlim(0, 1); ax.set_xlabel(xlabel, fontsize=7.5)
-    ax.set_title(title, loc="left", fontsize=8.5); S.clean(ax); ax.tick_params(axis="y", length=0)
-    ax.legend(fontsize=6, frameon=False, ncol=legend_cols, loc="upper left", bbox_to_anchor=(0, -0.12))
+        if upright:
+            ax.bar(range(len(share)), share[n].fillna(0), bottom=base, color=c, label=n, width=0.8)
+        else:
+            ax.barh(range(len(share)), share[n].fillna(0), left=base, color=c, label=n, height=0.8)
+        base += share[n].fillna(0).to_numpy()
+    if upright:
+        ax.set_xticks(range(len(share))); ax.set_xticklabels(labels, fontsize=6.5, rotation=90)
+        ax.set_xlim(-0.5, len(share) - 0.5); ax.set_ylim(0, 1); ax.set_ylabel(xlabel, fontsize=7.5)
+    else:
+        ax.set_yticks(range(len(share))); ax.set_yticklabels(labels, fontsize=6.5)
+        ax.invert_yaxis(); ax.set_xlim(0, 1); ax.set_xlabel(xlabel, fontsize=7.5)
+    ax.set_title(title, loc="left", fontsize=8.5); S.clean(ax); ax.tick_params(axis="x" if upright else "y", length=0)
+    if not upright:
+        ax.legend(fontsize=6, frameon=False, ncol=legend_cols, loc="upper left", bbox_to_anchor=(0, -0.12))
     t = share.rename_axis(index="row", columns="col").stack().dropna().rename("value").reset_index()
     return t.assign(panel=title)
 

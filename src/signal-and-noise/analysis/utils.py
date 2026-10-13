@@ -16,6 +16,7 @@ higher-numbered one's OUTPUT belongs here instead.
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from functools import lru_cache
@@ -53,6 +54,7 @@ TARGET_SIZE = _SNR["target_size"]
 CKPT_DA_EARLY_FRACS = _SNR["da_early_fracs"]   # the nine evaluated checkpoints before the final (analysis/RULES.md, rule 3)
 NOISE_WINDOW = _SNR["noise_window"]            # noise = std over the shared checkpoints in this last share of a run (rule 4)
 NOISE_GRID = _SNR["noise_grid"]                # the k/NOISE_GRID points the window is read on: 5 of them at 20 (rule 4)
+NOISE_DETREND = True                           # rule 4: the noise is the residual SD around a line through the window, not the raw SD
 MIN_PAIRS = _SNR["min_pairs"]                  # a decision-accuracy cell needs this many design-variant pairs (rule 5)
 MIN_LANG_TASKS = _SNR["min_lang_tasks"]        # a per-language correlation needs this many distinct tasks (rule 8)
 SHARED_FRACS = [k / 10 for k in range(1, 11)]  # the checkpoint grid every size was evaluated on
@@ -99,6 +101,19 @@ _BENCHMARK_FAMILY_OVERRIDES = {
     "arc_easy": "arc",
 }
 
+# Benchmarks the paper shows as one row although tasks.json registers them in
+# parts (a later addition, or one suite's subsets): the paper's per-benchmark
+# tables and figures group by FAMILY_MERGE.get(family, family). Display only:
+# benchmark_family keeps the parts apart, since the gate's option counts and
+# chance levels (above_random) and rq09's characteristics are keyed by them.
+FAMILY_MERGE = {
+    "multiblimp-extra": "multiblimp", "noreval_extra": "noreval", "evalita_llm_extra": "evalita_llm",
+    "french_bench_extra": "french_bench", "rf_french_bench_extra": "rf_french_bench",
+    # IberoBench's Catalan / Spanish / Basque sets, one suite
+    **{f"ibero_{b}": "ibero" for b in ("arc", "cola", "copa", "nli", "openbookqa", "paraphrase", "piqa", "siqa",
+                                      "truthfulqa")},
+}
+
 # Trailing tokens allowed after the language token in a per-language aggregate
 # (ISO-15924 script codes + lm-eval format suffixes).
 _TRAILING_OK = {
@@ -113,7 +128,7 @@ _TRAILING_OK = {
 # family beside the original and its `rf_` twins. Not `bpb_`: that prefix is
 # the per-language BPB of the validation sets.
 BBPB = "bbpb_"
-BENCH_BPB = SUBSET_SELECTION / "bench_bpb.csv"      # model, step, task, bbpb
+BENCH_BPB = SUBSET_SELECTION / "bench_bpb.csv"      # model, step, task, bbpb, bbpb_sd, n_items
 
 
 # A benchmark task is one evaluation VARIANT of a benchmark: a `format` (how
@@ -536,6 +551,16 @@ def agreement_measures(proxy, ref) -> dict:
                   "rho": float(spearmanr(s, t).statistic), "pearson_r": float(pearsonr(s, t).statistic)}
 
 
+def bootstrap_band(v, n_boot: int = 1000, level: float = 0.95) -> tuple[float, float]:
+    """The percentile bootstrap interval of the mean of `v`, resampling its
+    elements (tasks of a line, cells of a heat-map row): a band over the units
+    averaged, not over the design pairs (which `jackknife_ratio` resamples).
+    Seeded, so a figure redrawn from the same table keeps its bytes."""
+    v = np.asarray(v, dtype=float)
+    m = v[np.random.default_rng(0).integers(0, len(v), (n_boot, len(v)))].mean(axis=1)
+    return tuple(np.percentile(m, [50 * (1 - level), 50 * (1 + level)]))
+
+
 JACKKNIFE_Z = 1.645          # the two-sided 90 % band every jackknife interval here is drawn at
 
 
@@ -686,6 +711,51 @@ def noise_checkpoints(df: pd.DataFrame) -> pd.DataFrame:
     return sub.loc[sorted(nearest)]
 
 
+def checkpoint_noise(frac, scores, detrend: bool = NOISE_DETREND) -> float:
+    """The checkpoint noise of one run from its `noise_checkpoints` rows (rule 4).
+
+    Detrended (the default): the residual standard deviation after a
+    least-squares line through (frac, score), with n - 2 degrees of freedom,
+    so a run that still improves over the window (the WSD decay) does not
+    count its improvement as noise; NaN below three points. Raw
+    (`detrend=False`, the alternative, labelled `raw` wherever it is written):
+    the population std (ddof 0) of the scores, the definition until
+    2026-10-08; NaN below two points. Under white noise the two agree on
+    average; on a pure ramp the raw SD is the ramp's spread and the detrended
+    one is 0."""
+    y = np.asarray(scores, dtype=float)
+    if not detrend:
+        return float(np.std(y)) if len(y) >= 2 else float("nan")
+    if len(y) < 3:
+        return float("nan")
+    x = np.asarray(frac, dtype=float)
+    res = y - np.polyval(np.polyfit(x, y, 1), x)
+    return float(np.sqrt((res ** 2).sum() / (len(y) - 2)))
+
+
+# Pairs kept in every analysis whose two cells are NOT size-matched (RULES.md,
+# "Size matching"): (design axis, size) -> what differs. The depth pairs at
+# 175M-1.7B match their non-embedding count within -2.4 % to +0.8 %.
+UNMATCHED_PAIRS = {
+    ("arch", "600M"): "600M shallow is not size-matched to 600M deep: +3.7 % non-embedding parameters "
+                      "(616.6M vs 594.5M), width 2048 vs 1536 and about +15 % compute",
+}
+
+
+def size_matched(axis: str, size: str) -> bool:
+    """False for the pairs that move `axis` at `size` between cells that are
+    not size-matched (`UNMATCHED_PAIRS`): flagged in every output that reports
+    them, never dropped."""
+    return (axis, size) not in UNMATCHED_PAIRS
+
+
+def size_match_note(cells) -> str:
+    """The caption sentence for the (axis, size) `cells` an output reports
+    that are not size-matched; empty when there are none."""
+    hit = [UNMATCHED_PAIRS[c] for c in dict.fromkeys(cells) if c in UNMATCHED_PAIRS]
+    return "".join(f" Kept and flagged (size_matched = False): {h}." for h in hit)
+
+
 def passes_gate(mask: pd.DataFrame | None, tasks, *sizes) -> pd.Series:
     """True where the above-random gate keeps a task at every one of `sizes`
     (rule 1): a mask of 0 rejects, 1 passes, and NA (no chance level: BPB, the
@@ -724,7 +794,8 @@ def trained_tasks(L: int, data: str) -> frozenset[str]:
 
 
 def is_trained(task: str, L: int, data: str) -> bool:
-    return task in trained_tasks(int(L), data)
+    """A `bbpb_` twin is trained where its original is."""
+    return task.removeprefix(BBPB) in trained_tasks(int(L), data)
 
 
 def trained_only(df: pd.DataFrame) -> pd.DataFrame:
@@ -733,6 +804,87 @@ def trained_only(df: pd.DataFrame) -> pd.DataFrame:
     transfer, which is rq06's question and no other's."""
     keep = [is_trained(t, L, d) for t, L, d in zip(df["task"], df["L"], df["data"])]
     return df[np.asarray(keep, dtype=bool)]
+
+
+@lru_cache(maxsize=None)
+def auto_tasks() -> frozenset[str]:
+    """Every task of the benchmarks rule 2's trained set is drawn from, in every
+    language: the `auto` group (or the groups SNR_TRAINED_GROUPS names, as in
+    `pretrain.ladder_report._trained_tasks`), the `discarded` tasks left out.
+    The gate is built with `untrained=True`, so its tables (`above_random_*.csv`)
+    also hold the probe candidates; a script that reads them directly instead
+    of a pool filtered by `trained_only` keeps only these tasks (RULES.md, "The
+    probe candidates are not in the populations")."""
+    import os
+    from pretrain import ladder_report as lr
+    benchmarks = [b for g in os.environ.get("SNR_TRAINED_GROUPS", "auto").split(",") for b in lr.auto_benchmarks(g.strip())]
+    return frozenset(lr.tasks_for_benchmarks(benchmarks, lr.eval_languages(1, "A", all_languages=True)))
+
+
+# The probe screen (rq00_task_reformulation/probe.sh): its gate tables sit
+# outside the repo, and its verdicts are read on the final checkpoint of the
+# 600M, 1B, 1.7B and 3B cells (PROBE_SIZES: the probe jobs ran `--size
+# 600M,1B,1.7B --final-only` from 2026-09-22 on, the six 3B ones on
+# 2026-10-09; probe.sh runs the gate with `--above-reference` so the 3B
+# column exists at all). The `discarded` rule stays at DISCARD_SIZES, the
+# rule configs/tasks.json was built with: a task leaves the screen when it is
+# at chance at 1B and at 1.7B, whatever 600M or 3B says. A size with no probe
+# result (3B until the six 3B probe jobs land) has no row, never a fail.
+PROBE_GATE_DIR = Path(os.environ.get("SNR_PROBE_GATE_DIR") or "/iopsstor/scratch/cscs/mariagrandury/snr-probe-gate")
+DISCARD_SIZES = ("1B", "1.7B")
+PROBE_SIZES = ("600M", *DISCARD_SIZES, "3B")
+CONSIDERED_GROUPS = ("auto", "probe", "discarded")
+
+
+@lru_cache(maxsize=None)
+def pending_benchmarks() -> frozenset[str]:
+    """The `auto` benchmarks not analysed yet: in the group, but fewer than
+    half the seed-1904 cells that score any of their tasks in the ladder
+    report do so at ten checkpoints or more (rule 3 reads a task along the
+    run, at the ten tenths), or no cell scores them at all. On 2026-10-09
+    these are the nine promoted that day: rf_m_mmlu, rf_mmmlu, kobest,
+    multiblimp-extra, noreval and toksuite with the probe's final checkpoints
+    alone, piqa, winogrande and boolq with no result. It empties on its own
+    as their ladder evals land. Only rq00's "all considered" variant
+    (`considered_tasks`) and the paper's counts (make_appendix_tables.py) read
+    it; rule 2's trained set (`auto_tasks`) does not."""
+    from pretrain import ladder_report as lr
+    from snr.download.ladder import ladder_dir
+    path = ladder_dir() / "ladder_report.csv"
+    head = set(pd.read_csv(path, nrows=0).columns)
+    langs = lr.eval_languages(1, "A", all_languages=True)
+    cols = {b: [f"bench__{t}" for t in lr.tasks_for_benchmarks([b], langs) if f"bench__{t}" in head]
+            for b in lr.auto_benchmarks("auto")}
+    df = pd.read_csv(path, usecols=["cell", "seed", "iter", *{c for v in cols.values() for c in v}], low_memory=False)
+    df = df[df["seed"] == GRID_SEED]
+    pending = set()
+    for b, c in cols.items():
+        n = df[df[c].notna().any(axis=1)].groupby("cell")["iter"].nunique() if c else pd.Series(dtype=int)
+        if not len(n) or (n >= len(SHARED_FRACS)).mean() < 0.5:
+            pending.add(b)
+    return frozenset(pending)
+
+
+@lru_cache(maxsize=None)
+def considered_tasks() -> dict[str, str]:
+    """Every benchmark task the study considered, in every language, mapped to
+    its group: `auto` (`auto_tasks`, the analysed population, less the
+    `pending_benchmarks`), `probe` (the `auto_probe` benchmarks not analysed:
+    outside `auto`, or in it but pending; screened at PROBE_SIZES) or
+    `discarded` (the `discarded` group). A pending benchmark never probed
+    (piqa, winogrande, boolq) has no result and no group. Only rq00's "all
+    considered" gate variant reads it; no pool does, so no DA or SNR
+    population moves (RULES.md, "The probe candidates are not in the
+    populations")."""
+    from pretrain import ladder_report as lr
+    langs = lr.eval_languages(1, "A", all_languages=True)
+    pending = pending_benchmarks()
+    analysed = [b for b in lr.auto_benchmarks("auto") if b not in pending]
+    probe = [b for b in lr.auto_benchmarks("auto_probe") if b not in analysed]
+    out = dict.fromkeys(lr.auto_benchmarks("discarded"), "discarded")
+    out.update(dict.fromkeys(lr.tasks_for_benchmarks(probe, langs), "probe"))
+    out.update(dict.fromkeys(lr.tasks_for_benchmarks(analysed, langs), "auto"))
+    return out
 
 
 def with_bbpb_twins(df: pd.DataFrame) -> pd.DataFrame:
@@ -747,7 +899,7 @@ def with_bbpb_twins(df: pd.DataFrame) -> pd.DataFrame:
     originals'."""
     if not BENCH_BPB.is_file():
         return df
-    t = pd.read_csv(BENCH_BPB)
+    t = pd.read_csv(BENCH_BPB, usecols=["model", "step", "task", "bbpb"])
     bench = df[df["kind"] == "benchmark"]
     covered = bench["task"].isin(set(t["task"]))       # families with no bBPB anywhere are not a gap
     absent = sorted(set(bench.loc[covered, "model"]) - set(t["model"]))
@@ -759,12 +911,39 @@ def with_bbpb_twins(df: pd.DataFrame) -> pd.DataFrame:
     return pd.concat([df, twin], ignore_index=True)
 
 
+@lru_cache(maxsize=1)
+def bbpb_item_stats() -> pd.DataFrame:
+    """Per (model, step, twin) of `BENCH_BPB`: the item count (`n_items`) and
+    the standard deviation of the item bits per byte (`bbpb_sd`, ddof 0) behind
+    the twin's score, which give its k-fold noise as `n_items` and the binomial
+    variance give an accuracy's (`catalogue.kfold_noise`). Empty, and printed,
+    for a table written before the store reduction kept them."""
+    cols = ["model", "step", "task", "bbpb_sd", "n_items"]
+    if not BENCH_BPB.is_file() or not set(cols) <= set(pd.read_csv(BENCH_BPB, nrows=0).columns):
+        print(f"bBPB twins: {BENCH_BPB.name} has no item spread (rerun build_per_item_store.py --bench-bpb), "
+              "so the twins have no k-fold noise")
+        return pd.DataFrame(columns=cols).set_index(["model", "step", "task"])
+    t = pd.read_csv(BENCH_BPB, usecols=cols)
+    return t.assign(task=BBPB + t["task"]).set_index(["model", "step", "task"])
+
+
 def with_variant_columns(df: pd.DataFrame) -> pd.DataFrame:
     """`format` and `scoring` on every benchmark row (`variant`); empty on the
     per-language BPB and the loss, which are not benchmark variants."""
     v = {t: variant(t) for t in df.loc[df["kind"] == "benchmark", "task"].unique()}
     return df.assign(format=df["task"].map(lambda t: v.get(t, (None, None))[0]),
                      scoring=df["task"].map(lambda t: v.get(t, (None, None))[1]))
+
+
+def fixed_population(cells: pd.DataFrame, line: list, x: str, value: str, task: str = "task") -> pd.DataFrame:
+    """`cells` cut, per line (the `line` columns), to the tasks with a `value`
+    at EVERY `x` that line has: one task set along the whole line, so a change
+    along x is not a change of population (rule 13 by construction). It is the
+    twin a moving-population line is read beside, never a replacement for it."""
+    c = cells.dropna(subset=[value])
+    keys = list(line)
+    n_x = c.groupby(keys)[x].transform("nunique") if keys else c[x].nunique()
+    return c[c.groupby(keys + [task])[x].transform("nunique") == n_x]
 
 
 def finals(df: pd.DataFrame) -> pd.DataFrame:

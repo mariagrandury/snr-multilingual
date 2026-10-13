@@ -1,0 +1,83 @@
+\begin{table*}[p]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.8}
+\begin{tabular}{@{}lrrll>{\raggedright\arraybackslash}p{2.8cm}@{}}
+\toprule
+\textbf{Benchmark} & \textbf{Langs} & \textbf{Trained} & \textbf{Task} & \textbf{Formats} & \textbf{Low-Resource Language Examples} \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{Analysed} (40 benchmarks, 695 tasks)} \\
+ACP-Bench (cloze) \citeneeded{} & 1 & 1 & Reasoning & 2-option cloze & -- \\
+ACP-Bench (MCQ) \citeneeded{} & 1 & 1 & Reasoning & 4-option letter, RF & -- \\
+ARC (MT) \citeneeded{} & 11 & 11 & Knowledge & 4-option cloze & -- \\
+ARC (Okapi) \citeneeded{} & 32 & 27 & Knowledge & 4-option cloze & ml mr ne sr hr ta ca sk bn \\
+BBH (cloze) \citeneeded{} & 1 & 1 & Reasoning & 2-option cloze & -- \\
+BBH (MCQ) \citeneeded{} & 1 & 1 & Reasoning & 2--10-option letter, RF & -- \\
+Belebele \citep{bandarkar_belebele_2024} & 94 & 49 & Reading & 4-option letter, RF, LLM-RF & sq ur kk ml mr ne ka sr az ms lv hr ta ca et sl lt he sk bn \\
+BLEnD \citep{myung_blend_2025} & 4 & 4 & Cultural knowledge & 4-option letter & -- \\
+BoolQ \citeneeded{} & 1 & 1 & Reading & 2-option cloze & -- \\
+CommonsenseQA \citeneeded{} & 1 & 1 & Commonsense & 5-option letter, RF & -- \\
+CulturalBench-easy \citep{chiu_culturalbench_2025} & 8 & 8 & Cultural knowledge & 4-option letter, RF & -- \\
+CulturalBench-hard \citep{chiu_culturalbench_2025} & 8 & 8 & Cultural knowledge & 2-option cloze & -- \\
+Global PIQA \citeneeded{} & 77 & 48 & Commonsense & 2--4-option cloze & sq ur kk ml mr ne ka sr az ms hr ta ca et sl bs lt he sk bn \\
+Global-MMLU \citep{singh_global_2024} & 37 & 29 & Knowledge & 4-option letter, RF & ne sr ms lt he bn \\
+HellaSwag (Okapi) \citep{zellers_hellaswag_2019} & 31 & 26 & Commonsense & 4-option cloze & ml mr ne sr hr ta ca sk bn \\
+INCLUDE \citep{romanou_include_2024} & 43 & 36 & Knowledge & 4-option letter, RF, LLM-RF & sq ur kk ml ne ka sr az ms hr ta et lt he bn \\
+INCLUDE v2 RF (EN) \citep{romanou_include_2024} & 42 & 42 & Knowledge & 4-option cloze & sq ur kk ml mr ne ka sr az ms hr ta et lt he sk bn \\
+INCLUDE v2 RF (OG) \citep{romanou_include_2024} & 42 & 42 & Knowledge & 4-option cloze & sq ur kk ml mr ne ka sr az ms hr ta et lt he sk bn \\
+KoBEST \citeneeded{} & 1 & 1 & Mixed suite & 2--4-option cloze & -- \\
+LAMBADA \citeneeded{} & 5 & 5 & Language modelling & completion & -- \\
+MathQA \citeneeded{} & 1 & 1 & Reasoning & 5-option cloze & -- \\
+MMLU \citep{hendrycks_measuring_2021} & 1 & 1 & Knowledge & 4-option letter, RF & -- \\
+MMLU (Okapi) \citep{hendrycks_measuring_2021} & 27 & 27 & Knowledge & 4-option letter, RF & ml mr ne sr hr ta ca sk bn \\
+MMMLU \citep{hendrycks_measuring_2021} & 12 & 12 & Knowledge & 4-option letter, RF & bn \\
+MultiBLiMP \citeneeded{} & 60 & 37 & Grammar & completion & sq ur kk mr ka lv hr ta ca et sl lt he sk bn \\
+NorEval \citeneeded{} & 1 & 1 & Mixed suite & 2--5-option letter/cloze, completion & -- \\
+OpenBookQA \citeneeded{} & 1 & 1 & Knowledge & 4-option cloze & -- \\
+PAWS-X \citep{yang_paws-x_2019} & 10 & 8 & Inference & completion & ca \\
+PIQA \citeneeded{} & 1 & 1 & Commonsense & 2-option cloze & -- \\
+TokSuite \citeneeded{} & 5 & 5 & Tokenization & 4-option cloze & -- \\
+TokSuite math \citeneeded{} & 1 & 1 & Tokenization & 4-option cloze & -- \\
+TokSuite STEM \citeneeded{} & 1 & 1 & Tokenization & 4-option cloze & -- \\
+ToxiGen \citeneeded{} & 1 & 1 & Toxicity & 2-option cloze & -- \\
+TruthfulQA (MC2) \citeneeded{} & 3 & 3 & Truthfulness & var.-option cloze & -- \\
+TruthfulQA-Multi (MC1) \citeneeded{} & 3 & 2 & Truthfulness & var.-option cloze & -- \\
+WinoGrande \citep{sakaguchi_winogrande_2019} & 1 & 1 & Commonsense & completion & -- \\
+XCOPA \citep{ponti_xcopa_2020} & 11 & 8 & Commonsense & 2-option cloze & ta et \\
+XNLI \citep{conneau_xnli_2018} & 18 & 15 & Inference & completion & ur ca \\
+XStoryCloze \citeneeded{} & 13 & 8 & Commonsense & 2-option cloze & ca \\
+XWinograd \citeneeded{} & 6 & 6 & Commonsense & completion & -- \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{Screened, not analysed} (26 benchmarks, 485 tasks)} \\
+ACVA (OALL) \citeneeded{} & 1 & 1 & Cultural knowledge & 2-option cloze & -- \\
+AlGhafa (OALL) \citeneeded{} & 1 & 1 & Mixed suite & 2--5-option cloze & -- \\
+AlGhafa translated (OALL) \citeneeded{} & 1 & 1 & Mixed suite & 2--4-option cloze & -- \\
+Arabic EXAMS (OALL) \citep{hardalov_exams_2020} & 1 & 1 & Knowledge & 4-option letter, RF & -- \\
+Arabic MMLU (OALL) \citep{hendrycks_measuring_2021} & 1 & 1 & Knowledge & 4-option letter, RF & -- \\
+ArabicMMLU \citeneeded{} & 1 & 1 & Knowledge & var.-option letter, RF & -- \\
+Bangla \citeneeded{} & 1 & 1 & Mixed suite & 2--5-option letter & bn \\
+BLiMP-NL \citeneeded{} & 1 & 1 & Grammar & completion & -- \\
+C-Eval \citeneeded{} & 1 & 1 & Knowledge & 4-option letter & -- \\
+CareQA \citeneeded{} & 1 & 1 & Knowledge & 4-option letter, RF & -- \\
+COPAL-ID \citeneeded{} & 1 & 1 & Commonsense & 2-option cloze & -- \\
+EVALITA-LLM \citeneeded{} & 1 & 1 & Mixed suite & 2--5-option letter/cloze & -- \\
+FrenchBench \citeneeded{} & 1 & 1 & Mixed suite & 2--4-option letter/cloze, RF & -- \\
+HAE-RAE Bench \citeneeded{} & 1 & 1 & Knowledge & 5-option letter & -- \\
+HEAD-QA \citeneeded{} & 1 & 1 & Knowledge & 4-option cloze & -- \\
+IberoBench \citeneeded{} & 5 & 3 & Mixed suite & 2--4-option cloze & ca \\
+KMMLU \citeneeded{} & 1 & 1 & Knowledge & 4-option letter & -- \\
+MELA \citeneeded{} & 10 & 9 & Grammar & 2-option letter & -- \\
+TruthfulQA (MC1) \citeneeded{} & 1 & 1 & Truthfulness & var.-option cloze & -- \\
+TruthfulQA (Okapi, MC1) \citeneeded{} & 27 & 26 & Truthfulness & var.-option cloze & ml mr ne sr hr ta ca sk bn \\
+TruthfulQA (Okapi, MC2) \citeneeded{} & 24 & 24 & Truthfulness & var.-option cloze & ml mr ne sr hr ta ca sk bn \\
+TruthfulQA-Multi (MC2) \citeneeded{} & 3 & 3 & Truthfulness & var.-option cloze & ca \\
+TurBLiMP \citeneeded{} & 1 & 1 & Grammar & completion & -- \\
+TurkishMMLU \citeneeded{} & 1 & 1 & Knowledge & 5-option letter & -- \\
+XQuAD \citeneeded{} & 1 & 1 & Reading & completion & -- \\
+ZhoBLiMP \citeneeded{} & 1 & 1 & Grammar & completion & -- \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Every benchmark we considered}, its reformulated variants folded into the row of their original. Analysed benchmarks are evaluated throughout pretraining, and a benchmark with any analysed task is listed with them. Screened benchmarks were evaluated only on the final checkpoints of the 600M, 1B, 1.7B and 3B models. Langs is the number of languages that the harness registers for the benchmark. Trained is the number of them that the sweep trains (English and the FineWeb-2 languages of every trained build). Task is the capability the benchmark targets, and a mixed suite is a national benchmark collection that covers several. Formats lists the scoring formats of the original tasks with $K$ answer options, a range when $K$ differs across tasks (var.\ when it only varies across items). Letter scores the labels (A, B, \ldots) of options listed in the prompt. Cloze scores each answer text as a continuation of the prompt. Completion has no shared prompt (minimal pairs, sentence pairs, Winograd schemas) or a single target continuation (LAMBADA, XQuAD). RF and LLM-RF mark the reformulated variants (\S\ref{subsec:rq1_factors}). Low-Resource Language Examples lists the benchmark's languages among ranks 30 to 50 of our 50-language list, which orders English and the FineWeb-2 languages by resources, from the least resourced (rank 50) up (ISO 639-1 codes).}
+\label{tab:app_benchmarks_considered}
+\end{table*}

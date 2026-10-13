@@ -40,7 +40,8 @@ Each report writes:
 The mask is the gate: SNR and all downstream analyses drop the `(benchmark,
 size)` cells whose mask is 0 (`run_apertus_snr_variants.py` imports
 `scores_and_mask` and NaN-s those cells). A blank is not a drop — per-language
-BPB and the generative tasks have no chance level. This is a
+BPB, the generative tasks and the tasks not scored on an accuracy (MELA's
+mcc, EVALITA wic's f1) have no chance level. This is a
 *foundational* step — it depends ONLY on raw eval scores and the intrinsic
 per-family answer-option counts (`N_OPTIONS` below, `random_baseline =
 1 / n_options`); it never reads any RQ output, so every RQ depends on this
@@ -54,6 +55,7 @@ scripts that gate a score of their own.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -69,11 +71,23 @@ import pandas as pd  # noqa: E402
 from statsmodels.stats.proportion import proportion_confint  # noqa: E402
 
 from evals.scripts.utils.configs import (  # noqa: E402
-    bucket_order, load_pools, load_tasks, size_bucket)
+    accuracy_metric, bucket_order, load_pools, load_tasks, size_bucket)
 from analysis.utils import (  # noqa: E402
     assign_language, benchmark_family)
 from analysis.utils import _is_parent_task  # noqa: E402
 from analysis.paths import GATE_AND_CURVES
+
+# Where run() writes the gate tables and load_mask() reads them back. Only
+# probe.sh sets SNR_GATE_DIR (to a scratch dir outside the repo): its gate counts
+# the probe group as trained (SNR_TRAINED_GROUPS) and reads the fresh local
+# report, so written here it replaced the canonical tables every RQ reads,
+# which happened on 2026-10-08. Unset, nothing changes.
+GATE_DIR = Path(os.environ.get("SNR_GATE_DIR") or GATE_AND_CURVES)
+# The chance level `task_chance` returns: "uniform" (rule 1, the gate every RQ
+# reads) or "majority", max(uniform, the task's majority-class baseline,
+# tasks.json `majority`), which only the sensitivity analysis
+# `majority_chance.py` sets, together with a GATE_DIR of its own.
+CHANCE_MODE = os.environ.get("SNR_CHANCE", "uniform")
 
 # proportion_confint's alpha is the TWO-sided level, so 0.10 gives the
 # one-sided 95 % lower bound ("is this run above chance?" is one-sided).
@@ -93,7 +107,9 @@ MIN_SHARE = 0.5     # a cell is above random when at least this share of its run
 # 0.2253, the same items in every language; measured on the harness samples
 # of lm-1B-L50-deep-seed1904 on 2026-09-23). `task_chance` is the ONE reader
 # of both tables. A task with no option count anywhere (per-language BPB, the
-# loss, generative tasks) has no chance level and is never gated.
+# loss, generative tasks) has no chance level and is never gated; nor has a
+# task scored on something other than an accuracy (tasks.json `metric`: MELA's
+# mcc, EVALITA wic's f1), since neither 1/n nor the Wilson bound applies to it.
 # The chance level is UNIFORM guessing. With unbalanced gold labels a constant
 # answer scores the majority label's share, which can exceed 1/n (hellaswag_ta:
 # 2,175 of 8,413 golds are option 2, 0.2585 against 0.25); the gate does not
@@ -114,10 +130,16 @@ N_OPTIONS = {
     "truthfulqa": 5, "truthfulqa_mc1": 5,   # the same 817 items as the multilingual mc1; chance in CHANCE
     "truthfulqa_mc2": 7,                    # nominal (mean 7.2 options); chance = the mean true-option share, CHANCE
     "arabic_leaderboard_alghafa_mcq_exams_test": 4,
+    # probe families of 2026-10-08 with a variable option count (nominal = rounded mean)
+    "m_truthfulqa_mc1": 5, "ibero_truthfulqa": 5,   # mc1 of the TruthfulQA items, 2–13 options
+    "m_truthfulqa_mc2": 7, "truthfulqa-multi_mc2": 7,   # mc2, 2–20 options; chance in CHANCE
+    "arabicmmlu": 4, "rf_arabicmmlu": 4,   # 2–5 options, mean 3.62
 }
 _APPROX = {"truthfulqa", "truthfulqa_mc1", "truthfulqa-multi_mc1", "agieval",
            "agieval_logiqa", "agieval_sat", "agieval_lsat",
            "arabic_leaderboard_alghafa_mcq_exams_test",
+           "m_truthfulqa_mc1", "ibero_truthfulqa", "m_truthfulqa_mc2", "truthfulqa-multi_mc2",
+           "arabicmmlu", "rf_arabicmmlu",
            # mc2 is in here for a second reason: its score is the probability
            # mass on ALL true answers, not a pick-one accuracy, so its chance
            # level is the mean share of true options per item (CHANCE, 0.449)
@@ -132,14 +154,41 @@ _APPROX = {"truthfulqa", "truthfulqa_mc1", "truthfulqa-multi_mc1", "agieval",
 # Chance level of the variable-option families: E[1/n_i] over the items.
 # mc2: the mean share of true options per item (uniform probability mass
 # scores exactly that): en 0.4484 (817 items), vi 0.4500 (785), zh 0.4488 (788).
-CHANCE = {"truthfulqa": 0.2253, "truthfulqa_mc1": 0.2253, "truthfulqa-multi_mc1": 0.2253, "truthfulqa_mc2": 0.449}
+# The 2026-10-08 probe families, measured the same way on the harness samples
+# of lm-1.7B-L50-deep-seed1904's final checkpoint. Before this they fell back
+# to 1 / the derived count, which is one rounded number: the multilingual mc2
+# families were gated at 1/6 = 0.167 against a real 0.449, so every one of
+# their tasks "passed" at every size on scores of 0.34-0.50.
+#   m_truthfulqa_mc1   E[1/n] 0.2263-0.2334 over the 27 languages (the Okapi
+#                      translations drop a few items each), mean 0.227
+#   m_truthfulqa_mc2 / truthfulqa-multi_mc2   true-option share 0.448-0.453
+#   ibero_truthfulqa   truthfulqa-multi_mc1_ca 0.2253, truthfulqa_gl_mc1 0.2231
+#   arabicmmlu (+ its rf_ twin)   E[1/n] 0.2935 (2-5 options; the derived 3 read 0.333)
+CHANCE = {"truthfulqa": 0.2253, "truthfulqa_mc1": 0.2253, "truthfulqa-multi_mc1": 0.2253, "truthfulqa_mc2": 0.449,
+          "m_truthfulqa_mc1": 0.227, "m_truthfulqa_mc2": 0.449, "truthfulqa-multi_mc2": 0.449,
+          "ibero_truthfulqa": 0.2253, "arabicmmlu": 0.2935, "rf_arabicmmlu": 0.2935}
+# The same for tasks whose benchmark mixes fixed- and variable-option tasks
+# (NorEval's quiz and TruthfulQA prompts sit in `noreval_extra` beside 1/k
+# tasks), so the chance level is keyed on the task-name prefix instead.
+CHANCE_BY_PREFIX = {"nrk_quiz_qa_nob": 0.2836, "nrk_quiz_qa_nno": 0.2788,       # 2-5 options
+                    "nortruthfulqa_mc_nob": 0.2317, "nortruthfulqa_mc_nno": 0.2331}   # 2-12
 
 
 def task_chance(task: str) -> float:
-    """The chance level of uniform guessing: CHANCE for a variable-option family,
-    else 1 / task_n_options, NaN when the task has no option count."""
+    """The chance level of uniform guessing: CHANCE for a variable-option family
+    (CHANCE_BY_PREFIX for such a task inside a mixed family), else
+    1 / task_n_options, NaN when the task has no option count or is not scored
+    on an accuracy (`configs.accuracy_metric`). With CHANCE_MODE "majority",
+    the larger of that and the task's majority-class baseline."""
+    if accuracy_metric(task) is None:
+        return float("nan")
     c = CHANCE.get(benchmark_family(task))
-    return float(c) if c is not None else 1 / task_n_options(task)
+    if c is None:
+        c = next((v for p, v in CHANCE_BY_PREFIX.items() if task.startswith(p)), None)
+    c = float(c) if c is not None else 1 / task_n_options(task)
+    if CHANCE_MODE == "majority":
+        c = max(c, float(load_tasks().get(task, {}).get("majority") or 0))
+    return c
 
 
 def task_n_options(task: str) -> float:
@@ -252,21 +301,78 @@ def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool
     meta = pd.DataFrame({"family": fam, "language": lang,
                          "n_options": n_opt.astype("Int64"), "random_baseline": base_s,
                          "n_items": pd.Series({t: count(t) for t in fam.index}).astype("Int64"),
-                         "options_exact": ~fam.isin(_APPROX)})
+                         "options_exact": ~fam.isin(_APPROX) & ~fam.index.str.startswith(tuple(CHANCE_BY_PREFIX))})
     if runs:
         cols = ["task", "model", "bucket", "primary_score", "n_items", "lcb", "above"] + (["trained"] if "trained" in finals else [])
         return scores, mask, meta, finals[cols].rename(columns={"primary_score": "score"}), share, population
     return scores, mask, meta
 
 
-def load_mask(pool: str) -> pd.DataFrame | None:
-    """Read the committed mask (task × bucket, Int64 0/1), or None if absent."""
+def mask_pool(pool: str) -> str:
+    """The pool whose committed mask gates `pool`: its own, or for a ladder pool
+    without one the canonical pool's (analysis/RULES.md: every pool is gated
+    with `predictivity`'s mask), so no caller can read a missing mask as
+    "nothing is gated"."""
+    from analysis.autodoc import CANONICAL_POOL
+    from analysis.utils import _is_ladder_pool
     stage = load_pools()[pool].get("stage", "pretraining")
-    path = GATE_AND_CURVES / stage / pool / "above_random_mask.csv"
+    own = (GATE_DIR / stage / pool / "above_random_mask.csv").exists()
+    return CANONICAL_POOL if not own and _is_ladder_pool(pool) else pool
+
+
+def load_mask(pool: str) -> pd.DataFrame | None:
+    """Read the committed mask (task × bucket, Int64 0/1) that gates `pool`
+    (`mask_pool`), or None if absent."""
+    pool = mask_pool(pool)
+    path = GATE_DIR / load_pools()[pool].get("stage", "pretraining") / pool / "above_random_mask.csv"
     if not path.exists():
         return None
     m = pd.read_csv(path, index_col="task")
     return m[[c for c in m.columns if c in bucket_order()]].astype("Int64")
+
+
+def considered_gate(pool: str = "predictivity") -> pd.DataFrame:
+    """The gate over every benchmark task the study considered
+    (`utils.considered_tasks`), one row per (task, size) cell read on the runs
+    that train the task's language: task, family, language, group, format,
+    size, score, random_baseline, above (1/0). `auto` cells are the committed
+    gate's, at every size (the share's `trained` population, as `panels.py`
+    reads them). `probe` and `discarded` cells come from the probe screen's
+    runs (`utils.PROBE_GATE_DIR`, written by probe.sh) at `utils.PROBE_SIZES`
+    alone (600M, 1B, 1.7B, and 3B where the probe gate has a 3B run: a size with
+    no run has no row, never a 0), and are re-read here on the runs whose
+    cell trains the language, since the screen's own share counts a
+    `discarded` task as untrained.
+    Tasks without a chance level have no verdict and no row. Nothing gates
+    with it: it is the population of rq00's "all considered" tables only."""
+    from pretrain.ladder_report import CELL_RE, SCHEME_OF, eval_languages
+    from evals.scripts.utils.configs import _TASK_LANG_ALIASES
+    from analysis.utils import PROBE_GATE_DIR, PROBE_SIZES, considered_tasks, languages_only, variant
+    group = considered_tasks()
+    d = GATE_DIR / "pretraining" / pool
+    scores = pd.read_csv(d / "above_random_scores.csv")
+    sizes = [b for b in bucket_order() if b in scores.columns]
+    melt = lambda f, cols, name: pd.read_csv(d / f).melt(id_vars="task", value_vars=cols, var_name="size", value_name=name)
+    auto = (scores.melt(id_vars=["task", "family", "language", "random_baseline"], value_vars=sizes,
+                        var_name="size", value_name="score")
+            .merge(melt("above_random_mask.csv", sizes, "above"), on=["task", "size"])
+            .merge(melt("above_random_share.csv", [f"{s}__population" for s in sizes], "population")
+                   .assign(size=lambda x: x["size"].str.removesuffix("__population")), on=["task", "size"]))
+    auto = auto[(auto["population"] == "trained") & auto["above"].notna() & auto["task"].map(group).eq("auto")]
+    p = PROBE_GATE_DIR / "pretraining" / pool
+    meta = pd.read_csv(p / "above_random_scores.csv", usecols=["task", "family", "language", "random_baseline"])
+    runs = pd.read_csv(p / "above_random_runs.csv").merge(meta, on="task")
+    runs = runs[runs["bucket"].isin(PROBE_SIZES) & runs["task"].map(group).isin(["probe", "discarded"])
+                & runs["above"].notna()]
+    cell = runs["model"].map(CELL_RE.match)
+    trains = [_TASK_LANG_ALIASES.get(l, l) in eval_languages(int(m["L"]), SCHEME_OF[m["scheme"] or ""])
+              for l, m in zip(runs["language"], cell)]
+    probe = (runs[trains].groupby(["task", "family", "language", "random_baseline", "bucket"])
+             .agg(score=("score", "mean"), share=("above", "mean")).reset_index().rename(columns={"bucket": "size"}))
+    probe["above"] = probe.pop("share").ge(MIN_SHARE).astype(int)
+    out = languages_only(pd.concat([auto.drop(columns="population"), probe], ignore_index=True))
+    out["above"] = out["above"].astype(int)
+    return out.assign(group=out["task"].map(group), format=out["task"].map(lambda t: variant(t)[0]))
 
 
 # Above-random reports, one per model-set pool we gate. Output dirs are
@@ -283,19 +389,24 @@ REPORTS = [
 ]
 
 
-def run(pool: str) -> None:
+def run(pool: str, above_reference: bool = False) -> None:
     # build_snr_pool folds in the externals when the pool sets include_external
     # (custom_swissai_hf), is custom-only for seeds_*, and pools every non-custom
     # model for `external`. Lazy import: run_apertus_snr_variants imports
     # SIZES/scores_and_mask from here, so a module-top import would be circular.
     from analysis.utils import build_snr_pool
 
-    df = build_snr_pool(pool, untrained=True)   # the gate covers every task, trained or not: rq06 gates with it too
+    # the gate covers every task, trained or not: rq06 gates with it too.
+    # `above_reference` (the probe screen alone, probe.sh) widens it to the 3B
+    # rung through build_snr_pool's rule-10 opt-out, the one rq10 reads; the
+    # loader's require_final keeps a (cell, task) only once its final
+    # checkpoint is scored, so a 3B cell without a probe result has no verdict.
+    df = build_snr_pool(pool, untrained=True, above_reference=above_reference)
     scores, mask, meta, runs, share, population = scores_and_mask(df, runs=True)
     buckets = list(scores.columns)
 
     stage = load_pools()[pool].get("stage", "pretraining")
-    out_dir = GATE_AND_CURVES / stage / pool
+    out_dir = GATE_DIR / stage / pool
     out_dir.mkdir(parents=True, exist_ok=True)
     scores_out, mask_out = meta.join(scores), meta.join(mask)
     scores_out.index.name = mask_out.index.name = "task"
@@ -402,11 +513,16 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--only", choices=[pool for pool, _ in REPORTS], default=None,
                    help="Generate only this pool's report (default: all).")
+    p.add_argument("--above-reference", action="store_true",
+                   help="the probe screen alone (probe.sh): add the rungs above the reference (3B), final "
+                        "checkpoint only. Refused without SNR_GATE_DIR, so the canonical gate stays at 90M-1.7B (rule 10).")
     args = p.parse_args()
+    if args.above_reference and not os.environ.get("SNR_GATE_DIR"):
+        p.error("--above-reference writes a gate above the reference: set SNR_GATE_DIR to a scratch dir (probe.sh does)")
     for pool, _caption in REPORTS:
         if args.only and pool != args.only:
             continue
-        run(pool)
+        run(pool, above_reference=args.above_reference)
 
 
 if __name__ == "__main__":

@@ -217,38 +217,38 @@ def generate_readme(pool: str, task: str, t: pd.DataFrame) -> None:
     verdicts = ", ".join(f"{r.size} {int(r.n_pass)}/{int(r.n_runs)} → {'above' if r.passes else 'at chance'}" for r in per_size.itertuples())
     body = "\n\n".join([
         f"### The gate on one task: `{task}`",
-        f"An educational reading of the rule above on one benchmark-language task (the gate is per task, never per family). "
-        f"(a) every run of `{pool}` that trains the language along training, the chance level and the score a run needs for its "
-        f"Wilson lower bound to clear chance at this task's item count, with one run's score − LCB band; (b) per size the final "
-        f"scores with their bounds, passers in colour, and the verdict; (c) the consequence — rq02's DA-size and DA-ckpt cells of the task, "
-        f"grey where the gate blanks them. The rule is the header's three lines. "
+        f"The rule above, read on one benchmark-language task (the gate is per task, never per family). "
+        f"(a) Every run of `{pool}` that trains the language, along training, with the chance level and the score a run needs for its "
+        f"Wilson lower bound to clear chance at this task's item count. One run's band between its score and its Wilson lower bound (LCB) is drawn. (b) Per size, the final "
+        f"scores with their bounds, the passing runs in colour, and the verdict. (c) The consequence: rq02's DA-size and DA-ckpt cells of the task, "
+        f"grey where the gate blanks them. The figure's header states the rule in three lines. "
         f"Regenerate with `python analysis/rq00_gate_and_curves/above_random_example.py --pool {pool} --task {task}`.",
         f"![The above-random gate on {task}]({rel}/above_random_example.png)",
         "Key findings:",
         "\n".join([
             f"- `{task}` has {int(1 / chance)} options ({chance:.2f} chance) and {n_items:,} items, so a single run needs {need:.3f} "
-            f"(+{need - chance:.3f} over chance) for its LCB to clear chance; at n = {n_items:,} the bound sits "
+            f"(+{need - chance:.3f} over chance) for its LCB to clear chance. At n = {n_items:,} the bound sits "
             f"{hi['score'] - hi['lcb']:.3f} below the score.",
-            f"- Verdict per size (runs passing / runs that train the language, ≥ {MIN_SHARE:.0%} needed): {verdicts}; "
-            f"the task enters every RQ from **{first.iloc[0] if len(first) else 'no size'}** on and is grey below it.",
+            f"- Verdict per size (runs passing / runs that train the language, ≥ {MIN_SHARE:.0%} needed): {verdicts}. "
+            f"The task enters every RQ from **{first.iloc[0] if len(first) else 'no size'}** on and is grey below it.",
             f"- What that means in rq02 (panel c): a DA-size cell needs the proxy and the reference above chance, so `{task}` "
-            f"contributes {'no DA-size cell' if not ok_size else 'only the ' + ', '.join(f'{s_} → {TARGET_SIZE}' for s_ in ok_size) + ' DA-size cell(s)'}; "
-            f"a DA-ckpt cell needs the run's own size above chance, so it contributes {'no DA-ckpt cell' if not ok_ckpt else 'only the ' + ', '.join(ok_ckpt) + ' run(s)'}. "
-            f"{gated_n} of {len(cells)} cells are blanked; the task is never a decision at {', '.join(s_ for s_ in per_size['size'] if s_ not in ok_ckpt) or 'no size'}.",
+            f"contributes {'no DA-size cell' if not ok_size else 'only the ' + ', '.join(f'{s_} → {TARGET_SIZE}' for s_ in ok_size) + ' DA-size cell(s)'}. "
+            f"A DA-ckpt cell needs the run's own size above chance, so it contributes {'no DA-ckpt cell' if not ok_ckpt else 'only the ' + ', '.join(ok_ckpt) + ' run(s)'}. "
+            f"{gated_n} of {len(cells)} cells are blanked, and the task is never a decision at {', '.join(s_ for s_ in per_size['size'] if s_ not in ok_ckpt) or 'no size'}.",
             f"- The highlighted run `{hi['model']}` ends at {hi['score']:.3f} with LCB {hi['lcb']:.3f}: "
-            f"{'above' if hi['passes'] else 'not above'} chance — a score above the dotted line is not enough, the band's lower edge has to be.",
-            f"- Population: {len(per_run)} runs over {per_size['size'].nunique()} sizes (rule 2: only the runs that train the language "
-            f"count; a run scored on a language it never saw sits at chance and would drag the share down). The six runs of a size "
-            f"answer the same items, so their verdicts are correlated, not six independent trials.",
+            f"{'above' if hi['passes'] else 'not above'} chance. A score above the dotted line is not enough: the band's lower edge has to be above it.",
+            f"- Population: {len(per_run)} runs over {per_size['size'].nunique()} sizes. Only the runs that train the language "
+            f"count (rule 2), because a run scored on a language it never saw sits at chance and would drag the share down. The runs of a size "
+            f"answer the same items, so their verdicts are correlated, not independent trials.",
             f"- What the gate is not: chance is uniform guessing (1/{int(1 / chance)}), so a run that always picks the majority gold "
-            f"label is not caught (on `{task}` that scores the majority label's share, above {chance:.2f}); and the gate is not a "
-            f"filter on DA — it blanks a cell by the gate alone, whatever the DA there "
-            f"(DA-size per proxy: {'; '.join(f'{r.size} {r.score:.2f}' + ('' if r.passes else ' gated') for r in cells[cells.model.str.startswith('DA-size')].itertuples() if r.score == r.score)})."]),
+            f"label is not caught (on `{task}` that run scores the majority label's share, above {chance:.2f}). Nor is the gate a "
+            f"filter on DA: it blanks a cell by the gate alone, whatever the DA there "
+            f"(DA-size per proxy: {', '.join(f'{r.size} {r.score:.2f}' + ('' if r.passes else ' gated') for r in cells[cells.model.str.startswith('DA-size')].itertuples() if r.score == r.score)})."]),
         "Follow-ups:",
         "\n".join([
-            f"- `--task hellaswag_ta`: the clean step (0/6 at 175M–600M, 5/6 at 1B, 6/6 at 1.7B), with no run near the limit.",
-            f"- `--task hellaswag_eu`: a task whose verdict is not monotone in size (mask "
-            f"{'/'.join(str(v) for v in load_mask(pool).loc['hellaswag_eu'])}), to show the share moving with the runs.",
+            f"- `--task arc_ca`: a clean step (0/4 runs at 90M–600M, 4/4 at 1B and 1.7B).",
+            f"- `--task include_v2_og_spanish_jamaica`: a task whose verdict is not monotone in size (mask "
+            f"{'/'.join(str(v) for v in load_mask(pool).loc['include_v2_og_spanish_jamaica'])}), to show the share moving with the runs.",
             f"- The same figure on a {int(task_n_items('cultural_bench_easy_argentina'))}-item task (`cultural_bench_easy_argentina`), where the needed "
             f"margin is +{needed_score('cultural_bench_easy_argentina') - task_chance('cultural_bench_easy_argentina'):.2f}: the item count, not the model, decides.",
             "- A `--pool predictivity_seeds` version with the replicate seeds, to see how much the per-run verdict moves with the seed."]),

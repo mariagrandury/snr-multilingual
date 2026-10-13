@@ -10,8 +10,15 @@
 #   bash scripts/refresh_analysis.sh              # fetch the report, then rebuild
 #   bash scripts/refresh_analysis.sh --no-fetch   # rebuild from the local copy
 #   bash scripts/refresh_analysis.sh --no-deck    # skip the slidev build
-#   bash scripts/refresh_analysis.sh --curves     # also redraw rq00's ~140
-#                                                 # acc-vs-FLOPs grids (+1 h)
+#   bash scripts/refresh_analysis.sh --curves     # also redraw rq00's ~150
+#                                                 # acc-vs-FLOPs grids (~11 h on
+#                                                 # 2026-10-10: the nightly runs
+#                                                 # them as two jobs instead)
+#   bash scripts/refresh_analysis.sh --no-report  # skip the deck figures, the
+#                                                 # report PDF, the compendium
+#                                                 # and their figure check
+#   PARALLEL=1 bash scripts/refresh_analysis.sh   # the analysis as parallel lanes
+#                                                 # (run_all_predictivity.sh)
 #
 # Two things this cannot guess, both of which silently produce stale numbers:
 #
@@ -34,12 +41,13 @@ PY=${PY:-python3}
 # Fixed PDF creation date: an unchanged figure re-renders to the same bytes,
 # so git sees no diff (PNGs are already deterministic).
 export SOURCE_DATE_EPOCH=0
-FETCH=1; DECK=1
+FETCH=1; DECK=1; REPORT=1
 CURVES=${CURVES:-0}
 for a in "$@"; do
   case "$a" in
     --no-fetch) FETCH=0 ;;
     --no-deck)  DECK=0 ;;
+    --no-report) REPORT=0 ;;
     --curves)   CURVES=1 ;;
     *) echo "unknown flag: $a" >&2; exit 2 ;;
   esac
@@ -75,11 +83,15 @@ step "analysis pipeline"
   || FAILED+=("run_all_predictivity.sh")
 
 # 2b. The paper's figures: every one is written by an rqNN script above and
-#     only copied here, so the paper can never be newer than the tables.
+#     only its PNG is copied into documents/paper/figures/ (the scripts write
+#     the SVG and PDF straight into figures_svg/ and figures_pdf/), its LaTeX
+#     tables into documents/paper/tables/, so the paper can never be newer
+#     than the tables.
 step "paper figures"
 ( cd documents/paper/figures && $PY make_rq_figures.py ) || FAILED+=("make_rq_figures.py")
-# The appendix's one page per analysis folder: question and key finding read
-# from each README, the figure copied just above.
+# The appendix's one page per analysis folder, written into
+# documents/paper/sections/rqs/ (every generated page lives there): question
+# and key finding read from each README, the figure copied just above.
 ( cd documents/paper/figures && $PY make_rq_appendix.py ) || FAILED+=("make_rq_appendix.py")
 
 # 2c. The paper's audit tables: a reshape of the same rqNN tables, so the
@@ -92,12 +104,13 @@ step "paper tables"
 ( cd documents/paper/sections && $PY verify_paper_results.py ) || FAILED+=("verify_paper_results.py")
 # 2d. The paper's generated blocks (rule 17): the setup appendices' tables (the
 #     training grid, seeds, per-ladder hyperparameters, evaluated benchmarks and
-#     languages, read from DATA_SCHEMES / hyperparams / tasks.json and the ladder
-#     report), and the surrogate correlation tables of app_snr_new.tex.
+#     languages (sections/rqs/app_02_table_languages.tex), read from DATA_SCHEMES / hyperparams / tasks.json and the ladder
+#     report), and the surrogate correlation tables of app_06_snr_new.tex.
 ( cd documents/paper/figures && $PY make_appendix_tables.py ) || FAILED+=("make_appendix_tables.py")
 ( cd documents/paper/sections && $PY make_surrogate_tables.py ) || FAILED+=("make_surrogate_tables.py")
 
 # 3. The deck figures, then the two report figures the deck reuses.
+if [ "$REPORT" = 1 ]; then
 step "figures"
 for f in fig_setup fig_languages fig_benchmarks fig_predictivity fig_rq6_sketch \
          fig_benchmark_predictivity fig_rqs fig_appendix fig_from_analysis; do
@@ -105,6 +118,8 @@ for f in fig_setup fig_languages fig_benchmarks fig_predictivity fig_rq6_sketch 
   ( cd documents/figures && HF_HUB_OFFLINE=1 $PY "$f.py" ) 2>&1 | tail -3
   [ ${PIPESTATUS[0]} -eq 0 ] || FAILED+=("$f.py")
 done
+
+fi
 
 # 3b. The scaling-fit panel. ladder_report.py draws it on the cluster as part of
 #     --plot, but this one reads the published CSV alone, so it refreshes here.
@@ -121,6 +136,7 @@ print("wrote", LR.plot_scaling(ladder_dir() / "ladder_report.csv",
                                R / "documents" / "public" / "ladder"))
 EOF
 
+if [ "$REPORT" = 1 ]; then
 # 4. The report PDF.
 step "report pdf"
 run $PY documents/build_report.py
@@ -130,6 +146,7 @@ run $PY documents/build_report.py
 #    load images only from a data URI.
 step "compendium"
 run $PY scripts/inline_artifact.py
+fi
 
 # 6. Checks that catch a stale or missing figure before anyone presents it.
 step "checks"
@@ -162,17 +179,19 @@ for r in $RETIRED_POOLS; do
   done
 done
 if [ "${FORCE:-0}" = 1 ]; then
-  ORPHANS=$(find src/signal-and-noise/analysis/rq*/ documents/paper/figures -type f \
+  # bench_bpb.csv keeps its mtime when its content did not change (the driver's fresh() reads it), so it is no orphan
+  ORPHANS=$(find src/signal-and-noise/analysis/rq*/ documents/paper/figures documents/paper/figures_svg documents/paper/figures_pdf -type f \
       \( -name '*.png' -o -name '*.csv' -o -name '*.svg' -o -name '*.pdf' -o -name '*.json' \) ! -newer "$STARTED" \
     | grep -vE '/(all|custom_swissai_hf|external|seeds_[0-9_]+(__vs__seeds_[0-9_]+)?|per_sample|per_item_store)/' \
     | grep -vE "/($RETIRED_RE)/" \
+    | grep -v 'rq08_subset_selection/bench_bpb.csv$' \
     | { [ "$CURVES" = 1 ] && cat || grep -vE '/(score_curves|per_benchmark|per_language)/'; } | sort)
   n=$(printf '%s' "$ORPHANS" | grep -c . || true)
   echo "orphans: $n artifacts no generator wrote in this refresh"
   [ "$n" -eq 0 ] || printf '%s\n' "$ORPHANS" | sed 's/^/  ORPHAN /' | head -60
   [ "$n" -gt 60 ] && echo "  ... and $((n - 60)) more"
 fi
-$PY - "$LADDER" <<'EOF' || FAILED+=("figure check")
+[ "$REPORT" = 1 ] && { $PY - "$LADDER" <<'EOF' || FAILED+=("figure check"); }
 import re, pathlib, sys
 root = pathlib.Path("documents")
 pub = root / "public"

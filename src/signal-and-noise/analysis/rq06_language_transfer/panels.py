@@ -7,7 +7,7 @@
                               neither trains even the script (mean over L); the last two are the transfer test
     transfer_da_all_by_L_mono_axis.png      the same agreement per language count, one panel per intervention, one line per group
                               (DA-size, mean over the proxy sizes)
-    transfer_da_all_lines_mono_axis_paper.png/.svg/.csv   transfer_da_all_lines_mono_axis for the paper, no title
+    transfer_da_all_lines_mono_axis_paper.png/.csv   transfer_da_all_lines_mono_axis for the paper, no title
 
 Reads `rq5_transfer.csv`. There is no per-benchmark view: the transfer test
 is on per-language bits per byte only.
@@ -134,7 +134,7 @@ def main(pool: str) -> None:
         return
     body = "\n\n".join([
         "## Per benchmark and per language",
-        f"The summary above, per language (`{pool}` pool). Regenerate with `python analysis/rq06_language_transfer/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\"; each figure's table sits next to it under the same name.",
+        f"The summary above, per language (`{pool}` pool). Regenerate with `python analysis/rq06_language_transfer/panels.py --pool {pool}`. In every grid, white means \"no value\" and grey \"filtered out by the gate\". Each figure's table sits next to it under the same name.",
         f"![rq06 in one figure]({stage}/{pool}/highlights.png)"]
         + [f"![Transfer error per language and L]({stage}/{pool}/transfer_error_by_L.png)"]
         + ([f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('The list decision (scheme A vs B at L8–L30) on untrained languages, by proxy size and checkpoint', 'transfer_da_all_lines_mono_axis.png'), ('The decisions on untrained languages, by language count', 'transfer_da_all_by_L_mono_axis.png')]]

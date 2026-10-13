@@ -1,19 +1,21 @@
 """Minimum model size at which a measurement predicts the reference's decision.
 
 At a fixed number of languages the ladder offers one design decision: depth
-(deep vs shallow) at L in {1, 2}, data scheme (A vs B) at L in {8, 15, 30}. For
+(deep vs shallow) at every L, data scheme (A vs B) at L in {8, 15, 30}. For
 one measurement -- a single language's bits per byte, macro BPB, or a benchmark
 task -- a proxy size is predictive when it picks the same winner as the largest
 size trained at that L, and every size above it does too.
 
-TODO (before this is used again): it loads `load_predictivity_eval_results()`
-raw, so it applies NONE of the analysis-wide rules. Nothing in
-scripts/refresh_analysis.sh runs it and nothing imports it, which is the only
-reason that is currently harmless. Anything it produces for the deck or the
-paper must first go through `analysis.utils.build_snr_pool` -- or, if it keeps
-its own loader, filter to ANALYSIS_SIZES (rule 10: 175M to the reference, so
-the 3B rung does not quietly become a column), `parents_only` (rule 6) and
-`trained_only` (rule 2), which is exactly what build_snr_pool does in one call.
+The scores come from `analysis.utils.build_snr_pool("predictivity")`, so the
+analysis rules apply as in every rq table: sizes 90M to the 1.7B reference
+(rule 10), per-language parents only (rule 6), trained languages only (rule 2),
+with the bBPB twins the pool adds. A benchmark with a chance level also passes
+the above-random gate (rule 1, rq00's mask): it is dropped when it is at chance
+at the reference, and a proxy size where it is at chance cannot agree. One
+difference stays: each (decision, L) is read on ONE pair of runs, so rule 5's
+three-pair minimum is not applied (rq05's intervention tables pool the pairs).
+Imported by fig_predictivity, fig_benchmark_predictivity, fig_rq6_sketch,
+fig_rqs (b3) and facts.py.
 """
 import os, sys
 from pathlib import Path
@@ -23,8 +25,17 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "src" / "signal-and-noise"))
 sys.path.insert(0, str(REPO / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from snr.download.ladder import load_predictivity_eval_results  # noqa: E402
+from functools import lru_cache  # noqa: E402
+from analysis.utils import build_snr_pool, passes_gate  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 import style as S  # noqa: E402
+
+
+@lru_cache(maxsize=1)
+def _pool():
+    """The rule-filtered ladder scores (see the module docstring)."""
+    return build_snr_pool("predictivity")
+
 
 INTERVENTION = {"arch": ("deep", "shallow"), "scheme": ("A", "B")}
 # The depth pair and the held baseline are read on the ladder, not the depth
@@ -41,8 +52,9 @@ def finals(df):
 
 def min_predictive_size(seed=1904):
     """One row per (L, intervention, task): the smallest predictive size, or NaN."""
-    fin = finals(load_predictivity_eval_results())
+    fin = finals(_pool())
     fin = fin[fin["seed"] == seed]
+    mask = load_mask("predictivity")
     rows = []
     for axis, (a, b) in INTERVENTION.items():
         hold_col, hold_val = HOLD[axis]
@@ -58,14 +70,15 @@ def min_predictive_size(seed=1904):
                 continue
             delta = delta[order]
             ref = order[-1]
+            above = {s: passes_gate(mask, delta.index, s) for s in order}
             for task, r in delta.iterrows():
-                if not np.isfinite(r[ref]) or r[ref] == 0:
+                if not np.isfinite(r[ref]) or r[ref] == 0 or not above[ref][task]:
                     continue
                 want = np.sign(r[ref])
                 best = np.nan
                 # walk down from the reference: keep the run of agreeing sizes
                 for s in reversed(order[:-1]):
-                    if np.isfinite(r[s]) and np.sign(r[s]) == want:
+                    if np.isfinite(r[s]) and np.sign(r[s]) == want and above[s][task]:
                         best = s
                     else:
                         break
@@ -88,7 +101,7 @@ def kind(task):
 def agreement_by_size(seed=1904):
     """DA(L, size): the share of languages whose bits per byte picks the same
     winner at `size` as it does at the reference size."""
-    fin = finals(load_predictivity_eval_results())
+    fin = finals(_pool())
     fin = fin[(fin["seed"] == seed) & fin["task"].str.startswith("bpb_")
               & (fin["task"] != "bpb_macro")]
     rows = []

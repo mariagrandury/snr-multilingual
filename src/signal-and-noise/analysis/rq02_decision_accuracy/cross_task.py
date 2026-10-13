@@ -398,17 +398,19 @@ def generate_readme(pool: str, out_dir: Path, n_tasks: int, ref_fams: int, pairs
     stage = load_pools()[pool].get("stage", "pretraining")
     body = "\n\n".join([
         "## Cross-task predictability",
-        f"Every parent task as the proxy for every other one ({n_tasks} x {n_tasks}): the cell is the smallest proxy size "
-        f"(DA-size, {ref_fams} variants at {TARGET_SIZE}, {pairs_ref} pairs) or the earliest checkpoint (DA-ckpt, the within-size "
-        f"pairs of every size pooled, {pairs_within} pairs, the nine checkpoints before the final) at which the ranking on task x (columns) safely "
-        f"predicts the final ranking on task y (rows): DA >= {SAFE_DA} over >= {MIN_PAIRS} pairs there and at every larger "
-        "level with a value. The diagonal is rq02's own-task DA; the gate empties a benchmark's pairs at every size where it "
-        "is at chance. The `_by_family` maps take the median level over the task pairs of two benchmarks, the `_by_language` "
-        "maps over the same-benchmark task pairs of two languages (resource order of the scheme-A lists). "
+        f"Each map uses every parent task as a proxy for every other one ({n_tasks} x {n_tasks}). A cell gives the "
+        "earliest level at which the ranking on task x (columns) safely predicts the final ranking on task y (rows). "
+        f"Safely means DA >= {SAFE_DA} over >= {MIN_PAIRS} pairs at that level and at every larger level with a value. "
+        f"For DA-size the level is the smallest proxy size ({ref_fams} variants at {TARGET_SIZE}, {pairs_ref} pairs). "
+        "For DA-ckpt it is the earliest of the nine checkpoints before the final, over the within-size pairs of every "
+        f"size pooled ({pairs_within} pairs). The diagonal is rq02's own-task DA. The gate empties a benchmark's pairs at "
+        "every size where it is at chance. The `_by_family` maps take the median level over the task pairs of two "
+        "benchmarks. The `_by_language` maps take it over the same-benchmark task pairs of two languages, ordered by "
+        "resource as in the scheme-A lists. "
         f"Regenerate with `python analysis/rq02_decision_accuracy/cross_task.py --pool {pool}`.",
-        "The same two maps over the benchmark tasks that are above chance at some size — BPB, the loss and the "
-        "benchmarks the gate finds at chance everywhere are dropped, so what is left is the sub-map where a transfer "
-        "result is possible at all: "
+        "The benchmark maps repeat the DA-size and DA-ckpt task-level maps on the benchmark tasks above chance at some size. They drop "
+        "BPB, the loss and the benchmarks the gate finds at chance everywhere, so they keep only the part of the map "
+        "where a transfer result is possible at all: "
         f"[`cross_task_da_size_benchmarks_multi_axes.png`]({stage}/{pool}/cross_task_da_size_benchmarks_multi_axes.png), "
         f"[`cross_task_da_ckpt_benchmarks_multi_axes.png`]({stage}/{pool}/cross_task_da_ckpt_benchmarks_multi_axes.png).",
         f"![Cross-task DA-size by benchmark]({stage}/{pool}/cross_task_da_size_by_family_multi_axes.png)",

@@ -13,7 +13,7 @@ checkpoint) grid, not a new measurement, and the plan files live on capstor: a
 cell whose share is unreachable carries NaN tokens, is left out of the figure
 and is counted in the `!!!` line and the README.
 
-A) da_goal_multi_axes_across_langs_bpb.png/.pdf/.csv, _cells.csv  (and `_mono_axis_` twins of goal and ckpt)
+A) da_goal_multi_axes_across_langs_bpb.png/.csv, _cells.csv  (and `_mono_axis_` twins of goal and ckpt)
    DA-goal of a language's BPB against the tokens of that language the proxies
    had seen. DA-goal = the share of pairs of design variants the proxy
    checkpoint orders like the reference's final (rq02's kernel; rule 15's
@@ -37,7 +37,7 @@ A) da_goal_multi_axes_across_langs_bpb.png/.pdf/.csv, _cells.csv  (and `_mono_ax
    the token axis fall together there, it is the schedule, not the exposure,
    that decides when a language's BPB ranks the variants.
 
-B) pass_prob_vs_train_tokens_by_benchmark_<population>.png/.pdf/.csv, _points.csv
+B) pass_prob_vs_train_tokens_by_benchmark_<population>.png/.csv, _points.csv
    Per benchmark and size: the share of its (language, L) cells that are above
    chance, against the tokens of the language the cell trained on, one line per
    size, the cells binned on log10 tokens (BINS_PER_DECADE per decade, the cell
@@ -63,12 +63,29 @@ B) pass_prob_vs_train_tokens_by_benchmark_<population>.png/.pdf/.csv, _points.cs
    panels in order of the language's tokens) and `_all_` (one panel, every cell);
    the cell table is the `_by_benchmark_` stem's `.csv`, the two others' `.csv`
    hold the binned points they draw.
-   Two paper copies of the `_by_benchmark_1904_ckpts` figure, PNG and SVG, no
+   Two paper copies of the `_by_benchmark_1904_ckpts` figure, no
    header, the language count alone in a panel's title: `_paper` (every
    benchmark) and `_include_rf_paper_vertical` (INCLUDE over its `rf_` twin,
    the two panels stacked in the height of one), and `da_goal_..._paper`, the
    DA-goal figure without its header. Every paper copy goes through
    `style.save_paper` (rule 18).
+
+C) pass_threshold_tokens_by_benchmark_1904_ckpts.csv/.tex
+   The paper's threshold table, from B's `_by_benchmark_1904_ckpts` cell
+   table: to evaluate benchmark X in a language with a model of size N, how
+   many tokens of that language must the model have trained on? Per benchmark
+   family with non-English cells in at least two languages (format original /
+   rf / rfgm read off the family name) and per size, the training tokens of
+   the language at which a logistic fit of the cells' above-chance verdict on
+   log10 tokens reaches 50 % / 90 % (`_threshold`), read only inside the
+   token range that size's cells span ("<= lowest bin" when the fit is there
+   at the fewest tokens, "never" when it is not by the most, "no bin" with
+   fewer than MIN_FIT_CELLS cells), beside the family's median margin over
+   chance the gate's Wilson test implies (`above_random_example.needed_score`
+   − chance) and its median item count. English is left out: it is half of
+   every mixture. The CSV also keeps a fit pooled over sizes (`sizes` = all,
+   token_exclusion.py reads it); the `.tex` is the bare tabular, one column
+   per size.
 
     python analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_seeds
     python analysis/rq01_scaling_predictability/tokens_seen.py --paper     # the paper copies alone, from the tables on disk
@@ -84,6 +101,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import statsmodels.api as sm
 from matplotlib.ticker import PercentFormatter
 
 _REPO = Path(__file__).resolve().parents[2]
@@ -98,12 +116,14 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import CHANCE_VS_TRAIN_TOKENS, DA_VS_TRAIN_TOKENS  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import MIN_SHARE, above_chance  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import MIN_SHARE, above_chance, task_chance, task_n_items  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random_example import needed_score  # noqa: E402
 from analysis.rq02_decision_accuracy.compute_da import _scores_at, compute_early_small_decision_accuracy  # noqa: E402
 from analysis.rq02_decision_accuracy.early_small import SAFE_DA  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    AXES_SUFFIX, GRID_SEED, MIN_PAIRS, SHARED_FRACS, TARGET_SIZE, assign_language, at_fraction, benchmark_family,
-    design_axes, finals, ladder_frame, language_tokens, languages_only, pair_sets, size_order)
+    AXES_SUFFIX, FORMATS, GRID_SEED, MIN_PAIRS, SHARED_FRACS, TARGET_SIZE, assign_language, at_fraction,
+    benchmark_family, design_axes, finals, ladder_frame, language_tokens, languages_only, pair_sets, size_order,
+    variant)
 
 CANONICAL = "predictivity_seeds"
 BINS_PER_DECADE = 3
@@ -117,6 +137,15 @@ DA_MODES = {"goal": (f"the {TARGET_SIZE} final", SHARED_FRACS),
             "size": (f"the {TARGET_SIZE} final, the proxy at its own final", (1.0,))}
 PASS_NAME = "pass_prob_vs_train_tokens"
 PANELS = ("benchmark", "language", "all")         # what a panel of the pass figure holds
+THRESHOLD_NAME = "pass_threshold_tokens_by_benchmark"
+PASS_LEVELS = (0.5, 0.9)                 # the share of a family's cells above chance a threshold asks for
+MIN_THRESHOLD_LANGS = 2                  # a family enters the threshold table with non-English cells in at least this many languages
+MIN_FIT_CELLS = 40                       # a (family, size) threshold fit needs this many cells
+# benchmarks whose text is English while the task carries a country's language: its tokens are not what the model read
+ENGLISH_TEXT = {"cultural_bench_easy", "cultural_bench_hard", "include_v2_en"}
+# benchmarks we evaluate only in the cloze form our RF twins use, under their own name (no rf_ prefix)
+CLOZE_RELEASES = {"include_v2_en", "include_v2_og"}
+FORMAT_NAMES = {"original": "Original", "rf": "RF", "rfgm": "LLM-RF"}
 # population -> (the runs of a (task, size, L) cell, how the cell is called above chance)
 POPULATIONS = {
     "deep_A_1904": ("the plan grid, deep / data A / seed 1904: one run per cell",
@@ -180,7 +209,7 @@ def plot_da(summary: pd.DataFrame, cells: pd.DataFrame, out_dir: Path, mode: str
             paper: bool = False, axes: str = "multi-axis") -> None:
     """`x` = "tokens" (the language's tokens the proxy checkpoint had seen) or
     "frac" (the share of its run the checkpoint sits at: the `_vs_frac` twin);
-    `paper` writes the `_paper` copy, PNG and SVG, without the header (rule 18);
+    `paper` writes the `_paper` copy without the header (rule 18);
     `axes` the pair set the DA is over."""
     ref = DA_MODES[mode][0]
     fig, ax = plt.subplots(figsize=(6.4, 4.4))
@@ -297,7 +326,7 @@ def _cell_label(ckpts: bool) -> str:
 def plot_pass(points: pd.DataFrame, cells: pd.DataFrame, out_dir: Path, population: str, ckpts: bool = False,
               by: str = "benchmark", paper: bool = False) -> None:
     """`paper`: no header, the language count alone in a panel's title, the
-    cell named on the y axis, written as `<stem>_paper.png/.svg`."""
+    cell named on the y axis, written as `<stem>_paper.png`."""
     if by == "all":
         cells = cells.assign(all="all benchmarks, all languages")
     if by == "benchmark":
@@ -376,12 +405,118 @@ def plot_pass_include_rf(points: pd.DataFrame, cells: pd.DataFrame, out_dir: Pat
     S.save_paper(fig, out_dir / stem)
 
 
+def _threshold(cells: pd.DataFrame, level: float) -> dict:
+    """The training tokens of the language at which a logistic fit of the cells'
+    above-chance verdict on log10 tokens reaches `level`, read only inside the
+    token range the cells span: `never` when it is below `level` at the most
+    tokens (`highest_tokens`: never reached, or reached early and lost),
+    `<= lowest bin` when it is at `level` from the fewest tokens on (`bin_lo` =
+    those tokens), `bin` with `bin_lo` = the
+    crossing otherwise, `no bin` with fewer than MIN_FIT_CELLS cells. A slight
+    ridge keeps the fit finite when every cell passes or fails (separation)."""
+    if len(cells) < MIN_FIT_CELLS:
+        return {"status": "no bin"}
+    x, y = np.log10(cells["train_tokens"].to_numpy()), cells["above_chance"].to_numpy(float)
+    lo, hi = x.min(), x.max()
+    a, b = sm.GLM(y, sm.add_constant(x), family=sm.families.Binomial()).fit_regularized(alpha=1e-4, L1_wt=0.0).params
+    fit = lambda v: 1 / (1 + np.exp(-(a + b * v)))
+    out = {"intercept": a, "slope": b, "lowest_tokens": 10 ** lo, "highest_tokens": 10 ** hi,
+           "share_above": y.mean(), "fit_at_lowest": fit(lo), "fit_at_highest": fit(hi)}
+    if fit(hi) < level:            # not reached, or reached early and lost (the early passes of a constant answer)
+        return out | {"status": "never"}
+    if fit(lo) >= level:
+        return out | {"status": "<= lowest bin", "bin_lo": 10 ** lo}
+    return out | {"status": "bin", "bin_lo": 10 ** ((np.log(level / (1 - level)) - a) / b)}
+
+
+def _tok(x: float) -> str:
+    """A token count in two significant digits with its unit: 220M, 4.6B, 15B."""
+    for unit, scale in (("B", 1e9), ("M", 1e6), ("K", 1e3)):
+        if x >= scale:
+            return f"{float(f'{x / scale:.2g}'):g}{unit}"
+    return f"{x:.2g}"
+
+
+def pass_thresholds(cells: pd.DataFrame, out_dir: Path, population: str = "1904", ckpts: bool = True) -> pd.DataFrame:
+    """`pass_threshold_tokens_by_benchmark_<population>.csv/.tex`: per benchmark
+    family (original / rf / rfgm are three) with non-English cells in at least
+    MIN_THRESHOLD_LANGS languages, per size (and pooled, `sizes` = all, for
+    token_exclusion.py), the training tokens of the language at which the
+    fitted share of its cells above chance reaches each of PASS_LEVELS
+    (`_threshold`); with the family's median per-task margin over chance the
+    gate's Wilson test implies (`needed_score` − chance, as in the gate's
+    above_random_thresholds) and its median item count. The `.tex` is the
+    paper's tabular, one column per size, no caption; a dagger marks a family
+    whose text is English (ENGLISH_TEXT)."""
+    # English is half of every mixture, so it is never a language the model has seen little of; its
+    # cells would set the top of every family's token range
+    c = cells.dropna(subset=["train_tokens"])
+    c = c[c["language"] != "en"]
+    langs = c.groupby("benchmark")["language"].nunique()
+    fams = sorted(langs[langs >= MIN_THRESHOLD_LANGS].index,
+                  key=lambda f: (G.paper_name(G.base(f)).lower(), FORMATS.index(variant(f)[0])))
+    rows = []
+    for fam in fams:
+        cf = c[c["benchmark"] == fam]
+        tasks = cf["task"].unique()
+        head = {"benchmark": fam, "name": G.paper_name(G.base(fam)), "format": variant(fam)[0],
+                "n_languages": cf["language"].nunique(), "n_tasks": len(tasks),
+                "margin_median": np.median([needed_score(t) - task_chance(t) for t in tasks]),
+                "n_items_median": np.median([task_n_items(t) for t in tasks])}
+        # "all" pools the sizes: kept in the CSV for token_exclusion.py, not in the paper table, since
+        # which sizes reach a token count decides most of a pooled curve
+        for size in ["all"] + size_order(cf["model_size"].unique()):
+            cs = cf if size == "all" else cf[cf["model_size"] == size]
+            for level in PASS_LEVELS:
+                rows.append(head | {"sizes": size, "level": level, "n_cells": len(cs)} | _threshold(cs, level))
+    t = pd.DataFrame(rows)
+    stem = f"{THRESHOLD_NAME}_{population}" + ("_ckpts" if ckpts else "")
+    t.to_csv(out_dir / f"{stem}.csv", index=False)
+
+    def cell(fam, size, level):
+        r = t[(t["benchmark"] == fam) & (t["sizes"] == size) & (t["level"] == level)]
+        if r.empty or r.iloc[0]["status"] == "no bin":
+            return "--"
+        r = r.iloc[0]
+        if r["status"] == "never":
+            return "$>$" + _tok(r["highest_tokens"])
+        return ("$\\leq$" if r["status"] == "<= lowest bin" else "") + _tok(r["bin_lo"])
+    def both(fam, size):
+        """The two levels' cells, written once when they read the same."""
+        a, b = (cell(fam, size, lv) for lv in PASS_LEVELS)
+        return a if a == b else f"{a} / {b}"
+    sizes = [s for s in size_order(c["model_size"].unique())]
+    fams = [f for f in fams if (t[(t["benchmark"] == f) & (t["sizes"] != "all")]["status"] != "no bin").any()]   # drop: no size has enough cells
+    lines = ["\\begin{tabular}{llr" + "c" * len(sizes) + "rr}", "\\toprule",
+             f" & & & \\multicolumn{{{len(sizes)}}}{{c}}{{Training tokens of the language for "
+             + " / ".join(f"{lv:.0%}".replace("%", "\\%") for lv in PASS_LEVELS) + " of the cells above chance} & & \\\\",
+             f"\\cmidrule(lr){{4-{3 + len(sizes)}}}",
+             "Benchmark & Format & Lang. & " + " & ".join(sizes) + " & Margin & Items \\\\", "\\midrule"]
+    last = None
+    for fam in fams:
+        h = t[t["benchmark"] == fam].iloc[0]
+        name = h["name"] + ("$^\\dagger$" if G.base(fam) in ENGLISH_TEXT else "")
+        name = name if h["name"] != last else ""
+        if last is not None and name:
+            lines.append("\\addlinespace")
+        last = h["name"]
+        lines.append(" & ".join([name, "RF" if G.base(fam) in CLOZE_RELEASES else FORMAT_NAMES[h["format"]],
+                                 str(h["n_languages"])]
+                                + [both(fam, s) for s in sizes]
+                                + [f"{h['margin_median']:.3f}", f"{h['n_items_median']:,.0f}".replace(",", "{,}")]) + " \\\\")
+    (out_dir / f"{stem}.tex").write_text("\n".join(lines + ["\\bottomrule", "\\end{tabular}", ""]))
+    print(f"Thresholds: {len(fams)} benchmark families with cells in ≥ {MIN_THRESHOLD_LANGS} languages → {out_dir / stem}.csv/.tex; "
+          f"left out (fewer languages): {', '.join(sorted(langs[langs < MIN_THRESHOLD_LANGS].index))}")
+    return t
+
+
 def paper(pass_dir: Path, da_dir: Path, population: str = "1904", ckpts: bool = True) -> None:
     """The paper copies, from the `_by_benchmark_` tables on disk."""
     stem = pass_stem("benchmark", population, ckpts)
     cells, points = pd.read_csv(pass_dir / f"{stem}.csv"), pd.read_csv(pass_dir / f"{stem}_points.csv")
     plot_pass(points, cells, pass_dir, population, ckpts, "benchmark", paper=True)
     plot_pass_include_rf(points, cells, pass_dir, population, ckpts)
+    pass_thresholds(cells, pass_dir, population, ckpts)
     summary = pd.read_csv(da_dir / f"{DA_NAME}.csv")
     if summary.empty:
         print(f"!!! {DA_NAME}.csv is empty (no cell had a token count): its paper copy is not redrawn")

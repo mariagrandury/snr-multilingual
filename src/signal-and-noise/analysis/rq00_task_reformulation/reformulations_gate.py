@@ -24,7 +24,7 @@ this runs in seconds after them.
                                      twins, stars where McNemar p < P_SIG; (b)–(d) the
                                      headline readings with and without the twins
     reformulations_gate_mcnemar.csv  per (family, twin set, size): shares, discordant counts, p
-    reformulations_gate_paper.png / .svg / .csv   panel (a) alone, no header, for the paper
+    reformulations_gate_paper.png / .csv   panel (a) alone, no header, for the paper
     python analysis/rq00_task_reformulation/reformulations_gate.py --pool predictivity
     python analysis/rq00_task_reformulation/reformulations_gate.py --paper   # the paper panel alone, from the CSV
 """
@@ -83,17 +83,19 @@ def mcnemar(mask: pd.DataFrame, sizes: list) -> pd.DataFrame:
     for (fam, s), g in m.groupby(["base", "set"]):
         if s == "original":
             continue
-        orig = m[(m["base"] == fam) & (m["set"] == "original")].set_index("language")
-        tw = g.set_index("language")
-        langs = orig.index.intersection(tw.index)
+        # paired on the task a twin rewrites (`rf_<task>` -> `<task>`), not on its language:
+        # a family can hold several tasks per language (CulturalBench countries, belebele zh)
+        orig = m[(m["base"] == fam) & (m["set"] == "original")].set_index("task")
+        tw = g.assign(task=g["task"].str.removeprefix(f"{s}_")).set_index("task")
+        common = orig.index.intersection(tw.index)
         for size in sizes:
-            o, t = orig.loc[langs, size], tw.loc[langs, size]
+            o, t = orig.loc[common, size], tw.loc[common, size]
             ok = o.notna() & t.notna()
             o, t = o[ok].astype(int), t[ok].astype(int)
             b, c = int(((o == 1) & (t == 0)).sum()), int(((o == 0) & (t == 1)).sum())
             p = binomtest(min(b, c), b + c, 0.5).pvalue if b + c else np.nan
             rows.append({"family": fam, "set": s, "size": size, "languages": int(ok.sum()),   # paired tasks
-                         "n_languages": o.index.nunique(),     # CulturalBench: one task per country, 19 over 8 languages
+                         "n_languages": orig.loc[o.index, "language"].nunique(),   # CulturalBench: 19 countries over 8 languages
                          "share_original": o.mean() if len(o) else np.nan, "share_twin": t.mean() if len(t) else np.nan,
                          "twin_only": c, "original_only": b, "p_mcnemar": p})
     return pd.DataFrame(rows)
@@ -114,7 +116,8 @@ def headline(pool: str, mask: pd.DataFrame, sizes: list) -> pd.DataFrame:
     rel = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_all_reliable_tasks_both_axes.csv")
     rel = no_bbpb(rel[rel["axes"] == "multi-axis"] if "axes" in rel.columns else rel)
     rel["set"] = rel["task"].map(twin_set)
-    reg = no_bbpb(pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_seeds" / "scaling_regimes.csv"))
+    reg = pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_seeds" / "scaling_regimes.csv")
+    reg = reg[reg["task"].isin(bench["task"])].copy()        # benchmarks only: per-language BPB has no twin and would count as an original
     reg["set"] = reg["task"].map(twin_set)
     passes = mask.set_index("task")
     rows = []
@@ -132,7 +135,7 @@ def headline(pool: str, mask: pd.DataFrame, sizes: list) -> pd.DataFrame:
                          "gate_share": gate_col.mean() if len(gate_col) else np.nan,
                          "da_size_mean": d.loc[ok, col].mean() if col in d.columns else np.nan,
                          "da_size_n": int(d.loc[ok, col].notna().sum()) if col in d.columns else 0,
-                         "da_size_mean_ungated": d[col].mean() if col in d.columns else np.nan,
+                         "da_size_mean_ungated": d.loc[d["task"].isin(bench["task"]), col].mean() if col in d.columns else np.nan,
                          "reliable_share": (r["da_size_median"] >= 0.66).mean() if len(r) else np.nan,
                          "reliable_n": len(r), "r2_size_median": q["r2_size"].median() if len(q) else np.nan,
                          "regime_tasks": len(q)})
@@ -228,10 +231,11 @@ def generate_readme(pool: str, mc: pd.DataFrame, head: pd.DataFrame, sizes: list
     h = head.pivot_table(index="population", columns="size", values="gate_share").reindex(columns=sizes).round(2)
     body = "\n\n".join([
         "## The twins and the gate, with significance",
-        f"Per family at {TARGET_SIZE}: the share of languages above the gate for the original and the twin, paired on the "
-        f"language; `twin only / original only` are the discordant languages McNemar's exact test is run on. Below, the "
-        f"gate's pass share per size on every task, the originals alone and the twins alone (`reformulations_gate.csv` carries "
-        f"the same three populations for mean DA-size, the reliable share and rq01's median R²). Regenerate with "
+        f"Per family at {TARGET_SIZE}: the share of languages above the gate for the original and for the twin, paired on "
+        f"the language. `twin only / original only` counts the discordant languages that McNemar's exact test is run on. "
+        f"Below, the gate's pass share per size on every task, on the non-twin tasks alone (`originals only`) and on the "
+        f"twins alone. `reformulations_gate.csv` carries the same three populations for mean DA-size, the reliable share "
+        f"and rq01's median R². Regenerate with "
         f"`python analysis/rq00_task_reformulation/reformulations_gate.py --pool {pool}`.",
         md_table(["family", "twin", "languages", "original", "twin", "twin only / original only", "p (McNemar)"], rows),
         md_table(["population"] + sizes, [[p] + [f"{v:.2f}" for v in h.loc[p]] for p in h.index]),

@@ -1,7 +1,7 @@
 % DRAFT (2026-09-26) — stage one of the storyline: measurability. Not yet
 % \input in main.tex. Figures reference the paper copies written by the
 % analysis, copied into figures/ by make_rq_figures.py (its docstring maps each
-% copy to its source): app_chance_share, app_chance_full, app_chance_reformulation, rq0.
+% copy to its source): app_rq00_chance_share, app_rq00_chance_full, app_rq00_chance_reformulation, rq0.
 % Numbers: first_size_share_paper.csv, pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_points.csv,
 % reformulations_gate_mcnemar.csv (snapshot of 2026-09-25; every snapshot moves them).
 % TODO: every number below predates the 2026-09-30 report, which adds the batch-84 90M rung
@@ -12,9 +12,9 @@
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.48\textwidth]{figures/app_chance_share.png}
+\includegraphics[width=0.48\textwidth]{figures/app_rq00_chance_share.png}
 \hfill
-\includegraphics[width=0.48\textwidth]{figures/app_chance_reformulation.png}
+\includegraphics[width=0.48\textwidth]{figures/app_rq00_chance_reformulation.png}
 \caption{\textbf{Left:} for each benchmark, the share of its trained languages that clear the above-chance gate, coloured by the smallest model size from which the score stays above chance at every larger size (red: never on this ladder). Benchmarks are ordered by the number of languages that pass at some size. \textbf{Right:} the letter-format families against their reformulated twins: the share of languages above the gate for the original (grey) and for the cloze twin at each size; diamonds mark the model-rewritten INCLUDE twin, and a star a McNemar exact test on the discordant languages with $p<0.05$.}
 \label{fig:gate-share}
 \end{figure}

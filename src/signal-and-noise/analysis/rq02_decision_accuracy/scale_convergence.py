@@ -93,7 +93,7 @@ default they are not (an L50 line pools 52 tasks, an L8 line 7):
                                  reaches_tau, n_min_size (and n_min_compute on the
                                  compute axis). n_min_* is NA when no real proxy
                                  clears tau.
-    scale_convergence_da_size_multi_axes_paper.png/.svg/.csv   the plain figure for the
+    scale_convergence_da_size_multi_axes_paper.png/.csv   the plain figure for the
                                  paper's appendix: bare (rule 18, style.save_paper), same table.
 
 Every name above carries the pair set's AXES_SUFFIX (rule 15): `_multi_axes`, or
@@ -131,7 +131,7 @@ from analysis.rq02_decision_accuracy.reliable_tasks import FILTERS, load_reliabl
 from analysis.utils import (  # noqa: E402
     AXES_SUFFIX, CKPT_DA_EARLY_FRACS, GRID_SEED, MIN_PAIRS, NON_EMB, TARGET_SIZE,
     assign_language, at_fraction, design_axes, finals, jackknife_ratio, ladder_frame, moved_axes,
-    pair_sets, size_order)
+    pair_sets, size_match_note, size_order)
 from pretrain.launch_trainings import cell_languages  # noqa: E402
 
 OUT_ROOT = DECISION_ACCURACY
@@ -223,6 +223,7 @@ def pairs_by_group(attrs: pd.DataFrame, by: str, axes: str = "multi-axis") -> di
     if by == "overall":                       # the pooled line is the whole figure
         return groups
     allowed = set(sets[axes])                 # an L regime keeps the pair set it is named for
+    mono = set(sets["mono-axis"])
     for i, a in enumerate(fams):
         for b in fams[i + 1:]:
             ra, rb = attrs.loc[a], attrs.loc[b]
@@ -234,6 +235,8 @@ def pairs_by_group(attrs: pd.DataFrame, by: str, axes: str = "multi-axis") -> di
             if len(differ) != 1:              # two axes at once decides neither
                 continue
             axis = differ[0]
+            if axis != "seed" and (a, b) not in mono:   # a design decision holds the grid seed (two replicates are no decision)
+                continue
             groups.setdefault(AXIS_LABEL[axis], []).append((a, b))
     return groups
 
@@ -522,7 +525,8 @@ def figure(out: pd.DataFrame, path: Path, by: str, pool: str, tau: float,
                     f"the dashed segment into it is not evidence of convergence. The shaded band on `{OVERALL}` is a "
                     f"leave-one-design-variant-out jackknife (90 %): how much the line depends on which variants are "
                     f"in the grid, not on seed noise (no replicate exists at {TARGET_SIZE}). Gate and pair "
-                    f"minimum as everywhere in rq02; pairs from the {POOL} pool, gated with {pool}'s mask." + note)
+                    f"minimum as everywhere in rq02; pairs from the {POOL} pool, gated with {pool}'s mask." + note
+                    + (size_match_note([("arch", s) for s in out["size"].unique()]) if by == "transformation" else ""))
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path, dpi=150)
 
@@ -573,7 +577,8 @@ def panel_figure(out: pd.DataFrame, path: Path, pool: str, tau: float, populatio
                     f"share no variant; units in the title, so a 4-unit band is four numbers); "
                     f"dotted line = τ = {tau:g}, the ring = N_min(τ); the hollow {TARGET_SIZE} point is 1.0 by construction"
                     + ("; the number under a point = tasks behind it" if counts else "")
-                    + f". Pairs from the {POOL} pool, gated with {pool}'s mask." + note)
+                    + f". Pairs from the {POOL} pool, gated with {pool}'s mask." + note
+                    + size_match_note([("arch", s) for s in out["size"].unique()]))
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path, dpi=150)
 
@@ -596,25 +601,29 @@ def generate_readme_panels(pool: str, out_dir: Path, out: pd.DataFrame) -> None:
                     + [g["n_min_size"].iloc[0] if pd.notna(g["n_min_size"].iloc[0]) else "never"])
         if grp != OVERALL and len(g):
             last = g.loc[sizes[-1]] if sizes[-1] in g.index else g.iloc[-1]
-            bullets.append(f"- **{grp}** ({int(last['n_units'])} units / {int(last['n_families'])} families): R = {last['reliability']:.2f} at {last.name} "
-                           f"[{last['lo']:.2f}, {last['hi']:.2f}] over {int(last['n_tasks'])} tasks; "
-                           + (f"N_min(τ) = {g['n_min_size'].iloc[0]}." if pd.notna(g["n_min_size"].iloc[0]) else "no proxy reaches τ."))
+            bullets.append(f"- **{grp}** ({int(last['n_units'])} units / {int(last['n_families'])} families): at {last.name}, R = {last['reliability']:.2f} "
+                           f"[{last['lo']:.2f}, {last['hi']:.2f}] over {int(last['n_tasks'])} tasks. "
+                           + (f"N_min(τ) = {g['n_min_size'].iloc[0]}." if pd.notna(g["n_min_size"].iloc[0]) else "No proxy reaches τ."))
     body = "\n\n".join([
         "## Scale convergence per design axis, one panel each",
-        f"The `--by transformation` lines above drawn one axis per panel, with the panel's own leave-one-unit-out band and the "
-        f"pooled `{OVERALL}` line faint behind it. DA-size pooled over decisions, every pair at seed {GRID_SEED} (`{POOL}`), "
-        f"gated with `{pool}`'s mask, ≥ {MIN_PAIRS} pairs per task; task counts under the points. Same table as "
+        f"This figure splits the `--by transformation` lines above into one panel per design axis. Each panel has its own "
+        f"leave-one-unit-out band, with the pooled `{OVERALL}` line drawn faintly behind it for reference. R is DA-size pooled "
+        f"over decisions. Every pair is at seed {GRID_SEED} (`{POOL}`), gated with `{pool}`'s mask, and a task needs ≥ "
+        f"{MIN_PAIRS} pairs. The number under a point is the count of tasks behind it. The table is the same as "
         f"`{stem_for('transformation')}.csv`. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by transformation`.",
         f"![Scale convergence per design axis]({rel}/{stem}.png)",
         md_table(["axis", "units", "families"] + [f"{s} R [lo, hi] (tasks)" for s in sizes] + [f"N_min(τ={TAU:g})"], rows),
         "Key findings:",
-        "\n".join(bullets + [f"- The bands are leave-one-unit-out over the units in the column — the design variant, or the "
-                              f"pair on an axis whose pairs share no variant — not seed noise; a band on 4 units is four numbers "
-                              f"and only says which variant or pair the line hinges on."]),
+        "\n".join(bullets + [f"- **The bands measure which units the line depends on, not seed noise.** Each band is a "
+                              f"leave-one-unit-out jackknife over the units in the `units` column. A unit is a design variant, "
+                              f"or a pair when the pairs on an axis share no variant. A band on 4 units comes from four numbers, "
+                              f"so it only shows which variant or pair the line hinges on. With {MIN_PAIRS} units or fewer "
+                              f"the band is NaN."]),
         "Follow-ups:",
-        "\n".join(["- The `above_66_size` twin per panel (`" + stem_for("transformation_panels", "above_66_size") + ".png`): the same split on the cells that rank reliably.",
-                    "- A per-axis panel grid on the L8 languages only (`--langs L8`), so the language-count panel is read on one task set.",
-                    "- The activation panel fills in once the swiglu cells reach 1.7B (rule 9)."]),
+        "\n".join(["- **The `above_66_size` twin per panel** (`" + stem_for("transformation_panels", "above_66_size") + ".png`): the same split on the cells that rank reliably.",
+                    "- **A per-axis panel grid on the L8 languages only** (`--langs L8`), so the language-count panel is read on one task set.",
+                    f"- **A band for the activation panel.** Its line is drawn, but its band stays NaN while the axis has "
+                    f"≤ {MIN_PAIRS} units (one per (deep, swiglu) pair). More swiglu cells at {TARGET_SIZE} (rule 9) would give it one."]),
         f"Files: [`{stem}.png`]({gh}/{stem}.png), [`{stem}.csv`]({gh}/{stem}.csv)."])
     replace_block(OUT_ROOT / "README.md", "scale-convergence-transformation-panels", body,
                   "scale_convergence.py --by transformation")
@@ -625,16 +634,17 @@ def generate_readme(pool: str, out_dir: Path, tables: dict) -> None:
         return
     stage = load_pools()[pool].get("stage", "pretraining")
     body = ["## Scale convergence — the minimum useful scale",
-            f"How small a **fully trained** model may be and still decide the way the {TARGET_SIZE} final checkpoint "
-            f"does: R_size(N) = matching decisions / comparable decisions over the gated tasks, and N_min(τ) = the "
-            f"smallest size with R ≥ τ (τ = {TAU:g}). Same kernel, gate and pair minimum as the rest of rq02 — this is "
-            f"DA-size pooled over decisions rather than averaged over tasks, so the counts behind a point are in the "
-            f"CSV. The {TARGET_SIZE} point is 1.0 by construction. Regenerate with "
-            f"`python analysis/rq02_decision_accuracy/scale_convergence.py` (all three groupings)."]
+            f"How small can a **fully trained** model be and still make the same decisions as the {TARGET_SIZE} final "
+            f"checkpoint? A decision is the order of one pair of design variants on one task. "
+            f"R_size(N) = matching decisions / comparable decisions, pooled over the gated tasks, and N_min(τ) is the "
+            f"smallest size with R ≥ τ (τ = {TAU:g}). The kernel, gate and pair minimum are the same as in the rest of "
+            f"rq02. R is DA-size pooled over decisions instead of averaged over tasks, and the CSV holds the decision "
+            f"counts behind each point. The {TARGET_SIZE} point is 1.0 by construction, since it is compared with itself. "
+            f"Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py` (all three groupings)."]
     heading = {"overall": "**Pooled over every pair**", "L": "**By language count**",
                "transformation": "**By design axis**"}
     for by, t in tables.items():
-        body += [f"{heading[by]} (benchmarks; `{stem_for(by)}.csv` carries BPB and the decision counts):",
+        body += [f"{heading[by]}, over the benchmark tasks and their bBPB twins (`{stem_for(by)}.csv` also holds the per-language BPB rows and the decision counts):",
                  md_table(list(t.columns), t.values.tolist()),
                  f"![Scale convergence, {by}]({stage}/{pool}/{stem_for(by)}.png)"]
     replace_block(OUT_ROOT / "README.md", "scale-convergence", "\n\n".join(body),
@@ -794,19 +804,21 @@ if __name__ == "__main__":
         body = "\n\n".join([
             f"## Scale convergence by language count, on the {args.langs} languages"
             + (", common tasks" if args.common_tasks else ""),
-            f"The `--by L` lines read over the tasks in the {len(LANG_SETS[args.langs])} languages of the {args.langs} "
-            f"setting ({', '.join(sorted(LANG_SETS[args.langs]))}), which every regime from {args.langs} up trains"
-            + (f", and further over the tasks with ≥ {MIN_PAIRS} pairs in every regime at every proxy size — one task set "
-               f"for the whole figure, so a gap between lines is a gap on the same benchmarks" if args.common_tasks else "")
-            + f". What this cannot fix: a regime pools arch, scheme and temperature decisions at once and the mix differs "
-            f"by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes "
-            f"keep only their one-axis pairs ("
+            f"This block reads the `--by L` lines over the tasks in the {len(LANG_SETS[args.langs])} languages of the "
+            f"{args.langs} setting ({', '.join(sorted(LANG_SETS[args.langs]))}). Every regime from {args.langs} up "
+            f"trains on these languages."
+            + (f" It further keeps only the tasks with ≥ {MIN_PAIRS} pairs in every regime at every proxy size. The "
+               f"whole figure then uses one task set, so a gap between two lines is a gap on the same benchmarks."
+               if args.common_tasks else "")
+            + f" One confound remains. A regime pools architecture, scheme and temperature decisions, and the mix "
+            f"differs by regime (`share_*` in the CSV). Rule 5 forbids holding it fixed. Under `--axes mono-axis` the "
+            f"regimes keep only their one-axis pairs ("
             + ", ".join(f"{g} {n_pairs['L']['multi-axis'][g]} → {n_pairs['L']['mono-axis'].get(g, 0)}"
                         for g in group_order(k for k in n_pairs["L"]["multi-axis"] if k != OVERALL)
                         if n_pairs["L"]["multi-axis"][g] != n_pairs["L"]["mono-axis"].get(g, 0))
             + ") and rest on fewer tasks. "
-            f"Numbers below are the unfiltered population; the `above_66_size` twin "
-            f"(`{stem}.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/"
+            f"The numbers below are the unfiltered population. The `above_66_size` twin "
+            f"(`{stem}.png`) is the conditional reading. Regenerate with `python analysis/rq02_decision_accuracy/"
             f"scale_convergence.py --by L --langs {args.langs}{' --common-tasks' if args.common_tasks else ''}`.",
             md_table(list(tables["L"].columns), tables["L"].values.tolist()),
             f"![Scale convergence, {args.langs}{' common tasks' if args.common_tasks else ''}]"

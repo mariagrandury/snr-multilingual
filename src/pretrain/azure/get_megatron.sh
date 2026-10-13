@@ -32,5 +32,16 @@ cp "$(dirname "${BASH_SOURCE[0]}")/../patches/training_dist_signal_handler.py" \
 # failed --test-logits check (asserted after the save) is still not caught.
 cp "$(dirname "${BASH_SOURCE[0]}")/../patches/tools_checkpoint_saver_swissai_hf.py" \
    "$MEGATRON_LM_DIR/tools/checkpoint/saver_swissai_hf.py"
+# --optimizer muon, ported from upstream NVIDIA Megatron-LM (Newton-Schulz
+# vendored from Emerging-Optimizers v0.3.0, which the image lacks). Inert for
+# every other --optimizer: adds args/config fields and one dispatch branch.
+cp "$(dirname "${BASH_SOURCE[0]}")/../patches/optimizer_muon.py" \
+   "$MEGATRON_LM_DIR/megatron/core/optimizer/muon.py"
+cp "$(dirname "${BASH_SOURCE[0]}")/../patches/optimizer_optimizer_config.py" \
+   "$MEGATRON_LM_DIR/megatron/core/optimizer/optimizer_config.py"
+cp "$(dirname "${BASH_SOURCE[0]}")/../patches/training_arguments.py" \
+   "$MEGATRON_LM_DIR/megatron/training/arguments.py"
+cp "$(dirname "${BASH_SOURCE[0]}")/../patches/training_training.py" \
+   "$MEGATRON_LM_DIR/megatron/training/training.py"
 export MEGATRON_LM_DIR
 export PYTHONPATH=$MEGATRON_LM_DIR${PYTHONPATH:+:$PYTHONPATH}

@@ -1,0 +1,57 @@
+\begin{tabular}{llrccccccrr}
+\toprule
+ & & & \multicolumn{6}{c}{Training tokens of the language for 50\% / 90\% of the cells above chance} & & \\
+\cmidrule(lr){4-9}
+Benchmark & Format & Lang. & 90M & 175M & 350M & 600M & 1B & 1.7B & Margin & Items \\
+\midrule
+ARC (MT) & Original & 11 & $>$4.6B & $>$8.8B & $>$17B & 2.3B / 15B & 500M / 1.8B & 190M / 900M & 0.021 & 1{,}172 \\
+\addlinespace
+ARC (Okapi) & Original & 26 & $>$4.6B & $>$8.8B & $>$17B & 3.3B / $>$30B & 720M / 3.9B & 320M / 1.4B & 0.021 & 1{,}169 \\
+\addlinespace
+Belebele & Original & 48 & $>$4.6B & $>$8.8B & $>$17B & $>$30B & $>$47B & $>$84B & 0.024 & 900 \\
+ & RF & 48 & $\leq$440K / $>$4.6B & $\leq$860K / 5.6B & $\leq$1.7M / 550M & $\leq$3M / 210M & $\leq$4.6M / 51M & $\leq$8.2M / 9M & 0.024 & 900 \\
+ & LLM-RF & 48 & $\leq$440K & $\leq$860K & $\leq$1.7M & $\leq$3M & $\leq$4.6M & $\leq$8.2M & 0.024 & 898 \\
+\addlinespace
+BLEnD & Original & 3 & $>$4.6B & $>$8.8B & $>$17B & $>$30B & $>$47B & $>$84B & 0.032 & 500 \\
+\addlinespace
+CulturalBench-easy$^\dagger$ & Original & 7 & $\leq$3.1M / $>$4.6B & $>$8.8B & $>$17B & $>$30B & $>$47B & $>$84B & 0.138 & 32 \\
+ & RF & 7 & $>$4.6B & $>$8.8B & $>$17B & $>$30B & $>$47B & $>$84B & 0.142 & 32 \\
+\addlinespace
+CulturalBench-hard$^\dagger$ & Original & 7 & $>$4.6B & $>$8.8B & $>$17B & $>$30B & $>$47B & $>$84B & 0.077 & 130 \\
+\addlinespace
+Global PIQA (parallel) & Original & 45 & $>$4.6B & $>$8.8B & $>$17B & $>$30B & $>$47B & 17B / $>$84B & 0.070 & 103 \\
+\addlinespace
+Global-MMLU & Original & 28 & $>$4.6B & $>$8.8B & $>$17B & $>$30B & $>$47B & $>$84B & 0.006 & 14{,}042 \\
+ & RF & 28 & 51M / 3.3B & 55M / 600M & 83M / 600M & 88M / 550M & 64M / 400M & $\leq$39M / 210M & 0.006 & 14{,}042 \\
+\addlinespace
+HellaSwag (Okapi) & Original & 25 & $\leq$440K & $\leq$860K & $\leq$1.7M & $\leq$3M & $\leq$4.6M & $\leq$8.2M & 0.007 & 9{,}272 \\
+\addlinespace
+INCLUDE & Original & 36 & $>$4.6B & $>$8.8B & $>$17B & $>$30B & $>$47B & $>$84B & 0.032 & 548 \\
+ & RF & 36 & 1.3B / $>$4.6B & 1.1B / $>$8.8B & 730M / 12B & 400M / 8.1B & 310M / 7.7B & 150M / 4.9B & 0.032 & 548 \\
+ & LLM-RF & 36 & 750M / $>$4.6B & 520M / $>$8.8B & 430M / $>$17B & 250M / 13B & 180M / 10B & 79M / 4.9B & 0.032 & 546 \\
+\addlinespace
+INCLUDE v2 RF (EN)$^\dagger$ & RF & 42 & $\leq$440K / $>$4.6B & $\leq$860K / $>$8.8B & $\leq$1.7M / $>$17B & $\leq$3M / $>$30B & $\leq$4.6M / $>$47B & $\leq$8.2M / $>$84B & 0.024 & 886 \\
+\addlinespace
+INCLUDE v2 RF (OG) & RF & 42 & 880M / $>$4.6B & 880M / $>$8.8B & 510M / $>$17B & 310M / $>$30B & 200M / $>$47B & 92M / $>$84B & 0.024 & 886 \\
+\addlinespace
+MMLU (Okapi) & RF & 27 & 980K / $>$4.6B & 9.4M / 680M & 15M / 830M & 19M / 450M & 23M / 360M & 16M / 230M & 0.006 & 13{,}101 \\
+\addlinespace
+MMMLU & RF & 12 & 30M / 190M & 47M / 240M & 84M / 420M & 120M / 650M & 140M / 680M & 93M / 530M & 0.006 & 14{,}042 \\
+\addlinespace
+MultiBLiMP & Original & 33 & $\leq$570K & $\leq$1.1M & $\leq$2.2M & $\leq$3.8M & $\leq$6M & $\leq$11M & 0.017 & 2{,}298 \\
+\addlinespace
+PAWS-X & Original & 7 & $>$4.6B & $>$8.8B & $>$17B & $>$30B & $>$47B & 11B / $>$84B & 0.018 & 2{,}000 \\
+\addlinespace
+TokSuite & Original & 4 & $\leq$6.4M / 13M & $\leq$12M & $\leq$24M & $\leq$42M & $\leq$66M & $\leq$120M & 0.125 & 40 \\
+\addlinespace
+TruthfulQA (MC2) & Original & 2 & $>$4.6B & $>$8.8B & $>$17B & $>$30B & $>$47B & $>$84B & 0.030 & 786 \\
+\addlinespace
+XCOPA & Original & 8 & $>$4.6B & $>$8.8B & $\leq$2.6M / $>$17B & 13M / 260M & $\leq$7.2M / 44M & $\leq$13M / 14M & 0.038 & 500 \\
+\addlinespace
+XNLI & Original & 14 & 71M / $>$4.6B & $\leq$4.4M / $>$8.8B & $\leq$8.8M / $>$17B & $\leq$15M / $>$30B & $\leq$24M / $>$47B & $\leq$43M / $>$84B & 0.016 & 2{,}490 \\
+\addlinespace
+XStoryCloze & Original & 7 & $>$4.6B & 500M / $>$8.8B & 98M / 17B & $\leq$20M / 700M & $\leq$32M / 190M & $\leq$56M & 0.022 & 1{,}511 \\
+\addlinespace
+XWinograd & Original & 5 & 290M / 1.6B & 280M / 1.9B & 270M / 2.4B & 110M / 1B & $\leq$140M / 590M & $\leq$240M & 0.049 & 315 \\
+\bottomrule
+\end{tabular}

@@ -57,7 +57,7 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import metric_for  # noqa: E402
+from evals.scripts.utils.configs import accuracy_metric  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
@@ -179,15 +179,15 @@ def readme(summ: pd.DataFrame, pool: str, n_tasks: int, store: str, missing: lis
         "## Items the reference solves",
         f"DA-size, final checkpoints, multi-axis pairs of `{pool}` (grid seed), gate `{GATE_POOL}` at the proxy and the "
         f"reference, {n_tasks} tasks with per-item outputs. An item is solved when at least {SOLVED:g} of the {TARGET_SIZE} "
-        f"runs of the selecting half answer it right; the subset's proxy mean is scored against the {TARGET_SIZE} final of "
+        f"runs of the selecting half answer it right. The subset's proxy mean is scored against the {TARGET_SIZE} final of "
         "the full task on the other half's pairs, both ways round (held out, rule 11), beside the full set on the same "
-        "pairs; the in-sample column selects with every 1.7B run and has seen the truth. SNR = relative dispersion of the "
-        "design means over the relative k-fold noise, read at the proxy alone; the solved set's SNR is on the items at least "
-        f"half of all the {TARGET_SIZE} runs solve, while the DA it is correlated with is the held-out one. Regenerate with "
+        "pairs. The in-sample column selects with every 1.7B run, so it has seen the truth. SNR is the relative dispersion "
+        "of the design means over the relative k-fold noise, read at the proxy alone. The solved set's SNR uses the items "
+        f"that at least half of all the {TARGET_SIZE} runs solve, while the DA it is correlated with is the held-out one. Regenerate with "
         f"`python analysis/rq08_subset_selection/reference_solved.py --pool {pool}"
         f"{'' if store == pool else ' --store ' + store}`."
-        + (f" The store `{store}` lacks {len(missing)} of the pool's models ({', '.join(missing)}); "
-           "they are left out until the store is rebuilt for the pool." if missing else ""),
+        + (f" The store `{store}` lacks {len(missing)} of the pool's models ({', '.join(missing)}). "
+           "They are left out until the store is rebuilt for the pool." if missing else ""),
         md_table(["proxy", "tasks", "solved share", "DA all (held out)", "DA solved (held out)", "Δ", "Wilcoxon p",
                   "DA solved (in sample)", "ρ(SNR, DA) all", "ρ(SNR, DA) solved"], rows),
         f"![Items the reference solves](pretraining/{pool}/{NAME}.png)"])
@@ -224,9 +224,11 @@ def main(pool: str, store: str | None = None) -> None:
                           read_dictionary=["model", "task"]).to_pandas()
         s = s[s["step"].to_numpy() == s["model"].map(last).astype(float).to_numpy()]
         for task, g in s.groupby("task", observed=True):
+            if accuracy_metric(task) is None:      # mcc / f1: no per-item column in the store
+                continue
             cols = keys[keys["task"] == task].set_index("model")    # the (model, task) the pool keeps: rules 2 and 6
             g = g[g["model"].isin(cols.index)]
-            M = g.pivot_table(index="doc_id", columns="model", values=metric_for(task) or "acc", observed=True).dropna()
+            M = g.pivot_table(index="doc_id", columns="model", values=accuracy_metric(task), observed=True).dropna()
             cols = cols.loc[M.columns]
             if M.empty or not (cols["size"] == TARGET_SIZE).any():
                 continue

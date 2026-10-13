@@ -17,7 +17,10 @@ they lack the rows). Per benchmark the panel is cut to the languages above
 chance at 1.7B (rule 1 at the reference; at least MIN_PANEL of them) and, for
 each proxy size, a single-language view exists where the language is above
 chance at that size too (rule 1 at the proxy); the proxy macro averages the
-languages readable at that size. Pairs are every grid-seed pair of design
+languages readable at that size. A language with several tasks of one family
+(INCLUDE v2's countries, belebele's two Chinese scripts) is read as the mean
+over its tasks above chance, and the macro weighs every language the same
+(`n_tasks` in the CSV). Pairs are every grid-seed pair of design
 variants over every data build (rule 15's multi-axis set), ≥ MIN_PAIRS per view
 (rule 5), the band the leave-one-family-out jackknife.
 
@@ -87,6 +90,12 @@ def macro(scores: dict, tasks: list) -> dict:
     return {f: float(np.mean([scores[t][f] for t in tasks])) for f in fams}
 
 
+def macro_of(views: dict) -> dict:
+    """family -> mean over the language views (each language weighs the same,
+    whatever its number of tasks), families present in every view."""
+    return macro(views, list(views))
+
+
 def decisions(proxy: dict, ref: dict, pairs: list) -> list:
     """(family_a, family_b, match) for every pair both sides score."""
     return [(a, b, int(np.sign(proxy[a] - proxy[b]) == np.sign(ref[a] - ref[b])))
@@ -104,22 +113,28 @@ def panel_views(fin: pd.DataFrame, pairs: list, mask, sizes: list) -> pd.DataFra
     ref_scores = scores_by(bench, TARGET_SIZE)
     rows, panels = [], {}
     for b, g in bench.groupby("benchmark"):
-        task_of = dict(zip(g["language"], g["task"]))          # one parent task per language
-        ok_ref = [l for l in PANEL if l in task_of and bool(passes_gate(mask, [task_of[l]], TARGET_SIZE).iloc[0])]
+        # a language can hold several tasks of one family (INCLUDE v2's Spanish
+        # countries, belebele's two Chinese scripts): its view is their mean
+        tasks_of = {l: sorted(set(t)) for l, t in g.groupby("language")["task"]}
+        above = lambda tasks, size: [t for t, ok in zip(tasks, passes_gate(mask, tasks, size)) if ok]
+        ref_tasks = {l: above(tasks_of[l], TARGET_SIZE) for l in PANEL if l in tasks_of}
+        ok_ref = [l for l in PANEL if ref_tasks.get(l)]
         if len(ok_ref) < MIN_PANEL:
             continue
-        ref = macro(ref_scores, [task_of[l] for l in ok_ref])
+        ref = macro_of({l: macro(ref_scores, ref_tasks[l]) for l in ok_ref})
         panels[b] = ok_ref
         for size in sizes:
             prox = scores_by(bench, size)
-            ok = [l for l in ok_ref if bool(passes_gate(mask, [task_of[l]], size).iloc[0])]
-            views = {l: prox.get(task_of[l], {}) for l in ok}
+            at = {l: above(ref_tasks[l], size) for l in ok_ref}
+            ok = [l for l in ok_ref if at[l]]
+            views = {l: macro(prox, at[l]) for l in ok}
             if ok:
-                views[MACRO] = macro(prox, [task_of[l] for l in ok])
+                views[MACRO] = macro_of(views)
             for view, p in views.items():
                 for a, c, m in decisions(p, ref, pairs):
                     rows.append({"benchmark": b, "size": size, "view": view, "family_a": a, "family_b": c, "match": m,
-                                 "n_langs": len(ok) if view == MACRO else 1, "ref_langs": len(ok_ref)})
+                                 "n_langs": len(ok) if view == MACRO else 1, "ref_langs": len(ok_ref),
+                                 "n_tasks": sum(map(len, at.values())) if view == MACRO else len(at[view])})
     d = pd.DataFrame(rows)
     pooled = d[d["view"] != MACRO].assign(benchmark=POOLED)          # every single-language decision, pooled
     pooled_macro = d[d["view"] == MACRO].assign(benchmark=POOLED)
@@ -130,7 +145,7 @@ def summarise(d: pd.DataFrame) -> pd.DataFrame:
     keys = ["benchmark", "size", "view"]
     out = jackknife_ratio(d, keys)
     n = d.groupby(keys, sort=False).agg(n_pairs=("match", "size"), n_langs=("n_langs", "first"),
-                                        ref_langs=("ref_langs", "first")).reset_index()
+                                        ref_langs=("ref_langs", "first"), n_tasks=("n_tasks", "first")).reset_index()
     out = out.merge(n, on=keys)
     out = out[out["n_pairs"] >= MIN_PAIRS]                                   # rule 5
     out["non_emb"] = out["size"].map(NON_EMB)
@@ -209,9 +224,9 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, panels: dict) -> 
         f"Per benchmark family, decision accuracy of a proxy size against the {TARGET_SIZE} MACRO ranking of the "
         f"design variants (mean over the L8 panel languages above chance at {TARGET_SIZE}), when the proxy reads one "
         f"language, English, or its own macro over the languages readable at that size. Grid-seed pairs of every "
-        f"data build (multi-axis), ≥ {MIN_PAIRS} pairs, gate `{pool}`. A macro above every single language says the "
-        f"languages' errors are independent and the panel is worth evaluating; a single language at the macro says "
-        f"it suffices. Regenerate with `python analysis/rq06_language_transfer/language_panel.py --pool {pool}`.",
+        f"data build (multi-axis), ≥ {MIN_PAIRS} pairs, gate `{pool}`. A macro above every single language says that the "
+        f"languages' errors are independent and that the panel is worth evaluating. A single language as good as the "
+        f"macro says that this language suffices. Regenerate with `python analysis/rq06_language_transfer/language_panel.py --pool {pool}`.",
         md_table(list(tab.columns), tab.values.tolist()),
         f"![The minimal language panel]({stage}/{pool}/language_panel.png)"])
     replace_block(OUT_ROOT / "README.md", "language-panel", body, f"language_panel.py --pool {pool}")

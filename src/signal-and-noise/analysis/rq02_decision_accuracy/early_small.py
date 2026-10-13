@@ -239,39 +239,43 @@ def generate_readme(pool: str, r: dict | None) -> None:
             continue
         piv = g.pivot(index="proxy_size", columns="frac", values="da").reindex(index=r["sizes"], columns=r["fracs"])
         cheapest = g[g["da"] >= SAFE_DA]
-        blocks += [f"**{group}** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples; mean DA over "
-                   f"{int(g['tasks'].max())} tasks):",
+        blocks += [f"**{group}**. Rows are proxy sizes, columns are the proxy's training tokens in Chinchilla multiples, "
+                   f"and each cell is the mean DA over {int(g['tasks'].max())} tasks:",
                    md_table(["proxy"] + [G.chinchilla(f) for f in piv.columns],
                             [[s] + [fmt(piv.loc[s, f]) for f in piv.columns] for s in piv.index])]
         if not cheapest.empty:
             first = min(cheapest.itertuples(), key=lambda x: (r["sizes"].index(x.proxy_size), x.frac))
-            bullets.append(f"- **{group}** — smallest proxy whose mean agreement with the {TARGET_SIZE} final ranking "
-                           f"reaches {SAFE_DA}: **{first.proxy_size} at {G.chinchilla(first.frac)}** ({fmt(first.da)}).")
+            bullets.append(f"- **{group}**: the smallest size, at its earliest checkpoint, whose mean agreement with the "
+                           f"{TARGET_SIZE} final ranking reaches {SAFE_DA} is **{first.proxy_size} at "
+                           f"{G.chinchilla(first.frac)}** ({fmt(first.da)}).")
         else:
-            bullets.append(f"- **{group}** — no (proxy, checkpoint) reaches a mean agreement of {SAFE_DA}.")
+            bullets.append(f"- **{group}**: no (proxy, checkpoint) cell reaches a mean agreement of {SAFE_DA}.")
     ss = r["safe_size"]
     known = ss.stack().dropna()
     if len(known):
         known = known[known > G.GATED]
         dist = known.map(lambda i: "never" if i < 0 else r["proxies"][int(i)]).value_counts()
-        bullets.append("- **Smallest safe size per (benchmark, language)** — "
+        bullets.append("- **Smallest safe size per (benchmark, language)**: "
                        + ", ".join(f"{k}: {v}" for k, v in dist.items()) + f" of {len(known)} cells.")
     body = "\n\n".join([
         "## Early and small, as a ranking",
-        f"Numbers from the `{pool}` pool: every design variant at a proxy size, read at 1C–5C of training (C = the "
-        "Chinchilla-optimal 20 tokens per parameter; every run trains 5C, so 1C is 20 % of it), "
-        f"ranked against the same variants at the {TARGET_SIZE} final checkpoint (the 5C column is DA-size, the "
-        f"{TARGET_SIZE} row is that size's DA-ckpt). A benchmark task counts only where it clears chance at the proxy "
-        f"size and at {TARGET_SIZE}. "
+        f"This section asks how small a proxy, and how early in its run, still ranks the design variants like the "
+        f"{TARGET_SIZE} final checkpoint. Numbers come from the `{pool}` pool. Every design variant is read at a "
+        "proxy size and at checkpoints from 0.5C to 5C of training, where C is the Chinchilla-optimal budget of 20 "
+        "tokens per parameter. Every run trains for 5C, so 1C is 20 % of the run. Each cell ranks the variants "
+        f"against the same variants at the {TARGET_SIZE} final checkpoint. The 5C column is therefore DA-size, and the "
+        f"{TARGET_SIZE} row is that size's DA-ckpt. A benchmark task counts only where it clears chance both at the "
+        f"proxy size and at {TARGET_SIZE}. "
         f"Regenerate with `python analysis/rq02_decision_accuracy/early_small.py --pool {pool}`.",
         "\n".join(bullets),
         f"![rq02 in one figure]({rel}/highlights_da_all_multi_axes.png)"] + blocks + [
         f"![Early and small]({rel}/early_small_da_goal_multi_axes.png)",
         f"![Early and small per benchmark]({rel}/early_small_da_goal_by_benchmark_multi_axes.png)",
         f"![Early and small per language]({rel}/early_small_da_goal_by_language_multi_axes.png)",
-        f"**Smallest safe level per language and benchmark** (DA ≥ {SAFE_DA} over ≥ {MIN_PAIRS} pairs, held at "
-        "every larger level — for FLOPs, at every costlier (size, checkpoint) cell; red = never, grey = filtered "
-        "out by the above-random gate, white = no value). Each figure's table sits next to it under the same name:",
+        f"**Smallest safe level per language and benchmark.** A level is safe when DA ≥ {SAFE_DA} over ≥ "
+        f"{MIN_PAIRS} pairs there and at every larger level (for FLOPs, at every costlier (size, checkpoint) cell). "
+        "Red = never, grey = filtered out by the above-random gate, white = no value. Each figure's table sits next "
+        "to it under the same name:",
         f"![Smallest safe size]({rel}/safe_size_da_size_multi_axes.png)",
         f"![Smallest safe checkpoint]({rel}/safe_checkpoint_da_ckpt_multi_axes.png)",
         f"![Smallest safe FLOPs]({rel}/safe_flops_da_goal_multi_axes.png)",

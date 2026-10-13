@@ -69,6 +69,7 @@ a configuration with q < Q on the validation half.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from itertools import combinations
 from pathlib import Path
@@ -98,7 +99,11 @@ from analysis.utils import FRAC_TOL, MIN_LANG_TASKS, NOISE_WINDOW, PAIR_AXES  # 
 OUT_ROOT = SURROGATES
 KEYS = ["task", "language", "benchmark", "kind", "tier", "proxy_size", "axes"]
 TRUTH = ["t_kind", "metric", "axes", "L"]
-CIRCULAR = {"da_ckpt_mean", "da_ckpt_half", "sign_persistence", "settling_time"}   # early-vs-final agreements
+# Early-vs-final agreements, and statistics that contain one: `crossings` counts
+# the sign changes up to and including the final checkpoint (none = DA-ckpt 1 at
+# every fraction) and `consecutive_kendall*` include the 90 % -> final step.
+CIRCULAR = {"da_ckpt_mean", "da_ckpt_half", "sign_persistence", "settling_time",
+            "crossings", "consecutive_kendall", "consecutive_kendall_late"}
 RELIABLE_CUTS = (0.66, 0.75)
 RELIABLE_RED = "median"                 # the reduction of rq02's above_66_* filters
 MIN_UNITS = MIN_LANG_TASKS              # main analysis: rule 8's floor, three clusters
@@ -111,6 +116,10 @@ QUANTILES = (0.25, 0.5, 0.75)
 N_VALIDATE, N_PERM, N_BOOT = 400, 2000, 500
 TOP_PER_SUBSET = 3                      # ... plus the discovery-best three of every (truth, subset)
 Q = 0.05
+# Processes per phase. Every phase maps one job per truth with Pool.map, which keeps
+# the job order, and each validation job seeds its own rng, so the tables do not
+# depend on it; more workers also keep each process under a login node's CPU limit.
+N_JOBS = int(os.environ.get("SEARCH_WORKERS", "4"))
 mpl.rcParams.update(S.RC)
 
 
@@ -281,7 +290,8 @@ def subsets(g: pd.DataFrame):
             yield typ, str(k), (b & (g[col] == k)).to_numpy()
     if (g["frac"] < 1).any():
         yield "stage", "early (<= 50 %)", (b & (g["frac"] <= .5)).to_numpy()
-        yield "stage", "late (60-90 %)", (b & (g["frac"] > .5)).to_numpy()
+        # DA-goal's last tenth is its 100 % cell (= DA-size), DA-ckpt's is 90 %
+        yield "stage", f"late (60-{g.loc[b, 'frac'].max():.0%})", (b & (g["frac"] > .5)).to_numpy()
     for col in [c for c in g.columns if c.startswith("reliable_")]:
         yield "reliable (on the truth)", col.removeprefix("reliable_"), (b & g[col].fillna(False).astype(bool)).to_numpy()
 
@@ -568,11 +578,11 @@ def generate_readme(pool: str, corr, val, ceil, byL) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     sig = significant(corr)
     blocks = [f"**Main analysis (all the data).** {len(corr):,} configurations (truths × subsets × surrogates, the "
-              f"threshold filters included); {int(corr['p'].notna().sum()):,} have a p-value (≥ {MIN_P_UNITS} units); "
-              f"**{len(sig):,} hold at BH q < {Q}**. A best-of-many ρ is optimistic even when it is significant; "
-              "the extra below measures by how much."]
+              f"threshold filters included). {int(corr['p'].notna().sum()):,} of them have a p-value (≥ {MIN_P_UNITS} "
+              f"units), and **{len(sig):,} hold at BH q < {Q}**. A best-of-many ρ is optimistic even when it is "
+              "significant. The extra below measures by how much."]
     ce = ceil[ceil["kind"] == "benchmark"]
-    blocks += ["**The ceiling** — each truth against itself re-read at 90 % (benchmarks):",
+    blocks += ["**The ceiling.** Each truth against itself re-read at 90 % (benchmarks):",
                md_table(["truth", "ρ", "ρ over cells", "units"],
                         [[label(r), fmt(r["rho"]), fmt(r["rho_cells"]), int(r["n_units"])] for _, r in ce.iterrows()])]
     b = corr[corr["subset"] == "benchmarks"]
@@ -585,15 +595,15 @@ def generate_readme(pool: str, corr, val, ceil, byL) -> None:
             & (b["L"].astype(str) == "all")]
     sb = snr.loc[snr.groupby("t_kind")["rho"].idxmax()]
     std = snr[snr["surrogate"] == "snr__rel_std__ckpt_rel"].set_index("t_kind")["rho"]
-    blocks += ["**The AllenAI grid** (22 signals × 6 noises, DA, every pair, benchmarks): best combination against "
+    blocks += ["**The AllenAI grid** (22 signals × 6 noises, DA, every pair, benchmarks). The best combination against "
                "AllenAI's own `rel_std` / checkpoint noise:",
                md_table(["truth", "best signal / noise", "ρ", "rel_std / ckpt_rel ρ"],
                         [[f"DA-{r['t_kind']}", f"`{r['surrogate'].removeprefix('snr__').replace('__', ' / ')}`",
                           fmt(r["rho"]), fmt(std.get(r["t_kind"], np.nan))] for _, r in sb.iterrows()])]
     top = sig[sig["subset"] != "benchmarks"].groupby(["t_kind", "metric", "subset_type"], sort=False).head(2).head(30)
-    blocks += ["**Particular cases** — the strongest significant configurations outside \"every benchmark\", two per "
-               "(truth, subset type); `reliable (on the truth)` subsets are selected on the truth itself, so their ρ "
-               "is conditional on it; all of them in `surrogate_correlations.csv` (`q` column):",
+    blocks += ["**Particular cases.** The strongest significant configurations outside \"every benchmark\", two per "
+               "(truth, subset type). `reliable (on the truth)` subsets are selected on the truth itself, so their ρ "
+               "is conditional on it. All of them are in `surrogate_correlations.csv` (`q` column):",
                md_table(["truth", "subset", "surrogate", "ρ", "q", "ρ over cells", "units"],
                         [[label(r), f"{r['subset_type']}: {r['subset']}", f"`{r['surrogate']}`", fmt(r["rho"]),
                           f"{r['q']:.1e}", fmt(r["rho_cells"]), int(r["n_units"])] for _, r in top.iterrows()])]
@@ -604,9 +614,9 @@ def generate_readme(pool: str, corr, val, ceil, byL) -> None:
                           f"`{r['surrogate']}`", fmt(r["rho"])] for _, r in bl.iterrows()])]
     found = val[val["q_val"] < Q]
     vt = found.reindex(found["rho_val"].abs().sort_values(ascending=False).index).head(15)
-    blocks += [f"**Extra: held-out confirmation.** The (benchmark, language) clusters split in two halves; "
+    blocks += [f"**Extra: held-out confirmation.** The (benchmark, language) clusters are split in two halves. "
                f"{len(val)} configurations ranked best on one half (within-stratum ρ) were tested once on the other "
-               f"(one-sided cluster permutation test, BH): **{len(found)} hold at q < {Q}**. The strongest:",
+               f"(one-sided cluster permutation test, BH), and **{len(found)} hold at q < {Q}**. The strongest:",
                md_table(["truth", "subset", "surrogate", "ρ disc.", "ρ val. [90 %]", "q", "tasks val."],
                         [[label(r), f"{r['subset_type']}: {r['subset']}", f"`{r['surrogate']}`", fmt(r["rho_disc"]),
                           f"{fmt(r['rho_val'])} [{fmt(r['val_lo'])}, {fmt(r['val_hi'])}]", f"{r['q_val']:.1e}",
@@ -617,12 +627,12 @@ def generate_readme(pool: str, corr, val, ceil, byL) -> None:
     body = "\n\n".join([
         "## A catalogue of surrogates beyond SNR",
         f"Numbers from the `{pool}` pool. Regenerate with `python analysis/rq04_surrogates/catalogue.py --pool {pool}` "
-        f"then `search.py --pool {pool}`. Surrogates are read on the proxy alone (rule 11), except `pseudo_ref_da`, which reads the 1B rung; the truths are rq02's DA "
-        f"(DA-size; DA-goal and DA-ckpt at every early checkpoint of the proxy; both pair sets; every pair or the pairs "
+        f"then `search.py --pool {pool}`. Surrogates are read on the proxy alone (rule 11), except `pseudo_ref_da`, which reads the 1B rung. The truths are rq02's DA "
+        f"(DA-size, DA-goal and DA-ckpt at every early checkpoint of the proxy, both pair sets, every pair or the pairs "
         f"sharing L) and Kendall τ-b / Spearman ρ on the same rankings, over cells above chance (rule 1). ρ is a "
-        f"Spearman over one point per (benchmark, language) cluster, pooled over proxies and checkpoints; populations "
-        f"differ per configuration (rule 13) and n is in the CSVs. Definitions and sources: "
-        f"[`literature.md`](literature.md); method: `search.py`'s docstring.",
+        f"Spearman over one point per (benchmark, language) cluster, pooled over proxies and checkpoints. Populations "
+        f"differ per configuration (rule 13), and n is in the CSVs. Definitions and sources are in "
+        f"[`literature.md`](literature.md), the method in `search.py`'s docstring.",
         *blocks])
     replace_block(OUT_ROOT / "README.md", "catalogue", body, f"search.py --pool {pool}")
 
@@ -633,7 +643,7 @@ def main(pool: str, out_dir: Path) -> None:
     d, names = load(out_dir, pool)
     print(f"{len(d):,} cells, {d['task'].nunique()} tasks, {len(names)} surrogates, "
           f"{d.groupby(TRUTH).ngroups} truths")
-    with Pool(4) as p:
+    with Pool(N_JOBS) as p:
         corr = pd.DataFrame([r for rows in p.map(screen_truth, [(tr, g, names) for tr, g in truths(d)]) for r in rows])
     print(f"  screened: {len(corr):,} correlations")
     jobs = []
@@ -644,7 +654,7 @@ def main(pool: str, out_dir: Path) -> None:
             top = top.reindex(top[col].abs().sort_values(ascending=False).index).head(TOP_K)
             if len(top) >= 2:
                 jobs.append((tr, g, top, basis))
-    with Pool(4) as p:
+    with Pool(N_JOBS) as p:
         filt = pd.DataFrame([r for rows in p.map(filters_truth, jobs) for r in rows])
     filt.to_csv(out_dir / "surrogate_filters.csv", index=False)
     print(f"  filters: {len(filt):,} correlations")
@@ -669,7 +679,7 @@ def main(pool: str, out_dir: Path) -> None:
         rows = pick[(pick[TRUTH].astype(str) == pd.Series(tr).astype(str)).all(axis=1)]
         if len(rows):
             vjobs.append((g, rows.to_dict("records"), i))
-    with Pool(4) as p:
+    with Pool(N_JOBS) as p:
         val = pd.DataFrame([r for rows in p.map(validate_job, vjobs) for r in rows])
     assert np.allclose(val["rho_val"], val["rho_val_check"], equal_nan=True), "validation cells differ from the screen"
     val["q_val"] = bh(val["p_val"].to_numpy())

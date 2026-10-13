@@ -5,14 +5,16 @@ row per intervention, L, population, proxy size, fraction of the proxy's run)
 and answers the paper's question for the two planned decisions, depth and
 the language lists (data scheme A vs B at L8-L30; `analyze.by_recipe` keeps
 A vs ZH at L2 and A vs DCLMP at L1, the other recipes the letter B names, out
-of it): at which proxy size, and how early in that proxy's run, does
+of it), and for the two model-recipe decisions read at L8-L30, activation
+(xIELU vs SwiGLU) and optimizer (AdEMAMix vs Muon): at which proxy size, and
+how early in that proxy's run, does
 the decision match the reference's final one? The heat map is the mean over
 language settings of the per-setting agreement, so a setting with thousands
 of benchmark tasks does not outweigh one with hundreds.
 
     rq2_da_all_decisions_mono_axis.csv     the decision-table rows of the two planned decisions
     rq2_da_goal_early_small_mono_axis.csv   agreement per (decision, population, proxy size, fraction)
-    rq2_da_goal_early_small_mono_axis.png/.pdf
+    rq2_da_goal_early_small_mono_axis.png
     early_decision_facts.json
 
     python analysis/rq05_design_decisions/early_decision.py --pool predictivity_seeds
@@ -42,12 +44,14 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
-from analysis.rq05_design_decisions.analyze import by_recipe  # noqa: E402
-from analysis.utils import RELIABLE_DA, size_order  # noqa: E402
+from analysis.rq05_design_decisions.analyze import INTERVENTIONS, by_recipe, not_yet  # noqa: E402
+from analysis.utils import RELIABLE_DA, TARGET_SIZE, size_order  # noqa: E402
 
 OUT_ROOT = DESIGN_DECISIONS
 CANONICAL = "predictivity_seeds"
-DECISIONS = ["arch", "scheme_B"]                     # the two planned decisions (analyze.by_recipe keys: scheme_B = the L8-L30 lists)
+# the two planned decisions (analyze.by_recipe keys: scheme_B = the L8-L30
+# lists) and the two model-recipe ones (L8-L30)
+DECISIONS = ["arch", "scheme_B", "activation", "optimizer"]
 POPULATIONS = [("bpb_trained", "per-language bits per byte"), ("benchmark", "benchmark tasks")]
 mpl.rcParams.update(S.RC)
 
@@ -63,12 +67,19 @@ def early_small(dt: pd.DataFrame) -> pd.DataFrame:
 
 def plot(agg: pd.DataFrame, out_dir: Path) -> None:
     fracs = sorted(agg["frac"].unique())
-    fig, axes = plt.subplots(len(DECISIONS), len(POPULATIONS), figsize=(9.2, 6.4), sharex=True, squeeze=False)
+    fig, axes = plt.subplots(len(DECISIONS), len(POPULATIONS), figsize=(9.2, 3.2 * len(DECISIONS)), sharex=True, squeeze=False)
     im = None
     for i, dec in enumerate(DECISIONS):
         for j, (pop, title) in enumerate(POPULATIONS):
             ax = axes[i][j]
             g = agg[(agg["intervention"] == dec) & (agg["population"] == pop)]
+            if g.empty:               # no reference at any L yet (rule 9): say so, never fill it
+                not_yet(ax)
+                if i == 0:
+                    ax.set_title(title, loc="left")
+                if j == 0:
+                    ax.set_ylabel(f"{INTERVENTIONS[dec][0]}\nproxy size")
+                continue
             sizes = size_order(g["proxy_size"])
             mat = np.full((len(sizes), len(fracs)), np.nan)
             cnt = np.zeros_like(mat)
@@ -86,8 +97,7 @@ def plot(agg: pd.DataFrame, out_dir: Path) -> None:
             if i == 0:
                 ax.set_title(title, loc="left")
             if j == 0:
-                label = g["label"].iloc[0] if not g.empty else dec
-                ax.set_ylabel(f"{label}\nproxy size")
+                ax.set_ylabel(f"{g['label'].iloc[0]}\nproxy size")
             if i == len(DECISIONS) - 1:
                 ax.set_xlabel("proxy's training tokens (C = Chinchilla-optimal; 5C = the full run)")
             S.clean(ax, spines=()); ax.tick_params(length=0)
@@ -107,22 +117,25 @@ def generate_readme(pool: str, out_dir: Path, agg: pd.DataFrame) -> None:
         for pop, title in POPULATIONS:
             g = agg[(agg["intervention"] == dec) & (agg["population"] == pop)]
             if g.empty:
+                bullets.append(f"- **{INTERVENTIONS[dec][0][:1].upper()}{INTERVENTIONS[dec][0][1:]}, {title}.** Not yet. There is no {TARGET_SIZE} result at both "
+                               "levels, so there is no agreement with the reference to read (rule 9).")
                 continue
             label = g["label"].iloc[0]
             final = g[g["frac"] == 1.0].set_index("proxy_size")["da"]
             sizes = size_order(final.index)
-            first = next((s for s in sizes if final[s] >= RELIABLE_DA), None)
+            safe = G.smallest_safe(pd.DataFrame([(final[sizes] >= RELIABLE_DA).astype(float).where(final[sizes].notna()).to_numpy()]))[0]
+            first = sizes[int(safe)] if safe == safe and safe >= 0 else None     # stays >= RELIABLE_DA at every larger proxy
             early = g[(g["proxy_size"] == (first or sizes[-1]))].sort_values("frac")
             e_first = next((G.chinchilla(r.frac) for r in early.itertuples() if r.da >= RELIABLE_DA), "never")
             bullets.append(
-                f"- **{label}, {title}** — final-checkpoint agreement by proxy: "
+                f"- **{label[:1].upper()}{label[1:]}, {title}.** Final-checkpoint agreement by proxy: "
                 + ", ".join(f"{s} {fmt(final[s])}" for s in sizes)
-                + (f"; smallest proxy at ≥ {RELIABLE_DA:g}: **{first}**, which reaches it at {e_first} of training (5C = the full run)."
-                   if first else f"; no proxy reaches {RELIABLE_DA:g}."))
+                + (f". The smallest proxy from which every larger proxy stays at ≥ {RELIABLE_DA:g} is **{first}**, which reaches it at {e_first} of training (5C = the full run)."
+                   if first else f". No proxy reaches {RELIABLE_DA:g}."))
             piv = g.pivot_table(index="proxy_size", columns="frac", values="da")
             piv = piv.reindex(size_order(piv.index))
-            blocks += [f"**{label} — {title}** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; "
-                       "mean over L of the per-L agreement):",
+            blocks += [f"**{label}, {title}** (rows: proxy size, columns: the proxy's training tokens in Chinchilla multiples, "
+                       "5C = the full run, values: mean over L of the per-L agreement):",
                        md_table(["proxy"] + [G.chinchilla(f) for f in piv.columns],
                                 [[s] + [fmt(piv.loc[s, f]) for f in piv.columns] for s in piv.index])]
     blocks.append(f"![Early and small]({stage}/{pool}/rq2_da_goal_early_small_mono_axis.png)")

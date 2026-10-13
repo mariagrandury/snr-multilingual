@@ -116,10 +116,11 @@ def generate_readme(pool: str, out_dir: Path, sm: pd.DataFrame) -> None:
             for _, r in sm.iterrows() if r["size"] != TARGET_SIZE]
     body = "\n\n".join([
         "## Scaling utility against ranking utility",
-        f"Per proxy size, the Spearman correlation ACROSS TASKS between rq01's scaling statistics (ρ of score with "
-        f"model size; R² of the size fit; R² of the trajectory fit) and rq02's ranking statistics (ρ of the proxy's "
-        f"ranking of the design variants with the {TARGET_SIZE} ranking; DA-size), and the mean DA-size of the tasks "
-        f"rq01 calls 'predictable across both' against the rest. Regenerate with "
+        "For each proxy size, the table gives the Spearman correlation ACROSS TASKS between rq01's scaling statistics "
+        "and rq02's ranking statistics. The scaling statistics are the ρ of score with model size, the R² of the size "
+        "fit and the R² of the trajectory fit. The ranking statistics are the ρ between the proxy's ranking of the "
+        f"design variants and the {TARGET_SIZE} ranking, and DA-size. The last two columns compare the mean DA-size of "
+        "the tasks rq01 calls 'predictable across both' with that of the rest. Regenerate with "
         f"`python analysis/rq02_decision_accuracy/scaling_vs_ranking.py --pool {pool}`.",
         md_table(["proxy", "tasks", "ρ_size vs ρ_ranking", "R²_size vs DA-size", "R²_traj vs DA-size",
                   "DA-size, predictable both", "DA-size, other regimes"], rows),

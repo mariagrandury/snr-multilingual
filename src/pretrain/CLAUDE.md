@@ -36,45 +36,74 @@ reintroduces the drift this design removed.
 | `launch_pretraining_azure.sh` | `azure/get_megatron.sh` checkout, MBS auto-shrink to GPU count, torchrun |
 | `launch_trainings.py` | **the grid** (`LADDER`, `LANG_SETTINGS`, `DATA_SCHEMES`, `SEED_TRIPLES` — every other tool imports them from here) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
 | `pretrain_progress.py` | CSCS per-cell actions (`done/fresh/resume/corrupt` — the same `cell_action` the launcher uses) + `--is-valid` CLI + the plan table and three heatmaps (`--plot`): planned runs, finished models, and eval work outstanding. `--plot` also rewrites the generated grid block in README.md and the plan doc, so the figures and counts cannot drift from the constants in `launch_trainings.py`. `--plot`, every launch and every watcher pass also write `pretrain_progress_1b_17b.md` (per 1B/1.7B run of any account: data read, checkpoint, job, jobs left; then the launch commands). |
-| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (the ten tenths of training on the run's own save grid — `due_iters` — plus the k/20 points of the noise window, 85 % and 95 %, and the final: 12 per run at every size; the FLOPs-milestone add-on decided 09-02 is not implemented yet) submits convert-snr then evaluate.sbatch (one eval worker per GPU, results per task, so a killed job resumes on the next pass with only the missing tasks; `--max-attempts` holds back tasks that keep failing, `--retry-held` frees them for one pass after you fix the cause — the reason shown is the task's own, or its job log's only when that log belongs to the same run and family (../evals/CLAUDE.md "A second opinion from the wrong job's log"); `--all-languages` swaps a cell's trained languages for every language any task is tagged with; `--reformulated` was removed on 2026-10-03, after its groups were retired on 2026-09-23 (the twins are in `auto`, the candidates in `auto_probe`); `--size` filters, default `EVAL_SIZES` = the whole ladder, 90M included since its batch-84 retrain of 2026-09-23); needs models.json entries (`sync_models_json.py`) |
+| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (the ten tenths of training on the run's own save grid — `due_iters` — plus the k/20 points of the noise window, 85 % and 95 %, and the final: 12 per run at every size; the FLOPs-milestone add-on decided 09-02 is not implemented yet) submits convert-snr then evaluate.sbatch (one eval worker per GPU, results per task, so a killed job resumes on the next pass with only the missing tasks; `--max-attempts` holds back tasks that keep failing, `--retry-held` frees them for one pass after you fix the cause — the reason shown is the task's own, or its job log's only when that log belongs to the same run and family (../evals/CLAUDE.md "A second opinion from the wrong job's log"); `--all-languages` swaps a cell's trained languages for every language any task is tagged with; `--reformulated` was removed on 2026-10-03, after its groups were retired on 2026-09-23 (the twins are in `auto`, the candidates in `auto_probe`); `--size` filters, default `EVAL_SIZES` = the whole ladder, 90M included since its batch-84 retrain of 2026-09-23); needs models.json entries (`sync_models_json.py`). One real pass at a time per user and `--group`, across login nodes: a shared-filesystem lock (#15), `--stop` from any node |
 | `sync_models_json.py` | upserts one models.json entry per grid cell — conversion + W&B push resolve through it |
 |  `auto_evals_azure.py` | Azure watcher: same due rule against blob storage |
 
 A rung is trained in a ladder only if that ladder's hyperparams file defines
 it AND the scheme plans that ladder at that setting
 (`launch_trainings.ladders_for`): the 3B exists in `hyperparams_deep.json`
-only, and `swiglu` is listed in scheme A's `ladders_by_L` at L ∈ {8, 15, 30}
-rather than in its `ladders`, so it runs at three settings and not six. Every
+only, and `swiglu` and `muon` are listed in scheme A's `ladders_by_L` at
+L ∈ {8, 15, 30} rather than in its `ladders`, so they run at three settings
+and not six. Every
 fan-out over ladders reads `ladders_for(scheme, size, L)`, never a scheme's
 `ladders` list directly — the launcher's guard in `main()` did read it
 directly and refused the swiglu ladder outright until 2026-10-03.
 
-**A ladder is not an axis.** A ladder (`deep`, `shallow`, `swiglu` — the
+**A ladder is not an axis.** A ladder (`deep`, `shallow`, `swiglu`, `muon` — the
 `HYPERPARAMS` key, the token in the cell name, one trained model
 configuration) sits at one level on each of three intervention axes,
 `launch_trainings.LADDERS`: `arch` ∈ {deep, shallow} (the depth),
-`activation` ∈ {xielu, swiglu}, `optimizer` ∈ {ademamix}. Deep is
-(deep, xielu, ademamix), shallow moves `arch`, swiglu moves `activation`, so
-a (deep, swiglu) pair is an ACTIVATION decision, only (deep, shallow) is an
-ARCH one, and (shallow, swiglu) moves two axes and is neither.
+`activation` ∈ {xielu, swiglu}, `optimizer` ∈ {ademamix, muon}. Deep is
+(deep, xielu, ademamix), shallow moves `arch`, swiglu moves `activation`,
+muon moves `optimizer`, so a (deep, swiglu) pair is an ACTIVATION decision,
+(deep, muon) an OPTIMIZER one, only (deep, shallow) is an ARCH one, and
+(shallow, swiglu) moves two axes and is neither.
 `cell_env` emits `ACTIVATION`/`OPTIMIZER` only where a ladder's level differs
 from deep's, so deep and shallow env dicts are what those cells trained
 with. The launcher takes the levels, not the token — `--arch {deep,shallow}`,
-`--activation {xielu,swiglu}`, `--optimizer {ademamix}`, resolved by
+`--activation {xielu,swiglu}`, `--optimizer {ademamix,muon}`, resolved by
 `ladder_of()`, which refuses a combination no ladder trains (`--arch shallow
 --activation swiglu`); `sync_models_json.py` and `pretrain_progress.py` take
 the same three options, and `auto_evals_cscs.py` filters on `--arch` /
-`--activation` (default: every ladder; `--arch deep` keeps the deep AND
-swiglu ladders). `configs/models.json` predictivity entries and
+`--activation` / `--optimizer` (default: every ladder; `--arch deep` keeps
+the deep, swiglu AND muon ladders). `configs/models.json` predictivity entries and
 `ladder_report.py`'s wide CSV carry `ladder` plus the three levels, and
 `transform_effects` counts a pair on an axis only when it differs in that one
 axis. A ladder added to `HYPERPARAMS` without a `LADDERS` entry raises rather
-than being silently pooled into an axis. An OPTIMIZER level (muon) needs
-Megatron work first: Megatron's `--optimizer` takes only adam|sgd|ademamix.
+than being silently pooled into an axis.
+
+**The muon ladder** (2026-10-08) is `hyperparams_deep.json` 90M–1.7B
+unchanged — shape, peak LR, schedule, batch (`-b84`/`-b168` at the two small
+rungs, so a (deep, muon) pair differs in the optimizer alone) — trained with
+upstream Megatron's Muon, ported into the shared checkout
+(`patches/optimizer_muon.py` + `optimizer_optimizer_config.py`,
+`training_arguments.py`, `training_training.py`; Emerging-Optimizers'
+Newton–Schulz vendored, since that package is not in the image), with the
+Moonlight recipe (Liu et al. 2025): Muon on the 2D hidden weights, its update
+rescaled by 0.2 × √max(fan_out, fan_in) (`--muon-scale-mode spectral
+--muon-extra-scale-factor 0.2`), which matches AdamW's update RMS so the deep
+ladder's peak LR and decoupled weight decay 0.1 carry over unchanged;
+`--muon-momentum 0.95 --muon-nesterov --muon-num-ns-steps 5`; AdamW (betas
+0.9/0.999) on the embeddings, output layer and norms. The factor is
+`muon_extra_scale_factor` in the hyperparams file (`cell_env` emits it as
+`MUON_EXTRA_SCALE_FACTOR`, required by `megatron_args.sh`); the other flags
+are constants of `megatron_args.sh`'s muon branch.
+**No distributed optimizer**: the port is core_v0.16.0's, which rejects
+`--use-distributed-optimizer` for muon, so `megatron_args.sh` drops it and
+`--overlap-param-gather` for muon and every DP rank holds the full optimizer
+state and runs every Newton–Schulz — more memory per GPU than the deep cell
+it mirrors, at the same MBS. That OOMs at 1B: MBS 6 crashed every link on
+iteration 2 (CUDA OOM allocating the 12 GiB fp32 logits, (4096, 6, 131072),
+in the fused cross-entropy; 82.0 GB max allocated after iteration 1 against
+77.5 GB for deep 1B), so muon 1B runs MBS 3 — same GBS 504, two micro-batches
+per DP rank, the same samples per step and the same token-mean loss (no EOD
+masking, dropout 0), so the update differs only in fp summation order. Scheme A at L ∈ {8, 15, 30}, seed 1904, like
+swiglu. Converting a muon checkpoint to HF has not been tested.
 
 Cell name everywhere (checkpoint dir, W&B run id/name, models.json key,
 parsed by `pretrain_progress.py`):
-`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu>-seed<seed>` — the last
+`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu|muon>-seed<seed>` — the last
 token is the ladder, never renamed to the levels (the cells exist under it);
 `lm`, not `apertus`:
 the architecture has diverged from Apertus (renamed 2026-08-21). Job display
@@ -206,8 +235,9 @@ then never log again without a code-side id suffix.
   `/iopsstor/scratch/cscs/mariagrandury/data-92B`. The launcher reads a cell's
   FineWeb-2 half from there only when the stage copy is too small for it (the
   six 1.7B cells at A-L15/A-L50/B-L15); every other rung stays on 52B. The 3B
-  rung (2026-09-19, A/B at L8/L15; L30 and L50 added 2026-09-30, deep only —
-  `plan/3b_models.md`) repeats
+  rung (2026-09-19, A/B at L8/L15; A-L30, B-L30 and A-L50 added 2026-09-30,
+  deep only — `plan/3b_models.md`; B-L30 removed 2026-10-09 untrained, its
+  build stays staged) repeats
   the pattern as a second tier: those seven builds are sized 165B, built into
   `rebuild-165B`, staged to `data-165B`, and read only by cells the 92B copies
   cannot feed (`CSCS_REBUILD_DATA_DIRS`, smallest fit first). **Do not
@@ -389,9 +419,9 @@ WSD decay at the wrong step. Verified end-to-end 2026-05-10.
 
 ### 6. Platform parity beyond the arguments
 - Azure checks out Megatron at the pinned `MEGATRON_COMMIT`
-  (`azure/get_megatron.sh`) and copies `patches/` over it — the same three
+  (`azure/get_megatron.sh`) and copies `patches/` over it — the same
   patches the CSCS checkout carries (dist-checkpointing load, signal handler,
-  HF saver; README "Before the first CSCS run"); the CSCS wrapper uses the
+  HF saver, the Muon port; README "Before the first CSCS run"); the CSCS wrapper uses the
   on-disk checkout at `/iopsstor/.../data-mix-small/Megatron-LM`. Identical args don't guarantee
   identical code — verify the cluster checkout is at the same commit
   (`c92402e`) before cross-platform comparisons.
@@ -568,6 +598,58 @@ refuses an `apertus` config whose `hidden_act` is not `xielu`. Lesson: a
 reload into a class with no slot for a weight is a warning, not an error, so
 read `output_loading_info`.
 
+### 15. Two watchers submit everything twice (2026-10-08/09)
+A pass reads the queue ONCE (`active_jobs()`) and dedupes every submission
+against that snapshot, so two passes that start together each see the other's
+work as missing. On 2026-10-08 a hand-started `auto_evals_cscs.py --watch 1800`
+and the one `launch_trainings.py` spawned ran side by side on ln001; at 23:00
+both submitted the same 231 evals and 3 conversions within one second. The
+second copies burned 99.5 node-hours before 165 of them were cancelled, and
+with two smaller bursts earlier that day (17:00, 19:00) and one on 10-07,
+275 jobs went out twice since 10-07 at 121 node-hours (sacct, pairs of one name
+submitted < 10 min apart). The same had happened twice on ln004. The guards
+were `pgrep`, in the launcher and in `nightly.sh`, which see one login node;
+`$HOME` and `/iopsstor` are shared by all of them, so neither the timer nor the
+launcher could see a watcher on another node. Per-task idempotency does not
+save it: both copies start before either has a result, so both run every task.
+
+The fix is nightly.sh's lock, on the watcher itself (`take_lock`): every real
+pass, one-shot or `--watch`, mkdirs
+`/iopsstor/scratch/cscs/$USER/logs/auto_evals/watcher[-<group>].lock`
+(`AUTO_EVALS_LOCK_DIR` overrides) holding `host pid start ttl`, and refuses to
+start, naming the holder, while it is live. A holder on the same node is live
+iff `/proc/<pid>/cmdline` is this script (a dead or reused pid is stale); one
+on another node is live until its `heartbeat` file, touched before every
+cell, between the post-pass steps and every minute of the sleep, is older than
+its ttl (3 × the watch interval); a lock with no `heartbeat` yet (the moment
+between the holder's `owner` write and its first beat) gets the same minute's
+grace on the directory mtime as an unreadable `owner`. A stale lock is taken
+over, and a holder that was only slow finds a stranger in `owner` at its next
+beat and exits without touching the new holder's files. SIGTERM (and SIGHUP, unless nohup ignores it)
+unwinds through atexit, which removes the lock only if it is still ours.
+One-shot passes take it too, rather than only refusing while a watcher runs:
+"refuse" alone still lets two one-shots, or a one-shot and a watcher started a
+second later, overlap; `--dry-run` takes no lock (it submits nothing). The lock
+is per user and per `--group`: a probe pass names its jobs differently, and a
+collaborator's watcher is hers to run. Another node's watcher cannot be
+killed from here, so `--stop` writes a `stop` file naming the holder, which
+consumes it and exits at its next heartbeat (within a minute while idle, after
+the current cell or post-pass step mid-pass), plus SIGTERM when the holder is
+on this node; it then waits for the lock to go. On a timeout it withdraws the
+request (unlinks the file: exactly one of the two unlinks wins) and exits 1,
+so the holder keeps running instead of exiting at a later beat after
+`nightly.sh` gave up on a successor, which left no watcher at all (found in
+review, 2026-10-10). `nightly.sh evals` restarts the watcher through it,
+starting the fresh one even after a failed `--stop` (the lock refuses it while
+the old one is live), and
+the launcher starts one only when no live holder exists. Second guard:
+`submit_eval`/`submit_convert` re-ask `squeue -h -n <job>` immediately before
+each sbatch (`already_queued`), so even two passes that slip past the lock
+collide only within that one call. Every spawned watcher runs `-u` /
+`PYTHONUNBUFFERED=1`: block-buffered into a file, a killed one loses up to
+8 KB of unwritten output (the nightly `*.watcher.log` files of 10-06..09 are
+all empty), so its log cannot say how far it got.
+
 ---
 
 ## Live state (read, don't trust snapshots)
@@ -577,6 +659,11 @@ read `output_loading_info`.
 python3.11 pretrain_progress.py            # what a re-launch would do; --plot for heatmaps
 python launch_trainings.py cscs --dry-run  # first
 python launch_trainings.py cscs            # then for real (skips done/active, resumes partial)
+
+# CSCS: the eval watcher. One per user, across every login node (#15)
+python3.11 -u auto_evals_cscs.py --watch 1800   # refuses if one is already running
+python3.11 auto_evals_cscs.py --stop            # stop it, whichever node it is on
+cat /iopsstor/scratch/cscs/$USER/logs/auto_evals/watcher.lock/owner   # who holds it
 
 # Azure: watcher submits convert+eval as checkpoints land (one per workspace)
 source azure/env.sh && python auto_evals_azure.py --watch 600

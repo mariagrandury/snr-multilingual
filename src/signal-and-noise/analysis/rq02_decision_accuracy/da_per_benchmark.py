@@ -11,7 +11,9 @@ form. Two DA definitions live there:
   DA-size  — small-bucket ranking @last vs the reference's ranking @last
              (`decision_acc_size_<small>` is small→TARGET_SIZE; the
              `decision_acc_size_<small>_to_<large>` columns are the scaling
-             ladder and are never pooled into "DA-size").
+             ladder, filed as "DA-size (ladder)" and never pooled into the
+             README's DA-size means; the wide table and the slides show them
+             beside it). A `gated` column marks the cells rule 1 rejects.
   DA-ckpt  — within one bucket, the ranking at an early checkpoint (each of
              the nine evaluated tenths before the final, rule 3) vs that
              bucket's final ranking.
@@ -46,8 +48,8 @@ import pandas as pd  # noqa: E402
 from evals.scripts.utils.configs import (  # noqa: E402
     bucket_order, load_languages, load_pools)
 from analysis.rq00_gate_and_curves.above_random import (  # noqa: E402
-    TABLE_STYLE, above_random_slides, fmt_cell, md_table)
-from analysis.autodoc import CANONICAL_POOL  # noqa: E402
+    load_mask, TABLE_STYLE, above_random_slides, fmt_cell, md_table)
+from analysis.autodoc import CANONICAL_POOL, rewrite  # noqa: E402
 from analysis.utils import (LANGUAGE_AGGREGATES, RELIABLE_DA, one_axes, passes_gate,  # noqa: E402
     _BUCKET_RE, TARGET_SIZE, assign_language, benchmark_family)
 from snr.constants import PLOT_DIR  # noqa: E402
@@ -73,8 +75,8 @@ def melt_da(df: pd.DataFrame) -> pd.DataFrame:
             val = df.at[task, col]
             if pd.isna(val):
                 continue
-            if (m := _SIZE_SCALE.match(col)):
-                da_def, comparison = "DA-size", f"{m.group(1)}→{m.group(2)}"
+            if (m := _SIZE_SCALE.match(col)):     # a rung against a larger proxy, not the reference
+                da_def, comparison = "DA-size (ladder)", f"{m.group(1)}→{m.group(2)}"
                 frm, to = m.group(1), m.group(2)
             elif (m := _SIZE_CANON.match(col)):
                 da_def, comparison = "DA-size", f"{m.group(1)}→{TARGET_SIZE}"
@@ -95,7 +97,7 @@ def _pivot(long: pd.DataFrame, da_def: str) -> pd.DataFrame:
     """Wide view for one DA definition: rows=(language, benchmark, task),
     cols=comparison, sorted by mean DA so the most-predictive benchmarks sit on
     top within each language."""
-    sub = long[long["da_def"] == da_def]
+    sub = long[long["da_def"].str.startswith(da_def)]          # "DA-size" keeps the ladder's own pairs beside it
     if sub.empty:
         return pd.DataFrame()
     wide = sub.pivot_table(index=["language", "benchmark", "task"],
@@ -109,6 +111,11 @@ def run(pool: str, out_dir: Path) -> None:
     csv_path = out_dir / "da_all_per_task_both_axes.csv"
     df = one_axes(pd.read_csv(csv_path)).set_index("task")
     long = melt_da(df)
+    # rule 1, as a column (the values stay): DA-size at the proxy and its target, DA-ckpt at the proxy
+    mask = load_mask(pool)
+    long["gated"] = False
+    for (frm, to), g in long.groupby(["size_from", "size_to"]):
+        long.loc[g.index, "gated"] = ~passes_gate(mask, g["task"], *dict.fromkeys([frm, to])).to_numpy()
     long = long.sort_values(["da_def", "language", "benchmark", "comparison"])
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -161,12 +168,13 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
         med_n = int(npairs[col].reindex(bench.index).median()) if npairs is not None and len(bench) else 0
         rows.append([f"{b} → {TARGET_SIZE}", fmt(bench.mean()), len(bench), med_n, fmt(bpb.mean()), len(bpb)])
     if rows:
-        bullets.append("- **DA-size, proxy → " + TARGET_SIZE + "** (mean over the above-random benchmark tasks / over the "
-                       "per-language BPB tasks): " + "; ".join(f"{r[0]} {r[1]} / {r[4]}" for r in rows) + ".")
+        bullets.append("- **DA-size, proxy → " + TARGET_SIZE + "**, as the mean over the above-random benchmark tasks (their "
+                       "bBPB twins included) / the mean over the per-language BPB tasks: "
+                       + ", ".join(f"{r[0]} {r[1]} / {r[4]}" for r in rows) + ".")
         for agg in ("bpb_macro", "train_loss"):
             if agg in df.index:
-                bullets.append(f"- **DA-size of `{agg}`** (one task, kept out of the means above): "
-                               + "; ".join(f"{b} {fmt(df.at[agg, f'decision_acc_size_{b}'])}" for b in sizes) + ".")
+                bullets.append(f"- **DA-size of `{agg}`**, a single task kept out of the means above: "
+                               + ", ".join(f"{b} {fmt(df.at[agg, f'decision_acc_size_{b}'])}" for b in sizes) + ".")
     ckpt = [c for c in df.columns if c.startswith("decision_acc_ckpt_")]
     ck_rows = []
     if ckpt:
@@ -180,11 +188,13 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
         fracs = sorted({k[1] for k in piv}, key=lambda f: int(f[1:]))
         ck_rows = [[b] + [fmt(piv.get((b, f), float("nan"))) for f in fracs] for b in buckets]
         best = max(piv.items(), key=lambda kv: kv[1] if np.isfinite(kv[1]) else -1)
-        bullets.append(f"- **DA-ckpt** (early checkpoint vs final, above-random benchmark tasks): highest at "
-                       f"{best[0][0]} {int(best[0][1][1:])} % ({fmt(best[1])}).")
+        bullets.append(f"- **DA-ckpt**, an early checkpoint against the final of the same size (above-random benchmark "
+                       f"tasks, bBPB twins included): highest at {best[0][0]} and {int(best[0][1][1:])} % of the run "
+                       f"({fmt(best[1])}).")
     blocks = []
     if rows:
-        blocks += ["**DA-size by proxy size** (`n` tasks; median pairs per cell):",
+        blocks += ["**DA-size by proxy size.** The benchmark column includes the bBPB twins. Each `n` is the number of "
+                   "tasks behind the column to its left, and `pairs` is the median number of pairs per cell.",
                    md_tbl(["comparison", "benchmarks", "n", "pairs", "BPB", "n"], rows)]
         # family x proxy heatmap over the above-random tasks
         fams = sorted(fam[is_bench].unique())
@@ -215,14 +225,15 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
             S.save(fig, out_dir / "da_size_by_family_multi_axes.png", dpi=150)
             blocks.append(f"![DA-size by family]({stage}/{pool}/da_size_by_family_multi_axes.png)")
     if ck_rows:
-        blocks += ["**DA-ckpt by bucket and fraction of the run** (mean over the above-random benchmark tasks):",
+        blocks += ["**DA-ckpt by bucket and fraction of the run**, as the mean over the above-random benchmark tasks "
+                   "(bBPB twins included):",
                    md_tbl(["bucket"] + [f"{int(f[1:])} %" for f in fracs], ck_rows)]
     readme = DECISION_ACCURACY / "README.md"
     gen = f"da_per_benchmark.py --pool {pool}"
     replace_block(readme, "highlight", "## Highlighted result\n\n" + "\n".join(bullets), gen)
     replace_block(readme, "results", "## Results\n\n"
-                  + f"Numbers from the `{pool}` pool (`da_all_per_task_both_axes.csv`, pairs from `da_all_n_pairs_per_task_both_axes.csv`, "
-                  f"gate from rq00). Regenerate with `python analysis/rq02_decision_accuracy/da_per_benchmark.py --pool {pool}`.\n\n"
+                  + f"The numbers come from the `{pool}` pool: DA from `da_all_per_task_both_axes.csv`, pair counts from "
+                  f"`da_all_n_pairs_per_task_both_axes.csv` and the above-chance gate from rq00. Regenerate with `python analysis/rq02_decision_accuracy/da_per_benchmark.py --pool {pool}`.\n\n"
                   + "\n\n".join(blocks), gen)
     print(f"Wrote auto README blocks → {readme}")
 
@@ -250,7 +261,7 @@ def _comparison_key(comp: str) -> tuple[int, int]:
 def _da_language_slides(long: pd.DataFrame) -> list[str]:
     """One DA-size slide per language: benchmark rows × every computable size
     pair, cell = decision accuracy (bold ≥ _DA_BOLD), most-predictive first."""
-    size = long[long["da_def"] == "DA-size"]
+    size = long[long["da_def"].str.startswith("DA-size")]
     # The ladder resolves 96 languages, but only the ones it actually pretrains
     # on carry a claim. `groups.trained` is that set, capped at the 50-language
     # setting because the 100-language distribution is not settled. The CSVs keep
@@ -346,13 +357,12 @@ def generate_slides(long: pd.DataFrame, pool: str) -> None:
         _END,
     ]) + "\n"
 
-    text = _SLIDES.read_text()
-    if _BEGIN in text and _END in text:
-        text = re.sub(re.escape(_BEGIN) + r".*?" + re.escape(_END), block.rstrip(),
-                      text, flags=re.DOTALL)
-    else:
-        text = text.rstrip() + "\n\n" + block
-    _SLIDES.write_text(text)
+    def edit(text: str) -> str:
+        if _BEGIN in text and _END in text:
+            return re.sub(re.escape(_BEGIN) + r".*?" + re.escape(_END), block.rstrip(),
+                          text, flags=re.DOTALL)
+        return text.rstrip() + "\n\n" + block
+    rewrite(_SLIDES, edit)                       # locked: other steps write slides.md too
     print(f"Wrote appendix slides → {_SLIDES} "
           f"({len(ar)} above-random + {len(overview)} overview + "
           f"{len(lang_slides)} per-language DA)")

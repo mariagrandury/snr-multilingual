@@ -12,6 +12,30 @@ All AI-assisted content was reviewed by the authors, who take responsibility for
 
 - ladder sizes: our claims are limited not only by the availability of benchmarks but also by the capabilities of multilingual models at these sizes and the curse of multilinguality
 
+- small models only: 90M--1.7B, with a 3B check on six configurations
+
+- limitation of interventions? e.g., one tokenizer for every model and language
+
+- English is half of every multilingual mixture, so only the share of the other languages varies
+
+- single seed for most cells, and one 1.7B reference run per configuration
+
+- many benchmarks are machine translated
+
+- checkpoint noise is read in one window, the last 20\% of training during the cooldown
+
+- ties between letter-format scores in bf16 at small sizes
+
+- the model-based reformulation relies on a proprietary model
+
+- contamination of the pretraining data with benchmark items is not checked
+
 \section*{Ethical Statement}
 
 - acknowledge high compute cost, but we hope this will help the community to take informed decisions, launch useful ablations and avoid wasting compute on noisy evals
+
+- energy use and emissions of the sweep are not estimated
+
+- low-resource languages have fewer benchmarks and less web data, which may not represent their speakers
+
+- release of models trained on web data without safety tuning, for research use only

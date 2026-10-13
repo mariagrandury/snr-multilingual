@@ -175,8 +175,9 @@ def load_predictivity_eval_results(
     """One row per (cell, checkpoint, task) for the predictivity ladder.
 
     Columns: model (the cell name), family (cross-size identity), size, L,
-    ladder (the name's token: deep / shallow / swiglu), its levels arch (the
-    depth: a swiglu cell is "deep"), activation and optimizer, data (the
+    ladder (the name's token: deep / shallow / swiglu / muon), its levels arch
+    (the depth: a swiglu or muon cell is "deep"), activation and optimizer
+    (ademamix / muon), data (the
     build label: A, AT3, B, ZH, ES, DCLMP, FWEB), its levels scheme (the
     letter: A, B, C) and T (1, 3), seed, mix (`L8-schemeB-deep`: the cell's design variant,
     what the 36-sweep called its data mixture), step, task, kind

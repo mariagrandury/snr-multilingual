@@ -36,6 +36,7 @@
 \usepackage{hyperref}
 \usepackage{url}
 \usepackage{booktabs}
+\usepackage{array}  % >{\raggedright\arraybackslash}p{} columns (the considered-benchmarks table)
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{enumitem}
@@ -43,59 +44,123 @@
 \usepackage{xspace}
 \usepackage{wrapfig}
 \usepackage{amsmath}
-
+\usepackage{capt-of} % rq figures
+\usepackage{array} % considered-benchmarks table
 
 
 \newcommand{\ie}{{i.e.}\xspace}
 \newcommand{\eg}{{e.g.}\xspace}
 
 \definecolor{pink}{RGB}{204, 0, 102}
-\newcommand{\AR}[1]{\textcolor{pink}{\textit{(Note: #1)}}}
+\newcommand{\AR}[1]{\textcolor{pink}{\textit{AR: #1}}}
+\newcommand{\clara}[1]{\textcolor{orange}{\textit{CL: #1}}}
+\newcommand{\CL}[1]{\clara{#1}}  % the older name, still in some notes
+\newcommand{\MA}[1]{\textcolor{teal}{\textit{MA: #1}}}
+\newcommand{\TODO}[1]{\textcolor{red}{\textit{TODO: #1}}}
+\newcommand{\highlight}[1]{\textcolor{blue}{#1}}
 
-\newcommand{\fix}{\marginpar{FIX}}
-\newcommand{\new}{\marginpar{NEW}}
-\newcommand{\update}{\marginpar{UPDATE}}
+
 \newcommand{\citeneeded}[1]{\textcolor{blue}{[CITE]}}
 \newcommand{\checknum}[1]{\textcolor{orange}{#1}}
 
 
 \usepackage{tcolorbox}
 \newtcolorbox{rqfinding}{colback=teal!8, colframe=teal!55, arc=3pt, boxrule=0.7pt, left=5pt, right=5pt, top=4pt, bottom=4pt, fontupper=\small}
+\newtcolorbox{rquestion}{colback=teal!8, colframe=teal!55, arc=3pt, boxrule=0.7pt, left=5pt, right=5pt, top=4pt, bottom=4pt}
 
-% Constants. \nbenchmarks counts the multilingual families of Table~\ref{tab:benchmark-families}
-% (original families with more than one trained language; English-text families and reformulated
-% variants excluded) and is rewritten with that table by make_appendix_tables.py, together with
-% \nruns (every grid run, 3B and replicate seeds included), \nrunsfinished and the tasks per scheme-A
-% cell at each K (\ntasksKone ... \ntasksKfifty); the counts after them are rewritten by
-% verify_paper_results.py on every refresh (runs 90M--1.7B, evaluated checkpoints, per-language parent
-% benchmark tasks incl. the reformulated twins) with the charged compute from plan/compute-costs.json
-% (\npretrainnodehours, \nothernodehours, \ngpuhours).
+\usepackage{capt-of} 
+\newcommand{\rqparent}{}
+\newcommand{\rqgroup}[2]{\gdef\rqparent{\section{#1}\label{#2}\gdef\rqparent{}}}
+
+
+
+
 % BEGIN generated: nbenchmarks (make_appendix_tables.py)
-\newcommand{\nbenchmarks}{18 }
-\newcommand{\nruns}{201 }
-\newcommand{\nrunsfinished}{200 }
-\newcommand{\ntasksKone}{107 }
-\newcommand{\ntasksKtwo}{127 }
-\newcommand{\ntasksKeight}{306 }
-\newcommand{\ntasksKfifteen}{456 }
-\newcommand{\ntasksKthirty}{639 }
-\newcommand{\ntasksKfifty}{846 }
+\newcommand{\nbenchmarks}{20 }
+\newcommand{\nruns}{218 }
+\newcommand{\nrunsfinished}{218 }
+\newcommand{\ntasksKone}{113 }
+\newcommand{\ntasksKtwo}{134 }
+\newcommand{\ntasksKeight}{326 }
+\newcommand{\ntasksKfifteen}{485 }
+\newcommand{\ntasksKthirty}{720 }
+\newcommand{\ntasksKfifty}{938 }
+\newcommand{\nbenchanalysed}{52 }
+\newcommand{\ntasksanalysed}{938 }
+\newcommand{\nbenchscreened}{43 }
+\newcommand{\ntasksscreened}{550 }
+\newcommand{\ntasksdiscarded}{229 }
+\newcommand{\nbenchconsidered}{95 }
+\newcommand{\ntasksconsidered}{1,488 }
 % END generated: nbenchmarks
 % BEGIN generated: constants (verify_paper_results.py)
-\newcommand{\nmodels}{191 }
-\newcommand{\nckpts}{3,972 }
-\newcommand{\nbenchmarktasks}{1,379 }
-\newcommand{\npretrainnodehours}{39,100 }
-\newcommand{\nothernodehours}{8,900 }
-\newcommand{\ngpuhours}{192,000 }
+\newcommand{\nmodels}{213 }
+\newcommand{\nckpts}{4,412 }
+\newcommand{\nbenchmarktasks}{1,702 }
+\newcommand{\npretrainnodehours}{42,900 }
+\newcommand{\nothernodehours}{11,000 }
+\newcommand{\ngpuhours}{215,600 }
 % END generated: constants
 
 
+
+% If the title and author information does not fit in the area allocated, uncomment the following
+%
+%\setlength\titlebox{<dim>}
+%
+% and set <dim> to something 5cm or larger.
+
 % \title{Signal-Aware Framework for Multilingual Language Model Evaluation}
-\title{Model DR.: Diagnosing Decision Reliability \\ in Multilingual Model Development}
+\title{Small Scale, Big Decisions: A Guide to \\ Reliable Small-Scale Evaluation for Multilingual LLM Pretraining}
+% \title{Model DR.: Evaluating Decision Reliability \\ in Multilingual LLM Pretraining}
 % \title{Decision Reliability in Multilingual Model Development}
 % \title{Evaluating Multilingual Evaluations: In Search for Benchmarks that Enable Reliable Decisions}
 
+
+% Alternative titles:
+% Predicting Reliable Decisions in Multilingual Model Scaling
+% Decision Reliability in Multilingual Model Development/Scaling
+
+% Evaluating Multilingual Evaluations: In Search for Benchmarks that Enable Reliable Decisions
+
+%Model DR: Decision Reliability Improvement for Multilingual Model Development
+%mDR: Improving Decision Reliability for Multilingual Model Development 
+%Model DR.: Diagnosing Decision Reliability for Multilingual Model Development
+
+% MAIN RESEARCH QUESTION
+% People use evaluations of cheaper, small/partially trained models to make expensive training decisions. When is that practice actually reliable in multilingual model development?
+
+
+
+
+
+
+% Author information can be set in various styles:
+% For several authors from the same institution:
+% \author{Author 1 \and ... \and Author n \\
+%         Address line \\ ... \\ Address line}
+% if the names do not fit well on one line use
+%         Author 1 \\ {\bf Author 2} \\ ... \\ {\bf Author n} \\
+% For authors from different institutions:
+% \author{Author 1 \\ Address line \\  ... \\ Address line
+%         \And  ... \And
+%         Author n \\ Address line \\ ... \\ Address line}
+% To start a separate ``row'' of authors use \AND, as in
+% \author{Author 1 \\ Address line \\  ... \\ Address line
+%         \AND
+%         Author 2 \\ Address line \\ ... \\ Address line \And
+%         Author 3 \\ Address line \\ ... \\ Address line}
+
+%\author{First Author \\
+%  Affiliation / Address line 1 \\
+%  Affiliation / Address line 2 \\
+%  Affiliation / Address line 3 \\
+%  \texttt{email@domain} \\\And
+%  Second Author \\
+%  Affiliation / Address line 1 \\
+%  Affiliation / Address line 2 \\
+%  Affiliation / Address line 3 \\
+%  \texttt{email@domain} \\}
 
 \author{
   \textbf{María Grandury\textsuperscript{1}},
@@ -110,67 +175,102 @@
 \\
   \textsuperscript{1}EPFL,
 %  \textsuperscript{2}Affiliation 2,
+\\
+  \small{
+    \textbf{Correspondence:} \href{mailto:email@domain}{maria.grandury@epfl.ch}
+  }
 }
 
-
-%\iclrfinalcopy % Uncomment for camera-ready version, but NOT for submission.
 \begin{document}
 \maketitle
 \begin{abstract}
-Training multilingual language models requires repeated decisions about data mixtures and architectures, typically guided by evaluations of small proxy models.
-Such evaluations are useful, however, only if results from small-scale models reliably follow the same trends as their larger-scale counterparts. 
-While the conditions under which small-scale evaluations are predictive have been studied extensively in monolingual settings, these findings do not necessarily transfer to multilingual training, where model capacity is shared across languages and scaling behavior can depend strongly on the composition of the training mixture. 
-%a challenge compounded in multilingual settings where many language–specific tasks exhibit little measurable signal at small scales.
-This work asks four foundational questions around this practice: (1) for multilingual language models, at what model size do evaluations become sufficiently predictive of larger models? (2) how early during pretraining can decisions be taken? (3) can we determine before doing many expensive evaluations whether a particular evaluation is likely to be informative at small-scale? and (4) how do these patterns change as multilingual training data varies in composition? 
-We pretrain a controlled ladder of \nmodels models spanning six sizes from 90M to 1.7B non-embedding parameters and six language settings from 1 to 50 languages, with four design interventions and seed replicates. 
-We evaluate 12 aligned checkpoints from each run using per-language bits per byte over 100 languages and tasks from \nbenchmarks multilingual benchmark families.
-% RQ1
-We characterize which benchmark families exhibit predictable scaling across model size and training, and distinguish benchmarks whose performance improves consistently from those whose scaling is weak, noisy, or non-monotonic. 
-% RQ2
-For each benchmark, we quantify how well performance at smaller model sizes predicts performance at larger sizes, and how early in training this correspondence emerges. We then test whether these small-scale evaluations recover the relative effects of our data-mixture and architecture interventions observed at full scale.
-% RQ3
-Finally, we ask whether the reliability of a small-scale evaluation can itself be anticipated cheaply, comparing measurements that assess whether a benchmark has sufficient signal to recover full-scale results across model scales and as a function of the number and composition of training languages.
-% RQ4
-% Finally, we test whether scaling behavior learned from observed languages transfers to held-out languages, and how this transfer depends on the underlying design intervention. 
-% We find that likelihood-based measurements scale predictably while four-option knowledge benchmarks sit at chance up to 1.7B; that a 350M proxy at 20\% of its run already reads a data decision the way the 1.7B reference does on bits per byte, while the benchmark suite reads every decision as a coin flip; that the reliability of a proxy is set by the size of the intervention's effect relative to seed noise rather than by the intervention itself; and that scaling exponents transfer across languages, so that one small measurement predicts a never-trained language's bits per byte at 1.7B within 7\%. 
-We release the ladder and the per-checkpoint measurements to support cheaper, better-informed multilingual model development.
+Design choices for training large multilingual language models are typically guided by results from ablations done using smaller, proxy models. However, such results are only useful if evaluations of small-scale models reliably predict an ablation's effects in larger-scale models. The reliability of these evaluations has not been well-studied in the multilingual domain. 
+Here we provide a characterization of when small-scale models can reliably guide larger model development. 
+We pretrain a controlled ladder of \nmodels multilingual models, spanning scales and language mixtures, %spanning six sizes from 90M to 1.7B non-embedding parameters and six language settings from 1 to 50 languages, with four design interventions and seed replicates, providing a testbed for the reliability of evaluations as effective predictors of scaling behavior. 
+and evaluate language modelling and downstream performance on \nbenchmarks multilingual benchmark families. %Our results show that benchmarks commonly used for multilingual pretraining ablations are at chance at small scales and do not scale reliably.
+\TODO{Update below with concrete findings.}
+For each benchmark, we quantify how well the performance of smaller models predicts larger model performance, and how early in training this correspondence emerges. 
+We then test whether these small-scale evaluations recover the relative effects of design choices at full scale. Finally, we ask whether the reliability of a small-scale evaluation can itself be anticipated cheaply across model scales and difference compositions of training languages.
+\textcolor{red}{Catherine: I think we need to sum up in 1 sentence what the takeaways are. }We release the ladder and the per-checkpoint measurements to support the identification of evaluations that can lead to cheaper, better-informed multilingual model development.
+
+
+
+
+% % We evaluate 12 aligned checkpoints from each run using per-language bits per byte over 100 languages and tasks from \nbenchmarks multilingual benchmark families.
+% % RQ1
+% We characterize which benchmark families exhibit predictable scaling across model size and training, and distinguish benchmarks whose performance improves consistently from those whose scaling is weak, noisy, or non-monotonic. 
+% % RQ2
+% For each benchmark, we quantify how well performance at smaller model sizes predicts performance at larger sizes, and how early in training this correspondence emerges. We then test whether these small-scale evaluations recover the relative effects of our data-mixture and architecture interventions observed at full scale.
+% % RQ3
+% Finally, we ask whether the reliability of a small-scale evaluation can itself be anticipated cheaply, comparing measurements that assess whether a benchmark has sufficient signal to recover full-scale results across model scales and as a function of the number and composition of training languages.
+% % RQ4
+% % Finally, we test whether scaling behavior learned from observed languages transfers to held-out languages, and how this transfer depends on the underlying design intervention. 
+% % We find that likelihood-based measurements scale predictably while four-option knowledge benchmarks sit at chance up to 1.7B; that a 350M proxy at 20\% of its run already reads a data decision the way the 1.7B reference does on bits per byte, while the benchmark suite reads every decision as a coin flip; that the reliability of a proxy is set by the size of the intervention's effect relative to seed noise rather than by the intervention itself; and that scaling exponents transfer across languages, so that one small measurement predicts a never-trained language's bits per byte at 1.7B within 7\%. 
+% We release the ladder and the per-checkpoint measurements to support cheaper, better-informed multilingual model development.
 \end{abstract}
 
 \input{sections/01_introduction}
 \input{sections/02_related_work}
 \input{sections/03_methodology}
 \input{sections/04_analysis}
-%\input{sections/04_analysis_b} % RQ4 & 5
 \input{sections/05_conclusions}
+\input{sections/06_statements}
+%\input{sections/07_responsible_nlp_research}
 
 \bibliography{zotero,custom}
-\bibliographystyle{iclr2027_conference}
 
+\newpage
 \appendix
+% The setup appendices first, then the analyses in the order the analysis section (Section 4) first
+% refers to them, then those it does not refer to. The pages under sections/rqs/ are generated by
+% documents/paper/figures/make_rq_appendix.py (app_05_majority_chance excepted), one subsection each,
+% grouped by \rqgroup into the sections below.
 \input{sections/app_00_terminology}
 \input{sections/app_01_model_ladder}
 \input{sections/app_02_data_mixtures}
 \input{sections/app_03_evaluation}
 \input{sections/app_04_chance_threshold}
-\input{sections/app_snr}
-\input{sections/app_snr_new}
-% one page per analysis folder, generated by documents/paper/figures/make_rq_appendix.py
-\input{sections/app_rq00_gate_and_curves}
-\input{sections/app_rq00_task_reformulation}
-\input{sections/app_rq00_chance_vs_train_tokens}
-\input{sections/app_rq01_scaling_predictability}
-\input{sections/app_rq02_decision_accuracy}
-\input{sections/app_rq02_da_vs_train_tokens}
-\input{sections/app_rq03_noise_and_snr}
-\input{sections/app_rq04_surrogates}
-\input{sections/app_rq05_design_decisions}
-\input{sections/app_rq06_language_transfer}
-\input{sections/app_rq07_external_frameworks}
-\input{sections/app_rq08_subset_selection}
-\input{sections/app_rq09_benchmark_design}
-\input{sections/app_rq10_size_generalisation}
-\input{sections/app_rq11_evaluation_recipe}
-\input{sections/app_rq12_above_chance_items}
-\input{sections/app_rq13_english_only}
+\input{sections/app_05_ranking_agreement}
+
+
+\clearpage
+\section{THE FOLLOWING ARE AUTO-GENERATED}
+%\rqgroup{Measurability Analyses}{app:measurability}
+%\input{sections/rqs/app_rq00_gate_and_curves}
+%\input{sections/rqs/app_05_majority_chance}
+%\input{sections/rqs/app_rq00_task_reformulation}
+%\input{sections/rqs/app_rq00_chance_vs_train_tokens}
+%\input{sections/rqs/app_rq01_scaling_predictability}
+%\input{sections/rqs/app_rq13_english_only}
+
+\rqgroup{Agreement Analyses}{app:agreement}
+\input{sections/rqs/app_rq02_decision_accuracy}
+\input{sections/rqs/app_rq02_bbpb}
+\input{sections/rqs/app_rq02_da_vs_train_tokens}
+\input{sections/rqs/app_rq10_size_generalisation}
+%\input{sections/rqs/app_rq05_design_decisions}
+\input{sections/rqs/app_rq11_evaluation_recipe}
+\input{sections/rqs/app_rq06_language_transfer}
+%\input{sections/rqs/app_rq02_permutation_null}
+\input{sections/rqs/app_rq02_decisive_pairs}
+
+\rqgroup{Anticipation Analyses}{app:anticipation}
+\input{sections/app_06_snr}
+\input{sections/app_06_snr_new}  % the surrogates: every statistic defined, and the correlation tables
+\input{sections/app_07_snr_monolingual}  % the SNR -> DA check on English models (rq13 allenai_snr.py)
+
+%\input{sections/rqs/app_rq03_noise_and_snr}
+\input{sections/rqs/app_rq04_surrogates}
+
+\rqgroup{(Sub)benchmark Selection Analyses}{app:selection}
+\input{sections/rqs/app_rq09_benchmark_design}
+%\input{sections/rqs/app_rq08_subset_selection}
+%\input{sections/rqs/app_rq12_above_chance_items}
+
+\clearpage
+\section{Published Resources}
+\input{sections/app_hf_model_card}
+%\input{sections/app_hf_dataset_card}
+
 
 \end{document}

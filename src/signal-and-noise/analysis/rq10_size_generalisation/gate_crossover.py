@@ -200,7 +200,7 @@ def generate_readme(pool: str, reference: str, both: pd.DataFrame, fams: list, r
         f"**The above-random gate at two rungs · the {len(fams)} families with a {reference} final · both columns recomputed on those "
         f"families (rule 1) so the rung is the only difference.** Regenerate with "
         f"`python analysis/rq10_size_generalisation/gate_crossover.py --pool {pool}`.",
-        f"**Population.** {len(both)} tasks carry a chance level at both rungs; BPB and the generative tasks have none, so they never "
+        f"**Population.** {len(both)} tasks have a chance level at both rungs. BPB and the generative tasks have none, so they never "
         f"enter the gate. The gate admits **{n_ref}** of them at {TARGET_SIZE} and **{n_above}** at {reference} "
         f"(**{n_above - n_ref:+d}**, {(n_above / n_ref - 1):+.0%}).",
         f"![Gate crossover]({rel}/gate_crossover.png)",
@@ -211,9 +211,9 @@ def generate_readme(pool: str, reference: str, both: pd.DataFrame, fams: list, r
         f"[`gate_crossover_per_task.csv`]({gh}/gate_crossover_per_task.csv) (every task's run shares and verdicts, "
         f"`status` = `newly above` for the tasks that cross in).",
         f"### The share of each benchmark above chance at {TARGET_SIZE} and at {reference}",
-        f"Per benchmark, the share of its tasks the gate admits at each rung, on the same (family, task) cells; "
-        f"{len(b)} benchmarks, {int((b['delta'] > 0).sum())} gain, {int((b['delta'] < 0).sum())} lose, "
-        f"{int(((b['above_ref'] == 0) & (b['above'] > 0)).sum())} have no task above chance at {TARGET_SIZE} and at least one at {reference}.",
+        f"Per benchmark, the share of its tasks the gate admits at each rung, on the same (family, task) cells. "
+        f"Of {len(b)} benchmarks, {int((b['delta'] > 0).sum())} gain share, {int((b['delta'] < 0).sum())} lose share, and "
+        f"{int(((b['above_ref'] == 0) & (b['above'] > 0)).sum())} have no task above chance at {TARGET_SIZE} but at least one at {reference}.",
         f"![Gate share by benchmark]({rel}/gate_crossover_by_benchmark.png)",
         md_table(["benchmark", "tasks", f"above at {TARGET_SIZE}", f"above at {reference}", "share change"],
                  [[r["benchmark"], int(r["n_tasks"]), f"{int(r['above_ref'])} ({r['share_ref']:.0%})",

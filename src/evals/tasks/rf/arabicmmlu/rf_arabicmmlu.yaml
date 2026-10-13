@@ -1,0 +1,21 @@
+task: rf_arabicmmlu
+dataset_path: MBZUAI/ArabicMMLU
+dataset_name: All
+test_split: test
+output_type: multiple_choice
+num_fewshot: 0
+doc_to_text: '{{rf_text}}
+
+  Answer:'
+doc_to_choice: '{{rf_choices}}'
+doc_to_target: rf_gold
+metric_list:
+- metric: acc
+  aggregation: mean
+  higher_is_better: true
+- metric: acc_norm
+  aggregation: mean
+  higher_is_better: true
+metadata:
+  version: 0.0
+process_docs: !function utils.process_docs

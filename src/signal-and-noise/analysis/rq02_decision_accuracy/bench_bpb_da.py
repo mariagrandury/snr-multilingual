@@ -30,9 +30,11 @@ the answer text's. Such tasks are flagged `letter` (mean gold length <= 2.5
 bytes) and summarised apart from the cloze ones.
 
 Outputs under pretraining/<pool>/: bench_bpb_da_size_multi_axes.csv (task x size),
-bench_bpb_da_size_summary_multi_axes.csv (group x size), bench_bpb_da_size_heatmap_multi_axes.png,
+bench_bpb_da_size_summary_multi_axes.csv (group x size), bench_bpb_da_size_by_acc_gate_multi_axes.csv
+(the bBPB DAs split by the accuracy gate: above or at chance at the proxy, at chance at 1.7B, at chance at every size), bench_bpb_da_size_heatmap_multi_axes.png,
 bench_bpb_da_size_bars_multi_axes.png (overall), bench_bpb_da_size_bars_benchmarks_multi_axes.png (per
-benchmark), each with its CSV, and the README's `bench-bpb` block. `--store`
+benchmark), bench_bpb_da_size_by_acc_gate_multi_axes_paper.png (the accuracy-gate split, bare for the paper),
+each with its CSV, and the README's `bench-bpb` block. `--store`
 names the per_item_store/<store> folder when it differs from the pool; the
 merge keeps the pool's models, and the pool models the store lacks are printed
 and named in the README block.
@@ -138,6 +140,34 @@ def summary_table(out: pd.DataFrame) -> pd.DataFrame:
                      names=["group", "size"])
 
 
+# Where accuracy fails the gate: the populations of `by_acc_gate`, by the accuracy gate flags (rule 1)
+ACC_GATE = {"acc above chance at the proxy": lambda o: o["above_chance_proxy"],
+            "acc at chance at the proxy": lambda o: ~o["above_chance_proxy"],
+            "acc at chance at 1.7B": lambda o: ~o["above_chance_ref"],
+            "acc at chance at every size": lambda o: ~o["above_chance_ref"]
+            & ~o.groupby("task")["above_chance_proxy"].transform("any")}
+
+
+def by_acc_gate(out: pd.DataFrame) -> pd.DataFrame:
+    """Per (group, accuracy-gate population, size): the mean bBPB DA-size on the
+    tasks whose ACCURACY is at chance (or above it) there. bBPB -> acc needs
+    the reference's accuracy above chance (`bbpb_acc`, empty where the
+    population is at chance at 1.7B); bBPB -> bBPB has no chance level and is
+    read raw (`da_bpb`), as is acc -> acc (`da_acc`, the ungated accuracy DA,
+    for contrast)."""
+    rows = []
+    for g, o in ((ALL, out), (CLOZE, out[~out["letter"]])):
+        for pop, sel in ACC_GATE.items():
+            x_all = o[sel(o)]
+            for size in SMALL_SIZES:
+                x = x_all[x_all["size"] == size]
+                rows.append({"group": g, "population": pop, "size": size, "n_tasks": x["task"].nunique(),
+                             "bbpb_acc": x["bbpb_acc"].mean(), "bbpb_acc_n": int(x["bbpb_acc"].notna().sum()),
+                             "bbpb_bbpb": x["da_bpb"].mean(), "bbpb_bbpb_n": int(x["da_bpb"].notna().sum()),
+                             "acc_acc_ungated": x["da_acc"].mean(), "acc_acc_ungated_n": int(x["da_acc"].notna().sum())})
+    return pd.DataFrame(rows).assign(axes="multi-axis")
+
+
 def label(group: str, letter: dict) -> str:
     return f"{G.display(group)} (letter)" if letter.get(group) else G.display(group)
 
@@ -159,14 +189,15 @@ def heatmap(summ: pd.DataFrame, letter: dict, out_dir: Path, note: str) -> None:
     S.save_figure(fig, out_dir, "bench_bpb_da_size_heatmap_multi_axes")
 
 
-def bars_ax(ax, s: pd.DataFrame, title: str, ref: dict | None = None) -> None:
+def bars_ax(ax, s: pd.DataFrame, title: str, ref: dict | None = None, names: dict = READINGS,
+            ref_label: str = "FineWeb2 val BPB (bpb_macro)") -> None:
     """Grouped bars, one group per proxy size, one bar per reading (mean DA over tasks)."""
     x, w = np.arange(len(SMALL_SIZES)), 0.26
-    for k, (col, name) in enumerate(READINGS.items()):
+    for k, (col, name) in enumerate(names.items()):
         ax.bar(x + (k - 1) * w, s[col], w, color=S.SERIES[k], edgecolor=S.SURFACE, linewidth=1, label=name)
     if ref:
         ax.scatter(x, [ref.get(z, np.nan) for z in SMALL_SIZES], marker="_", s=260, color=S.INK, linewidths=1.5,
-                   label="FineWeb2 val BPB (bpb_macro)", zorder=3)
+                   label=ref_label, zorder=3)
     ax.axhline(0.5, color=S.MUTED, linewidth=0.8, linestyle="--")
     ax.set_xticks(x, SMALL_SIZES); ax.set_ylim(0, 1); ax.set_title(title, loc="left", fontsize=8.5)
     S.clean(ax); ax.grid(axis="y", color=S.GRID, linewidth=0.5); ax.set_axisbelow(True)
@@ -212,12 +243,40 @@ def bars(summ: pd.DataFrame, letter: dict, out_dir: Path, note: str, ref: dict) 
     S.save_figure(fig, out_dir, "bench_bpb_da_size_bars_benchmarks_multi_axes")
 
 
+PAPER_READINGS = {"acc_acc": "Accuracy → 1.7B accuracy", "bbpb_acc": "bBPB → 1.7B accuracy",
+                  "bbpb_bbpb": "bBPB → 1.7B bBPB"}
+ACC_GATE_PANELS = {"acc above chance at the proxy": "Accuracy above chance at the proxy",
+                   "acc at chance at the proxy": "Accuracy at chance at the proxy",
+                   "acc at chance at every size": "Accuracy at chance at every size"}
+
+
+def acc_gate_paper(gate: pd.DataFrame, ref: dict, out_dir: Path) -> None:
+    """bBPB where accuracy is at chance, bare for the paper (rule 18): one panel
+    per accuracy-gate population of `by_acc_gate` (all benchmarks), the bars of
+    `bars_ax` (accuracy is the ungated acc -> acc) and the macro BPB tick on the
+    same pairs. Writes bench_bpb_da_size_by_acc_gate_multi_axes_paper.{png,csv}."""
+    d = gate[(gate["group"] == ALL) & gate["population"].isin(ACC_GATE_PANELS)].rename(
+        columns={"acc_acc_ungated": "acc_acc", "acc_acc_ungated_n": "acc_acc_n"})
+    d = d.assign(bpb_macro=d["size"].map(ref))
+    fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.2), sharey=True)
+    for ax, (pop, title) in zip(axes, ACC_GATE_PANELS.items()):
+        bars_ax(ax, d[d["population"] == pop].set_index("size"), title, ref, PAPER_READINGS, "Macro average BPB")
+        ax.set_xlabel("Proxy size")
+    axes[0].set_ylabel("Decision accuracy against 1.7B")
+    fig.legend(*axes[0].get_legend_handles_labels(), loc="upper center", bbox_to_anchor=(0.5, 1.0), ncol=4,
+               frameon=False, fontsize=7.5)
+    fig.tight_layout(rect=(0, 0, 1, 0.91))
+    d.to_csv(out_dir / "bench_bpb_da_size_by_acc_gate_multi_axes_paper.csv", index=False)
+    S.save_paper(fig, out_dir / "bench_bpb_da_size_by_acc_gate_multi_axes_paper")
+
+
 def readme(summ: pd.DataFrame, letter: dict, ref: dict, n_pairs: int, n_pool_pairs: int, pool: str, store: str,
            missing: list[str]) -> None:
     def size_rows(g):
         return [[z, f"{fmt(r.acc_acc)} ({int(r.acc_acc_n)})", f"{fmt(r.bbpb_acc)} ({int(r.bbpb_acc_n)})",
-                 fmt(r.bbpb_bbpb), f"{r.gain:+.2f} ({int(r.n_paired)})",
-                 f"{r.bbpb_better:.0%} / {r.acc_better:.0%}", "<0.001" if r.p < 1e-3 else fmt(r.p, 3),
+                 fmt(r.bbpb_bbpb), f"{r.gain:+.2f} ({int(r.n_paired)})" if r.n_paired else "— (0)",
+                 f"{r.bbpb_better:.0%} / {r.acc_better:.0%}" if r.n_paired else "—",
+                 "<0.001" if r.p < 1e-3 else fmt(r.p, 3),
                  fmt(ref.get(z))] for z, r in summ.loc[g].iterrows()]
     head = ["proxy", "acc → acc (tasks)", "bBPB → acc (tasks)", "bBPB → bBPB", "paired gain (tasks)",
             "bBPB better / worse", "Wilcoxon p", "FineWeb2 val BPB"]
@@ -227,27 +286,46 @@ def readme(summ: pd.DataFrame, letter: dict, ref: dict, n_pairs: int, n_pool_pai
                 for f in fams]
     body = [
         "## Benchmark BPB against accuracy",
-        f"DA-size, final checkpoints, multi-axis pairs of `{pool}` ({n_pairs} of its {n_pool_pairs} pairs: those between "
-        f"families the store holds, for every reading and the FineWeb2 tick), gate `{GATE_POOL}` on the "
-        "accuracy side only: every reading counts the tasks above chance at 1.7B, and acc → acc also needs the "
-        "task above chance at the proxy (its task count is the smaller one). The paired gain is bBPB → acc "
-        "minus acc → acc on the tasks where both are defined. FineWeb2 val BPB is `bpb_macro`'s DA-size on the same "
-        "pairs. Regenerate with "
+        "Each table gives DA-size on the final checkpoints under three readings: the proxy's accuracy or its benchmark "
+        "BPB (bBPB) predicts the 1.7B accuracy (acc → acc, bBPB → acc), or bBPB predicts the 1.7B bBPB (bBPB → bBPB). "
+        f"The pairs are the multi-axis pairs of `{pool}`, {n_pairs} of its {n_pool_pairs}: those between families the "
+        "store holds. Every reading and the FineWeb2 column use the same pairs. "
+        f"The `{GATE_POOL}` gate applies to the accuracy side only. Every reading counts the tasks above chance at "
+        "1.7B, and acc → acc also needs the task above chance at the proxy, so its task count is smaller. The paired "
+        "gain is bBPB → acc minus acc → acc, on the tasks where both are defined. FineWeb2 val BPB is `bpb_macro`'s "
+        "DA-size on the same pairs. Regenerate with "
         f"`python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool {pool}"
         f"{'' if store == pool else ' --store ' + store}` (after "
         f"`build_per_item_store.py --pool {store} --finals-only`)."
-        + (f" The store `{store}` lacks {len(missing)} of the pool's models ({', '.join(missing)}); "
-           "they are left out until the store is rebuilt for the pool." if missing else ""),
+        + (f" The store `{store}` lacks {len(missing)} of the pool's models ({', '.join(missing)}). "
+           "They stay out until the store is rebuilt for the pool." if missing else ""),
         *[x for g, cap in [(ALL, ""), (CLOZE, " (the answer text is the continuation)"),
-                           (LETTER, " (the continuation is the letter: bBPB is the letter's surprisal)")]
+                           (LETTER, " (the continuation is the answer letter, so bBPB is the letter's surprisal)")]
           if summ.loc[g, "n_tasks"].notna().any() for x in (f"**{g}**{cap}", md_table(head, size_rows(g)))],
-        "**Per benchmark**, mean over the five proxy sizes (tasks: the parent tasks with bBPB; cells: task-mean DA over those above chance at 1.7B, blank = all gated):",
+        "**Per benchmark**, mean over the five proxy sizes. `tasks` counts the parent tasks with bBPB. A cell is the task-mean DA over the tasks above chance at 1.7B (for acc → acc, also above chance at the proxy), blank when the gate removes them all:",
         md_table(["benchmark", "tasks", *READINGS.values()], fam_rows),
         f"![bBPB DA, overall](pretraining/{pool}/bench_bpb_da_size_bars_multi_axes.png)",
         f"![bBPB DA, per benchmark](pretraining/{pool}/bench_bpb_da_size_bars_benchmarks_multi_axes.png)",
         f"![bBPB DA, heat map](pretraining/{pool}/bench_bpb_da_size_heatmap_multi_axes.png)",
     ]
     replace_block(DECISION_ACCURACY / "README.md", "bench-bpb", "\n\n".join(body), f"bench_bpb_da.py --pool {pool}")
+
+
+def readme_acc_gate(gate: pd.DataFrame, ref: dict, pool: str) -> None:
+    rows = [[g, pop, z, f"{fmt(r.bbpb_acc)} ({r.bbpb_acc_n})" if r.bbpb_acc_n else "", f"{fmt(r.bbpb_bbpb)} ({r.bbpb_bbpb_n})",
+             fmt(r.acc_acc_ungated), fmt(ref.get(z))] for g, pop, z, r in
+            zip(gate["group"], gate["population"], gate["size"], gate.itertuples())]
+    body = ["## bBPB where accuracy is at chance",
+            f"This table splits the same task × size DAs (multi-axis pairs of `{pool}`, finals) by the ACCURACY gate "
+            f"(rule 1, `{GATE_POOL}`). Each row is the mean DA-size of the bBPB twin over the tasks whose accuracy is at "
+            "chance, or above it, at the proxy, at 1.7B or at every size. bBPB → acc needs the 1.7B accuracy above "
+            "chance, so it is blank where the population is at chance there. bBPB → bBPB has no chance level and is "
+            "read on every task. acc → acc is the ungated accuracy DA, shown for contrast. Cells read mean (tasks). "
+            "Table: `bench_bpb_da_size_by_acc_gate_multi_axes.csv`.",
+            md_table(["group", "accuracy gate", "proxy", "bBPB → 1.7B acc", "bBPB → 1.7B bBPB", "acc → acc (ungated)",
+                      "FineWeb2 val BPB"], rows),
+            f"![bBPB where accuracy is at chance](pretraining/{pool}/bench_bpb_da_size_by_acc_gate_multi_axes_paper.png)"]
+    replace_block(DECISION_ACCURACY / "README.md", "bench-bpb-acc-gate", "\n\n".join(body), f"bench_bpb_da.py --pool {pool}")
 
 
 def main(pool: str, store: str | None = None) -> None:
@@ -263,6 +341,10 @@ def main(pool: str, store: str | None = None) -> None:
     out.to_csv(out_dir / "bench_bpb_da_size_multi_axes.csv", index=False)
     summ = summary_table(out)
     summ.assign(axes="multi-axis").to_csv(out_dir / "bench_bpb_da_size_summary_multi_axes.csv")
+    gate = by_acc_gate(out)
+    gate.to_csv(out_dir / "bench_bpb_da_size_by_acc_gate_multi_axes.csv", index=False)
+    acc_gate_paper(gate, ref, out_dir)
+    print(gate.round(3).to_string(index=False))
     print(summ.loc[[ALL, CLOZE, LETTER], ["n_tasks", *READINGS, "acc_acc_n", "bbpb_acc_n", "n_paired",
                                           "gain", "bbpb_better", "acc_better", "p"]].round(3).to_string())
 
@@ -271,11 +353,12 @@ def main(pool: str, store: str | None = None) -> None:
             "(tasks above chance at 1.7B; acc → acc also above chance at the proxy). bBPB = item mean of "
             "-log2 p(gold answer) / UTF-8 bytes of the answer.")
     heatmap(summ, letter, out_dir, note + " Cells: mean DA over tasks, small number = tasks; colour centred on 0.5 "
-            "(coin flip); grey = every task gated.")
-    bars(summ, letter, out_dir, note + " Bars: mean DA over tasks (n in the panel title); dashed line = coin flip; "
+            "(chance); grey = every task gated.")
+    bars(summ, letter, out_dir, note + " Bars: mean DA over tasks (n in the panel title); dashed line = chance (0.5); "
          "black tick = FineWeb2 val BPB's DA; an empty panel = every task gated.", ref)
     if pool == DOC_POOL:
         readme(summ, letter, ref, len(used), n_pool_pairs, pool, store, missing)
+        readme_acc_gate(gate, ref, pool)
 
 
 if __name__ == "__main__":

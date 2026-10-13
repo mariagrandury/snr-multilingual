@@ -7,9 +7,9 @@
     "L": 1,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.443,
-    "share_above_2": 0.32,
-    "n": 97
+    "median_effect_over_seed_sd": 1.055,
+    "share_above_2": 0.232,
+    "n": 138
    },
    {
     "intervention": "arch",
@@ -17,9 +17,9 @@
     "L": 2,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.0,
-    "share_above_2": 0.299,
-    "n": 117
+    "median_effect_over_seed_sd": 1.2,
+    "share_above_2": 0.246,
+    "n": 171
    },
    {
     "intervention": "arch",
@@ -37,9 +37,9 @@
     "L": 8,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.252,
-    "share_above_2": 0.321,
-    "n": 296
+    "median_effect_over_seed_sd": 1.056,
+    "share_above_2": 0.27,
+    "n": 467
    },
    {
     "intervention": "arch",
@@ -57,9 +57,9 @@
     "L": 15,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.27,
-    "share_above_2": 0.272,
-    "n": 445
+    "median_effect_over_seed_sd": 1.147,
+    "share_above_2": 0.271,
+    "n": 713
    },
    {
     "intervention": "arch",
@@ -77,9 +77,9 @@
     "L": 30,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.234,
-    "share_above_2": 0.293,
-    "n": 628
+    "median_effect_over_seed_sd": 1.237,
+    "share_above_2": 0.307,
+    "n": 1066
    },
    {
     "intervention": "arch",
@@ -97,9 +97,9 @@
     "L": 50,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.26,
-    "share_above_2": 0.314,
-    "n": 835
+    "median_effect_over_seed_sd": 1.17,
+    "share_above_2": 0.264,
+    "n": 1416
    },
    {
     "intervention": "scheme_B",
@@ -107,9 +107,9 @@
     "L": 1,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.441,
-    "share_above_2": 0.371,
-    "n": 97
+    "median_effect_over_seed_sd": 1.086,
+    "share_above_2": 0.275,
+    "n": 138
    },
    {
     "intervention": "scheme_B",
@@ -117,9 +117,9 @@
     "L": 2,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.0,
-    "share_above_2": 0.299,
-    "n": 97
+    "median_effect_over_seed_sd": 1.137,
+    "share_above_2": 0.261,
+    "n": 138
    },
    {
     "intervention": "scheme_B",
@@ -137,9 +137,9 @@
     "L": 8,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.28,
-    "share_above_2": 0.315,
-    "n": 181
+    "median_effect_over_seed_sd": 1.16,
+    "share_above_2": 0.249,
+    "n": 273
    },
    {
     "intervention": "scheme_B",
@@ -157,9 +157,9 @@
     "L": 15,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.255,
-    "share_above_2": 0.269,
-    "n": 193
+    "median_effect_over_seed_sd": 1.089,
+    "share_above_2": 0.246,
+    "n": 293
    },
    {
     "intervention": "scheme_B",
@@ -177,9 +177,9 @@
     "L": 30,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.228,
-    "share_above_2": 0.272,
-    "n": 592
+    "median_effect_over_seed_sd": 1.109,
+    "share_above_2": 0.248,
+    "n": 967
    },
    {
     "intervention": "scheme_C",
@@ -187,9 +187,9 @@
     "L": 1,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.83,
-    "share_above_2": 0.464,
-    "n": 97
+    "median_effect_over_seed_sd": 2.063,
+    "share_above_2": 0.536,
+    "n": 138
    },
    {
     "intervention": "scheme_C",
@@ -197,9 +197,9 @@
     "L": 2,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.3,
-    "share_above_2": 0.299,
-    "n": 97
+    "median_effect_over_seed_sd": 1.286,
+    "share_above_2": 0.261,
+    "n": 138
    },
    {
     "intervention": "temperature",
@@ -217,9 +217,9 @@
     "L": 15,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.309,
-    "share_above_2": 0.297,
-    "n": 445
+    "median_effect_over_seed_sd": 1.331,
+    "share_above_2": 0.339,
+    "n": 713
    },
    {
     "intervention": "temperature",
@@ -237,9 +237,9 @@
     "L": 30,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.424,
-    "share_above_2": 0.315,
-    "n": 628
+    "median_effect_over_seed_sd": 1.415,
+    "share_above_2": 0.339,
+    "n": 1066
    },
    {
     "intervention": "temperature",
@@ -257,56 +257,381 @@
     "L": 50,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.566,
-    "share_above_2": 0.376,
-    "n": 835
+    "median_effect_over_seed_sd": 1.817,
+    "share_above_2": 0.449,
+    "n": 1416
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "L": 8,
+    "reference_size": "1.7B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 1.75,
+    "share_above_2": 0.25,
+    "n": 8
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "L": 8,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.054,
+    "share_above_2": 0.236,
+    "n": 467
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "L": 15,
+    "reference_size": "1.7B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 1.092,
+    "share_above_2": 0.2,
+    "n": 15
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "L": 15,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.058,
+    "share_above_2": 0.219,
+    "n": 713
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "L": 30,
+    "reference_size": "1.7B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 0.693,
+    "share_above_2": 0.033,
+    "n": 30
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "L": 30,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.442,
+    "share_above_2": 0.364,
+    "n": 1066
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "L": 8,
+    "reference_size": "1.7B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 0.27,
+    "share_above_2": 0.0,
+    "n": 8
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "L": 8,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.144,
+    "share_above_2": 0.261,
+    "n": 467
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "L": 15,
+    "reference_size": "1.7B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 0.299,
+    "share_above_2": 0.0,
+    "n": 15
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "L": 15,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.197,
+    "share_above_2": 0.282,
+    "n": 713
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "L": 30,
+    "reference_size": "1.7B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 0.133,
+    "share_above_2": 0.0,
+    "n": 30
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "L": 30,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 0.963,
+    "share_above_2": 0.191,
+    "n": 1066
    }
   ],
   "da": [
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "decision_acc": 0.507,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "benchmark",
+    "proxy_size": "1B",
+    "decision_acc": 0.529,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.56,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "decision_acc": 0.494,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "benchmark",
+    "proxy_size": "90M",
+    "decision_acc": 0.531,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "decision_acc": 0.333,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "bpb_macro",
+    "proxy_size": "1B",
+    "decision_acc": 0.333,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "decision_acc": 0.667,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "decision_acc": 0.0,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "bpb_macro",
+    "proxy_size": "90M",
+    "decision_acc": 0.333,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "decision_acc": 0.9,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "bpb_trained",
+    "proxy_size": "1B",
+    "decision_acc": 0.967,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "decision_acc": 0.978,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "decision_acc": 0.344,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "bpb_trained",
+    "proxy_size": "90M",
+    "decision_acc": 0.956,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "loss",
+    "proxy_size": "175M",
+    "decision_acc": 0.667,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "loss",
+    "proxy_size": "1B",
+    "decision_acc": 0.667,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "loss",
+    "proxy_size": "350M",
+    "decision_acc": 0.667,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "loss",
+    "proxy_size": "600M",
+    "decision_acc": 0.333,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "activation",
+    "label": "activation (xIELU vs SwiGLU)",
+    "population": "loss",
+    "proxy_size": "90M",
+    "decision_acc": 1.0,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "175M",
-    "decision_acc": 0.524,
+    "decision_acc": 0.521,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "1B",
-    "decision_acc": 0.491,
+    "decision_acc": 0.493,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.583,
+    "decision_acc": 0.533,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.453,
+    "decision_acc": 0.477,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": false
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "90M",
-    "decision_acc": 0.52,
+    "decision_acc": 0.547,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
@@ -315,7 +640,8 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
@@ -324,7 +650,8 @@
     "proxy_size": "1B",
     "decision_acc": 0.5,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
@@ -333,7 +660,8 @@
     "proxy_size": "350M",
     "decision_acc": 0.667,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
@@ -342,7 +670,8 @@
     "proxy_size": "600M",
     "decision_acc": 0.333,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": false
    },
    {
     "intervention": "arch",
@@ -351,7 +680,8 @@
     "proxy_size": "90M",
     "decision_acc": 0.5,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
@@ -360,7 +690,8 @@
     "proxy_size": "175M",
     "decision_acc": 0.985,
     "cells": 4,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
@@ -369,7 +700,8 @@
     "proxy_size": "1B",
     "decision_acc": 0.945,
     "cells": 4,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
@@ -378,7 +710,8 @@
     "proxy_size": "350M",
     "decision_acc": 0.489,
     "cells": 4,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
@@ -387,7 +720,8 @@
     "proxy_size": "600M",
     "decision_acc": 0.0,
     "cells": 4,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": false
    },
    {
     "intervention": "arch",
@@ -396,7 +730,8 @@
     "proxy_size": "90M",
     "decision_acc": 0.972,
     "cells": 4,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
@@ -405,7 +740,8 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
@@ -414,7 +750,8 @@
     "proxy_size": "1B",
     "decision_acc": 0.333,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
@@ -423,7 +760,8 @@
     "proxy_size": "350M",
     "decision_acc": 0.667,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "arch",
@@ -432,7 +770,8 @@
     "proxy_size": "600M",
     "decision_acc": 0.167,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": false
    },
    {
     "intervention": "arch",
@@ -441,52 +780,258 @@
     "proxy_size": "90M",
     "decision_acc": 0.5,
     "cells": 6,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "decision_acc": 0.458,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "benchmark",
+    "proxy_size": "1B",
+    "decision_acc": 0.52,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.552,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "decision_acc": 0.503,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "benchmark",
+    "proxy_size": "90M",
+    "decision_acc": 0.519,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "decision_acc": 1.0,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "bpb_macro",
+    "proxy_size": "1B",
+    "decision_acc": 1.0,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "decision_acc": 1.0,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "decision_acc": 1.0,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "bpb_macro",
+    "proxy_size": "90M",
+    "decision_acc": 0.667,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "decision_acc": 0.189,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "bpb_trained",
+    "proxy_size": "1B",
+    "decision_acc": 0.189,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "decision_acc": 0.189,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "decision_acc": 0.189,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "bpb_trained",
+    "proxy_size": "90M",
+    "decision_acc": 0.233,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "loss",
+    "proxy_size": "175M",
+    "decision_acc": 0.0,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "loss",
+    "proxy_size": "1B",
+    "decision_acc": 0.333,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "loss",
+    "proxy_size": "350M",
+    "decision_acc": 0.0,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "loss",
+    "proxy_size": "600M",
+    "decision_acc": 0.0,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "optimizer",
+    "label": "optimizer (AdEMAMix vs Muon)",
+    "population": "loss",
+    "proxy_size": "90M",
+    "decision_acc": 0.0,
+    "cells": 3,
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
     "label": "data scheme (A vs B, B at L8\u2013L30)",
     "population": "benchmark",
     "proxy_size": "175M",
-    "decision_acc": 0.483,
+    "decision_acc": 0.484,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
     "label": "data scheme (A vs B, B at L8\u2013L30)",
     "population": "benchmark",
     "proxy_size": "1B",
-    "decision_acc": 0.517,
+    "decision_acc": 0.51,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
     "label": "data scheme (A vs B, B at L8\u2013L30)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.477,
+    "decision_acc": 0.454,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
     "label": "data scheme (A vs B, B at L8\u2013L30)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.44,
+    "decision_acc": 0.479,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
     "label": "data scheme (A vs B, B at L8\u2013L30)",
     "population": "benchmark",
     "proxy_size": "90M",
-    "decision_acc": 0.454,
+    "decision_acc": 0.46,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -495,7 +1040,8 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -504,7 +1050,8 @@
     "proxy_size": "1B",
     "decision_acc": 1.0,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -513,7 +1060,8 @@
     "proxy_size": "350M",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -522,7 +1070,8 @@
     "proxy_size": "600M",
     "decision_acc": 1.0,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -531,7 +1080,8 @@
     "proxy_size": "90M",
     "decision_acc": 1.0,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -540,7 +1090,8 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -549,7 +1100,8 @@
     "proxy_size": "1B",
     "decision_acc": 0.769,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -558,7 +1110,8 @@
     "proxy_size": "350M",
     "decision_acc": 1.0,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -567,7 +1120,8 @@
     "proxy_size": "600M",
     "decision_acc": 0.944,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -576,7 +1130,8 @@
     "proxy_size": "90M",
     "decision_acc": 1.0,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -585,7 +1140,8 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -594,7 +1150,8 @@
     "proxy_size": "1B",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -603,7 +1160,8 @@
     "proxy_size": "350M",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -612,7 +1170,8 @@
     "proxy_size": "600M",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B",
@@ -621,52 +1180,58 @@
     "proxy_size": "90M",
     "decision_acc": 1.0,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
     "label": "data scheme (A vs B, DCLMP at L1)",
     "population": "benchmark",
     "proxy_size": "175M",
-    "decision_acc": 0.577,
+    "decision_acc": 0.589,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
     "label": "data scheme (A vs B, DCLMP at L1)",
     "population": "benchmark",
     "proxy_size": "1B",
-    "decision_acc": 0.5,
+    "decision_acc": 0.515,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
     "label": "data scheme (A vs B, DCLMP at L1)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.786,
+    "decision_acc": 0.618,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
     "label": "data scheme (A vs B, DCLMP at L1)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.633,
+    "decision_acc": 0.533,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
     "label": "data scheme (A vs B, DCLMP at L1)",
     "population": "benchmark",
     "proxy_size": "90M",
-    "decision_acc": 0.522,
+    "decision_acc": 0.591,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
@@ -675,7 +1240,8 @@
     "proxy_size": "175M",
     "decision_acc": 0.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
@@ -684,7 +1250,8 @@
     "proxy_size": "1B",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
@@ -693,7 +1260,8 @@
     "proxy_size": "350M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
@@ -702,7 +1270,8 @@
     "proxy_size": "600M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
@@ -711,7 +1280,8 @@
     "proxy_size": "90M",
     "decision_acc": 0.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
@@ -720,7 +1290,8 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
@@ -729,7 +1300,8 @@
     "proxy_size": "1B",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
@@ -738,7 +1310,8 @@
     "proxy_size": "350M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
@@ -747,7 +1320,8 @@
     "proxy_size": "600M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:DCLMP",
@@ -756,52 +1330,58 @@
     "proxy_size": "90M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
     "label": "data scheme (A vs B, ZH at L2)",
     "population": "benchmark",
     "proxy_size": "175M",
-    "decision_acc": 0.492,
+    "decision_acc": 0.484,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
     "label": "data scheme (A vs B, ZH at L2)",
     "population": "benchmark",
     "proxy_size": "1B",
-    "decision_acc": 0.488,
+    "decision_acc": 0.471,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
     "label": "data scheme (A vs B, ZH at L2)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.473,
+    "decision_acc": 0.508,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
     "label": "data scheme (A vs B, ZH at L2)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.552,
+    "decision_acc": 0.57,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
     "label": "data scheme (A vs B, ZH at L2)",
     "population": "benchmark",
     "proxy_size": "90M",
-    "decision_acc": 0.409,
+    "decision_acc": 0.468,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
@@ -810,7 +1390,8 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
@@ -819,7 +1400,8 @@
     "proxy_size": "1B",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
@@ -828,7 +1410,8 @@
     "proxy_size": "350M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
@@ -837,7 +1420,8 @@
     "proxy_size": "600M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
@@ -846,7 +1430,8 @@
     "proxy_size": "90M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
@@ -855,7 +1440,8 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
@@ -864,7 +1450,8 @@
     "proxy_size": "1B",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
@@ -873,7 +1460,8 @@
     "proxy_size": "350M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
@@ -882,7 +1470,8 @@
     "proxy_size": "600M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_B:ZH",
@@ -891,52 +1480,58 @@
     "proxy_size": "90M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:ES",
     "label": "data scheme (A vs C, ES at L2)",
     "population": "benchmark",
     "proxy_size": "175M",
-    "decision_acc": 0.52,
-    "cells": 1,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme_C:ES",
-    "label": "data scheme (A vs C, ES at L2)",
-    "population": "benchmark",
-    "proxy_size": "1B",
-    "decision_acc": 0.445,
-    "cells": 1,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme_C:ES",
-    "label": "data scheme (A vs C, ES at L2)",
-    "population": "benchmark",
-    "proxy_size": "350M",
     "decision_acc": 0.527,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "scheme_C:ES",
+    "label": "data scheme (A vs C, ES at L2)",
+    "population": "benchmark",
+    "proxy_size": "1B",
+    "decision_acc": 0.453,
+    "cells": 1,
+    "refs": "1.7B",
+    "size_matched": true
+   },
+   {
+    "intervention": "scheme_C:ES",
+    "label": "data scheme (A vs C, ES at L2)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.515,
+    "cells": 1,
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:ES",
     "label": "data scheme (A vs C, ES at L2)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.567,
+    "decision_acc": 0.478,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:ES",
     "label": "data scheme (A vs C, ES at L2)",
     "population": "benchmark",
     "proxy_size": "90M",
-    "decision_acc": 0.435,
+    "decision_acc": 0.48,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:ES",
@@ -945,7 +1540,8 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:ES",
@@ -954,7 +1550,8 @@
     "proxy_size": "1B",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:ES",
@@ -963,7 +1560,8 @@
     "proxy_size": "350M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:ES",
@@ -972,7 +1570,8 @@
     "proxy_size": "600M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:ES",
@@ -981,7 +1580,8 @@
     "proxy_size": "90M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:ES",
@@ -990,7 +1590,8 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:ES",
@@ -999,7 +1600,8 @@
     "proxy_size": "1B",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:ES",
@@ -1008,7 +1610,8 @@
     "proxy_size": "350M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:ES",
@@ -1017,7 +1620,8 @@
     "proxy_size": "600M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:ES",
@@ -1026,52 +1630,58 @@
     "proxy_size": "90M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
     "label": "data scheme (A vs C, FWEB at L1)",
     "population": "benchmark",
     "proxy_size": "175M",
-    "decision_acc": 0.683,
+    "decision_acc": 0.694,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
     "label": "data scheme (A vs C, FWEB at L1)",
     "population": "benchmark",
     "proxy_size": "1B",
-    "decision_acc": 0.742,
+    "decision_acc": 0.746,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
     "label": "data scheme (A vs C, FWEB at L1)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.714,
+    "decision_acc": 0.672,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
     "label": "data scheme (A vs C, FWEB at L1)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.6,
+    "decision_acc": 0.757,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
     "label": "data scheme (A vs C, FWEB at L1)",
     "population": "benchmark",
     "proxy_size": "90M",
-    "decision_acc": 0.609,
+    "decision_acc": 0.576,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
@@ -1080,7 +1690,8 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
@@ -1089,7 +1700,8 @@
     "proxy_size": "1B",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
@@ -1098,7 +1710,8 @@
     "proxy_size": "350M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
@@ -1107,7 +1720,8 @@
     "proxy_size": "600M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
@@ -1116,7 +1730,8 @@
     "proxy_size": "90M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
@@ -1125,7 +1740,8 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
@@ -1134,7 +1750,8 @@
     "proxy_size": "1B",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
@@ -1143,7 +1760,8 @@
     "proxy_size": "350M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
@@ -1152,7 +1770,8 @@
     "proxy_size": "600M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "scheme_C:FWEB",
@@ -1161,52 +1780,58 @@
     "proxy_size": "90M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
     "label": "temperature (T=1 vs T=3)",
     "population": "benchmark",
     "proxy_size": "175M",
-    "decision_acc": 0.625,
+    "decision_acc": 0.621,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
     "label": "temperature (T=1 vs T=3)",
     "population": "benchmark",
     "proxy_size": "1B",
-    "decision_acc": 0.618,
+    "decision_acc": 0.613,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
     "label": "temperature (T=1 vs T=3)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.601,
+    "decision_acc": 0.622,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
     "label": "temperature (T=1 vs T=3)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.585,
+    "decision_acc": 0.62,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
     "label": "temperature (T=1 vs T=3)",
     "population": "benchmark",
     "proxy_size": "90M",
-    "decision_acc": 0.511,
+    "decision_acc": 0.634,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1215,7 +1840,8 @@
     "proxy_size": "175M",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1224,7 +1850,8 @@
     "proxy_size": "1B",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1233,7 +1860,8 @@
     "proxy_size": "350M",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1242,7 +1870,8 @@
     "proxy_size": "600M",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1251,7 +1880,8 @@
     "proxy_size": "90M",
     "decision_acc": 0.333,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1260,7 +1890,8 @@
     "proxy_size": "175M",
     "decision_acc": 0.993,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1269,7 +1900,8 @@
     "proxy_size": "1B",
     "decision_acc": 0.971,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1278,7 +1910,8 @@
     "proxy_size": "350M",
     "decision_acc": 0.949,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1287,7 +1920,8 @@
     "proxy_size": "600M",
     "decision_acc": 0.982,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1296,7 +1930,8 @@
     "proxy_size": "90M",
     "decision_acc": 0.956,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1305,7 +1940,8 @@
     "proxy_size": "175M",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1314,7 +1950,8 @@
     "proxy_size": "1B",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1323,7 +1960,8 @@
     "proxy_size": "350M",
     "decision_acc": 0.333,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1332,7 +1970,8 @@
     "proxy_size": "600M",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    },
    {
     "intervention": "temperature",
@@ -1341,8 +1980,10 @@
     "proxy_size": "90M",
     "decision_acc": 1.0,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B",
+    "size_matched": true
    }
-  ]
+  ],
+  "pending_reference": []
  }
 }

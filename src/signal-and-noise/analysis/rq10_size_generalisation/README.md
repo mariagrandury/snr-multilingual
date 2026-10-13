@@ -1,73 +1,92 @@
-# Size generalisation — does a ranking that holds at 1.7B still hold one rung above it, at 3B?
+# Size generalisation: does a ranking that holds at 1.7B still hold at 3B?
 
 ## Research question
 
-Every other analysis stops at the reference: a proxy is judged by whether it
-makes the decisions the 1.7B model makes (rule 10, `analysis/RULES.md`). The
-3B rung asks the one question that frame cannot: whether the reference itself
-is a proxy for the next rung.
+Does a ranking that holds at 1.7B still hold one rung above it, at 3B? Every
+other analysis stops at the reference: a proxy is judged by whether it makes
+the decisions the 1.7B model makes (rule 10, `analysis/RULES.md`). The 3B rung
+asks the one question that frame cannot ask, namely whether the reference
+itself is a good proxy for the next rung.
 
-Seven cells were trained at 3B for it (deep, seed 1904: L ∈ {8, 15, 30, 50} in
-scheme A and L ∈ {8, 15, 30} in scheme B; `plan/3b_models.md`); a cell enters
-each analysis once its 3B evaluations are in the ladder report. This folder is therefore the only reader of
-`build_snr_pool(above_reference=True)` and the only one the rule-10 checker
-exempts (`check_rules.EXEMPT`).
+Six cells train at 3B for this question: deep, seed 1904, L ∈ {8, 15, 30, 50}
+in scheme A and L ∈ {8, 15} in scheme B (`plan/3b_models.md`). A cell enters
+each analysis once the ladder report holds its evaluated 3B final. Among the
+six cells, the data scheme changes in only two mono-axis pairs (A vs B at L8
+and L15). That is below the three pairs a decision needs (rule 5), so the
+language count is the only design axis we can read on its own at 3B. This
+folder is the only reader of `build_snr_pool(above_reference=True)` and the
+only one the rule-10 checker exempts (`check_rules.EXEMPT`).
 
-Snapshot: the full refresh of **2026-10-07** (commit b316f53b) on the ladder
-report of **2026-10-06 04:26**, pool `predictivity` (seed 1904). The 3B
-population is the same four families as before the pool change; the bBPB
-twins are finals-only in these outputs, so nothing here is claimed about them
-at early checkpoints.
+Snapshot: the ladder report of **2026-10-10 04:31** (acc_norm on the
+cloze-format originals) and the outputs of the full refresh of 2026-10-10
+(detrended checkpoint noise), pool `predictivity` (seed 1904). All six 3B
+cells are in the report, each with its benchmark and BPB finals, and all six
+are scored at both 1.7B and 3B (A-L8, A-L15, A-L30, A-L50, B-L8, B-L15). The
+per-item store, and so the bBPB twins, still lacks the A-L30 cell at 3B.
 
-The question has two halves, and they answer differently:
+We ask the rung two things:
 
-- **can the decision be ranked one rung up** — the decision-accuracy half,
-  below. In benchmark accuracy, no (DA-size 0.43–0.52); in per-language BPB,
-  yes (0.75–0.96, and 0.96 mono-axis from the 1.7B reference).
-- **can the benchmark be measured at all one rung up** — the gate half,
-  [below](#what-the-3b-rung-can-measure-that-the-17b-reference-cannot). The 3B
-  rung lifts 98 of 573 tasks above chance that the reference leaves at chance.
+- **Does it lift more benchmarks above chance?** This is the gate,
+  [below](#what-the-3b-rung-can-measure-that-the-17b-reference-cannot).
+- **Do the decision-accuracy and SNR readings stay the same when 3B replaces
+  1.7B as the reference?** See [the 3B rung as the reference](#the-3b-rung-as-the-reference)
+  and [the framework at the new reference](#is-the-framework-consistent-when-the-reference-moves-from-17b-to-3b).
 
 ## Setup
 
-- **Population.** Pool `predictivity` (seed 1904); the four families with a
-  final at 3B (deep, L8 and L15, schemes A and B), proxies 90M–1.7B. Pairs at
-  the grid seed: six multi-axis and four mono-axis (rule 15), above rule 5's
-  minimum of three.
-- **Lattice.** With 6 and 4 pairs a per-task DA sits on a k/6, k/4 lattice.
-  The lines therefore draw the pooled ratio over tasks (matching pairs / all
-  pairs), not a mean of per-task values.
-- **Gate.** `predictivity`'s mask at the proxy; at the reference rung the same
-  one-sided 95 % Wilson rule computed on the reference's own runs
-  (`above_random.scores_and_mask`), since the committed mask stops at 1.7B.
-- **Two channels, pooled separately.** Benchmark accuracy and per-language
-  BPB are never averaged together: DA-size sits near 0.5 on the first and at
-  0.75–0.96 on the second, so one mean would report neither. BPB carries no
-  chance level and is never gated; only the languages every paired family
-  scores clear `MIN_PAIRS`, so the BPB channel rests on 6–7 tasks against the
-  benchmark channel's 59–90 at 3B.
-- **Comparison.** Panels (a) and (c) read the same four families to 1.7B, so
-  the two readings differ in nothing but the reference. The standalone
-  preview (`--reference 1.7B --design 3B`) is that comparison line on its own.
-- **The bBPB twins at the 1.7B reference.** In this refresh the twins exist
-  at finals only and only where the store holds them: none at 3B, but 187
-  multi-axis (175 mono-axis) twin tasks at 175M and 1B against the 1.7B final.
-  They enter the 1.7B-reference benchmark rows at those two sizes (the
-  "same families" column and the preview below); the clean benchmark-only
-  numbers are quoted in the Key findings.
+**Setup.**
+- **Measured.** We test whether the conclusions hold with a 3B reference. We compare the share of tasks above chance at 1.7B and at 3B, and DA-size against the 3B and the 1.7B final checkpoints on the same decisions.
+- **Models.** We use the six deep configurations trained to 3B at seed 1904 (scheme A at L ∈ {8, 15, 30, 50}, scheme B at L ∈ {8, 15}) and the same configurations at 90M–1.7B.
+- **Tasks.** Benchmark accuracy covers the tasks above chance at the proxy, at 1.7B and at 3B, the bBPB twins included (they exist for five of the six 3B models, all but L = 30). The share panel recomputes the Wilson rule at 1.7B and at 3B on the six configurations alone, over the runs that train the task's language (one to six runs per task). The DA panel gates the proxies and 1.7B with the gate of every seed-1904 run and 3B with the rule on the six 3B runs. Per-language BPB (14 languages, DCLM English and the mixture macro-average) is pooled separately.
+- **How.** We pool the matching pairs over the tasks, with at least three pairs per task. The bands are 90 % leave-one-family-out jackknife bands. The share panel shows the 15 benchmarks that have at least five tasks and whose share changes.
+- **Reference choice.** We also change the reference, first to each of the three seeds of the 1B models, then to the 3B model at L = 30 on its decisions against the other five (table: app_rq10_reference_choice).
+
+- **Population.** Pool `predictivity` (seed 1904), the six families with a
+  final at 3B (deep: A-L8, A-L15, A-L30, A-L50, B-L8, B-L15), proxies 90M–1.7B.
+  The pairs are at the grid seed: fifteen multi-axis and nine mono-axis (rule 15).
+  A task whose language not every family trains has fewer (rule 2), and a cell
+  needs three (rule 5).
+- **Lattice.** With 15 and 9 pairs, a per-task DA can only take the values
+  k/15 or k/9. The lines therefore draw the pooled ratio over tasks (matching
+  pairs / all pairs), not a mean of per-task values.
+- **Gate.** At the proxy, the gate is `predictivity`'s mask. At the reference
+  rung it is the same one-sided 95 % Wilson rule, computed on the reference's
+  own runs (`above_random.scores_and_mask`), because the committed mask stops
+  at 1.7B.
+- **Two channels, pooled separately.** We never average benchmark accuracy
+  and per-language BPB together. DA-size sits near 0.5 on the first and at
+  0.78–0.95 on the second, so one mean would describe neither. BPB has no
+  chance level and is never gated. The BPB channel rests on 16–21 tasks,
+  against 478–642 for the benchmark channel at 3B.
+- **Comparison.** Panels (a) and (c) read the same six families to 1.7B, so
+  the two readings differ only in the reference and in the coverage of the
+  bBPB twins (next bullet). The reference-consistency section reads both
+  references on identical decisions, twins included. The preview
+  (`--reference 1.7B --design 3B`) reads the six families of the 3B design set
+  to 1.7B, with the 1.7B gate alone.
+- **The bBPB twins at both references.** The per-item store holds every
+  checkpoint of every seed-1904 cell up to 1.7B and of five of the six 3B
+  cells (not A-L30, `bench_bpb.csv`). The twins therefore enter every
+  benchmark row at both references, on five families at 3B (293 mono-axis and
+  315 multi-axis twin tasks). Every table below pools them, and the Key
+  findings quote the benchmark-only numbers.
 - **Known-answer check.** `--reference 1.7B --check` reproduces the
   decision-accuracy tables' `decision_acc_size_<proxy>` per task for both
   pair sets (`predictivity/da_all_per_task_both_axes.csv`). It was exact on
   all 4,490 cells on 2026-10-02 (max |diff| 1.11e-16) and has not been re-run
-  on today's pools.
+  on the current pools.
 
 ## Key figure
 
 ![The benchmarks the 3B rung lifts above chance, and decision accuracy to 3B beside 1.7B](pretraining/predictivity/gate_share_and_da_size_mono_axis_paper.png)
 
-Population: pool `predictivity` (seed 1904); the deep families scored at both 1.7B and 3B, each (family, task) scored at both rungs. Left: per benchmark with at least five tasks whose share moves, the share of its tasks the above-random gate admits at each rung (rule 1, recomputed on those families). Right: DA-size from the finals of 90M–1B to the 3B final (solid) and to the 1.7B final (dashed) on the same mono-axis decisions, the task above chance at the proxy, 1.7B and 3B, no filter, ≥ 3 pairs; benchmark accuracy and per-language BPB pooled separately, 90 % leave-one-family-out jackknife bands.
+Population: pool `predictivity` (seed 1904), the six deep families scored at both 1.7B and 3B (A-L8, A-L15, A-L30, A-L50, B-L8, B-L15), each (family, task) scored at both rungs. Left: for each benchmark with at least five tasks whose share moves, the share of its tasks that the above-random gate admits at each rung (rule 1, recomputed on those families). Right: DA-size from the finals of 90M–1B to the 3B final (solid) and to the 1.7B final (dashed), on the same mono-axis decisions. A task must be above chance at the proxy, at 1.7B and at 3B, with no filter and ≥ 3 pairs. Benchmark accuracy and per-language BPB are pooled separately, with 90 % leave-one-family-out jackknife bands.
 
-**Key finding.** Pending the regeneration.
+**Key finding.** **The 3B rung measures more than the reference but decides
+no differently.** On the same six families, it lifts the above-chance count
+from 607 to 772 of 927 tasks (+27 %). On identical mono-axis decisions,
+DA-size stays at 0.49–0.54 in benchmark accuracy (bBPB twins pooled) and at
+0.78–0.91 in per-language BPB, whichever the reference.
 
 GitHub: [gate_share_and_da_size_mono_axis_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_share_and_da_size_mono_axis_paper.png) · [gate_share_and_da_size_mono_axis_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_share_and_da_size_mono_axis_paper.csv). The full figures: [the gate per benchmark](#the-share-of-each-benchmark-above-chance-at-17b-and-at-3b) and [the framework at the new reference](#is-the-framework-consistent-when-the-reference-moves-from-17b-to-3b). The previous key figure, DA-size to the 3B final alone, is still written as `above_reference_3B_paper.png` ([the 3B rung as the reference](#the-3b-rung-as-the-reference)).
 
@@ -78,250 +97,283 @@ GitHub: [gate_share_and_da_size_mono_axis_paper.png](https://github.com/mariagra
 
 **DA-size and DA-goal · reference 3B · multi-axis and mono-axis pairs at the grid seed · gate `predictivity` at the proxy, the Wilson rule on the 3B runs at the reference · no filter.** Regenerate with `python analysis/rq10_size_generalisation/above_reference.py --pool predictivity --reference 3B`.
 
-**Population.** 5 families with a final at 3B (lm-L15-deep-seed1904, lm-L15-schemeB-deep-seed1904, lm-L50-deep-seed1904, lm-L8-deep-seed1904, lm-L8-schemeB-deep-seed1904); DA-size pooled over the gated benchmark tasks with ≥ 3 pairs, and separately over the per-language BPB tasks (never gated — no chance level; only the languages every paired family scores clear 3 pairs, which is why the BPB column rests on far fewer tasks).
+**Population.** 6 families with a final at 3B (lm-L15-deep-seed1904, lm-L15-schemeB-deep-seed1904, lm-L30-deep-seed1904, lm-L50-deep-seed1904, lm-L8-deep-seed1904, lm-L8-schemeB-deep-seed1904). DA-size is pooled over the gated benchmark tasks with ≥ 3 pairs, and separately over the per-language BPB tasks. BPB has no chance level, so it is never gated, and only the languages that every paired family scores reach 3 pairs. That is why the BPB column rests on far fewer tasks.
 
 ![Size generalisation to 3B](pretraining/predictivity/above_reference_3B.png)
 
 | axes | proxy | DA-size → 3B | tasks | DA-size → 1.7B (same families) | BPB DA-size → 3B | BPB tasks |
 |---|---|---|---|---|---|---|
-| mono-axis | 90M | 0.53 | 117 | 0.52 | 0.92 | 6 |
-| mono-axis | 175M | 0.48 | 115 | 0.54 | 0.92 | 6 |
-| mono-axis | 350M | 0.51 | 131 | 0.48 | 0.75 | 6 |
-| mono-axis | 600M | 0.51 | 147 | 0.49 | 0.88 | 6 |
-| mono-axis | 1B | 0.52 | 157 | 0.53 | 0.92 | 6 |
-| mono-axis | 1.7B | 0.47 | 166 | — | 0.96 | 6 |
-| multi-axis | 90M | 0.51 | 125 | 0.52 | 0.95 | 7 |
-| multi-axis | 175M | 0.49 | 126 | 0.55 | 0.95 | 7 |
-| multi-axis | 350M | 0.49 | 142 | 0.49 | 0.82 | 7 |
-| multi-axis | 600M | 0.51 | 158 | 0.51 | 0.90 | 7 |
-| multi-axis | 1B | 0.53 | 170 | 0.53 | 0.92 | 7 |
-| multi-axis | 1.7B | 0.49 | 180 | — | 0.92 | 7 |
+| mono-axis | 90M | 0.53 | 481 | 0.53 | 0.87 | 16 |
+| mono-axis | 175M | 0.50 | 491 | 0.52 | 0.86 | 16 |
+| mono-axis | 350M | 0.49 | 511 | 0.52 | 0.78 | 16 |
+| mono-axis | 600M | 0.54 | 544 | 0.53 | 0.91 | 16 |
+| mono-axis | 1B | 0.54 | 569 | 0.51 | 0.81 | 16 |
+| mono-axis | 1.7B | 0.51 | 578 | — | 0.95 | 16 |
+| multi-axis | 90M | 0.54 | 530 | 0.54 | 0.87 | 21 |
+| multi-axis | 175M | 0.51 | 545 | 0.54 | 0.87 | 21 |
+| multi-axis | 350M | 0.50 | 567 | 0.53 | 0.84 | 21 |
+| multi-axis | 600M | 0.54 | 604 | 0.54 | 0.89 | 21 |
+| multi-axis | 1B | 0.54 | 635 | 0.53 | 0.85 | 21 |
+| multi-axis | 1.7B | 0.52 | 652 | — | 0.94 | 21 |
 
 Files: [`above_reference_3B.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B.png), [`above_reference_3B.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B.csv), [`above_reference_3B_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B_per_task.csv).
 <!-- END auto:above-reference-3B -->
 
 Key findings:
 
-- **In benchmark accuracy nothing predicts 3B, but nothing predicts 1.7B
-  either.** DA-size → 3B is 0.43–0.52 from every proxy over 59–90 gated tasks,
-  the 1.7B reference included (0.43 mono-axis over 83 tasks, 0.44 multi-axis
-  over 90), while the same four families read to 1.7B give 0.44–0.48
-  mono-axis and 0.44–0.49 multi-axis on benchmark tasks alone: the 3B number
-  is this population's chance-level ranking arriving one rung later, not a
-  property of 3B.
-- **The "same families" column at 175M and 1B is not benchmark-only.** Its
-  0.51 / 0.53 (mono-axis) and 0.51 / 0.51 (multi-axis) pool the bBPB twins,
-  which exist at those sizes and not at 3B; without them the 1.7B-reference
-  benchmark DA-size is 0.48 / 0.48 mono-axis and 0.49 / 0.48 multi-axis.
-- **In per-language BPB the reference is a good proxy for the next rung: 0.96
-  mono-axis, 0.92 multi-axis.** Every proxy from 90M up reaches at least 0.75 (lowest
-  at 350M: 0.75 mono-axis, 0.82 multi-axis).
-- **`bpb_macro` agrees on every pair, `train_loss` on all but one.**
-  1.7B → 3B, `bpb_macro` matches 4/4 mono-axis and 6/6 multi-axis pairs;
-  `train_loss` matches 3/4 and 5/6.
-- **Panel (d) says the same per benchmark family** (multi-axis, 1.7B → 3B,
-  26 families): `bpb` leads at 0.90 (7 tasks), then `paws` and `loss` at 0.83
-  and `hellaswag` at 0.67. 18 of the 26 families sit at or below 0.50.
-- **The BPB claim rests on 6–7 tasks**: five languages both an L8 and an L15
-  family train (cmn, deu, fas, jpn, rus) plus `bpb_macro` and `bpb_dclm`
-  multi-axis, one fewer mono-axis. This is the figure's binding limitation,
-  and what A-L30 + B-L30 at 3B would widen.
-- **DA-goal along the run (panel b) never rises above chance in benchmark
-  accuracy.** Multi-axis, every checkpoint of every proxy reads the 3B final at 0.37–0.55;
-  per-language BPB (in `above_reference_3B.csv`, not drawn in panel b) stays
-  at 0.77–0.97 multi-axis across checkpoints (0.71–1.00 mono-axis).
+- **In benchmark accuracy no proxy predicts the 3B decision, the 1.7B
+  reference included.** On the six families' gated benchmark tasks (the bBPB
+  twins left out), DA-size → 3B is 0.48–0.53 mono-axis over 184–281 tasks and
+  0.48–0.53 multi-axis over 209–326. The 1.7B rung (0.52 mono-axis, 0.53
+  multi-axis) does no better than 1B (0.53, 0.53), so a larger proxy is not a
+  better proxy of the next rung here.
+- **Without the bBPB twins the two references still agree.** On identical
+  decisions without the twins, DA-size is 0.48–0.53 to 1.7B and 0.48–0.53 to
+  3B, mono-axis (per-task table of [the framework at the new reference](#is-the-framework-consistent-when-the-reference-moves-from-17b-to-3b)).
+  With the twins, the "same families" column of the table above reads
+  0.51–0.53 mono-axis and 0.53–0.55 multi-axis to 1.7B. The twins
+  exist at 1.7B on all six families but at 3B on only five, so panel (a)'s
+  dashed lines rest on a median of 647 and 753 tasks against 523 and 578 to
+  3B.
+- **In per-language BPB the reference is a good proxy for the next rung: 0.95
+  mono-axis, 0.94 multi-axis.** Every proxy from 90M up reaches at least 0.78
+  (lowest at 350M: 0.78 mono-axis, 0.84 multi-axis), over the six families,
+  which all have a BPB final at 3B.
+- **`bpb_macro` agrees on every pair, `train_loss` on fewer than half the
+  mono-axis pairs.** From 1.7B to 3B, `bpb_macro` matches 9/9 mono-axis and
+  15/15 multi-axis pairs. `train_loss`, which all six families have, matches
+  4/9 and 10/15.
+- **Panel (d) shows the same split per benchmark family** (multi-axis,
+  1.7B → 3B, 72 families, 37 of them bBPB twins). Among the families with
+  more than one task, `bpb` leads at 0.93 (21 tasks), then `bbpb_xstorycloze`
+  at 0.80 (4), `rf_m_mmlu` at 0.77 (11) and `rf_mmmlu` at 0.75 (4). 30 of the
+  72 families sit at or below 0.50.
+- **The BPB claim rests on 16–21 tasks.** On mono-axis pairs these are 14
+  languages (arb, cmn, deu, fas, fra, ind, ita, jpn, nld, pol, por, rus, spa,
+  vie), `bpb_dclm` and `bpb_macro`. Multi-axis pairs add ben, ell, hin, kor
+  and tha. This is still the figure's main limitation: the BPB channel has
+  about 30 times fewer tasks than the benchmark channel.
+- **DA-goal along the run (panel b) never leaves chance in benchmark
+  accuracy.** Every checkpoint before the final, at every proxy size, reads
+  the 3B final at 0.48–0.55 multi-axis over 525–642 tasks (0.47–0.55
+  mono-axis), bBPB twins pooled. Per-language BPB (in `above_reference_3B.csv`,
+  not drawn in panel b) stays at 0.73–0.96 multi-axis (0.62–0.99 mono-axis).
 
 Follow-ups:
 
-- Panel (c) pairs per-task DA-size 1.7B → 3B against 1B → 1.7B at Pearson
-  r = 0.36 over 89 tasks (multi-axis): the tasks whose ranking converged by
-  1.7B are only weakly the ones that keep it at 3B. On a k/4, k/6 lattice
-  this is a weak instrument, so quote the pooled lines, not r.
+- Panel (c) pairs per-task DA-size 1.7B → 3B with 1B → 1.7B at Pearson
+  r = 0.18 over 643 tasks (multi-axis). The tasks whose ranking converged by
+  1.7B are barely the ones that keep it at 3B. On a k/15 lattice this is a
+  weak instrument, so quote the pooled lines, not r.
+- Score A-L30's 3B cell in the per-item store, so that the "same families"
+  column compares like with like. Until then, read the reference-consistency
+  table.
 - Add the reference's earlier checkpoints as proxies (DA-ckpt at 3B) once its
-  k/10 grid is evaluated; `per_task()` already takes any `frac`.
-- The rung has four families, all deep: no depth pair, so the
-  by-transformation reading is limited to the language count and the list.
+  k/10 grid is evaluated. `per_task()` already takes any `frac`.
+- The rung's families are all deep, so there is no depth pair, and the scheme
+  changes in only two mono-axis pairs. The reading by transformation is
+  therefore limited to the language count.
 
-### The preview: the four 3B-design families read to 1.7B
+### The preview: the 3B design set read to 1.7B
 
-The comparison line of panel (a) on its own — the control that separates "3B
-is unpredictable" from "this population is unpredictable at any reference".
+This control separates "3B is unpredictable" from "this population is
+unpredictable at any reference". It reads the six 3B-design families at
+1.7B, the population of the 3B table.
 
 <!-- BEGIN auto:above-reference-1.7B-design3B (above_reference.py --pool predictivity --reference 1.7B --design 3B) -->
-## The 1.7B rung as the reference — preview on the `3B` design set
+## The 1.7B rung as the reference: preview on the `3B` design set
 
 **DA-size and DA-goal · reference 1.7B · multi-axis and mono-axis pairs at the grid seed · gate `predictivity` at the proxy, the Wilson rule on the 1.7B runs at the reference · no filter.** Regenerate with `python analysis/rq10_size_generalisation/above_reference.py --pool predictivity --reference 1.7B --design 3B`.
 
-**Population.** 7 families with a final at 1.7B (lm-L15-deep-seed1904, lm-L15-schemeB-deep-seed1904, lm-L30-deep-seed1904, lm-L30-schemeB-deep-seed1904, lm-L50-deep-seed1904, lm-L8-deep-seed1904, lm-L8-schemeB-deep-seed1904); DA-size pooled over the gated benchmark tasks with ≥ 3 pairs, and separately over the per-language BPB tasks (never gated — no chance level; only the languages every paired family scores clear 3 pairs, which is why the BPB column rests on far fewer tasks).
+**Population.** 6 families with a final at 1.7B (lm-L15-deep-seed1904, lm-L15-schemeB-deep-seed1904, lm-L30-deep-seed1904, lm-L50-deep-seed1904, lm-L8-deep-seed1904, lm-L8-schemeB-deep-seed1904). DA-size is pooled over the gated benchmark tasks with ≥ 3 pairs, and separately over the per-language BPB tasks. BPB has no chance level, so it is never gated, and only the languages that every paired family scores reach 3 pairs. That is why the BPB column rests on far fewer tasks.
 
 ![Size generalisation to 1.7B](pretraining/predictivity/above_reference_1.7B_design3B.png)
 
 | axes | proxy | DA-size → 1.7B | tasks | DA-size → 1.7B (same families) | BPB DA-size → 1.7B | BPB tasks |
 |---|---|---|---|---|---|---|
-| mono-axis | 90M | 0.49 | 177 | 0.49 | 0.88 | 21 |
-| mono-axis | 175M | 0.52 | 702 | 0.52 | 0.88 | 21 |
-| mono-axis | 350M | 0.50 | 303 | 0.50 | 0.85 | 21 |
-| mono-axis | 600M | 0.49 | 250 | 0.49 | 0.88 | 21 |
-| mono-axis | 1B | 0.52 | 773 | 0.52 | 0.76 | 21 |
-| multi-axis | 90M | 0.49 | 220 | 0.49 | 0.91 | 31 |
-| multi-axis | 175M | 0.52 | 872 | 0.52 | 0.91 | 31 |
-| multi-axis | 350M | 0.51 | 474 | 0.51 | 0.87 | 31 |
-| multi-axis | 600M | 0.50 | 310 | 0.50 | 0.91 | 31 |
-| multi-axis | 1B | 0.53 | 956 | 0.53 | 0.77 | 31 |
+| mono-axis | 90M | 0.53 | 633 | 0.53 | 0.86 | 16 |
+| mono-axis | 175M | 0.52 | 653 | 0.52 | 0.85 | 16 |
+| mono-axis | 350M | 0.52 | 673 | 0.52 | 0.81 | 16 |
+| mono-axis | 600M | 0.53 | 706 | 0.53 | 0.87 | 16 |
+| mono-axis | 1B | 0.51 | 730 | 0.51 | 0.82 | 16 |
+| multi-axis | 90M | 0.54 | 741 | 0.54 | 0.89 | 21 |
+| multi-axis | 175M | 0.54 | 766 | 0.54 | 0.88 | 21 |
+| multi-axis | 350M | 0.53 | 788 | 0.53 | 0.84 | 21 |
+| multi-axis | 600M | 0.54 | 825 | 0.54 | 0.89 | 21 |
+| multi-axis | 1B | 0.53 | 855 | 0.53 | 0.86 | 21 |
 
 Files: [`above_reference_1.7B_design3B.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.png), [`above_reference_1.7B_design3B.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.csv), [`above_reference_1.7B_design3B_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B_per_task.csv).
 <!-- END auto:above-reference-1.7B-design3B -->
 
 Key findings:
 
-- **On these four families alone, DA-size to 1.7B is a coin flip from every
-  proxy size.** Benchmark tasks only (the bBPB twins left out): mono-axis
-  0.48 / 0.48 / 0.46 / 0.44 / 0.48 at 90M / 175M / 350M / 600M / 1B over 53–76
-  gated tasks, multi-axis 0.47 / 0.49 / 0.47 / 0.44 / 0.48 over 56–82; this
-  is the control for the 3B table above, since the 3B question starts from
-  a population whose 1.7B ranking the ladder does not resolve either.
-- **The table's 175M and 1B rows (234–269 tasks) pool the bBPB twins.** The
-  187 multi-axis (175 mono-axis) twin tasks alone give 0.52 / 0.53 multi-axis
-  and 0.52 / 0.56 mono-axis at 175M / 1B, which lifts those rows to 0.51–0.53;
-  the twins are finals-only in this refresh, so read nothing into them at
-  other sizes or checkpoints.
-- **The six multi-axis pairs are two scheme pairs, two L pairs and two that
-  change both.** The four mono-axis pairs are the scheme and L pairs alone.
-- **BPB on the same families reaches 0.79–0.90 at the 1.7B reference**
-  (0.79–0.88 mono-axis, 0.82–0.90 multi-axis), against 0.75–0.96 at 3B: the
-  channel that works does not degrade with the rung.
-- **The gated task count is 53–82** because the four families train 8 or 15
-  languages (rule 2): the 3B answer is about those languages' tasks.
+- **On the six design families, DA-size to 1.7B is at chance from every
+  proxy size.** On benchmark tasks only (the bBPB twins left out), it is
+  0.53 / 0.51 / 0.48 / 0.50 / 0.51 mono-axis at 90M / 175M / 350M / 600M / 1B
+  over 178–272 gated tasks, and 0.52 / 0.51 / 0.49 / 0.51 / 0.52 multi-axis
+  over 202–316. The 3B question therefore starts from a population whose 1.7B
+  ranking the ladder does not resolve either.
+- **Every row of the table pools the bBPB twins.** The 427 mono-axis (502
+  multi-axis) twin tasks alone give 0.52–0.55 (0.54–0.56) at every proxy size.
+  With them, the rows reach 0.51–0.55 over 606–819 tasks.
+- **The pair sets are those of the 3B table.** The six families give 15
+  multi-axis and 9 mono-axis pairs at both references, so the two tables
+  differ in the reference and in the coverage of the bBPB twins, not in the
+  decisions.
+- **BPB on these families reaches 0.81–0.89 at the 1.7B reference**
+  (0.81–0.87 mono-axis over 16 tasks, 0.84–0.89 multi-axis over 21), against
+  0.78–0.95 to 3B over the same 16 and 21 tasks. The channel that works barely
+  degrades with the rung.
 
-Follow-ups: see above; and consider whether the rung's design set should be
-widened (a shallow cell, or L30) before it is read as a generalisation test.
+Follow-ups: see above. Also consider widening the rung's design set (with a
+shallow cell) before reading it as a generalisation test.
 
 ### The prior question: what the rung can measure at all
 
-DA asks whether a ranking survives, which it can only ask of a benchmark
+DA asks whether a ranking survives, and it can only ask this of a benchmark
 above chance at both rungs. The gate is a property of (task, size), so a
-benchmark the reference cannot resolve may become measurable one rung up —
-and the reference's own mask can never say so.
+benchmark the reference cannot resolve may become measurable one rung up.
+The reference's own mask can never show this.
 
 <!-- BEGIN auto:gate-crossover (gate_crossover.py --pool predictivity) -->
 ## What the 3B rung can measure that the 1.7B reference cannot
 
-**The above-random gate at two rungs · the 5 families with a 3B final · both columns recomputed on those families (rule 1) so the rung is the only difference.** Regenerate with `python analysis/rq10_size_generalisation/gate_crossover.py --pool predictivity`.
+**The above-random gate at two rungs · the 6 families with a 3B final · both columns recomputed on those families (rule 1) so the rung is the only difference.** Regenerate with `python analysis/rq10_size_generalisation/gate_crossover.py --pool predictivity`.
 
-**Population.** 841 tasks carry a chance level at both rungs; BPB and the generative tasks have none, so they never enter the gate. The gate admits **510** of them at 1.7B and **674** at 3B (**+164**, +32%).
+**Population.** 933 tasks have a chance level at both rungs. BPB and the generative tasks have none, so they never enter the gate. The gate admits **612** of them at 1.7B and **778** at 3B (**+166**, +27%).
 
 ![Gate crossover](pretraining/predictivity/gate_crossover.png)
 
 |  | at chance at 3B | above chance at 3B |
 |---|---|---|
-| **above chance at 1.7B** | 6 | 504 |
-| **at chance at 1.7B** | 161 | 170 |
+| **above chance at 1.7B** | 5 | 607 |
+| **at chance at 1.7B** | 150 | 171 |
 
-**170 tasks cross into the gate at 3B** and **6** drop out of it. Where they come from:
+**171 tasks cross into the gate at 3B** and **5** drop out of it. Where they come from:
 
 | benchmark | gained | lost | net |
 |---|---|---|---|
-| belebele | 40 | 0 | +40 |
-| include_base_44 | 30 | 0 | +30 |
-| global_mmlu_full | 28 | 0 | +28 |
-| cultural_bench_easy | 16 | 0 | +16 |
-| global_piqa_parallel_cloze | 11 | 1 | +10 |
-| include_v2_og | 9 | 2 | +7 |
-| arc | 5 | 0 | +5 |
+| belebele | 45 | 0 | +45 |
+| global_mmlu_full | 29 | 0 | +29 |
+| include_base_44 | 28 | 0 | +28 |
+| cultural_bench_easy | 15 | 0 | +15 |
+| global_piqa_parallel_cloze | 14 | 1 | +13 |
+| include_v2_og | 8 | 1 | +7 |
 | blend_sample | 5 | 0 | +5 |
-| rf_include_base_44 | 5 | 0 | +5 |
-| include_v2_en | 4 | 1 | +3 |
-| rfgm_include_base_44 | 4 | 0 | +4 |
-| cultural_bench_hard | 3 | 0 | +3 |
+| cultural_bench_hard | 4 | 0 | +4 |
+| rf_cultural_bench_easy | 4 | 0 | +4 |
+| rf_include_base_44 | 4 | 0 | +4 |
+| include_v2_en | 3 | 1 | +2 |
+| rfgm_include_base_44 | 3 | 0 | +3 |
 
 Files: [`gate_crossover.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_crossover.png), [`gate_crossover.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_crossover.csv), [`gate_crossover_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_crossover_per_task.csv) (every task's run shares and verdicts, `status` = `newly above` for the tasks that cross in).
 
 ### The share of each benchmark above chance at 1.7B and at 3B
 
-Per benchmark, the share of its tasks the gate admits at each rung, on the same (family, task) cells; 40 benchmarks, 17 gain, 0 lose, 3 have no task above chance at 1.7B and at least one at 3B.
+Per benchmark, the share of its tasks the gate admits at each rung, on the same (family, task) cells. Of 52 benchmarks, 18 gain share, 0 lose share, and 5 have no task above chance at 1.7B but at least one at 3B.
 
 ![Gate share by benchmark](pretraining/predictivity/gate_crossover_by_benchmark.png)
 
 | benchmark | tasks | above at 1.7B | above at 3B | share change |
 |---|---|---|---|---|
+| global_mmlu_full | 29 | 0 (0%) | 29 (100%) | +100% |
 | blend_sample | 5 | 0 (0%) | 5 (100%) | +100% |
 | commonsense_qa | 1 | 0 (0%) | 1 (100%) | +100% |
 | mmlu | 1 | 0 (0%) | 1 (100%) | +100% |
-| global_mmlu_full | 29 | 1 (3%) | 29 (100%) | +97% |
-| cultural_bench_easy | 19 | 1 (5%) | 17 (89%) | +84% |
-| include_base_44 | 36 | 6 (17%) | 36 (100%) | +83% |
-| belebele | 59 | 17 (29%) | 57 (97%) | +68% |
-| paws | 8 | 5 (62%) | 7 (88%) | +25% |
-| arc | 28 | 17 (61%) | 22 (79%) | +18% |
-| global_piqa_parallel_cloze | 63 | 1 (2%) | 11 (17%) | +16% |
-| rf_cultural_bench_easy | 19 | 7 (37%) | 10 (53%) | +16% |
-| cultural_bench_hard | 19 | 1 (5%) | 4 (21%) | +16% |
-| rf_include_base_44 | 36 | 27 (75%) | 32 (89%) | +14% |
-| rfgm_include_base_44 | 36 | 30 (83%) | 34 (94%) | +11% |
+| cultural_bench_easy | 19 | 2 (11%) | 17 (89%) | +79% |
+| include_base_44 | 36 | 5 (14%) | 33 (92%) | +78% |
+| belebele | 59 | 10 (17%) | 55 (93%) | +76% |
+| kobest | 3 | 2 (67%) | 3 (100%) | +33% |
+| rf_cultural_bench_easy | 19 | 7 (37%) | 11 (58%) | +21% |
+| cultural_bench_hard | 19 | 0 (0%) | 4 (21%) | +21% |
+| global_piqa_parallel_cloze | 63 | 14 (22%) | 27 (43%) | +21% |
+| paws | 8 | 5 (62%) | 6 (75%) | +12% |
+| rf_include_base_44 | 36 | 29 (81%) | 33 (92%) | +11% |
 | include_v2_og | 77 | 57 (74%) | 64 (83%) | +9% |
-| include_v2_en | 77 | 66 (86%) | 69 (90%) | +4% |
-| hellaswag | 26 | 25 (96%) | 26 (100%) | +4% |
+| rfgm_include_base_44 | 36 | 31 (86%) | 34 (94%) | +8% |
+| arc | 28 | 22 (79%) | 24 (86%) | +7% |
+| include_v2_en | 77 | 66 (86%) | 68 (88%) | +3% |
+| rf_belebele | 59 | 57 (97%) | 58 (98%) | +2% |
 
 Files: [`gate_crossover_by_benchmark.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_crossover_by_benchmark.png), [`gate_crossover_by_benchmark.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_crossover_by_benchmark.csv).
 <!-- END auto:gate-crossover -->
 
 Key findings:
 
-- **The 3B rung measures 27 % more of the benchmark suite than the 1.7B
-  reference does.** On the four 3B-design families, of the 573 tasks with a
-  chance level the gate admits 337 at 1.7B and 429 at 3B (+92 net): 98 cross
-  in, 6 drop out, 331 stay above and 138 stay at chance at both rungs.
+- **Yes, the 3B rung lifts more benchmarks above chance: it measures 27 % more
+  of the suite than the 1.7B reference.** On the six families scored at both
+  rungs, the gate admits 607 of the 927 tasks with a chance level at 1.7B and
+  772 at 3B (+165 net). 170 tasks cross in, 5 drop out, 602 stay above chance
+  and 150 stay at chance at both rungs.
 - **The crossings are concentrated in the multilingual knowledge and
-  comprehension benchmarks.** Net gains: `global_mmlu_full` +17, `belebele`
-  +14, `cultural_bench_easy` +14, `include_base_44` +13,
-  `global_piqa_parallel_cloze` +8.
-- **Per language the gain is largest in the high-resource head**: en +16,
-  es +12, ar +7, zh +7, 42 of the 92 net. 23 languages gain at least one
-  task, and none outside the top five gains more than 5.
-- **This is the strongest argument for the 3B rung, and it is independent of
-  decision accuracy**: 98 tasks the reference reports as at chance become
+  comprehension benchmarks.** The net gains are `belebele` +45,
+  `global_mmlu_full` +29, `include_base_44` +28, `cultural_bench_easy` +15 and
+  `global_piqa_parallel_cloze` +13, together 130 of the 165.
+- **Per language, the gain is largest in the high-resource head.** English
+  gains 16 tasks net, Spanish 13, Chinese 9, Hindi 7 and Arabic 7, together 52
+  of the 165. 45 languages gain at least one task net, and none outside the
+  top five gains more than 5.
+- **This is the strongest argument for the 3B rung, and it does not depend on
+  decision accuracy.** 170 tasks that the reference reports at chance become
   measurable. It is also a caution for every other analysis, whose gate stops
   at 1.7B by rule 10.
-- **The 6 losses are small and scattered** (3 `belebele`, 1 each `bbh_mcq`
-  and `include_base_44` in the table above, one more outside it). With 4 runs
-  per rung the Wilson rule can plausibly move that many by chance.
+- **The 5 losses are few and rest on few runs.** They are
+  `bbh_mcq_disambiguation_qa` (English, 6 runs per rung) and four tasks on
+  2–4 runs per rung (`include_v2_en` Arabic-Kuwait, `include_v2_og`
+  Greek-Cyprus, `global_piqa_parallel_cloze` Swedish and
+  `nortruthfulqa_mc_nno_p3` Norwegian Nynorsk). With two runs, the Wilson
+  rule can flip that many tasks by chance.
 
 Follow-ups:
 
-- The two columns rest on 4 runs at 3B against 4 at 1.7B. More 3B cells would
-  tighten the gate estimate directly; this, not the decision-accuracy table,
-  is where A-L30 + B-L30 would pay.
+- The gate rests on 1–6 runs per (task, rung), and 34 of the 170 newly
+  admitted tasks rest on a single run (a language only the L50 family trains).
+  More 3B cells would tighten the gate directly, more than they would the
+  decision-accuracy table.
 - Ask in the gate analysis (`../rq00_gate_and_curves/README.md`) whether the
-  newly admitted tasks' DA is any better than the already-admitted ones', i.e.
-  whether measurability buys reliability.
+  newly admitted tasks have a better DA than the tasks admitted before, that
+  is, whether measurability buys reliability.
 
 Key findings (the per-benchmark shares, `gate_crossover_by_benchmark.png`):
 
-- **Benchmarks the rung lifts the most:** pending the regeneration
-  (`gate_crossover_by_benchmark.csv`, `delta`).
-- **Benchmarks with no task above chance at 1.7B and at least one at 3B:**
-  pending the regeneration.
-- **Benchmarks still at chance at 3B on every task:** pending the
-  regeneration.
+- **The rung lifts the multiple-choice knowledge benchmarks the most.**
+  `global_mmlu_full` goes from 0 % to 100 % of its 29 tasks, `include_base_44`
+  from 14 % to 92 % of 36, `cultural_bench_easy` from 11 % to 89 % of 19 and
+  `belebele` from 17 % to 93 % of 59. Of the 52 benchmarks, 17 gain share and
+  none loses it (`bbh_mcq` and `noreval_extra` trade one task each way).
+- **Their reformulated twins were already measurable at 1.7B.**
+  `rf_global_mmlu_full` and `rfgm_belebele` sit at 100 % at both rungs and
+  `rf_belebele` at 97–98 %. What 3B adds is the original format, not the
+  knowledge.
+- **Five benchmarks have no task above chance at 1.7B and at least one at
+  3B:** `global_mmlu_full` (0 → 29 of 29), `blend_sample` (0 → 5 of 5),
+  `cultural_bench_hard` (0 → 4 of 19), `commonsense_qa` and `mmlu` (0 → 1 of 1).
+- **Six benchmarks stay at chance on every task at 3B:** `acp_bench_cloze`
+  (7 tasks), `acp_bench_mcq` (7), `bbh_cloze` (6), `truthfulqa_mc2` (3),
+  `truthfulqa-multi_mc1` (2) and `toxigen` (1). `bbh_mcq` admits 1 of 17 and
+  `global_piqa_parallel_cloze` 27 of 63 at 3B, so neither is measurable on
+  most of its tasks on this ladder yet.
 
 Follow-ups:
 
-- Read the newly passing tasks' run counts (`gate_crossover_per_task.csv`,
-  `runs_<size>`): a task only the L50 family trains rests on one run per rung.
+- Draw the per-benchmark shares with each task's run count
+  (`gate_crossover_per_task.csv`, `runs_<size>`), so that a share resting on
+  one run per rung is visible as such.
 
 ### The framework at the new reference: does DA and SNR read the same?
 
-The gate says what the rung can measure; the question left open is whether
-the DA/SNR framework built on the 1.7B reference reads the same at 3B. This
-compares DA-size to the two references on the same decisions, the ranking of
-benchmarks by DA and by SNR under each, and the SNR at the two rungs.
+The gate says what the rung can measure. The open question is whether the
+DA/SNR framework built on the 1.7B reference gives the same answers at 3B.
+This section compares DA-size to the two references on the same decisions,
+the ranking of benchmarks by DA and by SNR under each reference, and the SNR
+at the two rungs.
 
 <!-- BEGIN auto:reference-consistency (reference_consistency.py --pool predictivity) -->
 ## Is the framework consistent when the reference moves from 1.7B to 3B?
 
-**DA-size to two references and the SNR at two rungs · 5 families scored at both (lm-L15-deep-seed1904, lm-L15-schemeB-deep-seed1904, lm-L50-deep-seed1904, lm-L8-deep-seed1904, lm-L8-schemeB-deep-seed1904) · multi-axis and mono-axis pairs at the grid seed · gate `predictivity` at the proxy and at 1.7B, the Wilson rule on the 3B runs · no filter.** Regenerate with `python analysis/rq10_size_generalisation/reference_consistency.py --pool predictivity`.
+**DA-size to two references and the SNR at two rungs · 6 families scored at both (lm-L15-deep-seed1904, lm-L15-schemeB-deep-seed1904, lm-L30-deep-seed1904, lm-L50-deep-seed1904, lm-L8-deep-seed1904, lm-L8-schemeB-deep-seed1904) · multi-axis and mono-axis pairs at the grid seed · gate `predictivity` at the proxy and at 1.7B, the Wilson rule on the 3B runs · no filter.** Regenerate with `python analysis/rq10_size_generalisation/reference_consistency.py --pool predictivity`.
 
-**Population.** 10 multi-axis and 6 mono-axis pairs over the 5 families (fewer on a task whose language not every family trains, rule 2). A DA cell is a (task, pair set, proxy) whose decisions both references score, the task above chance at the proxy, at 1.7B and at 3B; 2045 cells over 266 tasks have fewer than 3 pairs and are NaN (rule 5, pair counts in the per-task table). Bands are the 90 % leave-one-family-out jackknife.
+**Population.** 15 multi-axis and 9 mono-axis pairs over the 6 families (fewer on a task whose language not every family trains, rule 2). A DA cell is a (task, pair set, proxy) whose decisions both references score, with the task above chance at the proxy, at 1.7B and at 3B. 4260 cells over 557 tasks have fewer than 3 pairs and are NaN (rule 5, pair counts in the per-task table). The bands are 90 % leave-one-family-out jackknife bands.
 
 ![DA-size to two references, multi-axis](pretraining/predictivity/reference_consistency_da_size_multi_axes.png)
 
@@ -331,31 +383,31 @@ Benchmark accuracy, pooled DA-size [90 % band]:
 
 | axes | proxy | tasks | → 1.7B | → 3B |
 |---|---|---|---|---|
-| mono-axis | 90M | 101 | 0.52 [0.44, 0.60] | 0.51 [0.46, 0.56] |
-| mono-axis | 175M | 114 | 0.52 [0.44, 0.60] | 0.47 [0.38, 0.56] |
-| mono-axis | 350M | 129 | 0.48 [0.43, 0.53] | 0.50 [0.36, 0.64] |
-| mono-axis | 600M | 145 | 0.48 [0.36, 0.61] | 0.51 [0.47, 0.55] |
-| mono-axis | 1B | 154 | 0.52 [0.43, 0.61] | 0.52 [0.46, 0.59] |
-| multi-axis | 90M | 109 | 0.51 [0.44, 0.58] | 0.50 [0.44, 0.56] |
-| multi-axis | 175M | 125 | 0.52 [0.46, 0.57] | 0.48 [0.43, 0.53] |
-| multi-axis | 350M | 140 | 0.49 [0.45, 0.52] | 0.49 [0.39, 0.59] |
-| multi-axis | 600M | 156 | 0.51 [0.35, 0.66] | 0.51 [0.48, 0.54] |
-| multi-axis | 1B | 167 | 0.53 [0.43, 0.62] | 0.52 [0.47, 0.58] |
+| mono-axis | 90M | 471 | 0.53 [0.46, 0.60] | 0.53 [0.51, 0.56] |
+| mono-axis | 175M | 491 | 0.53 [0.50, 0.57] | 0.50 [0.48, 0.51] |
+| mono-axis | 350M | 510 | 0.51 [0.47, 0.55] | 0.49 [0.46, 0.53] |
+| mono-axis | 600M | 543 | 0.52 [0.46, 0.59] | 0.54 [0.49, 0.58] |
+| mono-axis | 1B | 568 | 0.52 [0.49, 0.54] | 0.54 [0.50, 0.58] |
+| multi-axis | 90M | 519 | 0.53 [0.45, 0.61] | 0.54 [0.50, 0.58] |
+| multi-axis | 175M | 544 | 0.54 [0.50, 0.58] | 0.51 [0.49, 0.54] |
+| multi-axis | 350M | 565 | 0.53 [0.50, 0.56] | 0.50 [0.47, 0.53] |
+| multi-axis | 600M | 602 | 0.54 [0.47, 0.61] | 0.54 [0.50, 0.57] |
+| multi-axis | 1B | 633 | 0.52 [0.48, 0.57] | 0.54 [0.51, 0.58] |
 
 Spearman between the two references' DA, over the benchmark tasks and over the benchmarks (mean DA of their tasks):
 
 | axes | proxy | ρ tasks | tasks | ρ benchmarks | benchmarks |
 |---|---|---|---|---|---|
-| mono-axis | 90M | 0.11 | 101 | 0.14 | 20 |
-| mono-axis | 175M | 0.09 | 114 | 0.03 | 22 |
-| mono-axis | 350M | 0.08 | 129 | -0.05 | 22 |
-| mono-axis | 600M | 0.02 | 145 | 0.43 | 23 |
-| mono-axis | 1B | 0.23 | 154 | 0.35 | 23 |
-| multi-axis | 90M | 0.19 | 109 | 0.16 | 21 |
-| multi-axis | 175M | 0.09 | 125 | -0.07 | 22 |
-| multi-axis | 350M | 0.10 | 140 | 0.02 | 22 |
-| multi-axis | 600M | 0.01 | 156 | 0.56 | 23 |
-| multi-axis | 1B | 0.16 | 167 | 0.32 | 23 |
+| mono-axis | 90M | 0.02 | 471 | -0.08 | 67 |
+| mono-axis | 175M | 0.06 | 491 | 0.23 | 67 |
+| mono-axis | 350M | 0.04 | 510 | 0.02 | 67 |
+| mono-axis | 600M | 0.05 | 543 | 0.33 | 70 |
+| mono-axis | 1B | 0.13 | 568 | 0.31 | 70 |
+| multi-axis | 90M | 0.06 | 519 | -0.03 | 68 |
+| multi-axis | 175M | 0.08 | 544 | 0.12 | 68 |
+| multi-axis | 350M | 0.09 | 565 | 0.04 | 68 |
+| multi-axis | 600M | 0.07 | 602 | 0.42 | 71 |
+| multi-axis | 1B | 0.13 | 633 | 0.27 | 71 |
 
 ![SNR at two rungs](pretraining/predictivity/reference_consistency_snr.png)
 
@@ -363,48 +415,196 @@ SNR (`rel_std`) at 1.7B against 3B, tasks above chance at both:
 
 | channel | ρ tasks | tasks | ρ benchmarks | benchmarks | median log10 SNR 1.7B | median log10 SNR 3B | share higher at 3B |
 |---|---|---|---|---|---|---|---|
-| benchmarks | 0.35 | 300 | 0.45 | 24 | -0.02 | -0.16 | 0.33 |
-| bpb | 0.94 | 12 | — | 1 | -0.58 | -0.82 | 0.00 |
+| benchmarks | 0.05 | 1016 | 0.18 | 73 | 0.11 | 0.01 | 0.41 |
+| bpb | 0.94 | 35 | — | 1 | 0.27 | 0.02 | 0.23 |
 
 Files: [`reference_consistency_da_size_multi_axes.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_multi_axes.png) / [`.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_multi_axes.csv), [`reference_consistency_da_size_mono_axis.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_mono_axis.png) / [`.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_mono_axis.csv), [`reference_consistency_da_size_per_task_both_axes.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_per_task_both_axes.csv), [`reference_consistency_snr.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_snr.png) / [`.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_snr.csv), [`reference_consistency_snr_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_snr_per_task.csv).
 <!-- END auto:reference-consistency -->
 
 Key findings:
 
-- **DA-size to 3B against DA-size to 1.7B on the same decisions:** pending
-  the regeneration (benchmark accuracy and BPB, both pair sets).
-- **Does the ranking of benchmarks by DA survive the reference:** pending the
-  regeneration (Spearman over tasks and over benchmarks, per proxy).
-- **SNR at 3B against 1.7B:** pending the regeneration (Spearman over tasks
-  and over benchmarks, the median log10 SNR at each rung).
+- **Pooled DA-size does not depend on the reference.** We read identical
+  decisions: six families, and the benchmark tasks and their bBPB twins above
+  chance at the proxy, at 1.7B and at 3B. Mono-axis DA-size is 0.51–0.53 to
+  1.7B and 0.49–0.54 to 3B over 467–560 tasks. Multi-axis DA-size is
+  0.53–0.54 and 0.50–0.55 over 513–621. Every 90 % band to 1.7B contains 0.50,
+  and five of the ten bands to 3B sit just above it (lower edges 0.505–0.516).
+- **In per-language BPB, both references are well predicted.** Mono-axis
+  DA-size is 0.81–0.87 to 1.7B and 0.78–0.91 to 3B (16 tasks). Multi-axis
+  DA-size is 0.84–0.89 to both (21 tasks, six families).
+- **Which tasks a proxy ranks well does not survive the move.** Spearman ρ
+  between the two references' per-task DA is 0.01 to 0.14 over 467–621 tasks.
+  Only 21–25 % of the benchmark cells give the same DA to both references
+  (mean |difference| 0.26–0.29).
+- **The ranking of benchmarks by DA survives weakly, best from 600M.** Over
+  67–70 benchmarks, ρ is −0.04 to 0.23 from 90M–350M, 0.34–0.41 from 600M and
+  0.28–0.30 from 1B, on both pair sets.
+- **The SNR ranking survives no better than the DA ranking, except in BPB.**
+  Over 1,011 benchmark tasks above chance at both rungs, ρ is 0.05 (0.21 over
+  74 benchmarks). Over 35 BPB tasks it is 0.94.
+- **SNR is lower at 3B.** Median log10 SNR drops from 0.11 to 0.00 on the
+  benchmark tasks, with 40 % of them higher at 3B. On BPB it drops from 0.27
+  to 0.02, and 8 of the 35 tasks are higher. Among the original benchmarks
+  with more than one task, the largest drops are `arc_mt` (median −0.36 over
+  10 tasks), `global_piqa_parallel_cloze` (−0.36, 10) and `hellaswag` (−0.29,
+  20). Among the benchmarks with more than one task, leaving out the bBPB
+  twins, only `xcopa` (+0.13, 7), `rf_mmmlu` (+0.12, 5), `toksuite` (+0.09, 5),
+  `rf_bbh_mcq` (+0.05, 10) and `xnli` (+0.03, 12) rise.
 
 Follow-ups:
 
-- With few families at 3B the per-task DA sits on a coarse lattice and many
-  cells fall under `MIN_PAIRS`; read the pooled lines and the benchmark-level
-  ρ before the per-task scatter.
+- With six families at 3B, a per-task DA can only take the values k/15 or
+  k/9, and 4,270 cells over 553 tasks fall under `MIN_PAIRS`. Read the pooled
+  lines and the benchmark-level ρ before the per-task scatter.
+- Split the SNR drop into its signal part (the spread of the six families)
+  and its noise part (the checkpoint window). This would tell whether the
+  designs converge at 3B or the late checkpoints get noisier.
+
+## The DA panel on one task set per line
+
+The DA lines pool, at each proxy size, the tasks above chance at the proxy and at both references, so a line can move because its tasks changed (rule 13). The twin figure redraws only the DA panel, one panel per reference (the gate panel is a share, not a mean over tasks). For each channel, the solid line keeps the tasks with a value at every proxy size, and the committed line is dashed behind it. A cell is kept for both references at once, so one task set serves both.
+
+![DA to 1.7B and to 3B on one task set per line](pretraining/predictivity/gate_share_and_da_size_mono_axis_fixed_tasks_paper.png)
+
+DA-size (no filter, mono-axis pairs, gate `predictivity` at the proxy, the references' own gate at 1.7B and 3B), pooled matching over comparable pairs. GitHub: [PNG](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_share_and_da_size_mono_axis_fixed_tasks_paper.png) · [CSV](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_share_and_da_size_mono_axis_fixed_tasks_paper.csv)
+
+Key findings:
+
+- **The fixed task set changes nothing that matters.** The benchmark lines keep 465 of 467–560 tasks and move by 0.02 at most (to 1.7B, at 600M). Against 3B they read 0.49–0.54 on both task sets.
+- **BPB does not move.** The same 16 BPB tasks enter at every size.
+
+Follow-ups:
+
+- **The jackknife band on the fixed set.** The per-task table has no family pairs, so the twin figure draws no band.
+
+## Other references: the 1B rung at three seeds, and the 3B model at K = 30
+
+The 1.7B reference is one run per design, and the 3B reading above pools six families. Two other references cover part of the decisions. The first is the 1B rung, the only one above 600M trained at three seeds (deep L1, L2, L30-A, L30-B). Its three finals show how much the reference's own seed moves DA. The second is the one 3B family at K = 30 (A-L30), read on the decisions that involve it.
+
+<!-- BEGIN auto:reference-choice (reference_choice.py --pool predictivity) -->
+## Other references: the 1B rung at three seeds, and the 3B model at K = 30
+
+**DA-size and DA-goal · pool `predictivity_seeds` read at the grid seed (the replicates enter as references only) · multi-axis and mono-axis pairs · gate `predictivity` at the proxy and at the reference (Wilson rule on the 3B runs) · no filter · ≥ 3 pairs.** The 1B readings take a reference below 1.7B on purpose (rule 9: the only rung above 600M with seed replicates). Within a block a cell counts only where every reading scores it, so the readings differ in the reference alone (`all pairs` reads more pairs per task). Regenerate with `python analysis/rq10_size_generalisation/reference_choice.py --pool predictivity`.
+
+**1B seeds, benchmarks**: DA-size (tasks)
+
+| axes | proxy | 1B seed 28 | 1B seed 1797 | 1B seed 1904 | 1.7B seed 1904 |
+|---|---|---|---|---|---|
+| mono-axis | 90M | 0.53 (127) | 0.56 (127) | 0.56 (127) | 0.56 (127) |
+| mono-axis | 175M | 0.66 (129) | 0.53 (129) | 0.56 (129) | 0.56 (129) |
+| mono-axis | 350M | 0.57 (132) | 0.53 (132) | 0.56 (132) | 0.55 (132) |
+| mono-axis | 600M | 0.59 (137) | 0.51 (137) | 0.53 (137) | 0.50 (137) |
+| multi-axis | 90M | 0.55 (156) | 0.59 (156) | 0.57 (156) | 0.57 (156) |
+| multi-axis | 175M | 0.67 (160) | 0.56 (160) | 0.58 (160) | 0.59 (160) |
+| multi-axis | 350M | 0.59 (163) | 0.56 (163) | 0.59 (163) | 0.57 (163) |
+| multi-axis | 600M | 0.63 (168) | 0.54 (168) | 0.57 (168) | 0.56 (168) |
+
+**1B seeds, bpb**: DA-size (tasks)
+
+| axes | proxy | 1B seed 28 | 1B seed 1797 | 1B seed 1904 | 1.7B seed 1904 |
+|---|---|---|---|---|---|
+| mono-axis | 90M | 0.75 (2) | 0.88 (2) | 0.75 (2) | 0.88 (2) |
+| mono-axis | 175M | 0.75 (2) | 0.88 (2) | 0.75 (2) | 0.88 (2) |
+| mono-axis | 350M | 0.75 (2) | 0.88 (2) | 0.75 (2) | 0.88 (2) |
+| mono-axis | 600M | 0.88 (2) | 1.00 (2) | 0.88 (2) | 1.00 (2) |
+| multi-axis | 90M | 0.87 (3) | 0.93 (3) | 0.80 (3) | 0.87 (3) |
+| multi-axis | 175M | 0.87 (3) | 0.93 (3) | 0.80 (3) | 0.87 (3) |
+| multi-axis | 350M | 0.80 (3) | 0.87 (3) | 0.73 (3) | 0.93 (3) |
+| multi-axis | 600M | 0.93 (3) | 1.00 (3) | 0.87 (3) | 0.93 (3) |
+
+**3B K=30, benchmarks**: DA-size (tasks)
+
+| axes | proxy | 3B, K=30 pairs | 1.7B, K=30 pairs | 3B, all pairs |
+|---|---|---|---|---|
+| mono-axis | 90M | 0.51 (118) | 0.54 (118) | 0.50 (118) |
+| mono-axis | 175M | 0.49 (132) | 0.52 (132) | 0.48 (132) |
+| mono-axis | 350M | 0.49 (145) | 0.52 (145) | 0.49 (145) |
+| mono-axis | 600M | 0.50 (170) | 0.46 (170) | 0.52 (170) |
+| mono-axis | 1B | 0.52 (180) | 0.49 (180) | 0.52 (180) |
+| mono-axis | 1.7B | 0.56 (186) | — | 0.52 (186) |
+| multi-axis | 90M | 0.47 (129) | 0.53 (129) | 0.49 (129) |
+| multi-axis | 175M | 0.49 (147) | 0.52 (147) | 0.49 (147) |
+| multi-axis | 350M | 0.49 (160) | 0.53 (160) | 0.49 (160) |
+| multi-axis | 600M | 0.51 (186) | 0.48 (186) | 0.51 (186) |
+| multi-axis | 1B | 0.53 (200) | 0.51 (200) | 0.52 (200) |
+| multi-axis | 1.7B | 0.55 (208) | — | 0.52 (208) |
+
+**3B K=30, bpb**: DA-size (tasks)
+
+| axes | proxy | 3B, K=30 pairs | 1.7B, K=30 pairs | 3B, all pairs |
+|---|---|---|---|---|
+| mono-axis | 90M | 0.78 (9) | 0.74 (9) | 0.89 (9) |
+| mono-axis | 175M | 0.81 (9) | 0.78 (9) | 0.90 (9) |
+| mono-axis | 350M | 0.70 (9) | 0.67 (9) | 0.78 (9) |
+| mono-axis | 600M | 0.81 (9) | 0.78 (9) | 0.89 (9) |
+| mono-axis | 1B | 0.74 (9) | 0.70 (9) | 0.85 (9) |
+| mono-axis | 1.7B | 0.96 (9) | — | 0.97 (9) |
+| multi-axis | 90M | 0.82 (12) | 0.84 (12) | 0.89 (12) |
+| multi-axis | 175M | 0.82 (12) | 0.84 (12) | 0.89 (12) |
+| multi-axis | 350M | 0.82 (12) | 0.76 (12) | 0.85 (12) |
+| multi-axis | 600M | 0.84 (12) | 0.86 (12) | 0.88 (12) |
+| multi-axis | 1B | 0.80 (12) | 0.78 (12) | 0.86 (12) |
+| multi-axis | 1.7B | 0.94 (12) | — | 0.95 (12) |
+
+DA-goal (the nine tenths before the final, benchmark accuracy), range over the proxy sizes and checkpoints:
+
+| block | reading | axes | DA-goal |
+|---|---|---|---|
+| 1B seeds | 1B seed 28 | mono-axis | 0.47–0.68 |
+| 1B seeds | 1B seed 28 | multi-axis | 0.49–0.68 |
+| 1B seeds | 1B seed 1797 | mono-axis | 0.48–0.60 |
+| 1B seeds | 1B seed 1797 | multi-axis | 0.51–0.61 |
+| 1B seeds | 1B seed 1904 | mono-axis | 0.48–0.63 |
+| 1B seeds | 1B seed 1904 | multi-axis | 0.53–0.63 |
+| 1B seeds | 1.7B seed 1904 | mono-axis | 0.46–0.60 |
+| 1B seeds | 1.7B seed 1904 | multi-axis | 0.49–0.62 |
+| 3B K=30 | 3B, K=30 pairs | mono-axis | 0.41–0.56 |
+| 3B K=30 | 3B, K=30 pairs | multi-axis | 0.42–0.57 |
+| 3B K=30 | 1.7B, K=30 pairs | mono-axis | 0.41–0.57 |
+| 3B K=30 | 1.7B, K=30 pairs | multi-axis | 0.43–0.57 |
+| 3B K=30 | 3B, all pairs | mono-axis | 0.43–0.54 |
+| 3B K=30 | 3B, all pairs | multi-axis | 0.45–0.54 |
+
+Files: [`reference_choice_da_all_both_axes.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_choice_da_all_both_axes.csv), [`reference_choice_da_size_both_axes.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_choice_da_size_both_axes.csv) / [`.tex`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_choice_da_size_both_axes.tex) (the paper table).
+<!-- END auto:reference-choice -->
+
+Key findings (`reference_choice_da_all_both_axes.csv`, snapshot of the 2026-10-10 refresh):
+
+- **The seed of the 1B reference moves a proxy's DA-size more than the move from 1B to 1.7B does.** On the four replicated designs (benchmark accuracy, mostly English and Russian tasks), mono-axis DA-size at 175M is 0.67, 0.54 and 0.56 against the three 1B seeds and 0.56 against 1.7B. At 600M it is 0.59, 0.51 and 0.54 against 0.50. The spread over the reference seeds reaches 0.13 per proxy, against at most 0.03 between the seed-1904 1B and 1.7B readings.
+- **No reference seed lifts benchmark accuracy above 0.70.** Every 1B reading stays at 0.51–0.70 (mono-axis) and 0.54–0.67 (multi-axis) from every proxy. The 350M mono-axis cell rests on 15 tasks.
+- **BPB stays high against every reference seed.** It is 0.73–1.00 on two to three BPB tasks (English, Russian, the macro), too few to read the spread.
+- **The 3B model at K = 30 decides like the other 3B models: at chance.** On its decisions with the five other 3B families, benchmark DA-size is 0.47–0.55 from every proxy, 1.7B included. Every 3B pair gives 0.49–0.53, and the same pairs read to 1.7B give 0.46–0.54. DA-goal stays at 0.41–0.56.
+- **Its BPB can now be read, and it sits slightly below the other 3B pairs.** On its decisions, BPB DA-size is 0.70–0.96 against 3B and 0.67–0.86 against 1.7B, against 0.78–0.97 for every 3B pair.
+
+Follow-ups:
+
+- Replicate seeds of a 1.7B design, which would give the spread due to the reference's seed at the reference itself.
+
 
 ## Extensions from other sweeps
 
-None: the 36-model sweep has no rung above its 1B reference, and the public
-models' size steps (the decision-accuracy README, "Extensions") are between-lab decisions, not this
-ladder's.
+None. The 36-model sweep has no rung above its 1B reference, and the size
+steps of the public models (the decision-accuracy README, "Extensions") are
+decisions between labs, not decisions of this ladder.
 
 ## Files
 
-- `above_reference.py` — the DA half; `--reference` picks the rung,
+- `above_reference.py`: the DA half. `--reference` picks the rung,
   `--design 3B` restricts to the rung's design set, `--check` compares with
-  the decision-accuracy tables, `--out-dir` writes elsewhere (the check).
-- `gate_crossover.py` — the gate half; `--reference` picks the rung read
+  the decision-accuracy tables, and `--out-dir` writes elsewhere (for the check).
+- `gate_crossover.py`: the gate half. `--reference` picks the rung read
   above the 1.7B reference.
-- `reference_consistency.py` — the framework at the two references: DA-size
-  to 3B against 1.7B on the same decisions, the DA and SNR rankings of the
-  benchmarks under each, the SNR at both rungs; and the key figure
-  (`--paper` redraws it from the CSVs on disk).
+- `reference_consistency.py`: the framework at the two references. It gives
+  DA-size to 3B against 1.7B on the same decisions, the DA and SNR rankings of
+  the benchmarks under each, and the SNR at both rungs. It also draws the key
+  figure (`--paper` redraws it from the CSVs on disk).
+- `reference_choice.py`: two other references, the 1B rung at each of its
+  three seeds and the 3B K = 30 family on the decisions that involve it
+  (`reference_choice_da_all_both_axes.csv`, `reference_choice_da_size_both_axes.{csv,tex}`).
 - `pretraining/predictivity/above_reference_<ref>[_design<d>].{png,csv}`,
   `..._per_task.csv`, `gate_crossover{,_by_benchmark}.{png,csv}`,
   `gate_crossover_per_task.csv`,
   `reference_consistency_da_size_{multi_axes,mono_axis}.{png,csv}`,
   `reference_consistency_da_size_per_task_both_axes.csv`,
   `reference_consistency_snr.{png,csv}`, `reference_consistency_snr_per_task.csv`,
-  `gate_share_and_da_size_mono_axis_paper.{png,svg,csv}`.
+  `gate_share_and_da_size_mono_axis_paper.{png,csv}`.

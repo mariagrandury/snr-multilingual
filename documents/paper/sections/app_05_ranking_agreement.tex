@@ -1,0 +1,124 @@
+\clearpage
+
+\section{Ranking Agreement}
+\label{app:ranking-agreement}
+
+Ranking agreement (RA) measures whether a set of model variants is ranked in the same order at a cheaper proxy point and at the reference point. A proxy point is a model size and training fraction $(N,f)$. The reference point is the final checkpoint ($f=1$), either at the same size $N$ or at the reference size $N_{\mathrm{ref}}$ that every compared variant reaches. Table~\ref{tab:ra_defs} defines the three settings we study.
+
+\begin{table*}[t!]
+    \centering
+    \begin{tabular}{llll}
+        \toprule
+        Setting & Proxy & Reference & Research question \\
+        \midrule
+        RA-size
+            & ($N$, $f=1$)
+            & ($N_{\mathrm{ref}}$, $f=1$)
+            & How small can the proxy model be? \\
+        RA-checkpoint
+            & ($N$, $f<1$)
+            & ($N$, \quad $f=1$)
+            & How early does the ranking stabilize? \\
+        RA-end-to-end
+            & ($N$, $f<1$)
+            & ($N_{\mathrm{ref}}$, $f=1$)
+            & How small and early can the proxy be? \\
+        \bottomrule
+    \end{tabular}
+        \caption{\textbf{Ranking-agreement (RA) settings.} The proxy and reference contain the same model variants but differ in model size, training progress, or both. $N$ is the non-embedding parameter count, $N_{\mathrm{ref}}$ is the 1.7B or 3B reference size, and $f$ is the fraction of the training.}
+    \label{tab:ra_defs}
+\end{table*}
+
+\textbf{Metrics.} We quantify ranking agreement with three metrics. Spearman's rank correlation $\rho$ measures the agreement between the complete proxy and reference rankings. Kendall's $\tau_a = (C-D)/n$ counts the concordant ($C$) minus the discordant ($D$) pairs among the $n$ pairs of variants. Decision accuracy (DA, \citealp{heineman_signal_2025}) is the fraction of pairwise preferences that agree. For a language task $b_\ell$, a proxy point $(N,f)$ and a set $\mathcal{P}$ of pairs of model configurations,
+
+\begin{equation}
+\begin{aligned}
+\mathrm{DA}_{b_\ell}(N,f) = \frac{1}{|\mathcal{P}|} \sum_{(\theta_a,\theta_b)\in\mathcal{P}} \mathbb{1}\Big[&\operatorname{sign}\big(Y_{b_\ell}(\theta_a,f)-Y_{b_\ell}(\theta_b,f)\big) \\
+= {} &\operatorname{sign}\big(Y_{b_\ell}(\theta_a^{\mathrm{ref}},1)-Y_{b_\ell}(\theta_b^{\mathrm{ref}},1)\big)\Big],
+\end{aligned}
+\label{eq:decision-accuracy}
+\end{equation}
+
+where $\theta_a$ has size $N$ and $\theta_a^{\mathrm{ref}}$ is the same configuration at the reference size. A pair tied on both sides counts as agreement and a pair tied on one side as disagreement. DA equals one when every pairwise preference transfers and $0.5$ in expectation under random, tie-free rankings. DA and Kendall's $\tau$ differ only in how they treat ties, $2\,\mathrm{DA}-1 = \tau_a + (T_{\mathrm{both}}-T_{\mathrm{one}})/n$, where $T_{\mathrm{both}}$ and $T_{\mathrm{one}}$ count the pairs tied on both sides and on one side. Over the cells of DA-size, DA correlates with Kendall's $\tau_b$ at $r = 0.99$ and with Spearman's $\rho$ at $r = 0.97$, and DA and $\tau_b$ give the same reliability verdict on 98\% of the cells (Figure~\ref{fig:app_rq02_agreement_correlation}), so we report DA.
+
+\textbf{Reported cells.} A cell $(b_\ell, N, f)$ is reported if it has at least three pairs. Where we restrict to reliably ranking tasks, we keep those whose median DA over the proxy cells reaches 0.66 for RA-size or for RA-checkpoint. Such a reading is conditional on the selection.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/app_rq02_agreement_correlation.png}
+\caption{\textbf{Decision accuracy, Kendall's $\tau$ and Spearman's $\rho$ measure nearly the same ranking agreement.} One point per (benchmark task, proxy size) value of DA-size (6,803 points). The final checkpoint of each proxy against the 1.7B final checkpoint, on the multi-axis pairs of the seed-1904 runs of every data build, over the tasks above chance at the proxy and at 1.7B. Colour marks the proxy size, and each panel gives the Pearson $r$ and Spearman's rank correlation over the cells.}
+\label{fig:app_rq02_agreement_correlation}
+\end{figure*}
+
+\textbf{Ranking comparison axes.}
+When computing RA, we distinguish between two types of model comparisons based on which design choices vary.
+In single-axis comparisons, models differ in only one model design choice while all others are held fixed. 
+For example, we compare deep and shallow architectures, while keeping the language count, language scheme, sampling temperature, optimizer, and activation unchanged.
+($\theta' = (A_\mathrm{deep},K,M,T) \rightarrow \theta'' = (A_\mathrm{shallow},K,M,T)$).
+This setting reflects a typical controlled development ablation where we test whether a cheaper proxy leads to the same choice between two alternatives as the reference evaluation.
+In multi-axis comparisons, models may differ in two or more design choices. This tests whether a benchmark preserves rankings across heterogeneous model configurations, similar to how benchmarks are used to rank independently developed models on a leaderboard.
+We report results for the two settings separately. Figure~\ref{fig:rq2} reports single-axis comparisons, and every table is also computed over the multi-axis pairs. Seed replicates are never ranked against each other as design variants: every ranking compares configurations at seed 1904.
+
+\subsection{Sensitivity Analysis of Decision Accuracy}
+\label{app:da-sensitivity}
+
+\paragraph{Sensitivity to near-tied reference rankings.}
+Our definition of decision accuracy (DA) requires the ordering of model variants at a proxy point to exactly match their ordering at the reference scale. This strict criterion may overstate decision failures when two variants have nearly identical performance at the reference point: a small numerical reversal is counted identically to a reversal between substantially different variants. We therefore perform a sensitivity analysis in which reference-scale differences within a tolerance $\epsilon$ are treated as effective ties. Specifically, when the proxy and reference rankings disagree but the absolute performance gap between the two variants at the reference point is at most $\epsilon$, we count the comparison as ranking-preserving. We sweep $\epsilon \in \{0, 0.1, 0.25, 0.5, 1, 2\}$ percentage points, with $\epsilon=0$ corresponding to the original DA definition. The set and denominator of pairwise comparisons remain fixed across thresholds, such that changes in DA arise only from reclassifying near-tied ranking reversals.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{rccc}
+\toprule
+$\epsilon$ (pp) &
+\shortstack{Pairs within\\ tolerance\\at reference} &
+\shortstack{Ranking \\ reversals treated \\ as ties} &
+\shortstack{Already\\correct} \\
+\midrule
+0.1  & 357   & 184   & 173   \\
+0.25 & 982   & 436   & 546   \\
+0.5  & 1,949 & 755   & 1,194 \\
+1.0  & 3,268 & 1,099 & 2,169 \\
+2.0  & 4,301 & 1,308 & 2,993 \\
+\bottomrule
+\end{tabular}
+\caption{
+\textbf{Sensitivity of decision accuracy to the reference-gap tolerance $\epsilon$.}
+``Within tolerance'' counts pairs whose absolute performance difference at the reference scale is at most $\epsilon$.
+Only reversed pairs are newly reclassified as correct; pairs whose rankings already agree remain unchanged.
+}
+\label{tab:da_tolerance}
+\end{table}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\linewidth]{figures/da_sensitivity.png}
+    \caption{
+    \textbf{Sensitivity of decision accuracy to near-tied reference rankings.}
+    Left: DA-size across proxy model sizes. Right: DA-checkpoint across training progress for the 350M model.
+    Increasing the tolerance $\epsilon$ raises absolute DA by treating small reference-scale ranking reversals as ties, while largely preserving the shape of the curves.
+    For DA-size, the curves remain nearly parallel across tolerances, indicating that accounting for near-ties does not induce stronger scale convergence.
+    The 1.7B point is the reference scale and therefore reaches perfect agreement by construction.
+    }
+    \label{fig:da_tolerance}
+\end{figure}
+
+Figure~\ref{fig:da_tolerance} shows that increasing the tolerance $\epsilon$ raises absolute DA, indicating that some apparent ranking failures are near-ties at the reference scale. At $\epsilon=0.5$ pp, 755 reversed comparisons are reclassified as correct, increasing to 1,099 at $1$ pp and 1,308 at $2$ pp (Table~\ref{tab:da_tolerance}). However, the DA-size curves remain nearly parallel across thresholds, and the number of reclassified comparisons is similar across proxy sizes. Thus, tolerance mainly shifts DA upward rather than making larger proxy models more predictive of the reference ranking. DA-checkpoint shows the same upward shift while preserving its increase with training progress. Overall, near-ties affect the absolute DA level but do not change the main conclusion: ranking recovery improves with training progress, but not consistently with model size.
+
+\paragraph{Categorizing changes in intervention effects.}
+Decision accuracy measures whether the ordering of model variants is preserved from a proxy point to the reference point, but it does not distinguish between qualitatively different ways in which pairwise differences can evolve. In particular, two variants may remain similarly close at both proxy and reference, an apparent proxy-scale difference may disappear at the reference, or a difference may emerge only at larger scale or later in training. To characterize these cases directly, we compare the absolute performance gap between each pair of variants at the proxy and reference points. We use a practical tolerance of $\epsilon=0.5$ percentage points and treat pairs with an absolute gap of at most $\epsilon$ as ties. This yields four categories: \emph{tie--tie}, where the variants remain within the tolerance at both points; \emph{difference--tie}, where a proxy-scale difference washes out at the reference; \emph{tie--difference}, where a difference emerges only at the reference; and \emph{difference--difference}, where the variants remain separated by more than $\epsilon$ at both points. We compute these categories using the same pairwise comparisons, filtering, and proxy/reference definitions as in the DA analysis, separately across model sizes and training checkpoints.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{figures/da_categories.png}
+    \caption{
+    \textbf{Evolution of pairwise intervention effects from proxy to reference.}
+    We categorize each pairwise comparison according to whether the absolute performance gap between the two variants is within a tolerance of $\epsilon=0.5$ percentage points at the proxy and reference points.
+    \emph{Tie--tie} indicates that the variants remain within the tolerance at both points; \emph{difference--tie} that a proxy-scale difference disappears at the reference; \emph{tie--difference} that a difference emerges only at the reference; and \emph{difference--difference} that the variants remain separated at both points.
+    Left: category fractions across proxy model sizes relative to the 1.7B reference model.
+    Right: category fractions across training checkpoints for the 350M model relative to its final checkpoint.
+    }
+    \label{fig:effect_categories}
+\end{figure}
+
+
+Figure~\ref{fig:effect_categories} shows that larger and later proxies become better at identifying whether an intervention remains consequential at the reference point. For DA-size, \emph{tie--difference} cases decrease with model size while \emph{difference--difference} cases increase, indicating that larger proxies are less likely to miss effects that persist at 1.7B. \emph{Difference--tie} remains comparatively stable, showing that some proxy-scale differences still wash out at the reference. The same pattern appears across training checkpoints, where \emph{tie--difference} decreases and \emph{difference--difference} increases with training progress. Thus, even when exact ranking recovery remains weak, larger models and later checkpoints provide a better signal of whether an intervention will matter at the reference point.

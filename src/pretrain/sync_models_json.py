@@ -21,6 +21,7 @@ Usage:
     python sync_models_json.py                 # every deep cell, all schemes
     python sync_models_json.py --arch shallow  # + the shallow ladder's cells
     python sync_models_json.py --activation swiglu  # + the swiglu ladder's
+    python sync_models_json.py --optimizer muon     # + the muon ladder's
     python sync_models_json.py --dry-run       # show what would change
     python sync_models_json.py --prune         # drop entries the grid lost
 

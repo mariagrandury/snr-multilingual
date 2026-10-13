@@ -4,11 +4,12 @@
 The decision the probe exists for: of the candidates in `groups.auto_probe`,
 which carry signal at each size, in which languages, and does the `rf_` twin
 (where one exists) survive where the original does not? Everything here is
-read off the committed gate mask (rule 1, `above_random.load_mask`) — no
-score is recomputed — so it agrees with every other RQ by construction. Run
-`above_random.py --only predictivity` first, with SNR_TRAINED_GROUPS naming
-the probe group so the multilingual candidates are gated on the cells that
-trained their language (probe.sh does both).
+read off a gate mask (rule 1, `above_random.load_mask`) — no score is
+recomputed — so it is the same rule as every other RQ. Run `above_random.py
+--only predictivity` first, with SNR_TRAINED_GROUPS naming the probe group
+so the multilingual candidates are gated on the cells that trained their
+language, and SNR_GATE_DIR pointing both scripts at a scratch dir so that
+gate never replaces the canonical one (probe.sh does all three).
 
 Writes, next to this file:
     probe_survivors.csv   one row per (task, size): benchmark, language and
@@ -20,6 +21,7 @@ Writes, next to this file:
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -30,7 +32,7 @@ ROOT = HERE.parents[3]
 sys.path.insert(0, str(ROOT / "src" / "signal-and-noise"))
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
-from analysis.utils import ANALYSIS_SIZES, assign_language, languages_only  # noqa: E402
+from analysis.utils import ANALYSIS_SIZES, PROBE_SIZES, assign_language, considered_tasks, languages_only  # noqa: E402
 
 TASKS_JSON = ROOT / "configs" / "tasks.json"
 POOL = "predictivity"
@@ -59,6 +61,11 @@ def main() -> None:
     if mask is None:
         sys.exit(f"no gate mask for pool {POOL}: run above_random.py --only {POOL} first")
     sizes = [s for s in ANALYSIS_SIZES if s in mask.columns]
+    # a probe size above the reference (3B, from probe.sh's --above-reference gate) once a screened task (`probe` or
+    # `discarded`, outside `auto`: the promoted ones have 3B evals already) has a verdict there, i.e. once the 3B
+    # probe jobs land
+    cand = mask.index.map(considered_tasks()).isin(["probe", "discarded"])
+    sizes += [s for s in PROBE_SIZES if s not in sizes and s in mask.columns and mask.loc[cand, s].notna().any()]
     # assign_language, not the raw tasks.json tag: INCLUDE writes Japanese as
     # `jp` and Chinese as `cn`, which the analysis folds to ja/zh — reading the
     # tag straight would split Japanese across two rows here and nowhere else.
@@ -101,12 +108,18 @@ def main() -> None:
             cells.append(", ".join(names) if names else "—")
         lang.append(f"| {l} | " + " | ".join(cells) + " |")
     n_b, n_l = tab["base"].nunique(), tab["language"].nunique()
+    # the committed gate counts only `auto` as trained (`ladder_report._trained_tasks`), so a candidate outside it
+    # is read on every cell there; probe.sh's gate counts the probe group as trained too
+    gate = (f"the `{POOL}` gate re-run by probe.sh with the probe counted as trained, read on the cells that trained "
+            "the language" if os.environ.get("SNR_GATE_DIR")
+            else f"the committed `{POOL}` gate mask, which reads a benchmark in `auto` on the cells that trained the "
+                 "language and a candidate outside `auto` on every cell")
     lines = [f"Probe survivors: which of the {n_b} candidate benchmarks in `auto_probe` clear the above-random gate "
-             f"(rule 1, read from the committed `{POOL}` mask, cells that trained the language), over {n_l} languages. "
-             "A cell counts languages (original | rf twin where one exists) — the population differs per cell "
-             "(rule 13) — and the second table names the surviving benchmarks per language, the twin as `-rf`. "
-             "Same items as `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance; this "
-             "table is only the gate.", ""] + bench + [""] + lang
+             f"(rule 1, {gate}), over {n_l} languages. "
+             "A cell counts languages (original | rf twin where one exists), so the population differs per cell "
+             "(rule 13). The second table names the surviving benchmarks per language, with the twin as `-rf`. "
+             "The items are those of `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance "
+             "they land. This table is only the gate.", ""] + bench + [""] + lang
     replace_block(HERE / "README.md", "probe-survivors", "\n".join(lines),
                   "analysis/rq00_task_reformulation/probe_survivors.py")
     print("\n".join(lines))

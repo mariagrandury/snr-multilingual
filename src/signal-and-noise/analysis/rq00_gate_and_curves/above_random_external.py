@@ -40,13 +40,13 @@ English-only cells among them; panel (d) carries the count per task.
                           a model reads against its parameters, public lines vs the ladder;
                           (d) the ladder-gated tasks: best ladder run at the reference vs the
                           best public model ≤ 1.7B, a near-miss view
-    above_random_external_paper.png/.svg/.csv   panel (b) for the paper, on the PUBLIC BASE releases alone
+    above_random_external_paper.png/.csv   panel (b) for the paper, on the PUBLIC BASE releases alone
                           (the full figure's external mask pools every external model, post-trained
                           releases and our own a06 / distilled runs included): per family, the
                           ladder-gated tasks by the smallest public base bucket that reads them
-    above_random_external_paper_b.png/.svg/.csv   the same, one cell per task tagged with its language and
+    above_random_external_paper_b.png/.csv   the same, one cell per task tagged with its language and
                           the line of the public base model that reads it first
-    above_random_external_paper_c.png/.svg/.csv   the same as a family x bucket grid, the languages in the cell
+    above_random_external_paper_c.png/.csv   the same as a family x bucket grid, the languages in the cell
     above_random_external_models.tex / .csv   the public base models per line and size bucket (LaTeX table)
     python analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity
 """
@@ -102,15 +102,32 @@ def floor_of(mask: pd.DataFrame) -> pd.Series:
 
 
 def floors(pool: str) -> pd.DataFrame:
+    """The shared tasks some ladder cell trains at every size (the gate falls
+    back to untrained runs where none does: a transfer reading, rule 2, so
+    those tasks are left out and counted in `attrs["n_transfer"]`), with both
+    floors and `ladder_never_above`: at chance at EVERY ladder size with a
+    verdict, not only at the largest one."""
     stage = load_pools()[pool].get("stage", "pretraining")
     ladder = pd.read_csv(GATE_AND_CURVES / stage / pool / "above_random_mask.csv")
+    share = pd.read_csv(GATE_AND_CURVES / stage / pool / "above_random_share.csv").set_index("task")
+    levels = [c for c in ladder.columns if c not in META]
+    pop = share[[f"{s}__population" for s in levels]]
+    trained = pop.eq("trained").where(pop.notna(), True).all(axis=1)
     ext = pd.read_csv(EXTERNAL)
     t = ladder[["task", "family", "language", "n_options", "random_baseline"]].merge(ext[["task"]], on="task")
+    keep = t["task"].map(trained).fillna(False).astype(bool)
+    n_transfer = int((~keep).sum())
+    t = t[keep].copy()
+    m = ladder.set_index("task")[levels]
     t["ladder_floor"] = t["task"].map(floor_of(ladder))
     t["external_floor"] = t["task"].map(floor_of(ext))
     t["external_bin"] = t["external_floor"].map({lvl: name for name, lv in BINS for lvl in lv})
-    t["ladder_gated_at_ref"] = t["ladder_floor"].eq(NEVER)
-    return t.dropna(subset=["ladder_floor", "external_floor"])
+    t["ladder_never_above"] = t["task"].map(m.fillna(0).eq(0).all(axis=1) & m.notna().any(axis=1))
+    t = t.dropna(subset=["ladder_floor", "external_floor"])
+    t.attrs["n_transfer"] = n_transfer
+    t.attrs["n_shared"] = len(keep)
+    print(f"{t.attrs['n_transfer']} shared tasks no ladder cell trains at every size: left out (rule 2)")
+    return t
 
 
 def params(size: str) -> float:
@@ -153,7 +170,7 @@ def external_lines(t: pd.DataFrame, pool: str) -> tuple[pd.DataFrame, pd.DataFra
                                             "n_tasks": [int(ladder[s].notna().sum()) for s in levels]})], ignore_index=True)
     # (d): the ladder's best single run at the reference, and the best public base model ≤ 1.7B
     lr = pd.read_csv(GATE_AND_CURVES / stage / pool / "above_random_runs.csv")
-    lr = lr[(lr["bucket"] == TARGET_SIZE) & lr["trained"] & lr["task"].isin(t.loc[t["ladder_gated_at_ref"], "task"])]
+    lr = lr[(lr["bucket"] == TARGET_SIZE) & lr["trained"] & lr["task"].isin(t.loc[t["ladder_never_above"], "task"])]
     chance = t.set_index("task")["random_baseline"]      # the gate's own chance level (task_chance)
     best = lr.loc[lr.groupby("task")["score"].idxmax()].set_index("task")
     near = pd.DataFrame({"ladder_best_run": best["model"], "ladder_best_margin": best["score"] - chance,
@@ -177,7 +194,7 @@ def public_base(t: pd.DataFrame, m: pd.DataFrame, runs: pd.DataFrame) -> pd.Data
     share = r.pivot_table(index="task", columns="bucket", values="above", aggfunc="mean")
     levels = [b for b in bucket_order() if b in share.columns]
     mask = (share[levels] >= MIN_SHARE).astype(float).where(share[levels].notna()).reset_index()
-    g = t.loc[t["ladder_gated_at_ref"], ["task", "family", "language"]].copy()
+    g = t.loc[t["ladder_never_above"], ["task", "family", "language"]].copy()
     g["base_floor"] = g["task"].map(floor_of(mask))
     g["base_bin"] = g["base_floor"].map({lvl: name for name, lv in BINS for lvl in lv})
     passed = r[r["above"] == 1].merge(g[["task", "base_floor"]], left_on=["task", "bucket"], right_on=["task", "base_floor"])
@@ -290,7 +307,7 @@ def figure(t: pd.DataFrame, m: pd.DataFrame, lines_tab: pd.DataFrame, near: pd.D
     a.set_title(f"(a) {len(t)} tasks scored by both tiers", loc="left", fontsize=8.5)
     a.tick_params(axis="x", labelsize=6.5)
     # (b) the tasks gated on the ladder, per family, by where the public models read them
-    g = t[t["ladder_gated_at_ref"]]
+    g = t[t["ladder_never_above"]]
     order = [n for n, _ in BINS]
     tab = pd.crosstab(g["family"], g["external_bin"]).reindex(columns=order, fill_value=0)
     tab = tab.loc[tab.sum(axis=1).sort_values(ascending=False).index]
@@ -360,7 +377,7 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, lines_tab: pd.Dat
                     base: pd.DataFrame) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     gh = f"https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/{stage}/{pool}"
-    g = t[t["ladder_gated_at_ref"]]
+    g = t[t["ladder_never_above"]]
     lad = lines_tab[lines_tab["line"] == "ladder"].set_index("model")["share"]
     small = lines_tab[(lines_tab["line"] != "ladder") & (lines_tab["params"] <= params(TARGET_SIZE))].sort_values("share", ascending=False)
     n_pass = int((near["ladder_best_lcb_margin"] > 0).sum())
@@ -371,13 +388,15 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, lines_tab: pd.Dat
     fam = fam.loc[fam.sum(axis=1).sort_values(ascending=False).index].reset_index()
     body = "\n\n".join([
         "## Benchmark floors: the ladder's gate against the public models'",
-        f"Of the {len(t)} tasks both tiers score, {len(g)} are at chance at every ladder size. Where the external "
-        f"models (270M–70B, every release the external tier holds, base and post-trained, same gate) first read them: " + ", ".join(f"{n} {c}" for n, c in counts.items()) + ". "
-        f"A task readable at ≤ 1.7B by a public model is a size/recipe floor (the 5×-Chinchilla ladder does not reach "
-        f"it; public models of that size train on 10–36 T tokens); a task that needs ≥ 3B or is never read is a "
+        f"Of the {len(t)} tasks both tiers score, {len(g)} are at chance at every ladder size. The external "
+        f"models (270M–70B, every release the external tier holds, base and post-trained, same gate) first read them at: " + ", ".join(f"{n} {c}" for n, c in counts.items()) + ". "
+        f"A task that a public model reads at ≤ 1.7B has a size or recipe floor: the 5×-Chinchilla ladder does not reach "
+        f"it, while public models of that size train on 10–36 T tokens. A task that needs ≥ 3B, or that no model reads, has a "
         f"benchmark or language-resource floor. \"Never reads\" is the gate's verdict: at every ladder size fewer than "
-        f"{MIN_SHARE:.0%} of the size's runs that train the task's language clear the one-sided 95 % Wilson bound over chance; "
-        f"single runs may clear it. Overlap is the 36-sweep's 86-task list only. Regenerate with "
+        f"{MIN_SHARE:.0%} of the size's runs that train the task's language clear the one-sided 95 % Wilson bound over chance. "
+        f"Single runs may clear it. The overlap is the {t.attrs.get('n_shared', len(t))} tasks of the 36-sweep's task list that both masks hold, minus the {t.attrs.get('n_transfer', 0)} "
+        f"tasks in a language that no ladder cell trains at some size (there the gate would read untrained runs, which "
+        f"measures transfer, rule 2). Regenerate with "
         f"`python analysis/rq00_gate_and_curves/above_random_external.py --pool {pool}`.",
         md_table(list(fam.columns), fam.values.tolist()),
         f"![The gate on the public models]({stage}/{pool}/above_random_external.png)",
@@ -386,23 +405,24 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, lines_tab: pd.Dat
         f"post-trained release, none of {', '.join(INTERNAL)}): "
         + ", ".join(f"{n} {c}" for n, c in base["base_bin"].value_counts().reindex([n for n, _ in BINS], fill_value=0).items())
         + ". `above_random_external_models.tex` lists those models per line and size bucket.",
-        "Population: the `predictivity` pool (seed 1904, 175M–1.7B, final checkpoint, trained languages) against "
-        "every external release (`all/external`, base and post-trained, same gate; the paper version uses the public "
-        "base releases only; panels (c) and (d) use the six public lines "
-        + ", ".join(LINES) + "); no task filter beyond the 84-task overlap.",
+        "Population: the `predictivity` pool (seed 1904, 90M–1.7B, final checkpoint, trained languages) against "
+        "every external release (`all/external`, base and post-trained, same gate). The paper version uses the public "
+        "base releases only, and panels (c) and (d) use the six public lines "
+        + ", ".join(LINES) + f". There is no task filter beyond the {len(t)}-task overlap.",
         "Key findings:\n" + "\n".join([
-            f"- {len(g)} of the {len(t)} shared tasks are gated at every ladder size; {int(counts['≤ 600M'] + counts['1B–1.7B'])} "
-            f"of them are read by an external model ≤ 1.7B, {int(counts['never'])} by none up to 70B.",
+            f"- {len(g)} of the {len(t)} shared tasks are gated at every ladder size. An external model ≤ 1.7B reads "
+            f"{int(counts['≤ 600M'] + counts['1B–1.7B'])} of them, and no model up to 70B reads {int(counts['never'])}.",
             f"- (c) the ladder reads {lad.iloc[0]:.0%} of the shared tasks at {lad.index[0]} and {lad.iloc[-1]:.0%} at "
-            f"{lad.index[-1]}; the public base models ≤ 1.7B read " + ", ".join(f"{r.model} {r.share:.0%}" for r in small.itertuples())
-            + " (a model's own run clears the bound; the ladder's share is its mask, half of the runs).",
-            f"- (d) {len(near)} of the {len(g)} ladder-gated tasks have a trained run at {TARGET_SIZE} (no {TARGET_SIZE} cell trains "
-            f"{no_ref}, rule 2); {n_pass} of them have a single run whose lower bound clears chance (near misses: the gate wants "
-            f"half of the runs), and the best public base model ≤ {TARGET_SIZE} beats the ladder's best run on {n_public}."]),
+            f"{lad.index[-1]}. The public base models ≤ 1.7B read " + ", ".join(f"{r.model} {r.share:.0%}" for r in small.itertuples())
+            + " (for a public model, its own run clears the bound, while the ladder's share is its mask, half of the runs).",
+            f"- (d) {len(near)} of the {len(g)} ladder-gated tasks have a trained run at {TARGET_SIZE}"
+            + (f" (no {TARGET_SIZE} cell trains {no_ref}, rule 2)" if no_ref else "") + f". {n_pass} of them have a single run whose lower bound "
+            f"clears chance. These are near misses, since the gate wants half of the runs. The best public base model ≤ {TARGET_SIZE} "
+            f"beats the ladder's best run on {n_public}."]),
         "Follow-ups:\n" + "\n".join([
-            "- (c) with the post-trained releases as open markers: whether instruction tuning moves a task over the gate at the same size.",
-            "- (d) at every ladder size, not only the reference: the size at which each near miss first has a passing run.",
-            "- (c)/(d) on the `rf_` cloze twins once the external tier is evaluated on them: the twins pass the gate on the ladder, so the overlap would stop being the old 86-task list."]),
+            "- (c) with the post-trained releases as open markers, to see whether instruction tuning moves a task over the gate at the same size.",
+            "- (d) at every ladder size, not only the reference, to find the size at which each near miss first has a passing run.",
+            "- (c) and (d) on the `rf_` cloze twins once the external tier is evaluated on them. The twins pass the gate on the ladder, so the overlap would no longer be the 36-sweep's task list alone."]),
         f"Figure: {gh}/above_random_external.png · tables: {gh}/above_random_external.csv, {gh}/above_random_external_lines.csv"])
     replace_block(GATE_AND_CURVES / "README.md", "above-random-external", body, f"above_random_external.py --pool {pool}")
 

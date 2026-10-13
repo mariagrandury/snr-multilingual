@@ -3,12 +3,18 @@
 squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /seed28/ {print $1}' | xargs -r scancel
 scontrol update JobId=3593053 Partition=normal
 
+
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual
+git diff --stat b08dd163 HEAD -- documents/paper/sections/
+git difftool -y b08dd163 HEAD -- documents/paper/sections/ 
+
+
 ## Pretraining
 
 python3.11 pretrain/launch_trainings.py cscs --scheme FWEB --partition preemptable
 python3.11 pretrain/launch_trainings.py cscs --size 3B --partition preemptable
 python3.11 pretrain/launch_trainings.py cscs --activation swiglu --partition preemptable
-
+python3.11 pretrain/launch_trainings.py cscs --optimizer muon --partition preemptable
 
 
 ## Convert and eval new ckpts
@@ -17,14 +23,28 @@ cd Projects/snr-multilingual/src/ && conda activate snr
 
 ✅ eval new ckpts:
 bash evals/scripts/launch_bpb.sh
-SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --watch 1800
+SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --watch 1800 --optimizer muon
 SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --retry-held
 
 ✅ probe new benchmarks:
-SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --group auto_probe --size 90M,175M,350M,600M,1B,1.7B --seed 1904 --final-only
+SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --group auto_probe --size 600M,1B,1.7B --seed 1904 --final-only
 
 ✅ compare probe benchmarks and decide which to keep:
 bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/signal-and-noise/analysis/rq00_task_reformulation/probe.sh
+
+# bBPB for 3B models
+
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/signal-and-noise
+sbatch analysis/rq08_subset_selection/build_per_item_store.sbatch --pool predictivity --above-reference
+
+sbatch analysis/rq08_subset_selection/build_per_item_store.sbatch --pool predictivity-seeds
+
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual
+source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr
+(cd src/signal-and-noise && PYTHONPATH=$PWD:$PWD/../../src HF_HUB_OFFLINE=1 python analysis/rq08_subset_selection/build_per_item_store.py --bench-bpb)
+FORCE=1 PARALLEL=1 MAXJOBS=5 SEARCH_WORKERS=12 COMPUTE_DA_WORKERS=8 OPENBLAS_NUM_THREADS=2 OMP_NUM_THREADS=2 HF_HUB_OFFLINE=1 \
+  bash scripts/refresh_analysis.sh --no-fetch --no-deck --no-report
+
 
 ## Update analysis with new evals
 
@@ -370,3 +390,194 @@ What the optimisation draft measured:
 - **Eight steps already failed on 10-04:** `by_L.py` (3 runs), `agreement.py`, `scaling_vs_ranking.py`, `public_ladders.py`, `finetasks_criteria.py`, `per_item_ladder.py`. Check the paper job's log for those in case it uses any of their figures.
 
 Nothing else is running on my side. The paper job (3593053) and the store build (3593047) are still queued on preemptable and will run without me.
+
+
+3B MODELS
+
+I canceled the seed job, why would I need it? I launched only the 3B bBPB
+
+
+
+PAPER RQ APPENDIX LAYOUT
+
+Each RQ should be one page:
+(do not add the auto-generated disclaimer)
+start with \clearpage
+then section title
+then "Research Question" paragraph with the question in italic
+then "Setup" paragraph
+then 3 key findings, each starting with a sentence in bold and then elaborate it
+then a horizontal figure
+then optionally a full-page figure(s)
+
+since the ACL layout is in 2 columns, the layout of each RQ page should be, after the title, on the left the RQ and setup, on the right the key findings, the figure below occupying both columns, with a detailed caption starting with the main key takeaway visualized in bold, then the usual description of plot
+
+the full-page figures should use figure* to occupy the full width (I think the other horizontal ones too)
+
+FIGURE NAMES AND EXTENSIONS
+
+- add the "rqNN" to the name of the paper/figures/app_rqNN_x.png so they're more easily to find (do not regenerate, just git mv in a dedicated renaming commit)
+- save the svg versions in a new paper/figures_svg/
+- save the pdf versions in a new paper/figures_pdf/
+- these two new folders should be the ONLY place with figures in svg or pdf format, the others are just redundant and make the repo crowded
+
+FIGURE UPDATES
+
+Besides updating the captions, here are some additional specific details to update:
+
+rq00 above change gate
+- generate a horizontal version of the figure to try, we might keep the vertical one if the benchmark names in the x axis are not readable
+
+scaling predictability
+- src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_size_curves_paper.png -> make the grid 5 columns
+- src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_curves_paper.png -> make the grid have 5 columns
+
+
+for paper/figures/
+
+app_rq02_decision accuracy.tex:
+
+
+app_rq11_evaluation_recipe.tex:
+add a full page figure:
+- an A4 panel where each subplot is a benchmark's DA (y axis) vs size/chinchilla. 3 columns for DA-size, DA-ckpt, DA-goal. The first row should be "Overall" and have 3 lines for bpb, benchmarks, bbpb.  One row per benchmark, keep only the 8 benchmarks with best DA size (either in original or rf versions). In each benchmark row, each subplot should have a line for the original benchmark, rf, rfgm, bbpb (predicting acc), bbpb (predicting bbpb). Include the corresponding band for each line.
+
+app 3b:
+- update with new benchmark and bbpb results
+
+benchmark design.tex:
+- the option number finding is not too interesting, it's okey to mention but not to highlight.
+- generate a table with the benchmark characteristics considered (source curation, etc) 
+- Compute again correlations but instead of with SNR with DA-size
+- generate a plot with 2 axis that intersect in the origin (0,0). The x axis is DA-size, the y axis is the characteristic (doesnt matter that they are not numerical). EAch characteristic has a color, let's see if we get patterns or zones with more density of dots (i.e. benchmarks).
+- think of other possible representations
+
+
+language transfer.tex:
+- rescue the analyses we had done with a heatmap with all combinations of languages and tasks and see whether ranking at small scale on the task of the y axis can help predict ranking ont he benchmark on the x axis. Try different filters besides the above chance threshold that could help us get a nice plot (e.g. above 66, only certain benchs/languages). Do this for trained and all-languages
+- also, generate a figure to visualize how training on these languages help pass the above random threshold on non-trained langauges (no mention of DA here, just above chance). Do a version focusing only on the L1, L2 (3 schemes) and L8 (2 schemes) schemes, and analyse whether they help pass chance on languages from their same family.
+
+english-only:
+- generate a figure to support the benchmark scaling behaviour section. FineWeb English sweep: the $K{=}1$ runs under the same filter and the same fits, as the monolingual comparison point for the benchmark scaling behaviour section.
+
+add the new figures to the existing ones, do not delete any
+
+of course, to edit the .tex you first have to update the script that generated the original image, then copy it. Same for the prose, always update the original README first, then the paper so they never diverge.
+
+
+MUON OPTIMIZER
+
+- You said that it wasn't available in megatron, but it's because we are using an old version (from the swissai fork). Copy the implementation of the optimizer from the updated upstream version. 
+- Moonlight version, add to docs and paper
+- The muon grid should train the same L count and other interventions as swiglu
+- The 90M and 175M Muon cells keep the 84 and 168 batches, and there will be no separate 1.7B smoke run.
+
+Here is the plan:
+1. Once the appendix and benchmarks agents have committed, I review the Muon ladder and land it in the order the chains need.
+2. I run `launch_trainings.py cscs --dry-run --optimizer muon` and show you the cell and job count.
+3. After your yes, I submit.
+4. I watch the first 50 steps of the 1.7B links, checking peak memory and step time.
+
+
+PROBE BENCHMARKS
+
+- Check from the benchmarks that are in the website's list, which are available on the harness and haven't been part of auto_probe yet. Give me the list of potential additions, divided per language, starting with the langauges that have lower coverage.
+- Add to probe all non-English benchmarks that are on the harness, MCQA, in one of the L50 training languages
+- Generate the RF version of all letter benchmarks
+- Launch evals for 600M, 1B, 1.7B models, only last checkpoint
+- Check which pass the above chance threshold at least at 1B and 1.7B. Add those to auto.
+- Launch the auto watcher eval on preemptable to eval on all sizes and checkpoints 
+
+
+WEBSITE
+
+- Update the Landing Page
+- Model grid: 
+
+
+MSG
+
+The order I suggest:
+- intro
+- methodology
+- appendix: D onward
+
+
+# acc vs acc_norm
+
+acc vs acc_norm (just an assessment, no changes):
+
+Fine: per-task analyses. Every model is scored on a task with the same metric, so DA, SNR and the above-chance test compare like with like. That covers almost everything in the paper.
+
+Mixed now:
+
+Original vs twin comparisons. HellaSwag, ARC, OBQA and the Okapi translations now use acc_norm, but their rf_ / rfgm_ twins stay on acc. So the rq00 reformulation figure (original vs RF pass rates) and rq11's "original vs RF vs LLM-RF" lines compare a length-normalised original with a raw-accuracy twin. For RF twins with single-letter answers the two metrics are almost the same, so the effect is likely small. It's still a confound worth one sentence or a check.
+Cross-benchmark averages of the accuracy level. Examples are the mean accuracy curves, or the "accuracy, every format" line in rq11's Overall row. These now mix acc_norm benchmarks with acc-only ones (XCOPA, XStoryCloze, XNLI, …). Rank-based quantities (DA) and per-task tests are unaffected. Raw accuracy levels averaged across benchmarks are not.
+
+
+# Paper review
+
+QUICK REVIEW: check for broken references, typos and incoherencies (e.g. different numbers), no use of AI lingo, expressions or punctuation, all citations exist and are correct
+
+REVIEW REPORT: add it to the overleaf folder. Actually, design a claude skill for you to review each version of the paper i share with you. it should have different levels, the first is the quick review i described, if the reviewer finds many issues there, stops, if not, it continues to the next step (e.g. methodology and analysis logical consistency, how solid the arguments are, etc), then next step (story consistent from abstract to conclusions, the contributions from the intro are backed up by the paper), appendix, style of paper, wording and figures (clarity, colors, captions), etc.
+Show less
+Bash Locate overleaf export and skill folders
+IN
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual && ls -d overleaf/* 2>/dev/null | head; ls overleaf/paper-overleaf-10-08-20h 2>/dev/null | head -20; git check-ignore -v overleaf 2>/dev/null; ls .claude-shared/skills .claude/skills 2>/dev/null
+
+OUT
+.claude-shared/skills:
+draft
+review-snr
+
+.claude/skills:
+draft
+review-snr
+Bash Find the overleaf export folder
+IN
+cd /iopsstor/scratch/cscs/mariagrandury && find . -maxdepth 4 -type d -name "paper-overleaf-10-08*" 2>/dev/null | head
+
+OUT
+(Bash completed with no output)
+Bash Find overleaf-named folders in repo
+IN
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual && find . -maxdepth 3 -type d -iname "*overleaf*" -not -path "./.git/*" 2>/dev/null | head
+
+OUT
+./documents/overleaf
+./documents/overleaf/paper-overleaf-10-08-20h
+
+
+
+Everything from your last message is committed (nothing pushed):
+
+| Step | Commit(s) | Result |
+|---|---|---|
+| Analysis section | `57b3a650`, `06347628`, `f7dbe6a4`, `e5486313`, `b8848217` | Your answers are applied: bBPB defined in the evaluation part of §3, the token-threshold table in the appendix and referenced from §4, `app_rq02_bbpb` referenced. Review fixes: six wording errors, dashes, a stale docstring |
+| Files | `d9e9556e` | All generated pages are in `sections/rqs/` (22 rq pages + fixed populations + language table). Generated tables are in `tables/`, matching the layout you'd started on Overleaf. Hand-written files stay in `sections/` |
+| SNR | `481091a0` | `app_snr.tex` is now the single section "Signal, Noise and Surrogates of Decision Accuracy", with every label kept. `app_snr_new.tex` is no longer included but is still on disk. Deleting it is your call |
+| Statements | `8ef86ed3` | `07_responsible_nlp_research.tex` now answers each question with refs. 12 `\TODO{}` flags mark what's missing: Limitations still in note form, licenses, intended use, PII, splits, software versions, hyperparameter search, and the reformulation LLM in the AI statement. New bullets went into `06_statements` |
+| Overleaf diff | `8ab037d5` | See below |
+| Analyses 6/7 | `1eda57eb`, `06ffd6a6` | Reported in my previous message |
+
+**Comparing with Overleaf.** Use this each time you export:
+```bash
+python3 scripts/overleaf_diff.py                 # newest export in documents/overleaf/, or pass a folder/.zip
+python3 scripts/overleaf_diff.py --diff 04_analysis   # word diff of one file
+python3 scripts/overleaf_diff.py --code 04_analysis   # open side by side in VS Code
+python3 scripts/overleaf_diff.py --html               # full report next to the export
+```
+Today's report: `documents/overleaf/paper-overleaf-10-08-20h-diff.html`. Out of 35 file pairs, 1 is identical, 5 changed only in the repo, and the rest have diverged.
+
+**To merge by hand into Overleaf:**
+- **`03_methodology`:** your Overleaf version has its own "Benchmark BPB" bullet, which overlaps the new bBPB definition in the repo. Merge the two.
+- **`app_04_chance_threshold`:** Overleaf says 25.0 / 1.1 / 79.0 / 4.1%, the repo says 37.5 / 1.1 / 100.0 / 4.1%. The repo values come from today's data.
+- **Generated rq pages edited on Overleaf** (figure placement, `figure*`, `\section`): a regeneration overwrites those edits. Tell me which layout to keep and I'll put it in the generator.
+- **Label names:** Overleaf renamed `subsec:methodology-snr` to `app:methodology-snr`. Pick one.
+- **Includes:** the repo's `main.tex` doesn't include `06_statements` (which holds Limitations), `07_responsible_nlp_research` or the model card. Overleaf's does include `06_statements` and the model card.
+
+**Your export is incomplete:**
+- No figures, tables or `.bib` files.
+- Its `main.tex` uses `01_introduction_restructure` and `04_analysis_restructure`, which aren't in the folder.
+
+For the full review, please export the complete project from Overleaf (Menu → Download → Source, the .zip) into `documents/overleaf/`. I'll then run the `review-paper` skill on it and put `REVIEW.md` in that folder.

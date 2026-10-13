@@ -30,6 +30,7 @@ therefore English at three proxy sizes and Russian at 1B, and is drawn as such.
                 too. Drawn against the real DA-ckpt of the same cells.
 
     seed_uncertainty_da_all_seed_null.png / .csv     the three panels and their long table
+    seed_uncertainty_da_all_seed_null_paper.png / .csv   the same, bare for the paper (rule 18)
 
     python analysis/rq02_decision_accuracy/seed_uncertainty.py --pool predictivity
 """
@@ -154,8 +155,12 @@ def null_view(out_dir_seed: Path, pool: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def figure(sv: pd.DataFrame, nv: pd.DataFrame, path: Path, pool: str) -> None:
-    fig, (a, b, c) = plt.subplots(1, 3, figsize=(15.5, 4.6))
+LANG_NAME = {"en": "English", "ru": "Russian"}
+
+
+def draw(axs, sv: pd.DataFrame, nv: pd.DataFrame, paper: bool = False) -> None:
+    """The three panels; `paper` swaps in the bare labels of rule 18."""
+    a, b, c = axs
     sizes = size_order(sv["size"].unique()) if len(sv) else []
     for lang, mk in zip(LANGS, ("o", "s")):
         for view, ax in (("proxy seed", a), ("test-retest", b)):
@@ -166,30 +171,46 @@ def figure(sv: pd.DataFrame, nv: pd.DataFrame, path: Path, pool: str) -> None:
             nd = sorted(set(g["designs"]))
             ax.scatter(g["size"].map(NON_EMB), g["da"], s=26, marker=mk, facecolor="none",
                        edgecolor=S.SERIES[0] if lang == "en" else S.SERIES[1], lw=1.2, zorder=3,
-                       label=f"{lang}: {nd[0] if len(nd) == 1 else f'{nd[0]}–{nd[-1]}'} designs, "
-                             f"{int(g['decisions'].max())} decisions at most")
+                       label=LANG_NAME[lang] if paper else
+                       f"{lang}: {nd[0] if len(nd) == 1 else f'{nd[0]}–{nd[-1]}'} designs, "
+                       f"{int(g['decisions'].max())} decisions at most")
             if len(grid):
                 ax.scatter(grid["size"].map(NON_EMB), grid["da"], s=26, marker=mk,
                            color=S.SERIES[0] if lang == "en" else S.SERIES[1], zorder=4)
-    for ax, ttl in ((a, f"proxy seed: vs the {TARGET_SIZE} final, proxy at each of its 3 seeds (filled = seed {GRID_SEED})"),
-                    (b, "test-retest: the same designs ranked from seed s1 vs seed s2, one size")):
+    titles = ((f"Proxy at each of its three seeds (filled: seed {GRID_SEED})", "Two seeds of the same designs, one size")
+              if paper else
+              (f"proxy seed: vs the {TARGET_SIZE} final, proxy at each of its 3 seeds (filled = seed {GRID_SEED})",
+               "test-retest: the same designs ranked from seed s1 vs seed s2, one size"))
+    for ax, ttl in zip((a, b), titles):
         ax.axhline(.5, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(0, 1.0); ax.set_xscale("log")
         ax.set_xticks([NON_EMB[s] for s in sizes]); ax.set_xticklabels(sizes)
         ax.xaxis.set_minor_locator(mpl.ticker.NullLocator())      # three sizes on a log axis: no 2×10⁸ labels
         ax.set_xlim(NON_EMB[sizes[0]] / 1.6, NON_EMB[sizes[-1]] * 1.6)
-        ax.set_xlabel("non-embedding parameters (log)"); ax.set_title(ttl, loc="left", fontsize=7.5)
-        ax.legend(fontsize=6, frameon=False, loc="lower right"); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
-    a.set_ylabel(f"DA vs {TARGET_SIZE} final, pooled over tasks"); b.set_ylabel("DA between the two seeds' rankings")
+        ax.set_xlabel("Proxy size" if paper else "non-embedding parameters (log)")
+        ax.set_title(ttl, loc="left", fontsize=8 if paper else 7.5)
+        ax.legend(fontsize=6.5 if paper else 6, frameon=False, loc="lower right"); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    a.set_ylabel(f"Decision accuracy against {TARGET_SIZE}" if paper else f"DA vs {TARGET_SIZE} final, pooled over tasks")
+    b.set_ylabel("Decision accuracy between two seeds" if paper else "DA between the two seeds' rankings")
     for s in size_order(nv["size"].unique()) if len(nv) else []:
         g = nv[nv["size"] == s].sort_values("frac")
         col = S.SIZE_COLOR.get(s, S.MUTED)
-        c.plot(g["frac"] * G.CHINCHILLA_AT_FULL, g["da"], color=col, ls="--", marker="o", ms=3, lw=1.2, label=f"{s} seed null")
-        c.plot(g["frac"] * G.CHINCHILLA_AT_FULL, g["da_real"], color=col, ls="-", marker="o", ms=3, lw=1.2, label=f"{s} real pairs")
+        c.plot(g["frac"] * G.CHINCHILLA_AT_FULL, g["da"], color=col, ls="--", marker="o", ms=3, lw=1.2,
+               label=f"{s} seed null")
+        c.plot(g["frac"] * G.CHINCHILLA_AT_FULL, g["da_real"], color=col, ls="-", marker="o", ms=3, lw=1.2,
+               label=f"{s} design pairs" if paper else f"{s} real pairs")
     c.axhline(.5, color=S.MUTED, lw=.8, ls=":"); c.set_ylim(0, 1.0)
     c.set_xticks([1, 2, 3, 4, 5]); c.set_xticklabels([G.chinchilla(f) for f in (.2, .4, .6, .8, 1.0)]); c.set_xlim(0.3, 5.2)
-    c.set_xlabel("proxy's training tokens (× Chinchilla)"); c.set_ylabel("mean DA-ckpt over the gated tasks")
-    c.set_title("seed null: DA-ckpt over two seeds of ONE design (dashed) vs the real pairs (solid)", loc="left", fontsize=7.5)
-    c.legend(fontsize=5.5, frameon=False, ncol=2, loc="lower right"); c.grid(color=S.GRID, lw=.6); S.clean(c)
+    c.set_xlabel("Proxy training tokens (× Chinchilla)" if paper else "proxy's training tokens (× Chinchilla)")
+    c.set_ylabel("Checkpoint decision accuracy" if paper else "mean DA-ckpt over the gated tasks")
+    c.set_title("Two seeds of one design (dashed) and design pairs (solid)" if paper else
+                "seed null: DA-ckpt over two seeds of ONE design (dashed) vs the real pairs (solid)",
+                loc="left", fontsize=8 if paper else 7.5)
+    c.legend(fontsize=6.5 if paper else 5.5, frameon=False, ncol=2, loc="lower right"); c.grid(color=S.GRID, lw=.6); S.clean(c)
+
+
+def figure(sv: pd.DataFrame, nv: pd.DataFrame, path: Path, pool: str) -> None:
+    fig, (a, b, c) = plt.subplots(1, 3, figsize=(15.5, 4.6))
+    draw((a, b, c), sv, nv)
     top = G._header(fig, "Seed uncertainty in decision accuracy: what the replicate seeds can and cannot say",
                     f"Left and middle: the ten replicated cells (deep scheme A at L ∈ {{1, 2, 50}} for 175M/600M, seeds 64/313/"
                     f"{GRID_SEED}; deep L1, L2, L30-A, L30-B at 1B, seeds 28/1797/{GRID_SEED}); rule 2 leaves their cross-L "
@@ -203,6 +224,14 @@ def figure(sv: pd.DataFrame, nv: pd.DataFrame, path: Path, pool: str) -> None:
     S.save(fig, path, dpi=150)
 
 
+def figure_paper(sv: pd.DataFrame, nv: pd.DataFrame, path: Path) -> None:
+    """The same three panels, bare (rule 18): the caption is the paper's."""
+    fig, axs = plt.subplots(1, 3, figsize=(13, 3.8))
+    draw(axs, sv, nv, paper=True)
+    fig.tight_layout()
+    S.save_paper(fig, path)
+
+
 def generate_readme(pool: str, out_dir: Path, sv: pd.DataFrame, nv: pd.DataFrame) -> None:
     if pool != CANONICAL_POOL:
         return
@@ -214,16 +243,18 @@ def generate_readme(pool: str, out_dir: Path, sv: pd.DataFrame, nv: pd.DataFrame
         vals = ", ".join(f"{v:.2f}" for v in g.sort_values("seed")["da"])
         rows.append([size, lang, int(g["designs"].iloc[0]), vals,
                      f"{tr.min():.2f}–{tr.max():.2f}" if len(tr.dropna()) else "—", int(g["tasks"].max())])
-    null = ("; ".join(f"{s}: {nv[nv['size'] == s]['da'].mean():.2f} vs real {nv[nv['size'] == s]['da_real'].mean():.2f}"
+    null = (", ".join(f"{s}: {nv[nv['size'] == s]['da'].mean():.2f} vs real {nv[nv['size'] == s]['da_real'].mean():.2f}"
                       for s in size_order(nv["size"].unique())) if len(nv) else "not available")
     body = "\n\n".join([
         "## Seed uncertainty",
-        f"What the replicate seeds say about decision accuracy — English at three proxy sizes and Russian at 1B, the only "
-        f"(size, language) cells where three replicated designs give ≥ {MIN_PAIRS} cross-L pairs under rule 2. Per row: DA "
-        f"of those decisions against the {TARGET_SIZE} final with the proxy at each of its three seeds (proxy-side noise), "
-        f"and the DA between two seeds' rankings of the same designs at that size (the reference-side ceiling). Three "
-        f"pairs put a DA on {{0, ⅓, ⅔, 1}}: read the spread, not a mean. The seed null (DA-ckpt over pairs of two seeds "
-        f"of one design, mean over fractions and gated tasks) is {null}. Regenerate with "
+        f"This section asks what the replicate seeds say about decision accuracy. Only English at three proxy sizes "
+        f"and Russian at 1B can be read. These are the only (size, language) cells where the replicated designs give "
+        f"≥ {MIN_PAIRS} pairs under rule 2. Each row reports two things. The first is the DA of those decisions "
+        f"against the {TARGET_SIZE} final, with the proxy at each of its three seeds (proxy-side noise). The second is "
+        f"the DA between two seeds' rankings of the same designs at that size (the reference-side ceiling). With as "
+        f"few as three pairs per task, a task's DA can only be 0, ⅓, ⅔ or 1, so read the spread, not a mean. The seed "
+        f"null is DA-ckpt over pairs of two seeds of one design, where there is nothing to decide, averaged over "
+        f"fractions and gated tasks: {null}. Regenerate with "
         f"`python analysis/rq02_decision_accuracy/seed_uncertainty.py --pool {pool}`.",
         md_table(["size", "language", "designs", "DA at the 3 proxy seeds", "test-retest (3 seed pairs)", "tasks"], rows),
         f"![Seed uncertainty]({stage}/{pool}/seed_uncertainty_da_all_seed_null.png)"])
@@ -242,9 +273,12 @@ if __name__ == "__main__":
     fin["design"] = "L" + fin["L"].astype(int).astype(str) + "-" + fin["ladder"] + "-" + fin["data"]
     sv = seed_views(fin, args.pool)
     nv = null_view(OUT_ROOT / stage / SEED_POOL, args.pool)
-    pd.concat([sv, nv], ignore_index=True).to_csv(out_dir / "seed_uncertainty_da_all_seed_null.csv", index=False)
+    long = pd.concat([sv, nv], ignore_index=True)
+    long.to_csv(out_dir / "seed_uncertainty_da_all_seed_null.csv", index=False)
+    long.to_csv(out_dir / "seed_uncertainty_da_all_seed_null_paper.csv", index=False)
     print(sv.to_string(index=False))
     if len(nv):
         print(nv.groupby("size")[["da", "da_real"]].mean().round(3).to_string())
     figure(sv, nv, out_dir / "seed_uncertainty_da_all_seed_null.png", args.pool)
+    figure_paper(sv, nv, out_dir / "seed_uncertainty_da_all_seed_null_paper")
     generate_readme(args.pool, out_dir, sv, nv)

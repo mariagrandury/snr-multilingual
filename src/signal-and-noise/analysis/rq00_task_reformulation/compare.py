@@ -34,8 +34,8 @@ the items with a missing option or a rejected rewrite, so the counts differ)
 under the two-proportion z-test. The panels keep acc_norm for the twins,
 because that is the metric a cloze task is scored with, and `norm_offset`
 in the CSV is how much of the cell is that choice. A task's gain is
-significant at a size when p < P_SIG for at least half of the size's models
-(per family); per language the small number counts the significant (task,
+significant at a size when the twin scores higher with p < P_SIG for at least
+half of the size's tested models (per family); per language the small number counts the significant (task,
 model) pairs instead. The twin run's `acc` lives in the harness results files
 on the cluster only: elsewhere the test reuses the values the last cluster run
 recorded in rf_significance.csv, leaves the newer pairs untested (p NaN, and
@@ -173,7 +173,9 @@ def significance(df: pd.DataFrame, s: str, kept: pd.Series | None = None) -> pd.
                         "acc_twin_plain": acc_plain, "norm_offset": w["primary_score"]["twin"] - acc_plain,
                         "n_orig": w["n"]["orig"].astype(int), "n_twin": w["n"]["twin"].astype(int), "p": p},
                        index=w.index).reset_index()
-    out["sig"] = out["p"] < P_SIG
+    # a significant GAIN: the two-sided test says the formulations differ, the sign says which
+    # way; an untested pair (no twin results file) is NaN, not "not significant"
+    out["sig"] = ((out["p"] < P_SIG) & (out["acc_twin_plain"] > out["acc_orig"])).where(out["p"].notna())
     missing = out["acc_twin_plain"].isna().sum()
     if missing:
         print(f"({s}: {missing} of {len(out)} pairs have no twin results file: not tested)")
@@ -245,6 +247,11 @@ def main() -> None:
         print(f"no harness results under {RESULTS}: twin acc from the committed rf_significance{sfx}.csv ({len(kept)} pairs)")
     sig = pd.concat([significance(pairs[s], s, kept) for s in SETS], ignore_index=True)
     untested = int(sig["p"].isna().sum())
+    # the acc_norm - acc offset of the rf twins, read off this run's pairs (it used to be a constant here)
+    rf = sig[(sig["set"] == "rf") & sig["norm_offset"].notna()]
+    off_fam = rf.groupby(rf["task"].map(lambda t: TASKS[t]["benchmark"]))["norm_offset"].mean()
+    off_med = rf["norm_offset"].median()
+    off_big = (rf["norm_offset"].abs() > (rf["acc_twin"] - rf["acc_orig"]).abs() / 2).mean()
     sig.to_csv(HERE / f"rf_significance{sfx}.csv", index=False)
     fam = {s: cells(pairs[s], sig[sig["set"] == s], s, ["family"]) for s in SETS}      # set -> (orig, twin, n_sig)
     fam_o = fam[have[0]][0]
@@ -253,7 +260,8 @@ def main() -> None:
             "models that trained the language and have the original and the twin scored) − the task's chance level "
             "(1 / n_options); original = acc, twins = acc_norm, and part of every twin cell is that metric choice "
             f"(`norm_offset` in rf_significance{sfx}.csv"
-            + (": rf median +0.005, belebele −0.016 / Global-MMLU +0.016 / INCLUDE +0.018 on average)" if not sfx else ")"))
+            + (f": rf median {off_med:+.3f}, mean " + " / ".join(f"{f} {v:+.3f}" for f, v in off_fam.items()) + ")"
+               if not sfx and len(rf) else ")"))
     sig_note = ("the z-test compares the original's acc with the twin run's own acc, so the formulation is the only "
                 f"difference (p < {P_SIG})")
     note = f"{cell.format(unit='family')}; small number = tasks, and on a difference panel the tasks significant for at " \
@@ -277,14 +285,15 @@ def main() -> None:
     G.save_highlights(fig, HERE, "Per language, before and after the reformulations", note_lang, tables, name=f"rf_gate_by_language{sfx}")
 
     # the markdown block: family x size, original / per set: twin, Δ, sig
-    lines = [f"Gate cells (median task margin over the task's chance level, trained languages, deep data-A seed-1904 ladder, "
-             f"from the ladder report; each set on the models that have the original and that twin scored — the original "
-             f"shown is the {have[0]} pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, "
-             f"n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models "
-             f"(two-proportion z-test of the original's acc against the twin run's own acc, p < {P_SIG}"
-             + (f"; {untested} of {len(sig)} (task, model) pairs untested, no harness results file" if untested else "")
-             + ("; the acc_norm−acc offset is family-shaped, rf median +0.005, and exceeds half the plotted rf gain in "
-                "36 % of the pairs" if not sfx else "") + ").", "",
+    lines = [f"Gate cells: the median task margin over the task's chance level (trained languages, deep data-A seed-1904 "
+             f"ladder, from the ladder report). Each set is read on the models that have both the original and that twin "
+             f"scored, and the original shown is the {have[0]} pairing. A cell gives the original's acc, then per set "
+             f"`twin acc_norm (**Δ** = twin − original, n = tasks, sig)`. sig counts the tasks whose gain is significant "
+             f"for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's "
+             f"own acc, p < {P_SIG})."
+             + (f" {untested} of {len(sig)} (task, model) pairs are untested, for lack of a harness results file." if untested else "")
+             + (f" The twins' acc_norm − acc offset differs by family (rf median {off_med:+.3f}), and it exceeds half the "
+                f"pair's acc_norm gain in {off_big:.0%} of the rf (task, model) pairs." if not sfx and len(rf) else ""), "",
              "| family | " + " | ".join(sizes) + " |", "|---|" + "---:|" * len(sizes)]
     for f in families:
         out = []

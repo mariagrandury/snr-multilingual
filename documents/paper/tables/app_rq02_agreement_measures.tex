@@ -1,0 +1,11 @@
+\begin{tabular}{lrrrrrrrr}
+\toprule
+ & \multicolumn{6}{c}{Pearson $r$ across cells} & Spearman & Same \\
+\cmidrule(lr){2-7}
+Statistics & All & 90M & 175M & 350M & 600M & 1B & All & verdict \\
+\midrule
+DA and Kendall's $\tau_b$ & 0.99 & 0.99 & 0.99 & 0.99 & 0.98 & 0.98 & 0.99 & 98.3\% \\
+DA and Spearman's $\rho$ & 0.97 & 0.97 & 0.97 & 0.97 & 0.97 & 0.97 & 0.98 & -- \\
+Kendall's $\tau_b$ and Spearman's $\rho$ & 0.98 & 0.98 & 0.98 & 0.98 & 0.98 & 0.98 & 0.99 & -- \\
+\bottomrule
+\end{tabular}

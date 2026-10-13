@@ -216,9 +216,9 @@ def _plot_grid(df, df_ext, group_label, tasks, subplot_titles, out_path, seed, n
     return True
 
 
-def _plot_grouped_curves(df, df_ext, tasks, out_dir, seed):
+def _plot_grouped_curves(df, df_ext, tasks, out_dir, seed, only=None):
     """Emit two combined views: one figure per benchmark family (subplots = languages)
-    and one figure per language (subplots = benchmark families)."""
+    and one figure per language (subplots = benchmark families); `only` draws one of them."""
     by_family = defaultdict(list)
     by_language = defaultdict(list)
     for task in tasks:
@@ -231,7 +231,7 @@ def _plot_grouped_curves(df, df_ext, tasks, out_dir, seed):
     per_lang_dir.mkdir(parents=True, exist_ok=True)
 
     n_bench = 0
-    for family, fam_tasks in tqdm(sorted(by_family.items()), desc="Per-benchmark grids"):
+    for family, fam_tasks in tqdm(sorted(by_family.items()) if only != "language" else [], desc="Per-benchmark grids"):
         fam_tasks_sorted = sorted(fam_tasks, key=assign_language)
         subtitles = [assign_language(t) for t in fam_tasks_sorted]
         if _plot_grid(df, df_ext, f"benchmark: {family}", fam_tasks_sorted, subtitles,
@@ -239,7 +239,7 @@ def _plot_grouped_curves(df, df_ext, tasks, out_dir, seed):
             n_bench += 1
 
     n_lang = 0
-    for lang, lang_tasks in tqdm(sorted(by_language.items()), desc="Per-language grids"):
+    for lang, lang_tasks in tqdm(sorted(by_language.items()) if only != "benchmark" else [], desc="Per-language grids"):
         lang_tasks_sorted = sorted(lang_tasks, key=benchmark_family)
         subtitles = [benchmark_family(t) for t in lang_tasks_sorted]
         if _plot_grid(df, df_ext, f"language: {lang}", lang_tasks_sorted, subtitles,
@@ -249,7 +249,7 @@ def _plot_grouped_curves(df, df_ext, tasks, out_dir, seed):
     return n_bench, n_lang
 
 
-def run(pool: str, out_dir: Path, seed: int | None = None, grids: bool = True):
+def run(pool: str, out_dir: Path, seed: int | None = None, grids: bool = True, only: str | None = None):
     if seed is None:
         seed = _seed_of(pool)
     df = build_snr_pool(pool)
@@ -279,14 +279,16 @@ def run(pool: str, out_dir: Path, seed: int | None = None, grids: bool = True):
     print(f"  Wrote signal CSV ({len(sig_df)} tasks). Top-{TOP_N} families by "
           f"Signal: {list(fam_rank.head(TOP_N).index)}")
 
-    # The grids are a viewer: ~140 figures that no other script reads, and
-    # about an hour of a three-hour pipeline (measured 2026-09-18: the 122
-    # per-language grids alone ran 06:15 to 07:13). Everything above — the
-    # Signal CSV every RQ ranks by, and the README blocks — is seconds, so a
-    # routine refresh skips the drawing and the previous figures stay on disk.
+    # The grids are a viewer: ~150 figures that no other script reads, and
+    # hours to draw (an hour on 2026-09-18; on 2026-10-10, at 1.86M rows, a
+    # per-benchmark grid took ~3.4 min, ~5.5 h for the 92 and as long again
+    # for the per-language ones). Everything above — the Signal CSV every RQ
+    # ranks by, and the README blocks — is seconds, so a routine refresh skips
+    # the drawing and the previous figures stay on disk. `only` draws one kind,
+    # so the nightly can split the two over two jobs under the 12 h wall.
     if grids:
         plot_tasks = [t for t in tasks if benchmark_family(t) != "loss"]
-        n_bench, n_lang = _plot_grouped_curves(df, df_ext, plot_tasks, out_dir, seed)
+        n_bench, n_lang = _plot_grouped_curves(df, df_ext, plot_tasks, out_dir, seed, only)
         print(f"Wrote {n_bench} per-benchmark grids → {out_dir / 'per_benchmark'}")
         print(f"Wrote {n_lang} per-language grids → {out_dir / 'per_language'}")
     else:
@@ -383,8 +385,14 @@ def main():
     p.add_argument(
         "--no-grids", action="store_true",
         help="Write the Signal CSV and the README blocks but do not redraw the "
-             "~140 per-benchmark and per-language grids (about an hour). The "
-             "figures already on disk are left untouched.",
+             "~150 per-benchmark and per-language grids (hours: ~5.5 h each kind "
+             "on 2026-10-10). The figures already on disk are left untouched.",
+    )
+    p.add_argument(
+        "--only", choices=("benchmark", "language"), default=None,
+        help="Draw only the per-benchmark or only the per-language grids (the "
+             "nightly runs the two as separate jobs; each writes the same Signal "
+             "CSV and README blocks).",
     )
     p.add_argument(
         "--out-subdir", default=None,
@@ -397,7 +405,7 @@ def main():
     stage = load_pools()[args.pool].get("stage", "pretraining")
     run(pool=args.pool,
         out_dir=GATE_AND_CURVES / stage / (args.out_subdir or args.pool),
-        seed=args.seed, grids=not args.no_grids)
+        seed=args.seed, grids=not args.no_grids, only=args.only)
 
 
 if __name__ == "__main__":

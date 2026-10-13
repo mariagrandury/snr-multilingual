@@ -29,6 +29,25 @@ another (DA ≥ 0.66 maps to tau ≥ 0.32 through the identity).
                                     tied cells sit off it by exactly (T_both − T_one)/n
     agreement_da_size_cut_sensitivity_multi_axes.png / .csv   per size, the share of cells whose reliability verdict
                                     depends on the statistic
+    agreement_da_size_equivalence_multi_axes.tex       the paper's table: Pearson r between DA, tau_b and rho over
+                                    every cell and per size, Spearman over every cell, the shared verdicts
+    agreement_da_size_correlation_multi_axes_paper.png the correlation figure for the paper (two-column width)
+
+    python analysis/rq02_decision_accuracy/agreement.py --paper   # the two paper outputs, from the per-cell table
+
+DA-size under other definitions, on the same finals and gate, multi-axis and
+mono-axis pairs (rule 15): the current rule; a tied pair counting one half
+(= (1 + tau_a) / 2); the pairs the reference ties dropped; and the pairs whose
+reference gap exceeds K x the task's reference checkpoint noise (rule 4,
+`utils.checkpoint_noise` on the 80-100 % window, mean over the 1.7B runs) or
+K x sqrt(2) x its seed sd (rq05's `seed_sd`, rq02_decisive_pairs' threshold),
+K in (1, 2). A cell needs MIN_PAIRS kept pairs (rule 5). Means over tasks,
+per population (accuracy, the bBPB twins, both, per-language BPB), on each
+variant's own cells and on the cells every variant defines (rule 13):
+
+    da_size_definition_sensitivity_<pair set>.csv / .tex   per (variant, population, size): task-mean DA-size,
+                                    tasks, share of the comparable pairs kept; the .tex is the
+                                    booktabs tabular of the paper's appendix (no caption)
 
     python analysis/rq02_decision_accuracy/agreement.py --pool predictivity
 """
@@ -56,9 +75,12 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, md_table, replace_block  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.rq02_decision_accuracy.reliable_tasks import FILTERS  # noqa: E402
+from analysis.rq05_design_decisions.analyze import seed_sd  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    GRID_SEED, MIN_PAIRS, TARGET_SIZE, agreement_measures, design_axes, finals, ladder_frame, size_order)
+    AXES_SUFFIX, GRID_SEED, MIN_PAIRS, SMALL_SIZES, TARGET_SIZE, agreement_measures, checkpoint_noise, design_axes,
+    finals, ladder_frame, noise_checkpoints, pair_sets, passes_gate, size_order)
 
 OUT_ROOT = DECISION_ACCURACY
 POOL = "predictivity_seeds"          # every data build at the grid seed, as by_L and scale_convergence pair over
@@ -155,12 +177,13 @@ def correlations(d: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def figure_correlation(d: pd.DataFrame, corr: pd.DataFrame, path: Path) -> None:
+def figure_correlation(d: pd.DataFrame, corr: pd.DataFrame, path: Path, paper: bool = False) -> None:
     """The three statistics against each other, one point per cell, the
-    correlation in the corner: the plain version of `agreement_da_size_identity_multi_axes`."""
+    correlation in the corner: the plain version of `agreement_da_size_identity_multi_axes`.
+    `paper`: the paper copy (`<stem>_paper`), two-column width, no header, the legend below."""
     sizes = size_order(d["size"].unique())
     colour = {s: S.SIZE_COLOR.get(s, S.MUTED) for s in sizes}   # RAMP has four steps; the ladder has more proxies
-    fig, axes = plt.subplots(1, 3, figsize=(12.6, 4.3))
+    fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.6) if paper else (12.6, 4.3))
     for ax, (x, y) in zip(axes, CORR_PAIRS):
         for s in sizes:
             g = d[d["size"] == s]
@@ -170,11 +193,20 @@ def figure_correlation(d: pd.DataFrame, corr: pd.DataFrame, path: Path) -> None:
         else:
             ax.plot([-1, 1], [-1, 1], color=S.MUTED, lw=.8, ls=":", zorder=1)
         c = corr[(corr["size"] == "all") & (corr["x"] == x) & (corr["y"] == y)].iloc[0]
-        ax.text(0.03, 0.97, f"Pearson r = {c['pearson_r']:.3f}\nSpearman ρ = {c['spearman_rho']:.3f}\n{int(c['cells'])} cells",
-                transform=ax.transAxes, va="top", ha="left", fontsize=7.5,
+        ax.text(0.03, 0.97, f"Pearson r = {c['pearson_r']:.2f}\nSpearman ρ = {c['spearman_rho']:.2f}"
+                + ("" if paper else f"\n{int(c['cells'])} cells"),
+                transform=ax.transAxes, va="top", ha="left", fontsize=6.5 if paper else 7.5,
                 bbox=dict(boxstyle="round,pad=0.3", fc=S.SURFACE, ec=S.GRID, lw=.6))
-        ax.set_xlabel(CORR_LABEL[x]); ax.set_ylabel(CORR_LABEL[y])
+        lab = (lambda k: (CORR_LABEL[k][0].upper() + CORR_LABEL[k][1:]).replace("τ_b", r"$\tau_b$")) if paper else CORR_LABEL.get
+        ax.set_xlabel(lab(x)); ax.set_ylabel(lab(y))
         ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    if paper:
+        h, labels = axes[0].get_legend_handles_labels()
+        fig.legend(h, [l.split(" proxy")[0] for l in labels], fontsize=6.5, frameon=False, ncol=len(sizes),
+                   loc="lower center", bbox_to_anchor=(0.5, 0), markerscale=2)
+        fig.tight_layout(rect=(0, 0.08, 1, 1))
+        S.save_paper(fig, path.with_suffix(""))
+        return
     axes[-1].legend(fontsize=6.5, frameon=False, loc="lower right")
     top = G._header(fig, "Three rank-agreement statistics on the same cells",
                     f"One point per (benchmark task, proxy size): the proxy's final ranking of the {GRID_SEED}-seed design "
@@ -220,6 +252,146 @@ def figure_cuts(sens: pd.DataFrame, d: pd.DataFrame, path: Path) -> None:
     S.save(fig, path, dpi=150)
 
 
+# DA-size's definition, varied: variant -> the paper table's row label (paper punctuation: no dash, no ';')
+VARIANTS = {"current": "Current rule (a pair tied on one side misses)",
+            "ties_half": "A tied pair counts one half",
+            "ref_ties_dropped": "Pairs the reference ties dropped",
+            "ckpt_noise_1x": "Reference gap $>$ 1 reference checkpoint SD",
+            "ckpt_noise_2x": "Reference gap $>$ 2 reference checkpoint SD",
+            "seed_sd_1x": "Reference gap $>$ 1 seed SD of a difference",
+            "seed_sd_2x": "Reference gap $>$ 2 seed SD of a difference"}
+DEF_POPULATIONS = {"accuracy": "Benchmark accuracy", "accuracy+bbpb": "Benchmark accuracy and bBPB twins",
+                   "bpb": "Per-language BPB"}
+DEF_NAME = "da_size_definition_sensitivity"
+
+
+def ref_ckpt_noise(frame: pd.DataFrame, fams) -> pd.Series:
+    """Per task, the reference's checkpoint noise (rule 4): `checkpoint_noise`
+    (the residual SD around a line through the 80-100 % window) of each 1.7B
+    run of `fams`, mean over the runs."""
+    w = noise_checkpoints(frame[(frame["size"] == TARGET_SIZE) & frame["family"].isin(fams)])
+    per_run = {k: checkpoint_noise(g["frac"], g["primary_score"]) for k, g in w.groupby(["task", "model"])}
+    return pd.Series(per_run, dtype=float).groupby(level=0).mean()
+
+
+def definition_sensitivity(frame: pd.DataFrame, pool: str) -> pd.DataFrame:
+    """Per (axes, variant, population, task set, size): the task-mean DA-size,
+    its task count and the share of the comparable pairs the variant keeps.
+    Rule 1 at the proxy and the reference; a cell needs MIN_PAIRS comparable
+    pairs and MIN_PAIRS kept ones (rule 5). Task set `own` = the cells each
+    variant defines, `common` = the cells every variant defines (rule 13);
+    the share kept is over the `current` cells for `own`."""
+    fin = finals(frame)
+    attrs = design_axes(fin)
+    fams = sorted(attrs.query("seed == @GRID_SEED").index)
+    W = fin[fin["family"].isin(fams)].pivot_table(index="task", columns=["size", "family"], values="primary_score")
+    meta = G.add_meta(pd.DataFrame({"task": W.index}))                 # drops the aggregates (rule 7)
+    meta = meta[meta["family"] != "loss"]
+    W = W.loc[meta["task"]]
+    tasks = W.index
+    pop = np.where(meta["family"] == "bpb", "bpb", np.where(meta["family"].str.startswith("bbpb_"), "bbpb", "accuracy"))
+    noise = ref_ckpt_noise(frame, fams).reindex(tasks).to_numpy()
+    sd = np.sqrt(2) * seed_sd(fin).reindex(tasks).to_numpy()          # the sd of a difference of two runs
+    noise, sd = (np.where(np.isfinite(x) & (x > 0), x, np.nan)[:, None] for x in (noise, sd))
+    print(f"definition sensitivity: {np.isfinite(noise).sum()} of {len(tasks)} tasks with a reference checkpoint "
+          f"noise, {np.isfinite(sd).sum()} with a seed sd")
+    mask = load_mask(pool)
+    ref = W[TARGET_SIZE].reindex(columns=fams).to_numpy()
+    fi = {f: i for i, f in enumerate(fams)}
+    psets = pair_sets(attrs)
+    cells = []
+    for axes in ("multi-axis", "mono-axis"):
+        I, J = (np.array([fi[p[k]] for p in psets[axes]]) for k in (0, 1))
+        dt, gap = np.sign(ref[:, I] - ref[:, J]), np.abs(ref[:, I] - ref[:, J])
+        for size in SMALL_SIZES:
+            prx = W[size].reindex(columns=fams).to_numpy()
+            ds = np.sign(prx[:, I] - prx[:, J])
+            V = np.isfinite(ds) & np.isfinite(dt)
+            agree, tie = V & (ds == dt), V & ((ds == 0) | (dt == 0))    # agree: a both-tied pair too; tie: any tie
+            with np.errstate(invalid="ignore"):
+                keep = {"current": V, "ties_half": V, "ref_ties_dropped": V & (dt != 0),
+                        "ckpt_noise_1x": V & (gap > noise), "ckpt_noise_2x": V & (gap > 2 * noise),
+                        "seed_sd_1x": V & (gap > sd), "seed_sd_2x": V & (gap > 2 * sd)}
+            ok = passes_gate(mask, tasks, size, TARGET_SIZE).to_numpy() & (V.sum(1) >= MIN_PAIRS)   # rules 1, 5
+            for v, k in keep.items():
+                n = k.sum(1)
+                # ties_half: (C + T/2) / n = (1 + tau_a) / 2, a tied pair (on either side or both) counts one half
+                m = (agree & ~tie & k).sum(1) + .5 * (tie & k).sum(1) if v == "ties_half" else (agree & k).sum(1)
+                cells.append(pd.DataFrame({"axes": axes, "variant": v, "size": size, "task": tasks, "population": pop,
+                                           "da": np.where(ok & (n >= MIN_PAIRS), m / np.maximum(n, 1), np.nan),
+                                           "kept": n, "comparable": V.sum(1), "ok": ok}))
+    c = pd.concat(cells, ignore_index=True)
+    c = c[c["ok"]]
+    defined = c.dropna(subset=["da"]).groupby(["axes", "size", "task"])["variant"].nunique()
+    common = set(defined[defined == len(VARIANTS)].index)
+    c["common"] = [k in common for k in zip(c["axes"], c["size"], c["task"])]
+    cur = set(c.loc[(c["variant"] == "current") & c["da"].notna(), ["axes", "size", "task"]].itertuples(index=False, name=None))
+    c["own_share"] = [k in cur for k in zip(c["axes"], c["size"], c["task"])]
+    rows = []
+    groups = {"accuracy": ["accuracy"], "bbpb": ["bbpb"], "accuracy+bbpb": ["accuracy", "bbpb"], "bpb": ["bpb"]}
+    for (axes, v, size), g in c.groupby(["axes", "variant", "size"], sort=False):
+        for p, members in groups.items():
+            g_p = g[g["population"].isin(members)]
+            for task_set, vals, share in (("own", g_p.dropna(subset=["da"]), g_p[g_p["own_share"]]),
+                                          ("common", g_p[g_p["common"]], g_p[g_p["common"]])):
+                rows.append({"axes": axes, "variant": v, "population": p, "task_set": task_set, "size": size,
+                             "da": vals["da"].mean(), "n_tasks": len(vals),
+                             "kept": int(share["kept"].sum()), "comparable": int(share["comparable"].sum())})
+    t = pd.DataFrame(rows)
+    t["share_kept"] = t["kept"] / t["comparable"]
+    return t
+
+
+def definition_tex(t: pd.DataFrame, path: Path) -> None:
+    """The appendix tabular: one block per population, one row per variant,
+    task-mean DA-size per proxy size (each variant's own cells) and the share
+    of the comparable pairs kept, pooled over the proxy sizes. No caption."""
+    t = t[t["task_set"] == "own"]
+    lines = ["\\begin{tabular}{l" + "r" * (len(SMALL_SIZES) + 1) + "}", "\\toprule",
+             " & ".join(["Definition", "Pairs kept", *SMALL_SIZES]) + " \\\\"]
+    for p, head in DEF_POPULATIONS.items():
+        lines += ["\\midrule", f"\\multicolumn{{{len(SMALL_SIZES) + 2}}}{{l}}{{\\textit{{{head}}}}} \\\\"]
+        for v, lab in VARIANTS.items():
+            g = t[(t["population"] == p) & (t["variant"] == v)].set_index("size").reindex(SMALL_SIZES)
+            kept = g["kept"].sum() / g["comparable"].sum() if g["comparable"].sum() else np.nan
+            cells = [f"{x:.2f}" if np.isfinite(x) else "--" for x in g["da"]]
+            lines.append(" & ".join([lab, f"{kept:.0%}".replace("%", "\\%") if np.isfinite(kept) else "--", *cells]) + " \\\\")
+    lines += ["\\bottomrule", "\\end{tabular}", ""]
+    path.write_text("\n".join(lines))
+    print(f"wrote {path}")
+
+
+def generate_definition_readme(pool: str, t: pd.DataFrame) -> None:
+    if pool != CANONICAL_POOL:
+        return
+    stage = load_pools()[pool].get("stage", "pretraining")
+    blocks = [
+        "## DA-size under other definitions",
+        "Each row gives the task-mean DA-size under one definition of DA. DA-size compares the proxy's "
+        f"final ranking of the grid-seed variants with the {TARGET_SIZE} final's. A task counts at a proxy size when it is "
+        f"above chance at the proxy and at {TARGET_SIZE} (rule 1) and has ≥ {MIN_PAIRS} comparable pairs, ≥ {MIN_PAIRS} of them "
+        "kept (rule 5). The checkpoint SD is the reference's checkpoint noise (rule 4): the residual SD around a line fitted "
+        f"through the 80–100 % window, averaged over the {TARGET_SIZE} runs. The seed SD of a difference is √2 × rq05's "
+        "seed sd, the threshold rq02_decisive_pairs uses. Each cell reads DA (tasks). \"Pairs kept\" is the share of the "
+        "comparable pairs a definition keeps, pooled over the proxy sizes. `own` uses each definition's own cells, and "
+        "`common` only the cells every definition defines. Regenerate with "
+        f"`python analysis/rq02_decision_accuracy/agreement.py --pool {pool}`."]
+    for axes in ("multi-axis", "mono-axis"):
+        for task_set in ("own", "common"):
+            rows = []
+            for p, head in DEF_POPULATIONS.items():
+                for v in VARIANTS:
+                    g = t[(t["axes"] == axes) & (t["task_set"] == task_set) & (t["population"] == p)
+                          & (t["variant"] == v)].set_index("size").reindex(SMALL_SIZES)
+                    kept = g["kept"].sum() / g["comparable"].sum() if g["comparable"].sum() else np.nan
+                    rows.append([head, v, f"{kept:.0%}" if np.isfinite(kept) else "",
+                                 *[f"{r.da:.3f} ({int(r.n_tasks)})" if np.isfinite(r.da) else "" for r in g.itertuples()]])
+            blocks += [f"**{axes}, {task_set} cells** (`{DEF_NAME}{AXES_SUFFIX[axes]}.csv`)",
+                       md_table(["population", "definition", "pairs kept", *SMALL_SIZES], rows)]
+    blocks.append(f"Paper tabulars: `{stage}/{pool}/{DEF_NAME}_multi_axes.tex`, `{stage}/{pool}/{DEF_NAME}_mono_axis.tex`.")
+    replace_block(OUT_ROOT / "README.md", "da-definition-sensitivity", "\n\n".join(blocks), f"agreement.py --pool {pool}")
+
+
 def generate_readme(pool: str, out_dir: Path, d: pd.DataFrame, sens: pd.DataFrame) -> None:
     if pool != CANONICAL_POOL:
         return
@@ -229,17 +401,21 @@ def generate_readme(pool: str, out_dir: Path, d: pd.DataFrame, sens: pd.DataFram
          .reindex(columns=size_order(sens["size"].unique())).mul(100).round(1).reset_index())
     body = "\n\n".join([
         "## Decision accuracy is Kendall's τ under another tie convention",
-        f"Over the {len(d):,} (benchmark task, proxy size) cells of DA-size's population (every pair of the grid-seed "
-        f"variants, ≥ {MIN_PAIRS} pairs, above chance at the proxy and at {TARGET_SIZE}): 2·DA − 1 = τ_a + (T_both − T_one)/n "
-        f"exactly, where T_both / T_one are the pairs tied on both / one side. Ties are {ties:,} of {d['n_pairs'].sum():,} pairs "
-        f"({ties / d['n_pairs'].sum():.1%}), {d['tied_one'].sum() / max(ties, 1):.0%} of them one-sided, and touch "
-        f"{(d['tied_both'] + d['tied_one'] > 0).mean():.0%} of the cells — so the two statistics correlate at "
-        f"r = {d['da'].corr(d['tau_b']):.3f} by construction, and the number with content is how often the tie "
-        f"convention changes a reliability verdict (DA ≥ {CUT:g}, i.e. τ ≥ {2 * CUT - 1:.2f}), in % of cells per proxy size:",
+        "DA and Kendall's τ_a differ only in how they count tied pairs. We check this on the "
+        f"{len(d):,} (benchmark task, proxy size) cells of DA-size's population: every pair of the grid-seed variants, "
+        f"≥ {MIN_PAIRS} pairs per cell, above chance at the proxy and at {TARGET_SIZE}. In every cell, "
+        "2·DA − 1 = τ_a + (T_both − T_one)/n exactly, where T_both and T_one count the pairs tied on both sides and on "
+        f"one side, and n counts all pairs. Ties are {ties:,} of {d['n_pairs'].sum():,} pairs "
+        f"({ties / d['n_pairs'].sum():.1%}). {d['tied_one'].sum() / max(ties, 1):.0%} of them are one-sided, and they touch "
+        f"{(d['tied_both'] + d['tied_one'] > 0).mean():.0%} of the cells. DA and τ_b therefore correlate at "
+        f"r = {d['da'].corr(d['tau_b']):.3f} by construction. The number that matters is how often the tie convention "
+        f"changes a reliability verdict (DA ≥ {CUT:g}, or equivalently τ ≥ {2 * CUT - 1:.2f}). The table gives it in % of "
+        "cells per proxy size:",
         md_table(list(t.columns), t.values.tolist()),
-        f"Spearman ρ and Pearson r on the raw scores are the two statistics that are NOT a rescaling — they weight a pair "
-        f"by its displacement — and sit at r = {d['da'].corr(d['rho']):.3f} and {d['da'].corr(d['pearson_r']):.3f} against DA. "
-        f"Median {int(d['n_models'].median())} models per cell. Values in `agreement_da_size_per_cell_multi_axes.csv`; regenerate with "
+        "Spearman ρ and Pearson r on the raw scores are the only two statistics here that are not a rescaling of DA. "
+        f"They weight a pair by how far it is displaced, and they correlate with DA at r = {d['da'].corr(d['rho']):.3f} and "
+        f"{d['da'].corr(d['pearson_r']):.3f}. A cell has a median of {int(d['n_models'].median())} models. Values are in "
+        "`agreement_da_size_per_cell_multi_axes.csv`. Regenerate with "
         f"`python analysis/rq02_decision_accuracy/agreement.py --pool {pool}`.",
         f"![DA, Kendall tau and Spearman rho against each other]({stage}/{pool}/agreement_da_size_correlation_multi_axes.png)",
         f"![DA against Kendall's tau]({stage}/{pool}/agreement_da_size_identity_multi_axes.png)",
@@ -247,13 +423,50 @@ def generate_readme(pool: str, out_dir: Path, d: pd.DataFrame, sens: pd.DataFram
     replace_block(OUT_ROOT / "README.md", "agreement-measures", body, f"agreement.py --pool {pool}")
 
 
+EQUIV_NAME = "agreement_da_size_equivalence_multi_axes"
+PAIR_TEX = {("da", "tau_b"): "DA and Kendall's $\\tau_b$", ("da", "rho"): "DA and Spearman's $\\rho$",
+            ("tau_b", "rho"): "Kendall's $\\tau_b$ and Spearman's $\\rho$"}
+
+
+def equivalence(d: pd.DataFrame, out_dir: Path) -> None:
+    """`agreement_da_size_equivalence_multi_axes.tex`, the paper's bare tabular: for each pair of
+    DA, Kendall's tau_b and Spearman's rho, Pearson r over every (task, proxy size) cell and per
+    proxy size, Spearman's rank correlation over every cell (`correlations`), and for DA and tau_b
+    the share of cells with the same reliability verdict (DA >= CUT <=> tau_b >= 2 CUT - 1,
+    `cut_sensitivity`): the evidence for reporting one statistic."""
+    corr, sens = correlations(d), cut_sensitivity(d)
+    sizes = [s for s in SMALL_SIZES if s in set(corr["size"])]
+    t = sens[sens["statistic"] == "tau_b"]
+    same = 1 - t["flip_vs_da"].sum() / t["cells"].sum()
+    lines = ["\\begin{tabular}{l" + "r" * (len(sizes) + 3) + "}", "\\toprule",
+             f" & \\multicolumn{{{len(sizes) + 1}}}{{c}}{{Pearson $r$ across cells}} & Spearman & Same \\\\",
+             f"\\cmidrule(lr){{2-{len(sizes) + 2}}}",
+             "Statistics & All & " + " & ".join(sizes) + " & All & verdict \\\\", "\\midrule"]
+    for x, y in CORR_PAIRS:
+        c = corr[(corr["x"] == x) & (corr["y"] == y)].set_index("size")
+        lines.append(" & ".join([PAIR_TEX[(x, y)]] + [f"{c.loc[s, 'pearson_r']:.2f}" for s in ["all"] + sizes]
+                                + [f"{c.loc['all', 'spearman_rho']:.2f}",
+                                   f"{same:.1%}".replace("%", "\\%") if (x, y) == ("da", "tau_b") else "--"])
+                     + " \\\\")
+    (out_dir / f"{EQUIV_NAME}.tex").write_text("\n".join(lines + ["\\bottomrule", "\\end{tabular}", ""]))
+    print(f"{EQUIV_NAME}.tex: {int(corr.loc[corr['size'] == 'all', 'cells'].iloc[0])} cells; same verdict DA / tau_b {same:.1%}")
+
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL_POOL, help="the pool whose gate applies and whose folder receives the outputs")
+    p.add_argument("--paper", action="store_true", help="only the equivalence table, from the per-cell table on disk")
     args = p.parse_args()
     out_dir = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
-    d = per_cell(finals(ladder_frame(POOL)), args.pool)
+    if args.paper:
+        d = pd.read_csv(out_dir / "agreement_da_size_per_cell_multi_axes.csv")
+        equivalence(d, out_dir)
+        figure_correlation(d, correlations(d), out_dir / "agreement_da_size_correlation_multi_axes_paper.png", paper=True)
+        sys.exit()
+    frame = ladder_frame(POOL)
+    d = per_cell(finals(frame), args.pool)
     d.to_csv(out_dir / "agreement_da_size_per_cell_multi_axes.csv", index=False)
+    equivalence(d, out_dir)
     resid = ((2 * d["da"] - 1) - d["tau_a"] - d["gap_pairs"]).abs().max()
     print(f"{len(d)} cells; identity 2·DA − 1 = τ_a + (T_both − T_one)/n to {resid:.1e}; "
           f"r(DA, τ_b) = {d['da'].corr(d['tau_b']):.4f}, r(DA, ρ) = {d['da'].corr(d['rho']):.4f}")
@@ -264,6 +477,15 @@ if __name__ == "__main__":
     corr = correlations(d)
     corr.to_csv(out_dir / "agreement_da_size_correlation_multi_axes.csv", index=False)
     figure_correlation(d, corr, out_dir / "agreement_da_size_correlation_multi_axes.png")
+    figure_correlation(d, corr, out_dir / "agreement_da_size_correlation_multi_axes_paper.png", paper=True)
     figure_identity(d, out_dir / "agreement_da_size_identity_multi_axes.png")
     figure_cuts(sens, d, out_dir / "agreement_da_size_cut_sensitivity_multi_axes.png")
     generate_readme(args.pool, out_dir, d, sens)
+    t = definition_sensitivity(frame, args.pool)
+    for axes in ("multi-axis", "mono-axis"):
+        ta = t[t["axes"] == axes]
+        ta.to_csv(out_dir / f"{DEF_NAME}{AXES_SUFFIX[axes]}.csv", index=False)
+        definition_tex(ta, out_dir / f"{DEF_NAME}{AXES_SUFFIX[axes]}.tex")
+    print(t[t["task_set"] == "own"].pivot_table(index=["axes", "population", "variant"], columns="size", values="da",
+                                                sort=False)[SMALL_SIZES].round(3).to_string())
+    generate_definition_readme(args.pool, t)

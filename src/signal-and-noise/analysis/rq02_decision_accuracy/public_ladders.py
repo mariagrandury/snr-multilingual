@@ -76,10 +76,10 @@ def decisions(fin: pd.DataFrame) -> pd.DataFrame:
     """Per task and line pair: the sign of the proxy difference against the reference's."""
     mask = pd.read_csv(EXTERNAL_MASK).set_index("task")
     score = fin.pivot_table(index="task", columns="model", values="primary_score")
+    # rule 1 at the proxy and at the reference; a task with no chance level (LAMBADA) has a mask of NA and passes
+    score = score[score.index.isin(mask.index) & passes_gate(mask, score.index, *PROXY_BUCKETS, REF_BUCKET).to_numpy()]
     rows = []
     for task, r in score.iterrows():
-        if task not in mask.index or not all(mask.loc[task, b] == 1 for b in PROXY_BUCKETS + (REF_BUCKET,)):
-            continue                                                       # rule 1 at the proxy and at the reference
         for (la, (pa, ra)), (lb, (pb, rb)) in combinations(LINES.items(), 2):
             if any(pd.isna(r.get(m)) for m in (pa, ra, pb, rb)):
                 continue
@@ -172,15 +172,16 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, d: pd.DataFrame) 
     fam = fam[fam["tasks"] >= 3].sort_values("tasks", ascending=False)
     body = "\n\n".join([
         "## Decision accuracy one rung above the ladder: the public lines",
-        f"gemma-3, Qwen3-Base and OLMo-2 each have a base model near 1B and near 13B in the external tier. Per task "
-        f"above chance at both buckets, DA is the share of the three line pairs the small models order like the large "
-        f"ones: pooled {t['da_public'].mean():.2f} over {len(t)} tasks, against the ladder's own {LADDER_PROXY} → 1.7B "
-        f"DA-size of {t['da_ladder'].mean():.2f} on the same tasks. Per line pair: "
-        + "; ".join(f"{r['pair']} {r['da']:.2f} against a majority baseline of {r['majority']:.2f} "
-                    f"({int(r['minority_tasks'])} minority tasks, DA there {r['da_minority']:.2f})" for _, r in p.iterrows()) + ". "
-        f"The majority baseline is what a proxy scores by always naming the line that usually wins at 12–14B, so only DA "
-        f"above it is information the small models add. Between-lab decisions on public sizes, not the ladder's one-axis ones; three pairs, so per-task values are a "
-        f"lattice. Regenerate with `python analysis/rq02_decision_accuracy/public_ladders.py --pool {pool}`.",
+        "gemma-3, Qwen3-Base and OLMo-2 each have a base model near 1B and near 13B in the external tier. For each task "
+        "above chance at both buckets, DA is the share of the three line pairs that the small models order like the "
+        f"large ones. Pooled, it is {t['da_public'].mean():.2f} over {len(t)} tasks, against the ladder's own "
+        f"{LADDER_PROXY} → 1.7B DA-size of {t['da_ladder'].mean():.2f} on the same tasks. Per line pair: "
+        + " ".join(f"{r['pair']} reaches {r['da']:.2f} against a majority baseline of {r['majority']:.2f} "
+                   f"({int(r['minority_tasks'])} minority tasks, DA there {r['da_minority']:.2f})." for _, r in p.iterrows()) + " "
+        "The majority baseline is the DA a proxy gets by always naming the line that usually wins at 12–14B. Only DA "
+        "above it is information the small models add. These are decisions between labs at public sizes, not the "
+        "ladder's one-axis decisions. With three pairs, a task's DA can only be 0, ⅓, ⅔ or 1, so read the pooled numbers. "
+        f"Regenerate with `python analysis/rq02_decision_accuracy/public_ladders.py --pool {pool}`.",
         md_table(["family", "tasks", "DA public lines (1B–1.7B → 12–14B)", f"DA ladder ({LADDER_PROXY} → 1.7B)"],
                  [[r["family"], int(r["tasks"]), f"{r['da_public']:.2f}", f"{r['da_ladder']:.2f}" if r["da_ladder"] == r["da_ladder"] else "—"]
                   for _, r in fam.iterrows()]),

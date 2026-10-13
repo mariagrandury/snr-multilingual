@@ -82,8 +82,10 @@ tasks).
 Outputs, `pretraining/<pool>/`:
 
     english_only_scores.png/.csv                 mean gap and win share per size, L1 against every other L
-    english_only_scores_paper.png/.svg/.csv      the same for the paper: bare (rule 18); `--paper` redraws it
+    english_only_scores_paper.png/.csv      the same for the paper: bare (rule 18); `--paper` redraws it
                                                  alone from english_only_scores_summary.csv
+    english_only_scores_fixed_tasks_paper.png/.csv   the same on one population per line (rule 13), the
+                                                 moving line dashed behind it; `--paper` redraws it too
     english_only_scores_by_benchmark.png/.csv    the same per benchmark (deep, every other L pooled)
     english_only_scores_per_task.csv             one row per (task, size, arch, comparator L)
     english_only_scores_summary.csv              per (scoring, arch, size, comparator), with `thin`
@@ -132,7 +134,7 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import ENGLISH_ONLY  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import above_chance, load_mask  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import above_chance, load_mask, mask_pool  # noqa: E402
 from analysis.rq01_scaling_predictability.analyze import fit_table  # noqa: E402
 from analysis.rq01_scaling_predictability.scaling_law_error import scaling_law_error  # noqa: E402
 from analysis.rq02_decision_accuracy.scale_convergence import (  # noqa: E402
@@ -143,8 +145,8 @@ from analysis.rq03_noise_and_snr.run_apertus_snr_variants import (  # noqa: E402
     per_model_inputs, variant_key, variant_signal_noise_snr)
 from analysis.rq07_external_frameworks.analyze import ALLENAI_CSV, SIZE_PAIRS  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    AXES_SUFFIX, GRID_SEED, MIN_PAIRS, RELIABLE_DA, SMALL_SIZES, TARGET_SIZE, assign_language,
-    benchmark_family, design_axes, finals, ladder_frame, lower_is_better, pair_sets, passes_gate,
+    AXES_SUFFIX, BBPB, BENCH_BPB, GRID_SEED, MIN_PAIRS, RELIABLE_DA, SMALL_SIZES, TARGET_SIZE, assign_language,
+    benchmark_family, design_axes, finals, fixed_population, ladder_frame, lower_is_better, pair_sets, passes_gate,
     size_order, variant)
 
 EN = "en"
@@ -322,6 +324,20 @@ def spikes(g: pd.DataFrame, sizes: list) -> tuple[str, pd.Index, int, int] | Non
     at = l1.sum().idxmax()
     ow = b.pivot_table(index=["L", "task"], columns="size", values="score_other").reindex(columns=sizes)
     return at, l1.index[l1[at]], int(mask(ow)[at].sum()), int(ow[at].notna().sum())
+
+
+def spike_seeds(at: str, tasks) -> pd.Series:
+    """Mean bBPB over the spiking twins `tasks` of every L1 deep run at size
+    `at` (the grid seed and its replicates), at each run's final checkpoint of
+    the per-item store (`utils.BENCH_BPB`): whether the spike is the run's or
+    the size's."""
+    if not BENCH_BPB.is_file():
+        return pd.Series(dtype=float)
+    b = pd.read_csv(BENCH_BPB)
+    b = b[b["model"].str.fullmatch(rf"lm-{re.escape(at)}-L1-deep-seed\d+")
+          & b["task"].isin({t[len(BBPB):] for t in tasks})]
+    b = b[b["step"] == b.groupby("model")["step"].transform("max")]
+    return b.groupby(b["model"].str.extract(r"seed(\d+)$", expand=False).astype(int))["bbpb"].mean()
 
 
 # --- 2. the gate ----------------------------------------------------------------
@@ -616,6 +632,73 @@ def fig_scores(summ: pd.DataFrame, out_dir: Path, sizes: list, where: str, paper
                       + _thin_note(p.assign(where=p["arch"] + " " + p["size"]), "count of the line")
                       + " Seed sd = sample std of the deep L1 cell over its replicate seeds, where they exist.",
                       tabs, name="english_only_scores")
+
+
+def fig_scores_fixed(g: pd.DataFrame, out_dir: Path) -> None:
+    """english_only_scores_paper on one population per line (rule 13): solid,
+    the (task, L) comparisons with a value at every size the line is drawn at
+    (`utils.fixed_population`); dashed behind it, the paper figure's moving
+    population. Panel (c)'s shares are over the same moving comparisons, so they
+    get the twin too; the pooled median line is left out."""
+    acc = g[g["scoring"] == "acc"].dropna(subset=["gap"]).assign(unit=lambda d: d["task"] + "|" + d["L"].astype(str))
+    seed = acc.dropna(subset=["gap_over_seed"])
+    pooled = "every L > 1"
+    cells = []
+    for arch in ARCHS:
+        d = acc[acc["arch"] == arch]
+        cells += [c.assign(panel=f"{arch}: mean gap", line=comp, comparator=comp, value=100 * c["gap"])
+                  for comp, c in [(label(L), d[d["L"] == L]) for L in sorted(d["L"].unique())] + [(pooled, d)]]
+        cells.append(d.assign(panel="shares", line=f"{arch}: L1 ahead", comparator=pooled, value=(d["gap"] > 0) * 1.0))
+    s = seed[seed["arch"] == "deep"]
+    cells += [s.assign(panel="shares", line=f"{w} by > {BEYOND:g} seed sd", comparator=pooled, value=v * 1.0)
+              for w, v in (("ahead", s["gap_over_seed"] > BEYOND), ("behind", s["gap_over_seed"] < -BEYOND))]
+    summ = score_summary(g)
+    drawn = summ.loc[(summ["scoring"] == "acc") & ~summ["thin"], ["arch", "comparator", "size"]]      # fig_scores' points
+    sizes = size_order(g["size"].unique())
+    cells = pd.concat(cells).merge(drawn, on=["arch", "comparator", "size"])
+    cells["size"] = pd.Categorical(cells["size"], sizes, ordered=True)
+    tab = pd.concat([d.groupby(["panel", "line", "size"], observed=True).agg(value=("value", "mean"), n_tasks=("task", "nunique"))
+                     .reset_index().assign(reading=rd)
+                     for rd, d in (("moving", cells), ("fixed", fixed_population(cells, ["panel", "line"], "size", "value",
+                                                                                 task="unit")))]).rename(columns={"size": "x"})
+    fig, axes = plt.subplots(1, 3, figsize=(12, 3.4))
+
+    def draw(ax, panel, line, colour, fixed_kw):
+        for rd in ("moving", "fixed"):
+            t = tab[(tab["panel"] == panel) & (tab["line"] == line) & (tab["reading"] == rd)].set_index("x").reindex(sizes)
+            kw = fixed_kw if rd == "fixed" else dict(ls=(0, (3, 2)) if fixed_kw.get("ls") != "" else "", lw=.9, alpha=.6,
+                                                     marker=".", ms=3, zorder=1.8)
+            ax.plot(range(len(sizes)), t["value"], color=colour, **({"marker": "o", "ms": 3.5} | kw))
+        return t
+    for ax, arch in zip(axes[:2], ARCHS):
+        panel = f"{arch}: mean gap"
+        for comp in group_order(tab.loc[tab["panel"] == panel, "line"].unique()):
+            t = draw(ax, panel, comp, S.INK if comp == pooled else colour(comp),
+                     dict(lw=2.2 if comp == pooled else 1.1, label=comp))
+            if comp == pooled and t["value"].notna().any():
+                last = t["value"].last_valid_index()
+                ax.annotate(f"{int(t.loc[last, 'n_tasks'])} tasks", (sizes.index(last), t.loc[last, "value"]),
+                            textcoords="offset points", xytext=(0, 5), fontsize=6, ha="center")
+        ax.axhline(0, color=S.MUTED, lw=.8)
+        ax.set_title(f"({'ab'[ARCHS.index(arch)]}) {arch.capitalize()}: L1 minus L, accuracy points", loc="left", fontsize=8.5)
+        ax.set_ylabel("Mean over the English tasks above chance"); _x(ax, sizes)
+    axes[0].plot([], [], color=S.MUTED, ls=(0, (3, 2)), lw=.9, label="Tasks above chance at each size")
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, fontsize=7, frameon=False, ncol=len(handles), loc="upper center", bbox_to_anchor=(0.5, 0.0))
+    ax = axes[2]
+    for arch, c in zip(ARCHS, (S.INK, S.MUTED)):
+        draw(ax, "shares", f"{arch}: L1 ahead", c, dict(label=f"{arch}: L1 ahead"))
+    for w, c in (("ahead", S.SERIES[0]), ("behind", S.SERIES[1])):
+        draw(ax, "shares", f"{w} by > {BEYOND:g} seed sd", c, dict(ls="", label=f"deep: {w} by > {BEYOND:g} seed sd"))
+    ax.axhline(0.5, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(-0.02, 1.02)
+    ax.set_title("(c) Share of (task, L) comparisons, every L > 1 pooled", loc="left", fontsize=8.5)
+    ax.legend(fontsize=6.5, frameon=False); _x(ax, sizes); ax.set_ylabel("Share of comparisons")
+    for a in axes:
+        a.set_xlabel("Model size")
+    fig.tight_layout()
+    tab[["reading", "panel", "line", "x", "value", "n_tasks"]].to_csv(out_dir / "english_only_scores_fixed_tasks_paper.csv",
+                                                                       index=False)
+    S.save_paper(fig, out_dir / "english_only_scores_fixed_tasks_paper")
 
 
 def fig_scores_by_benchmark(g: pd.DataFrame, out_dir: Path, sizes: list, where: str) -> None:
@@ -996,16 +1079,17 @@ def readme(pool: str, gate_pool: str, rel: str, r: dict) -> None:
     # --- setup
     fams = "; ".join(f"{label(L)} — " + ", ".join(f"`{f}`" for f in fs) for L, fs in groups.items())
     left = ", ".join(f"{label(L)} ({len(f)})" for L, f in r["all_groups"].items() if L not in groups)
-    lines = [f"Pool `{pool}`, ladder-report snapshot **{snap}**; seed {GRID_SEED} for every score, the replicate seeds of "
-             f"`{SEEDS_POOL}` for the seed yardstick; gate `{gate_pool}`. {r['population']}", "",
+    lines = [f"Pool `{pool}`, ladder-report snapshot **{snap}**, gate `{gate_pool}`. Every score is from seed {GRID_SEED}, "
+             f"and the seed yardstick uses the replicate seeds of `{SEEDS_POOL}`. {r['population']}", "",
              f"- **Mirrored family groups** (decision accuracy and the first SNR reading): {fams}."
-             + (f" Left out, with another number of such families: {left}." if left else ""),
+             + (f" Left out because they have a different number of such families: {left}." if left else ""),
              "- **Deep against shallow** (the second SNR reading): the two baseline cells at "
              + ", ".join(label(L) for L in r["depth"]) + "."]
     if r["coverage"]:
-        lines.append("- **Coverage that moves the populations**: " + "; ".join(r["coverage"]) + ". A decision-accuracy or "
-                     "SNR cell missing a family of its group is left out of the lines (it stays in the per-task CSVs), so "
-                     "a gap in one L1 family removes that (task, size) from every group's line.")
+        lines.append("- **Coverage gaps that shrink the populations**: " + "; ".join(r["coverage"]) + ". A "
+                     "decision-accuracy or SNR cell that misses a family of its group is left out of the lines but stays "
+                     "in the per-task CSVs. A gap in one L1 family therefore removes that (task, size) from every "
+                     "group's line.")
     if len(cells):
         k = cells[cells["shared"] & cells["da"].notna() & cells["size"].isin(SMALL_SIZES) & (cells["axes"] == "multi-axis")
                   & (cells["population"] == "all benchmarks")]
@@ -1013,11 +1097,11 @@ def readme(pool: str, gate_pool: str, rel: str, r: dict) -> None:
             .reindex(index=list(SMALL_SIZES), columns=["acc", "bbpb"]).fillna(0)
         th = da[(da["axes"] == "multi-axis") & (da["population"] == "all benchmarks") & da["thin"]
                 & da["size"].isin(SMALL_SIZES)]["size"].unique()
-        lines.append("- **The decision-accuracy population** (multi-axis; English benchmarks above chance at the proxy and "
-                     "the reference that every family of every group has): " + ", ".join(
+        lines.append("- **The decision-accuracy population** (multi-axis, the English benchmarks above chance at the proxy "
+                     "and the reference that every family of every group has): " + ", ".join(
                          f"{s} {int(row.sum())} (" + ", ".join(f"{int(v)} {c}" for c, v in row.items()) + ")"
                          for s, row in n.iterrows())
-                     + (f"; thin, so neither drawn nor quoted: {', '.join(th)}" if len(th) else "") + ".")
+                     + (f". Thin, so neither drawn nor quoted: {', '.join(th)}" if len(th) else "") + ".")
     if missing:
         lines += ["", rule5]
     replace_block(path, "english-setup", "\n".join(lines), gen)
@@ -1031,45 +1115,50 @@ def readme(pool: str, gate_pool: str, rel: str, r: dict) -> None:
             continue
         x = x.loc[size_order(x.index)]
         xs = x[~x["thin"]]
-        bullets.append(f"- **{arch}**: L1 ahead in {_ranges(xs['win_share'])} of the (task, L) comparisons per size; mean "
-                       f"gap {', '.join(f'{s} {fmt(100 * v, 1)}' for s, v in xs['mean_gap'].items())} accuracy points "
-                       f"(positive = L1 better; tasks {', '.join(f'{s} {int(v)}' for s, v in x['n_tasks'].items())}"
-                       + (f"; {', '.join(x.index[x['thin']])} thin, left out" if x["thin"].any() else "") + ").")
+        bullets.append(f"- **{arch.capitalize()}**: L1 is ahead in {_ranges(xs['win_share'])} of the (task, L) comparisons "
+                       f"per size. Mean gap {', '.join(f'{s} {fmt(100 * v, 1)}' for s, v in xs['mean_gap'].items())} "
+                       f"accuracy points (positive = L1 better), over "
+                       f"{', '.join(f'{s} {int(v)}' for s, v in x['n_tasks'].items())} tasks"
+                       + (f" ({', '.join(x.index[x['thin']])} is thin and left out)" if x["thin"].any() else "") + ".")
     s = a[(a["arch"] == "deep") & ~a["thin"]].dropna(subset=["ahead_beyond_seed"])
     s = s.set_index("size").loc[size_order(s["size"])].reset_index()
     if len(s):
-        bullets.append(f"- **Against the seed noise** (deep, where replicates exist): L1 ahead by more than {BEYOND:g} seed sd "
-                       f"in {', '.join(f'{r_.size} {fmt(r_.ahead_beyond_seed)}' for r_ in s.itertuples())} of the "
-                       f"comparisons, behind by as much in {', '.join(f'{r_.size} {fmt(r_.behind_beyond_seed)}' for r_ in s.itertuples())}.")
+        bullets.append(f"- **Against the seed noise** (deep, sizes with replicate seeds): L1 is ahead by more than "
+                       f"{BEYOND:g} seed sd in {', '.join(f'{r_.size} {fmt(r_.ahead_beyond_seed)}' for r_ in s.itertuples())} "
+                       f"of the comparisons and behind by as much in "
+                       f"{', '.join(f'{r_.size} {fmt(r_.behind_beyond_seed)}' for r_ in s.itertuples())}.")
     m = g[(g["scoring"] == "acc") & (g["arch"] == "deep")].groupby(["task", "size"])["gap"].mean()
     w = m[m < -DEFICIT].sort_values()
     if len(w):
-        bullets.append(f"- **Where L1 is far behind** (deep, mean over every other L below −{100 * DEFICIT:g} pp): "
+        bullets.append(f"- **Where L1 is far behind** (deep, mean gap over every other L below −{100 * DEFICIT:g} pp): "
                        + ", ".join(f"`{t}` at {sz} ({fmt(100 * v, 0)} pp)" for (t, sz), v in w.items())
-                       + ". A letter-format task can pass the gate on a constant answer that matches the majority gold "
-                       "label (rule 1 does not test for it), so a cell where every L but one sits far above chance and "
-                       "the other near zero reads a letter preference, not English skill; the medians are "
+                       + ". A letter-format task can pass the gate with a constant answer that matches the majority gold "
+                       "label, which rule 1 does not test for. So when every L but one sits far above chance and the "
+                       "other sits near zero, the cell shows a letter preference, not English skill. The median gaps are "
                        + ", ".join(f"{sz} {fmt(100 * v, 1)}" for sz, v in a[(a["arch"] == "deep") & ~a["thin"]]
                                    .set_index("size")["median_gap"].reindex(size_order(a["size"].unique())).dropna().items())
                        + " pp.")
     ebpb = summ[(summ["scoring"] == "bpb") & (summ["comparator"] == "every L > 1") & (summ["arch"] == "deep")]
     if len(ebpb):
         x = ebpb.set_index("size").reindex(size_order(ebpb["size"].unique()))
-        bullets.append(f"- **English BPB** ({ENGLISH_BPB}, deep): L1 lower than the other L's in "
-                       f"{_ranges(x['win_share'])} of the comparisons per size, by "
-                       f"{', '.join(f'{s_} {fmt(v, 3)}' for s_, v in x['mean_gap'].items())} bits per byte "
-                       f"(L1 at {TARGET_SIZE}: {fmt(x.at[TARGET_SIZE, 'mean_l1'], 3)} against "
+        bullets.append(f"- **English BPB** ({ENGLISH_BPB}, deep): "
+                       + ("L1 is lower than every other L at every size"
+                          if (x["win_share"] == 1).all() else
+                          f"L1 is lower than the other L in {_ranges(x['win_share'])} of the comparisons per size")
+                       + f", by a mean of {', '.join(f'{s_} {fmt(v, 3)}' for s_, v in x['mean_gap'].items())} bits per "
+                       f"byte (at {TARGET_SIZE}, L1 {fmt(x.at[TARGET_SIZE, 'mean_l1'], 3)} against "
                        f"{fmt(x.at[TARGET_SIZE, 'mean_other'], 3)}).")
     bb = summ[(summ["scoring"] == "bbpb") & (summ["comparator"] == "every L > 1") & (summ["arch"] == "deep")]
     if len(bb):
         x = bb.set_index("size")
         x = x.loc[size_order(x.index)]
         xs = x[~x["thin"]]
-        line = (f"- **bBPB** (deep, lower is better, oriented): L1 ahead in {_ranges(xs['win_share'])} of the comparisons "
-                f"per size; mean gap {', '.join(f'{s_} {fmt(v, 3)}' for s_, v in xs['mean_gap'].items())} bits, median "
-                f"{', '.join(f'{s_} {fmt(v, 3)}' for s_, v in xs['median_gap'].items())} (positive = L1 better"
-                + (f"; {', '.join(x.index[x['thin']])} thin: {', '.join(str(int(v)) for v in x.loc[x['thin'], 'n_tasks'])} "
-                   f"tasks" if x["thin"].any() else "") + ").")
+        line = (f"- **bBPB** (deep, sign flipped so that positive = L1 better): L1 is ahead in {_ranges(xs['win_share'])} "
+                f"of the comparisons per size. Mean gap {', '.join(f'{s_} {fmt(v, 3)}' for s_, v in xs['mean_gap'].items())} "
+                f"bits, median {', '.join(f'{s_} {fmt(v, 3)}' for s_, v in xs['median_gap'].items())}"
+                + (f" ({', '.join(x.index[x['thin']])} is thin: "
+                   f"{', '.join(str(int(v)) for v in x.loc[x['thin'], 'n_tasks'])} tasks)" if x["thin"].any() else "")
+                + ".")
         sp = spikes(g, sizes)
         if sp:
             at, tasks, n_o, n_all = sp
@@ -1077,44 +1166,56 @@ def readme(pool: str, gate_pool: str, rel: str, r: dict) -> None:
             fam = b1[b1["task"].isin(tasks)].drop_duplicates("task")["benchmark"].value_counts()
             line += (f" At {at} the L1 deep value sits more than {JUMP:g} bits above both neighbouring sizes on "
                      f"{len(tasks)} of {b1['task'].nunique()} tasks (" + ", ".join(f"{k} {v}" for k, v in fam.items())
-                     + f"), against {n_o} of {n_all} (task, L) cells of the other L's deep cells; without those tasks "
+                     + f"), against {n_o} of {n_all} (task, L) cells for the other L's deep cells. Without those tasks "
                      f"the {at} mean gap is {fmt(b1.loc[~b1['task'].isin(tasks), 'gap'].mean(), 3)} instead of "
-                     f"{fmt(b1['gap'].mean(), 3)}: a spike of that one cell, not of English (the store holds finals "
-                     "only and no replicate seed, so it cannot be told from seed noise).")
+                     f"{fmt(b1['gap'].mean(), 3)}, so the spike belongs to that one cell, not to English.")
+            rep = spike_seeds(at, tasks)
+            others = rep.drop(GRID_SEED, errors="ignore")
+            line += (f" On those tasks the L1 deep {at} run of seed {GRID_SEED} averages {fmt(rep[GRID_SEED], 2)} bits, "
+                     f"against {', '.join(f'{fmt(v, 2)} for seed {k}' for k, v in others.items())} (the replicate "
+                     f"seeds). "
+                     + (f"It sits more than {JUMP:g} bits above every replicate, so the spike belongs to that run, not "
+                        f"to the size."
+                        if (rep[GRID_SEED] - others).min() > JUMP else
+                        "A replicate comes within the spike's margin, so the spike cannot be told from seed noise.")
+                     if GRID_SEED in rep and len(others) else
+                     f" No replicate seed of the L1 deep {at} cell is in the store, so the spike cannot be told from "
+                     f"seed noise.")
         bullets.append(line)
     per_l = summ[(summ["scoring"] == "acc") & (summ["arch"] == "deep") & (summ["size"] == TARGET_SIZE)
                  & (summ["comparator"] != "every L > 1")]
     if len(per_l):
         bullets.append(f"- **By L at {TARGET_SIZE}** (deep, mean gap / win share): "
-                       + "; ".join(f"{r_.comparator} {fmt(100 * r_.mean_gap, 1)} pp / {fmt(r_.win_share)}" for r_ in
+                       + ", ".join(f"{r_.comparator} {fmt(100 * r_.mean_gap, 1)} pp / {fmt(r_.win_share)}" for r_ in
                                    per_l.set_index("comparator").loc[group_order(per_l["comparator"])].reset_index()
                                    .itertuples()) + ".")
     replace_block(path, "english-scores", "\n".join([
         "![English scores](" + rel + "/english_only_scores.png)", "",
         "![English scores per benchmark](" + rel + "/english_only_scores_by_benchmark.png)", "",
-        "Key findings (accuracy-scored English tasks above chance at the size; the population moves with the size, the "
-        "counts are drawn on the pooled line and listed below):", "", *bullets, "",
+        "Key findings (on the accuracy-scored English tasks above chance at each size, so the population changes with the "
+        "size and the task counts are listed per size):", "", *bullets, "",
         links("english_only_scores.png", "english_only_scores.csv", "english_only_scores_by_benchmark.png",
               "english_only_scores_by_benchmark.csv", "english_only_scores_per_task.csv",
               "english_only_scores_summary.csv")]), gen)
 
     # --- the gate
     n = share.groupby("size")["n_tasks"].first()
-    bullets = [f"- **Population**: the English tasks with a chance level every drawn cell scores, "
-               + ", ".join(f"{c} {int(n[c])}" for c in size_order(n.index)) + "; a size below half the largest population is "
-               "left out of the lines and of the shares below (" + (", ".join(sorted(set(share.loc[share["thin"], "size"])))
-                                                                    or "none") + ")."]
+    bullets = [f"- **Population**: the English tasks with a chance level that every drawn cell scores, "
+               + ", ".join(f"{c} {int(n[c])}" for c in size_order(n.index)) + ". A size with fewer than half the largest "
+               "population is left out of the lines and of the shares below ("
+               + (", ".join(sorted(set(share.loc[share["thin"], "size"]))) or "none") + ")."]
     sh = share[(share["build"] == "") & ~share["thin"]]
     for arch in ARCHS:
         x = sh[sh["ladder"] == arch].pivot_table(index="L", columns="size", values="share")
         if 1 in x.index:
             x = x.reindex(columns=[c for c in size_order(x.columns)])
-            bullets.append(f"- **{arch}**: share of English tasks above chance, L1 "
-                           f"{', '.join(f'{c} {fmt(v)}' for c, v in x.loc[1].items())}; other L's median "
-                           f"{', '.join(f'{c} {fmt(v)}' for c, v in x.drop(1).median().items())}.")
+            bullets.append(f"- **{arch.capitalize()}**: share of English tasks above chance, L1 "
+                           f"{', '.join(f'{c} {fmt(v)}' for c, v in x.loc[1].items())}, against a median over the other "
+                           f"L of {', '.join(f'{c} {fmt(v)}' for c, v in x.drop(1).median().items())}.")
     for r_ in cross[cross["arch"] == "deep"].itertuples():
-        bullets.append(f"- **deep, L1 vs {r_.comparator}** ({r_.n_tasks} tasks either clears): L1 clears from a smaller size "
-                       f"on {fmt(r_.earlier)}, the same on {fmt(r_.same)}, a larger one on {fmt(r_.later)}.")
+        bullets.append(f"- **Deep, L1 vs {r_.comparator}** ({r_.n_tasks} tasks that either cell clears): L1 clears chance "
+                       f"at a smaller size on {fmt(r_.earlier)} of them, at the same size on {fmt(r_.same)} and at a "
+                       f"larger size on {fmt(r_.later)}.")
     replace_block(path, "english-gate", "\n".join([
         "![Above random](" + rel + "/english_only_above_random.png)", "", "Key findings:", "", *bullets, "",
         links("english_only_above_random.png", "english_only_above_random.csv", "english_only_above_random_per_task.csv")]), gen)
@@ -1124,14 +1225,14 @@ def readme(pool: str, gate_pool: str, rel: str, r: dict) -> None:
     if len(sle):
         top = sle[sle["ladder_top"] == SMALL_SIZES[-1]]
         bullets.append(f"- **English BPB, fit on {SMALL_SIZES[0]}–{SMALL_SIZES[-1]}** (a forecast from the proxies): "
-                       f"|error| of the {TARGET_SIZE} prediction "
-                       + "; ".join(f"{r_.chain} {fmt(100 * abs(r_.rel_error), 1)} %" for r_ in top.itertuples()) + ".")
+                       f"absolute error of the {TARGET_SIZE} prediction, "
+                       + ", ".join(f"{r_.chain} {fmt(100 * abs(r_.rel_error), 1)} %" for r_ in top.itertuples()) + ".")
     if len(fits):
         m = fits.groupby("L").agg(r2=("r2", "median"), n=("r2", "count"))
-        bullets.append(f"- **English accuracy tasks** (deep, median R² of the log-N fit over the rungs the L1 deep cell "
-                       f"has, {TARGET_SIZE} included — a reference-size quantity (rule 11) that describes the ladder, not a "
-                       f"forecast; fits in brackets): " + "; ".join(f"{label(L)} {fmt(r_.r2)} ({int(r_.n)})"
-                                                                     for L, r_ in m.iterrows()) + ".")
+        bullets.append(f"- **English accuracy tasks** (deep): median R² of the log-N fit, with the number of fits in "
+                       f"brackets, " + ", ".join(f"{label(L)} {fmt(r_.r2)} ({int(r_.n)})" for L, r_ in m.iterrows())
+                       + f". The fit uses the rungs the L1 deep cell has, {TARGET_SIZE} included, so it describes the "
+                       f"ladder and is not a forecast (rule 11).")
     replace_block(path, "english-scaling", "\n".join([
         "![Scaling](" + rel + "/english_only_scaling.png)", "", "Key findings:", "", *bullets, "",
         links("english_only_scaling.png", "english_only_scaling.csv")]), gen)
@@ -1148,14 +1249,14 @@ def readme(pool: str, gate_pool: str, rel: str, r: dict) -> None:
             piv = d.pivot_table(index="group", columns="size", values="reliability")
             piv = piv.reindex(index=group_order(piv.index), columns=[c for c in SMALL_SIZES if c in piv.columns])
             half = ((d["hi"] - d["lo"]) / 2).groupby([d["group"], d["size"]]).first()
-            bullets.append(f"- **{axes}**: " + "; ".join(
+            bullets.append(f"- **{axes[0].upper() + axes[1:]}**: " + "; ".join(
                 f"{g_} " + ", ".join(fmt(v) + (f" ±{fmt(half[(g_, c)])}" if half.get((g_, c), np.nan) == half.get((g_, c), np.nan)
                                               else "") for c, v in r_.items() if v == v)
                 for g_, r_ in piv.iterrows()) + f" ({', '.join(piv.columns)}).")
         mx = mix[(mix["axes"] == "multi-axis") & (mix["population"] == "all benchmarks")]
         if len(mx):
-            bullets.append("- **By the axis a pair moves** (multi-axis, pooled over the proxies drawn; decisions in "
-                           "brackets): " + "; ".join(
+            bullets.append("- **By the axis a pair moves** (multi-axis, pooled over the drawn proxies, number of decisions "
+                           "in brackets): " + "; ".join(
                                f"{g_} " + ", ".join(f"{EO_AXIS_LABEL.get(r_.axis, 'two axes at once')} {fmt(r_.da)} "
                                                     f"({int(r_.n_decisions)})" for r_ in x.sort_values("axis").itertuples())
                                for g_, x in ((k_, mx[mx["group"] == k_]) for k_ in group_order(mx["group"].unique())))
@@ -1165,8 +1266,8 @@ def readme(pool: str, gate_pool: str, rel: str, r: dict) -> None:
         if len(bb):
             t = bb.groupby("group").agg(m=("n_matching", "sum"), n=("n_pairs", "sum"), p=("n_pairs", "median"))
             t = t.reindex(group_order(t.index))
-            bullets.append("- **bBPB twins** (not in the lines: some family of a group has none; multi-axis, every cell "
-                           "with ≥ 3 pairs, pooled over the proxies, NOT one population): " + "; ".join(
+            bullets.append(f"- **bBPB twins alone** (multi-axis, every cell with ≥ {MIN_PAIRS} pairs at every proxy, "
+                           "including thin sizes and cells that miss a family, so not one population): " + "; ".join(
                                f"{k_} {fmt(v.m / v.n)} ({int(v.p)} pairs per task)" for k_, v in t.iterrows()) + ".")
         bp = da[(da["axes"] == "multi-axis") & (da["population"] == "bpb") & da["size"].isin(SMALL_SIZES) & ~da["thin"]]
         if len(bp):
@@ -1176,9 +1277,10 @@ def readme(pool: str, gate_pool: str, rel: str, r: dict) -> None:
         replace_block(path, "english-da", "\n".join([
             "![DA-size, multi-axis](" + rel + "/english_only_da_size_by_L_multi_axes.png)", "",
             "![DA-size, mono-axis](" + rel + "/english_only_da_size_by_L_mono_axis.png)", "",
-            f"Key findings (DA-size against {TARGET_SIZE}, no reliability filter, pooled over the English benchmarks above "
-            f"chance at the proxy and the reference (gate `{gate_pool}`) that every family of every group has, ≥ "
-            f"{MIN_PAIRS} pairs per task, ± the 90 % leave-one-family-out half-width; the decisions differ by L):", "",
+            f"Key findings (DA-size against {TARGET_SIZE}, no reliability filter, ≥ {MIN_PAIRS} pairs per task, ± the "
+            f"half-width of the 90 % leave-one-family-out band). The lines pool the English benchmarks above chance at "
+            f"the proxy and the reference (gate `{gate_pool}`) that every family of every group has. The decisions "
+            f"differ by L.", "",
             *bullets, "",
             links("english_only_da_size_by_L_multi_axes.png", "english_only_da_size_by_L_multi_axes.csv",
                   "english_only_da_size_by_L_mono_axis.png", "english_only_da_size_by_L_mono_axis.csv",
@@ -1197,9 +1299,9 @@ def readme(pool: str, gate_pool: str, rel: str, r: dict) -> None:
         piv = piv.reindex(index=group_order(piv.index), columns=[c for c in size_order(piv.columns)])
         n = p.groupby("size")["n_tasks"].max()
         th = sorted(set(p.loc[p["thin"], "size"]), key=sizes.index)
-        bullets.append(f"- **{FAMILIES[fam][0].upper() + FAMILIES[fam][1:]}**, median log10 SNR over the paired tasks ("
+        bullets.append(f"- **{FAMILIES[fam][0].upper() + FAMILIES[fam][1:]}**: median log10 SNR over the paired tasks ("
                        + ", ".join(f"{c}: {int(n[c])}" for c in size_order(n.index)) + " tasks"
-                       + (f"; thin: {', '.join(th)}" if th else "") + "): "
+                       + (f", {', '.join(th)} thin" if th else "") + "): "
                        + "; ".join(f"{g_} " + ", ".join(fmt(v) for v in r_) for g_, r_ in piv.iterrows())
                        + f" ({', '.join(piv.columns)}).")
     s = sur[(sur["axes"] == "multi-axis") & ~sur["thin"]] if len(sur) else sur
@@ -1241,23 +1343,24 @@ def readme(pool: str, gate_pool: str, rel: str, r: dict) -> None:
         none = al[al["l1"].isna()]
         why = ", ".join(f"`{t}` {', '.join(sorted(set(v['size']), key=sizes.index))}"
                         for t, v in none[none["quantity"] == "da_size"].groupby("task", sort=False))
-        bullets = [f"- **{q.replace('_', '-')}**: L1 / DataDecide on the same task, median {fmt(g_['l1_over_allenai'].median())} "
-                   f"(range {_ranges(g_['l1_over_allenai'])}); the other L groups' median over DataDecide "
-                   f"{fmt((g_['other_l_median'] / g_['allenai']).median())}." for q, g_ in x.groupby("quantity")]
+        bullets = [f"- **{ {'da_size': 'DA-size', 'snr': 'SNR'}.get(q, q)}**: the ratio L1 / DataDecide on the same task has "
+                   f"a median of {fmt(g_['l1_over_allenai'].median())} (range {_ranges(g_['l1_over_allenai'])}). The same "
+                   f"ratio for the other L groups has a median of {fmt((g_['other_l_median'] / g_['allenai']).median())}."
+                   for q, g_ in x.groupby("quantity")]
         if why:
             bullets.append(f"- **No L1 DA-size** (at chance on our side, rule 1, or a family missing): {why}. DataDecide is "
                            "not gated, so its range is taken only over the tasks where L1 has a value at that size.")
         reading = [
             "Reading the two sides:", "",
-            f"- **DA-size shares the kernel, not the decisions.** Both sides count agreeing pairs; ours is conditional on "
-            f"the task passing the gate at the proxy and the reference, theirs is not, and ours ranks {n1} families that "
+            f"- **DA-size shares the kernel, not the decisions.** Both sides count agreeing pairs. Ours counts only tasks "
+            f"that pass the gate at the proxy and the reference, and theirs is not gated. Ours ranks {n1} families that "
             f"differ in depth and English corpus, theirs 25 recipes. A cell above DataDecide's range is a "
-            f"{n_pairs}-of-{n_pairs} (DA moves in steps of 1/{n_pairs} against 1/300).",
-            "- **The SNRs are not comparable** and are not graded: DataDecide's signal is the spread of 25 recipes over very "
-            "different corpora, ours the spread of families of which two differ in depth only or in one filter, and the "
-            "noise uses different checkpoint windows. The like-for-like SNR reading is deep against shallow at every L "
-            "([Noise and SNR](#noise-and-snr)); the four-family direction against the other L groups is a within-ladder "
-            "reading over different decisions per L (Setup)."]
+            f"{n_pairs}-of-{n_pairs} (our DA moves in steps of 1/{n_pairs}, theirs in steps of 1/300).",
+            "- **The SNRs are not comparable**, so they are not graded. DataDecide's signal is the spread of 25 recipes "
+            "over very different corpora. Ours is the spread of families of which two differ only in depth or in one "
+            "filter, and the two noises use different checkpoint windows. The like-for-like SNR reading is deep against "
+            "shallow at every L ([Noise and SNR](#noise-and-snr)). The four-family comparison with the other L groups "
+            "stays within the ladder and covers different decisions per L (Setup)."]
         replace_block(path, "english-allenai", "\n".join([
             defs, "", "![AllenAI](" + rel + "/english_only_allenai.png)", "", "Key findings:", "", *bullets, "",
             md_table(["ours", "DataDecide", "quantity", "sizes (ours / theirs)", "L1", "L1 pairs / runs", "other L median",
@@ -1276,7 +1379,7 @@ def readme(pool: str, gate_pool: str, rel: str, r: dict) -> None:
 # --- driver ------------------------------------------------------------------------
 
 def main(pool: str, seeds_pool: str, write_readme: bool) -> None:
-    gate_pool = pool if load_mask(pool) is not None else CANONICAL_POOL
+    gate_pool = mask_pool(pool)
     mask = load_mask(gate_pool)
     if mask is None:
         print(f"no above-random mask for `{pool}` or `{CANONICAL_POOL}` (above_random.py): nothing written")
@@ -1320,6 +1423,7 @@ def main(pool: str, seeds_pool: str, write_readme: bool) -> None:
     where = f"pool `{pool}`, gate `{gate_pool}`"
     fig_scores(summ, out_dir, sizes, where)
     fig_scores(summ, out_dir, sizes, where, paper=True)
+    fig_scores_fixed(g, out_dir)
     summ.to_csv(out_dir / "english_only_scores_summary.csv", index=False)
     fig_scores_by_benchmark(g, out_dir, sizes, where)
 
@@ -1388,11 +1492,12 @@ if __name__ == "__main__":
                    help=f"write the README blocks from this pool (by default only `{CANONICAL_POOL}` writes them, and "
                         "only when L1 has three families there)")
     p.add_argument("--paper", action="store_true",
-                   help="only english_only_scores_paper, the paper's bare figure, from english_only_scores_summary.csv on disk")
+                   help="only the paper's bare figures (english_only_scores_paper and its fixed-tasks twin), from the tables on disk")
     a = p.parse_args()
     if a.paper:
         d = ENGLISH_ONLY / load_pools()[a.pool].get("stage", "pretraining") / a.pool
         summ = pd.read_csv(d / "english_only_scores_summary.csv")
         fig_scores(summ, d, size_order(summ["size"].unique()), "", paper=True)
+        fig_scores_fixed(pd.read_csv(d / "english_only_scores_per_task.csv"), d)
     else:
         main(a.pool, a.seeds_pool, a.readme)

@@ -1,0 +1,21 @@
+task: rf_mmmlu_bn_bd
+dataset_path: openai/MMMLU
+dataset_name: BN_BD
+test_split: test
+output_type: multiple_choice
+num_fewshot: 0
+doc_to_text: '{{Question.strip()}}
+
+  Answer:'
+doc_to_choice: '{{[A, B, C, D]}}'
+doc_to_target: '{{[''A'', ''B'', ''C'', ''D''].index(Answer)}}'
+metric_list:
+- metric: acc
+  aggregation: mean
+  higher_is_better: true
+- metric: acc_norm
+  aggregation: mean
+  higher_is_better: true
+metadata:
+  version: 0.0
+process_docs: !function utils.process_docs

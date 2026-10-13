@@ -1,50 +1,167 @@
 \clearpage
-\section{Above chance threshold}
+\section{Measurability Analyses}
+\label{app:rq1_measurability}
+\label{app:rq00_chance_threshold}
 \label{app:chance-threshold}
 
+\subsection{Threshold definition}
+\label{app:chance-threshold-definition}
 
-For each language task $b_\ell$ and model size $N$, we test whether the observed accuracy is distinguishable from random guessing.
-For a task with $m_b$ answer options, chance accuracy is $1/m_b$. We read the option count from the evaluated samples where available, and from the benchmark's specification otherwise. Where the option count varies across items, chance is the mean of $1/m$ over the items (TruthfulQA mc1, 0.2253). TruthfulQA mc2 scores probability mass instead of a single pick, so its chance level is the mean share of true options (0.449).
-For every model of size $N$, we take its final-checkpoint accuracy $\hat{p}$ over the $n$ scored items of the task. We recover the count of correct answers as $\operatorname{round}(\hat{p}\,n)$ and compute the one-sided 95\% Wilson lower confidence bound on the proportion.
-The model is above chance when
+\textbf{Chance level.} For a task with $m_b$ answer options, chance accuracy is $1/m_b$. We read the option count from the evaluated samples where available, and from the benchmark's specification otherwise. When the option count varies across items, chance is the mean of $1/m$ over the items (0.2253 for TruthfulQA mc1). TruthfulQA mc2 scores probability mass instead of a single pick, so its chance level is the mean share of true options (0.449).
 
+\textbf{Test per model.} For every model of size $N$, we take its final-checkpoint accuracy $\hat{p}$ over the $n$ scored items of the task. We recover the number of correct answers as $\operatorname{round}(\hat{p}\,n)$ and compute the one-sided 95\% Wilson lower confidence bound on the proportion. The model is above chance when
 \[
 \operatorname{LCB}_{95}(\hat{p}) > \frac{1}{m_b}.
 \]
 
 We then aggregate these decisions over the models of the same size, that is, every ladder and every data build at seed 1904.
-A $(b_\ell, N)$ cell is retained if at least 50\% of these models are above chance.
+A $(b_\ell, N)$ pair is retained if at least 50\% of these models are above chance.
 When models trained on the benchmark language are available, only those models enter the decision. Otherwise, all evaluated models of that size enter it.
-The resulting mask is the gate that every analysis reads. A gated cell keeps its place in every grid and table but carries no value. A scaling fit uses only the sizes where the task passes. A ranking against the reference also requires the task to pass at the reference size.
-Measurements without a meaningful chance baseline, such as bits per byte and training loss, are not filtered by this procedure.
-This filtering step only decides whether a benchmark gives measurable signal at a given scale. It does not assess whether the benchmark can reliably rank model variants.
+The resulting mask is the gate that every analysis reads. A gated pair keeps its place in every grid and table but carries no value. A scaling fit uses only the sizes where the task passes. A ranking against the reference also requires the task to pass at the reference size.
+Measurements without a meaningful chance baseline, such as BPB and bBPB, are not filtered by this procedure.
 
 \textbf{Per-benchmark threshold.} The Wilson bound accounts for the number of evaluation examples, so the amount by which accuracy must exceed chance varies across tasks.
 Smaller evaluation sets require a larger margin above chance, while larger sets can support smaller but more reliable departures from chance.
 For example, the median required margins are 9.00 percentage points for nonparallel Global PIQA (100 items per language), 2.44 for Belebele (900), 0.74 for HellaSwag (about 9,000), and 0.60 for Global-MMLU (about 14,000).
 
-\textbf{The formulation effect.}
-The corresponding fractions of benchmark-language-size cells that pass the filter over the six sizes from 90M to 1.7B are 25.0\%, 1.1\%, 79.0\% and 4.1\%, respectively. The reformulated variants of Belebele and Global-MMLU pass in 75.4\% and 73.4\% of their cells.
-
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\linewidth]{figures/app_chance_share.png}
-\caption{Share of language tasks that pass the chance threshold per benchmark. The number in parentheses is the total number of language tasks available per benchmark.}
-    \label{fig:app_chance_share}
-\end{figure}
-
+%\begin{figure}[t]
+%    \centering \includegraphics[width=\linewidth]{figures/app_rq00_chance_share.png}
+%\caption{Share of language tasks that pass the chance threshold per benchmark. The number in parentheses is the total number of language tasks available per benchmark. Figure \ref{fig:app_chance_full} provides this information by language.}
+%    \label{fig:app_chance_share}
+%\end{figure}
 
 \begin{figure}[t]
-    \centering
-    \includegraphics[width=\linewidth]{figures/app_chance_reformulation.png}
-\caption{Share of language tasks that pass the chance threshold per benchmark, depending on the evaluation format.}
-    \label{fig:app_chance_reformulation}
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq00_chance_share_considered_counts_3b.png}
+% source: documents/paper/figures/make_considered_figures.py (not in make_rq_appendix.py's FIGURES: add it there before regenerating this page)
+\caption{\textbf{Most popular letter-format benchmarks pass the above-chance threshold only at 3B, while cloze benchmarks pass from 90M.} For every benchmark we considered, the number of trained languages in which it is above chance, coloured by the smallest model size from which it passes the threshold. Benchmarks in bold are scored in cloze format. A * marks a benchmark that we screened but did not include in the analyses.
+}
+\label{fig:app_rq00_chance_shared}
 \end{figure}
+
+\clearpage
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=\linewidth]{figures/app_chance_full.png}
+    \includegraphics[width=\linewidth]{figures/app_rq00_chance_full.png}
 \caption{Language tasks that pass the chance threshold per benchmark.}
-    \label{fig:app_chance_full}
+    \label{fig:app_rq00_chance_full}
+\end{figure*}
+
+\clearpage
+\twocolumn[{%
+\rqparent
+
+\noindent\begin{minipage}[t]{0.485\textwidth}
+\vspace{0pt}
+\textbf{Majority-class chance level.}
+\label{app:rq00_majority_chance}
+The above-chance filter compares every run with uniform guessing. When the gold answers of a task are unbalanced, a model that always picks the most frequent gold option scores that option's share of the items, which can exceed $1/m_b$. We test how much the filter depends on this choice. For every accuracy task, we read the gold option position of each evaluated item and compute the majority baseline, the accuracy of always choosing the most frequent position. We then rerun the filter on the same runs and with the same Wilson rule, taking as chance level the larger of the uniform level and the majority baseline. 
+% The majority baseline is attainable only where a position means the same answer on every item, as with lettered options or a fixed set of labels such as yes and no. On cloze tasks whose answers change from item to item, the model scores each answer by its log-likelihood and never sees its position. On these tasks, the majority baseline reflects how the dataset orders its answers. MultiBLiMP always lists the grammatical sentence first and TruthfulQA its true answers first, so their majority baseline is 1.0. We therefore also report the filter with the majority level applied to the labelled tasks only.
+%Figure~\ref{fig:app_rq00_majority_chance} shows the result. Applied to every task, the majority level removes 45\% of the passing (task, size) cells of the trained tasks. Almost all of the removed cells belong to cloze tasks with item-specific answers, whose position skew no log-likelihood model can use. 
+Applied to the labelled tasks only, it lowers the share of trained tasks above chance by 1.5 to 2.8 percentage points, depending on the size. It removes few tasks: the Belebele, Global-MMLU and INCLUDE tasks that barely pass the uniform threshold, the NoReC sentiment tasks, CulturalBench-easy (whose small answer keys are unbalanced), PAWS-X, BBH (MCQ), and BLEnD. Under either majority filter, the decision accuracy of a proxy against the 1.7B reference on accuracy moves by at most 0.006. When only the labelled tasks change, the share of tasks with predictable scaling along both model size and training is 76\%, against 74\% under the uniform filter.
+
+
+\end{minipage}\hfill
+\begin{minipage}[t]{0.485\textwidth}
+\vspace{0pt}
+
+\subsection{Task reformulation}
+\label{app:rq00_task_reformulation}
+
+\textit{Do letter-format multiple-choice benchmarks leave chance at 90M--1.7B once the letters are dropped (\texttt{RF}) or the items are rewritten as cloze statements (\texttt{LLM-RF})?}
+
+We measure whether the letter-format benchmarks pass the above-chance gate as published and after two reformulations of the same items. We call a reformulated task the twin of its original. RF drops the answer letters and scores each option as a continuation. LLM-RF has an LLM rewrite every item into a cloze statement with the options as its continuations (Belebele and INCLUDE only). We use the runs of the gate: seed 1904, every language setting, ladder and data build, 90M--1.7B, each task read on the runs that train its language. Each twin goes through the same gate as its original. A McNemar test on the paired verdicts of the original and its twin (one pair per task) tests the difference at every size.
+
+
+We find that dropping the letters helps whole benchmark families above chance, with margins scaling with size. Moreover, the Gemini rewrite gains more than programmatically dropping the letters.
+
+\end{minipage}
+
+\vspace{\baselineskip}
+\noindent\begin{minipage}{\textwidth}
+\centering
+\includegraphics[width=\textwidth,height=0.36\textheight,keepaspectratio]{figures/app_rq00_chance_reformulation.png}
+% source: src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate_paper.png
+\captionof{figure}{\textbf{Dropping the letters moves whole families across the gate.} For each letter-format benchmark (its number of tasks in parentheses), the share of tasks above the chance threshold for the original items (grey bars), for the RF version at each model size (blue bars, a darker blue is a larger size) and for the LLM-RF version (orange diamonds). A star marks a size at which the McNemar test between the original and its twin gives p $<$ 0.05.}
+\label{fig:app_rq00_task_reformulation}
+\end{minipage}
+}]
+
+
+
+\clearpage
+
+\subsection{Above chance against the training tokens of the language}
+\label{app:rq00_chance_vs_train_tokens}
+
+\paragraph{Research Question.} \emph{Does a benchmark task clear chance once the model has seen enough tokens of the task's language, and is it the exposure or the model size that decides?}
+
+We measure the share of cells above chance. A cell is one (task, size, language setting K), read at one of the ten evaluated tenths of the run. We use the seed-1904 runs of every data build and ladder, 90M--1.7B, at K $\in$ \{1, 2, 8, 15, 30, 50\}. The tasks are the benchmark tasks with a chance level in trained languages. BPB and the bBPB twins have no chance level and are left out. A cell is above chance when it passes the gate (the per-run Wilson test and the half-of-the-runs rule), applied at that tenth. A cell sits at the number of tokens of the task's language that the checkpoint had seen: the language's share of the build's mixture $\times$ the size's token budget $\times$ the tenth. Per benchmark, answer format and model size, we fit a logistic curve of the cells' above-chance verdict on the log of the language's tokens, on the non-English cells, and read the token count at which it reaches 50 \% and 90 \% of the cells (Table~\ref{tab:app_rq0_thresholds}). 
+
+\textbf{Outside English, the share of cells above chance rises with every decade of the language's tokens from $10^{7}$ on.} But at matched tokens the larger model still clears chance more often. The share goes from 42 \% at $10^{7}$--$10^{8}$ tokens to 64 \% at $10^{10}$--$10^{11}$. At $10^{8}$--$10^{9}$ tokens it is 43 \% at 90M against 62 \% at 1.7B, so exposure is necessary but not sufficient. (Figure~\ref{fig:app_rq00_chance_vs_train_tokens}.)
+
+\textbf{Pooled over every language, the curve peaks at $10^{8}$--$10^{9}$ tokens and falls after, because the top bins are mostly English.} It reads 52 \% at $10^{8}$--$10^{9}$, dips to 51 \% at $10^{9}$--$10^{10}$ and drops to 41 \% at $10^{10}$--$10^{11}$ (25,217 cells, 80 \% of them English).
+
+\textbf{Without English, the share stays near 40 \% up to $10^{8}$ tokens and rises with every decade after.} Per decade: 43 \% ($10^{5}$, 82 cells), 42 \% ($10^{6}$), 42 \% ($10^{7}$), 52 \% ($10^{8}$), 62 \% ($10^{9}$), 64 \% ($10^{10}$, 4,945 cells).
+
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.9\textheight,keepaspectratio]{figures/app_rq00_chance_vs_train_tokens.png}
+% source: src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_seeds/pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_paper.png
+\caption{\textbf{Outside English, the share of cells above chance rises with every decade of the language's tokens from $10^{7}$ on.} One panel per benchmark (its number of tasks in parentheses). Each point is the share of (language, K, checkpoint) cells above chance, binned by the training tokens of the task's language that the checkpoint had seen (log scale). There is one line per model size, a darker blue for a larger size.}
+\label{fig:app_rq00_chance_vs_train_tokens}
+\end{figure*}
+
+\begin{table*}[p]
+\centering
+\small
+\begin{adjustbox}{max width=\textwidth}
+\input{tables/app_rq00_thresholds}
+\end{adjustbox}
+% source: src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_seeds/pass_threshold_tokens_by_benchmark_1904_ckpts.tex
+\caption{\textbf{Training tokens of the language a model of each size needs before a benchmark is above chance.} For each non-English multilingual benchmark and answer format, the training tokens of the language at which 50\% / 90\% of its (language, $K$, checkpoint) cells are above chance. Lang. is the number of non-English trained languages, Margin the median accuracy above chance that a task needs for its Wilson bound to clear chance, and Items its median item count.}
+\label{tab:app_rq0_thresholds}
+\end{table*}
+
+
+
+\subsection{Scaling predictability}
+\label{app:rq01_scaling_predictability}
+
+\emph{Which benchmarks, and which per-language measurements, scale with model size in a way a log-linear fit captures, so that a small-model measurement has a trend to extrapolate from at all?}
+
+We measure how predictably a task's score changes with model size and along training: the R$^2$ and the Spearman $\rho$ of log-linear fits. We use the deep cells with the baseline data (scheme A, T = 1) at seed 1904, 90M--1.7B, at every language setting. The tasks are every benchmark task in a trained language, gated above chance per size, plus two measurements with no chance level that are never gated: the per-language bits per byte (BPB) and the bBPB twins (the bits per byte of each benchmark task's gold answer). The size fit regresses the final score of one series (a task at one language setting) on log model size, over the sizes where the task is above chance (at least three). The training fit regresses the score of one run on its log training tokens, over at least five checkpoints. A task's value is the median over its series, with at least two series per axis.
+
+\textbf{Accuracy scales log-linearly where it is above chance.} The 1417 gated (task, K) fits over 509 benchmark tasks have a median R$^2$ of 0.87 (IQR 0.76--0.94). (Figure~\ref{fig:rq1}.)
+
+\textbf{The gate decides which benchmarks have a scaling law at all.} Of 988 accuracy and BPB tasks, 429 are at chance wherever a fit was possible, and 16 of 54 families lose every task (Figures~\ref{fig:app_rq01_size_scaling} and~\ref{fig:app_rq01_training_scaling}), among them Belebele (0/59), INCLUDE (0/36) and Global-MMLU (0/29).
+
+\textbf{A letter-answer benchmark's bBPB scales far better once reformulated.} Over the eight letter-format families, the original's bBPB fits at median R$^2$ 0.53 and its \texttt{rf\_} twin's at 0.97 (530 fits each, 5--6 rungs).
+
+
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq00_benchmark_size_curves.png}
+% source: src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_size_curves_paper.png
+\caption{\textbf{The reformulated versions rise with model size while their letter-format originals stay at chance up to 1.7B.} For each benchmark family, we plot the final-checkpoint accuracy of every design against non-embedding parameters. This accuracy is the mean over the tasks in the languages the design trains on. There is one line per (number of languages, ladder, data build, seed), over 90M--1.7B. Colour gives the number of trained languages, line width the ladder and line style the data build. The dotted red line is chance. The curves are not gated.}
+\label{fig:app_rq01_size_scaling}
+\end{figure*}
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq00_benchmark_curves.png}
+% source: src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_curves_paper.png
+\caption{\textbf{Along training, the letter-format originals stay at chance for the whole run while their reformulated twins increase consistently.} For each benchmark family, we plot the accuracy of every run at the ten evaluated tenths of the run. This accuracy is the mean over the tasks in the languages the run trains on. Training progress is given in Chinchilla multiples of the run's token budget. The figure covers every seed and data build, 90M--1.7B. Colour gives the model size, line width the ladder and line style the data build. The dotted red line is chance. The curves are not gated.}
+\label{fig:app_rq01_training_scaling}
+\end{figure*}
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=0.8\textwidth,height=0.8\textheight,keepaspectratio]{figures/app_rq13_english_scaling_regimes_l1_accuracy_tagged.png}
+% source: src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_scaling_regimes_l1_accuracy_tagged_paper.png
+\caption{\textbf{The commonly used English benchmarks are the ones that scale predictably.} ARC-Challenge, ARC-Easy, HellaSwag, LAMBADA, OpenBookQA, Belebele RF, CommonsenseQA RF, Global-MMLU RF, MMLU RF, XNLI, XStoryCloze and XWinograd are predictable across both size and training in all three corpora. Belebele, CommonsenseQA, Global-MMLU, MMLU and TruthfulQA (mc2) never pass the above-chance filter in their original format, and Global PIQA is the one above chance that does not scale. A name takes the colour of its regime (blue predictable across both, green during training only, slate across size only, brown weak in both, black declines with size). The 74 English accuracy tasks that the above chance threshold removes have no point drawn.}
+\label{fig:app_rq01_english_scaling}
 \end{figure*}

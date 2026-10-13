@@ -52,7 +52,7 @@ from launch_trainings import (  # noqa: E402
 from ladder_report import EVAL_LOGS  # noqa: E402
 from pretrain_progress import TRAIN_LOGS  # noqa: E402
 from auto_evals_cscs import (  # noqa: E402
-    ALL_LANGUAGES_RUNS, EVAL_JOB_LOGS, auto_benchmarks, eval_languages)
+    EVAL_JOB_LOGS, all_languages_run, auto_benchmarks, eval_languages)
 sys.path.insert(0, str(SCRIPT_DIR.parent))
 from evals.scripts.eval_timing import SIZE_RE, task_names  # noqa: E402
 from evals.scripts.utils.configs import tasks_for_benchmarks  # noqa: E402
@@ -189,10 +189,11 @@ def main() -> None:
 
     def auto_tasks(cell: str) -> set[str]:
         # The languages the watcher evaluates this cell in: its trained ones,
-        # or every language for ALL_LANGUAGES_RUNS, whose extra tasks are
-        # deliberate work, not work outside the auto list.
+        # or every language for an all_languages_run cell, whose extra tasks
+        # are deliberate work, not work outside the auto list.
         g = grid[cell]
-        key = (g["L"], g["scheme"], (g["scheme"], g["ladder"], g["seed"]) == ALL_LANGUAGES_RUNS)
+        key = (g["L"], g["scheme"],
+               all_languages_run(g["scheme"], g["ladder"], g["seed"], g["L"]))
         if key not in auto_cache:
             auto_cache[key] = set(tasks_for_benchmarks(benchmarks, eval_languages(*key)))
         return auto_cache[key]

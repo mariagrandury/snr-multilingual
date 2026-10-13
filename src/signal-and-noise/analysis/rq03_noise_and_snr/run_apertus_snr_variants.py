@@ -12,9 +12,17 @@ them) and each aggregator returns (signal, noise, snr), stored as
            (`data_scores`); `rel_std` divides by the cross-run std of the
            finals (`data_noise`, CLAUDE.md bug #4), the others by their own
            dispersion
-  noise    the mean over runs of the checkpoint-to-checkpoint std inside the
-           noise window (`step_noise`), relative to the window mean
-           (`data_scores_last_n`)
+  noise    the mean over runs of the checkpoint noise inside the noise window
+           (`step_noise`), relative to the window mean (`data_scores_last_n`).
+           The checkpoint noise is `utils.checkpoint_noise`: the residual SD
+           around a line through the window (rule 4), so the rise the WSD
+           decay still makes is not counted as noise. The raw SD (ddof 0,
+           the definition until 2026-10-08) is kept beside it, labelled:
+           `ckpt_noise_detrended_<bucket>` and `ckpt_noise_raw_<bucket>` are
+           the mean over runs of the two absolute SDs, and since every
+           variant's noise is that mean over a denominator that does not read
+           it, a variant's raw-noise SNR is
+           `snr_<V>_<bucket> * ckpt_noise_detrended / ckpt_noise_raw`.
 
 The noise window is analysis/RULES.md rule 4: `utils.noise_checkpoints`, the
 k/20 points in the last NOISE_WINDOW (20 %) of each run, 80 / 85 / 90 / 95 / 100 %,
@@ -74,7 +82,7 @@ from evals.scripts.utils.configs import (  # noqa: E402
     size_bucket,
 )
 from analysis.utils import (one_axes,  # noqa: E402
-    NOISE_WINDOW, _is_parent_task, ladder_frame, lower_is_better,
+    NOISE_DETREND, NOISE_WINDOW, _is_parent_task, checkpoint_noise, ladder_frame, lower_is_better,
     noise_checkpoints, pool_models,
 )
 from analysis.autodoc import CANONICAL_POOL  # noqa: E402
@@ -93,7 +101,7 @@ DISCREPANCY_UNIT_INTERVAL = {"discrepancy", "star_discrepancy", "star_discrepanc
 # --- per-model arrays for snr_variants --------------------------------------
 
 
-def per_model_inputs(df, task, size):
+def per_model_inputs(df, task, size, detrend=NOISE_DETREND):
     """Build the four per-model arrays expected by snr_variants aggregators.
 
     ``size`` is a *bucket* label and rows are selected on the ``bucket``
@@ -105,15 +113,18 @@ def per_model_inputs(df, task, size):
     The noise window is the one of RULES.md rule 4, `utils.noise_checkpoints`:
     the k/20 points in the last NOISE_WINDOW (20 %) of the run, 80 / 85 / 90 / 95 /
     100 %, the same rows for BPB and benchmarks.
-      step_noise         = per-model std (ddof 0) over the window checkpoints
+      step_noise         = per-model checkpoint noise over the window
+                           (`utils.checkpoint_noise`: the residual SD around a
+                           line, n - 2 dof, by default; the std, ddof 0, with
+                           `detrend=False`)
       data_scores        = per-model final-checkpoint score
       data_noise         = cross-model std of `data_scores`, broadcast as
                            a constant array of the same length (bug #4)
       data_scores_last_n = per-model mean over the window checkpoints
 
-    Models with fewer than 2 window checkpoints are dropped (they can't
-    contribute step_noise — e.g. a single-revision external model). We
-    require ≥ 2 surviving models overall.
+    Models with fewer window checkpoints than the noise needs (3 detrended,
+    2 raw) are dropped (they can't contribute step_noise — e.g. a
+    single-revision external model). We require ≥ 2 surviving models overall.
     """
     sub = df[(df["bucket"] == size) & (df["task"] == task)]
     if sub.empty:
@@ -121,15 +132,25 @@ def per_model_inputs(df, task, size):
     if "frac" not in sub:
         sub = sub.assign(frac=sub["step"] / sub.groupby("model")["step"].transform("max"))
     sub = sub.sort_values("step")
-    window = noise_checkpoints(sub).groupby("model")["primary_score"].apply(np.asarray)
-    window = window[window.map(len) >= 2]
-    if len(window) < 2:
+    window = {m: g for m, g in noise_checkpoints(sub).groupby("model")}
+    noise = pd.Series({m: checkpoint_noise(g["frac"], g["primary_score"], detrend) for m, g in window.items()}, dtype=float)
+    noise = noise.dropna()
+    if len(noise) < 2:
         return None
-    step_noise = np.array([np.std(a) for a in window])
-    data_scores = sub.groupby("model")["primary_score"].last().loc[window.index].to_numpy(dtype=float)
-    data_scores_last_n = np.array([a.mean() for a in window])
+    step_noise = noise.to_numpy()
+    data_scores = sub.groupby("model")["primary_score"].last().loc[noise.index].to_numpy(dtype=float)
+    data_scores_last_n = np.array([window[m]["primary_score"].mean() for m in noise.index])
     data_noise = np.full_like(data_scores, np.std(data_scores))
     return step_noise, data_scores, data_noise, data_scores_last_n
+
+
+def ckpt_noise_columns(df, task, size, inputs, gated=False) -> dict:
+    """`ckpt_noise_detrended_<size>` (what every variant reads, from `inputs`,
+    the default `per_model_inputs`) and `ckpt_noise_raw_<size>` (the labelled
+    alternative): the mean over runs of the absolute checkpoint noise."""
+    raw = per_model_inputs(df, task, size, detrend=False)
+    return {f"ckpt_noise_detrended_{size}": np.nan if gated or inputs is None else float(np.mean(inputs[0])),
+            f"ckpt_noise_raw_{size}": np.nan if gated or raw is None else float(np.mean(raw[0]))}
 
 
 def variant_signal_noise_snr(inputs, agg_func):
@@ -244,7 +265,8 @@ def run(pool: str, out_dir: Path):
     print(f"  Buckets: {pool_buckets}")
     print(f"  Pool models per bucket: {pool_n_models}")
     print(f"  Noise window: the k/20 points in the last {NOISE_WINDOW:.0%} of each run (rule 4), "
-          f"every kind of measurement; {sorted(DISCREPANCY_UNIT_INTERVAL)} are NaN on BPB, the bBPB twins and the loss")
+          f"every kind of measurement; noise = {'residual SD around a line (raw SD kept as ckpt_noise_raw_*)' if NOISE_DETREND else 'raw SD'}; "
+          f"{sorted(DISCREPANCY_UNIT_INTERVAL)} are NaN on BPB, the bBPB twins and the loss")
 
     write_variants_definitions(out_dir)
 
@@ -270,6 +292,8 @@ def run(pool: str, out_dir: Path):
                 row[f"signal_{key}_{b}"] = sig
                 row[f"noise_{key}_{b}"] = noi
                 row[f"snr_{key}_{b}"] = snr
+        for b in pool_buckets:
+            row |= ckpt_noise_columns(dft, task, b, size_inputs[b], gated=(task, b) in at_chance)
         rows.append(row)
 
     snr_df = pd.DataFrame(rows).set_index("task").sort_index()
@@ -309,7 +333,7 @@ def run(pool: str, out_dir: Path):
     print(
         f"  {len(combined)} tasks × {len(combined.columns)} columns "
         f"({len(AGGREGATION_FUNCTIONS)} variants × {len(pool_buckets)} buckets × 3 stats "
-        f"+ {len(da_df.columns)} DA cols from rq02)"
+        f"+ 2 ckpt-noise cols per bucket + {len(da_df.columns)} DA cols from rq02)"
     )
 
 

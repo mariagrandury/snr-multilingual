@@ -71,6 +71,33 @@ class SNR(unittest.TestCase):
         self.assertAlmostEqual(snr, (2 / 2) / (1 / 2))
 
 
+class CheckpointNoise(unittest.TestCase):
+    """`utils.checkpoint_noise` (rule 4): the residual SD around a line through
+    the window, so a run still rising over the WSD decay is not noisy for it."""
+
+    def setUp(self):
+        sys.path.insert(0, str(_SND.parent))          # analysis imports `pretrain`
+        from analysis.utils import checkpoint_noise
+        self.noise = checkpoint_noise
+        self.x = np.array([.80, .85, .90, .95, 1.00])
+
+    def test_pure_trend_has_no_detrended_noise(self):
+        y = 0.40 + 0.3 * self.x                       # +6 points over the window, no noise
+        self.assertAlmostEqual(self.noise(self.x, y), 0.0, places=12)
+        self.assertGreater(self.noise(self.x, y, detrend=False), 0.02)   # the raw SD counts the rise
+
+    def test_white_noise_keeps_its_sd(self):
+        rng = np.random.default_rng(0)
+        sd = 0.01
+        draws = [self.noise(self.x, 0.5 + 0.2 * self.x + rng.normal(0, sd, 5)) ** 2 for _ in range(20000)]
+        self.assertAlmostEqual(np.sqrt(np.mean(draws)), sd, delta=0.02 * sd)   # n - 2 dof: unbiased variance
+
+    def test_too_few_points(self):
+        self.assertTrue(np.isnan(self.noise(self.x[:2], [0.1, 0.2])))
+        self.assertTrue(np.isnan(self.noise(self.x[:1], [0.1], detrend=False)))
+        self.assertAlmostEqual(self.noise(self.x[:2], [0.1, 0.2], detrend=False), 0.05)
+
+
 class Ladder(unittest.TestCase):
     """Invariants on the real report, when one is on disk."""
 

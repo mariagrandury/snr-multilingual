@@ -500,6 +500,34 @@ def da_by_task(dfp, tasks, axes_sets, psets, scaling_pairs, pool_buckets, worker
     return by_task
 
 
+def score_cube(pool: str):
+    """The pool's parent tasks in one cube, read with this module's checkpoint
+    choice (`_ckpt_cube`), for the analyses that score DA on pair lists of
+    their own (rq02's cross-fitted filter, the permutation null, the decisive
+    pairs): (frame, tasks, families, {(bucket, frac): column}, S, P). A task
+    whose rows the cube cannot hold (two rows at one checkpoint) is left out
+    and printed."""
+    df = add_family_column(build_snr_pool(pool).assign(bucket=lambda x: x["size"].map(size_bucket)))
+    df = df[df["task"].map(_is_parent_task)]
+    dup = set(df.loc[df.duplicated(["task", "bucket", "family", "step"]) & df["bucket"].notna(), "task"])
+    if dup:
+        print(f"  score_cube: {len(dup)} task(s) with duplicate (bucket, family, step) rows left out")
+    buckets = [b for b in bucket_order() if b in set(df["bucket"].dropna())]
+    tasks, fams, cols, S, _, P, _ = _ckpt_cube(df[~df["task"].isin(dup)], buckets, CKPT_DA_EARLY_FRACS)
+    return df, tasks, fams, {c: i for i, c in enumerate(cols)}, S, P
+
+
+def pair_agree(S, P, I, J, pc: int, rc: int):
+    """Per (task, pair) of the cube: whether pair (I[k], J[k]) is decided at the
+    proxy column `pc` as at the reference column `rc` (the sign rule of
+    `_da`), and whether both sides read it. Boolean arrays of shape
+    (tasks, pairs); their row sums are a cell's matching and comparable pairs."""
+    V = P[:, I, pc] & P[:, J, pc] & P[:, I, rc] & P[:, J, rc]
+    with np.errstate(invalid="ignore"):
+        A = (np.sign(S[:, I, pc] - S[:, J, pc]) == np.sign(S[:, I, rc] - S[:, J, rc])) & V
+    return A, V
+
+
 def run(pool: str, out_dir: Path, workers: int | None = None):
     df_pool = build_snr_pool(pool)
     df_pool["bucket"] = df_pool["size"].map(size_bucket)

@@ -1,7 +1,7 @@
 """rq08 as one grid: where does the best subset beat the random-subset null?
 
     gain_over_null.png   best-subset SNR minus the null's 95th percentile, task x size, one subplot per case
-    gain_over_null_paper.png/.svg/.csv   its language-subset case (one subset of each benchmark's languages) alone, for the paper
+    gain_over_null_paper.png/.csv   its language-subset case (one subset of each benchmark's languages) alone, for the paper
 
 Reads `summary.csv`. The per-benchmark and per-language sweeps themselves are
 `per_benchmark_plots/` and `global_mmlu_full_per_language_plots/`.
@@ -82,7 +82,7 @@ def main(pool: str) -> None:
         return
     body = "\n\n".join([
         "## Per benchmark and per language",
-        f"Every swept cell in one grid (`{pool}` pool). Regenerate with `python analysis/rq08_subset_selection/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\"; each figure's table sits next to it under the same name.",
+        f"Every swept cell in one grid (`{pool}` pool). Regenerate with `python analysis/rq08_subset_selection/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\". Each figure's table sits next to it under the same name.",
         f"![rq08 in one figure]({stage}/{pool}/highlights.png)"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('Gain over the null', 'gain_over_null.png')]])
     replace_block(OUT_ROOT / "README.md", "panels", body, f"panels.py --pool {pool}")

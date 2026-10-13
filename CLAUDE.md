@@ -66,7 +66,7 @@ Two sweeps, in this order:
    against 1.7B) differ, so they are compared as replications of a finding,
    never pooled. `plan/next_analyses.md` says what each period can still add.
 2. **The predictivity sweep** (current work): a 7-rung ladder
-   90M–3B × 6 language settings × deep/shallow (+ the swiglu activation on deep at L 8/15/30) × seven data builds
+   90M–3B × 6 language settings × deep/shallow (+ the swiglu activation and the muon optimizer on deep at L 8/15/30) × seven data builds
    (A, AT3, B, ZH, ES, DCLMP, FWEB — the `DATA_SCHEMES` registry in
    `src/pretrain/launch_trainings.py`, the single source of truth for the
    grid; the analysis reads a build as scheme A/B/C × temperature T, never by
@@ -138,12 +138,14 @@ Eval results are NOT in the repo: they live on the cluster at
   hand-curated, read by the site's Benchmarks tab
 - Each trained model configuration (a **ladder**) lives in
   `src/pretrain/hyperparams/hyperparams_<ladder>.json`: `deep` the baseline,
-  `shallow` the depth level, `swiglu` the activation level.
+  `shallow` the depth level, `swiglu` the activation level, `muon` the
+  optimizer level.
   `launch_trainings.LADDERS` gives each ladder its levels on the three
   intervention axes — `arch` ∈ {deep, shallow}, `activation` ∈ {xielu,
-  swiglu}, `optimizer` ∈ {ademamix} — so `swiglu` is a deep model with the
-  swiglu activation, not an architecture; muon would be an optimizer level
-  (needs Megatron work first)
+  swiglu}, `optimizer` ∈ {ademamix, muon} — so `swiglu` is a deep model with
+  the swiglu activation, not an architecture, and `muon` a deep model trained
+  with Muon (upstream Megatron's, ported into the shared checkout by
+  `src/pretrain/patches/`)
 
 ## Development
 
@@ -174,8 +176,11 @@ python3.11 src/pretrain/ladder_report.py --plot --publish --push-hf --push-git
 #     included (~2 h; the refresh does the fetch itself)
 FORCE=1 bash scripts/refresh_analysis.sh
 
-# 2b. the same, also redrawing rq00's grids (+1 h, so submit it). A compute
-#     node has no network: fetch here first, and build the deck afterwards.
+# 2b. the same in a Slurm job. A compute node has no network: fetch here
+#     first, and build the deck afterwards. rq00's grids are NOT redrawn here:
+#     they take ~11 h on the 2026-10-10 report (--curves would push the job
+#     past the normal partition's 12 h wall); the nightly draws them in two
+#     jobs of their own (scripts/nightly.sh, run_apertus.py --only).
 git fetch origin data/ladder-report && git archive origin/data/ladder-report \
   | tar -x -C src/signal-and-noise/data/ladder-report
 sbatch --account=infra01 --partition=normal --nodes=1 --time=06:00:00 \
@@ -184,7 +189,7 @@ sbatch --account=infra01 --partition=normal --nodes=1 --time=06:00:00 \
   --wrap='source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr \
     && cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual \
     && FORCE=1 HF_HUB_OFFLINE=1 OPENBLAS_NUM_THREADS=4 \
-       bash scripts/refresh_analysis.sh --curves --no-fetch --no-deck'
+       bash scripts/refresh_analysis.sh --no-fetch --no-deck'
 cd documents && npx slidev build                # the deck the job skipped
 
 # 2c. only analysis/ — no figures, PDF, compendium or deck. It does NOT fetch,
@@ -217,9 +222,18 @@ numbers against `documents/ladder-facts.json` and prints the ones that moved.
 bpb chain and **restarts** the auto-eval watcher, so the running watcher always
 matches the code on disk — a watcher holds its constants from import time, and
 on 2026-09-21 one started before a path fix kept writing conversions to the old
-capstor tree for three hours after the fix landed. `ladder` (04:00) publishes,
-installs, then submits the analysis plus a separate `afterany` job for the
-`--curves` grids, so the hour they cost does not lengthen the main refresh.
+capstor tree for three hours after the fix landed. The restart goes through the
+watcher's own cross-node lock (`auto_evals_cscs.py --stop`, then a fresh
+`--watch`), never `pgrep`, which sees one login node: on 2026-10-08 two
+watchers on ln001 submitted the same 231 evals
+(`src/pretrain/CLAUDE.md` #15). Start or stop a watcher by hand the same way;
+a second one refuses to start. `ladder` (04:00) publishes,
+installs, then submits the analysis plus two `afterany` jobs for the
+`--curves` grids (per-benchmark and per-language, `run_apertus.py --only`,
+10 h each), so the hours they cost do not lengthen the main refresh. One 4 h
+curves job timed out on 2026-10-09 and 10-10: at 1.86M rows a per-benchmark
+grid takes ~3.4 min, ~11 h for both kinds, against the 12 h MaxTime of the
+`normal` partition.
 While the analysis code is mid-change, `touch
 /iopsstor/scratch/cscs/$USER/logs/nightly/PAUSE_REFRESH`: `ladder` still
 publishes but submits nothing (remove the file to resume).
@@ -249,8 +263,9 @@ Three things it cannot guess:
   the heavy part; the fetch and the deck build need network, which a compute
   node lacks, so fetch on the login node and submit the rest with
   `--no-fetch --no-deck`.
-- **`--curves`.** rq00's ~140 acc-vs-FLOPs grids are a viewer that nothing
-  reads and about an hour of the run. They are skipped by default and the
+- **`--curves`.** rq00's ~150 acc-vs-FLOPs grids are a viewer that nothing
+  reads and ~11 h of drawing on the 2026-10-10 report (an hour in September;
+  the cost grows with the rows). They are skipped by default and the
   previous figures stay on disk; pass `--curves` to redraw them.
 
 System Python on the login nodes is 3.6 — use `python3.11`.
@@ -269,9 +284,11 @@ are retired — do not carry them into new work):
 
 - Sizes: 90M, 175M, 350M, 600M, 1B, 1.7B, 3B non-embedding — every size trains
   at every language setting except 3B, the extrapolation check above the 1.7B
-  reference: deep only, seed 1904, L ∈ {8, 15} in schemes A and B (trained) plus
-  L ∈ {30, 50} added 2026-09-30 — A-L30, B-L30, A-L50, the cells that take the
-  3B reference over `MIN_PAIRS` on the `L` and `scheme` axes
+  reference: deep only, seed 1904, L ∈ {8, 15} in schemes A and B plus A-L30
+  and A-L50 (added 2026-09-30) — six cells. B-L30, planned with them to take
+  the `scheme` axis over `MIN_PAIRS` at 3B, was removed from the grid on
+  2026-10-09 before it trained (scheme B's `max_size` caps L30 at 1.7B), so
+  only `L` clears `MIN_PAIRS` at the 3B reference
   ([`plan/3b_models.md`](plan/3b_models.md))
 - Data: fixed 50/50 English (DCLM) + FineWeb-2, with L ∈ {1, 2, 8, 15, 30, 50}
   languages; L=1 is 100% English. The mixture varies the language *count*,
@@ -289,7 +306,7 @@ are retired — do not carry them into new work):
   axis. Its 88.5B build stays on disk, unreferenced. "Variant" is the older, looser word for any
   run configuration (seed × ladder × scheme) — don't use it for the data axis.
 - Cell name = Slurm job name = checkpoint dir = W&B run name:
-  `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu>-seed<seed>`
+  `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu|muon>-seed<seed>`
   — the last token is the ladder, not the arch (`swiglu` = arch deep +
   activation swiglu); names stay as trained
 - Each size trains its own budget D(N) = 100 × N tokens (5× Chinchilla)

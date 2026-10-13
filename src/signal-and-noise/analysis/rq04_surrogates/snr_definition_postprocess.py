@@ -10,7 +10,7 @@ Q2 (within-cluster similarities) — language groups by best variant.
 Q3 (across languages) — top variants by mean Pearson r over the languages
     with a value (≥ MIN_LANG_TASKS tasks each, rule 8).
     → top_variants_overall.csv  +  top_variants_overall.png
-      (+ top_variants_overall_paper.png/.svg/.csv, the bare rule-18 copy the paper's
+      (+ top_variants_overall_paper.png/.csv, the bare rule-18 copy the paper's
       appendix shows; `--paper` redraws it alone from the CSV)
 Q4 (top benchmarks per language) — under the overall-best variant (Q3's
     mean over DA-size and DA-ckpt), rank benchmarks per language with both
@@ -48,8 +48,9 @@ from analysis.rq04_surrogates.analyze_snr_variants import (  # noqa: E402
 from analysis.autodoc import (  # noqa: E402
     CANONICAL_POOL, HOLDOUT, SLIDES, fmt, md_table, replace_block)
 from analysis.paths import NOISE_AND_SNR, SURROGATES  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    MIN_LANG_TASKS, SMALL_SIZES, TARGET_SIZE, assign_language, benchmark_family, languages_only)
+    MIN_LANG_TASKS, SMALL_SIZES, TARGET_SIZE, assign_language, benchmark_family, languages_only, passes_gate)
 
 TOP_K = 5
 DA_NOTE = (f"DA-size = proxy final → {TARGET_SIZE} final; DA-ckpt = a proxy size's early checkpoints → its final, "
@@ -69,6 +70,13 @@ def _pairs_for(df: pd.DataFrame, da_kind: str):
 
 
 def _table(df: pd.DataFrame, da_kind: str) -> pd.DataFrame:
+    """Variant x language Pearson r. DA-size ranks the proxy against the
+    reference, so it also needs the task above chance at TARGET_SIZE (rule 1;
+    rq03 gates the SNR at the proxy only, and rq02's DA is never gated)."""
+    if da_kind == "size":
+        df = df.copy()
+        bad = ~passes_gate(load_mask(CANONICAL_POOL), df.index, TARGET_SIZE).to_numpy()
+        df.loc[bad, [c for _, _, c in da_size_pairs(df)]] = np.nan
     return _per_language_pearson_table(df, list_variants(df), _pairs_for(df, da_kind))
 
 
@@ -460,28 +468,28 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
     hm = _holdout_metrics(stage)
 
     bullets = [
-        f"- **Global-best SNR definition (`{pool}`): `{g.variant}`** — mean Pearson r of "
-        f"log₁₀(SNR) vs decision accuracy **{fmt(g.mean_r_da_size)}** (DA-size, proxy → {TARGET_SIZE}, "
-        f"{int(g.n_languages_da_size)} languages), **{fmt(g.mean_r_da_ckpt)}** (DA-ckpt, proxy sizes pooled, "
-        f"{int(g.n_languages_da_ckpt)} languages), {fmt(g.mean_r_overall)} overall. "
-        f"DA-ckpt is led by `{'`/`'.join(ckpt_leaders)}` (≈ {fmt(ckpt_r)}; "
-        f"{'one family: ' + next(iter(families)) if len(families) == 1 else 'families: ' + ', '.join(sorted(families))}) — "
-        f"recommend the *family*, not an exact variant.",
-        f"- **Per-language anchor: `{fam_name}`** — the highest-SNR above-random benchmark "
-        f"in **{fam_n} of {n_langs}** languages (`{g.variant}` SNR @ {ref}; `train_loss` and `bpb_macro` "
-        f"are not a language's and are left out); the language's own "
+        f"- **Global-best SNR definition (`{pool}`): `{g.variant}`.** Its mean Pearson r of "
+        f"log₁₀(SNR) with decision accuracy is **{fmt(g.mean_r_da_size)}** under DA-size (proxy → {TARGET_SIZE}, "
+        f"{int(g.n_languages_da_size)} languages), **{fmt(g.mean_r_da_ckpt)}** under DA-ckpt (proxy sizes pooled, "
+        f"{int(g.n_languages_da_ckpt)} languages) and {fmt(g.mean_r_overall)} overall. "
+        f"DA-ckpt is led by `{'`/`'.join(ckpt_leaders)}` (≈ {fmt(ckpt_r)}, "
+        f"{'one family: ' + next(iter(families)) if len(families) == 1 else 'families: ' + ', '.join(sorted(families))}), "
+        f"so we recommend the *family*, not an exact variant.",
+        f"- **Per-language anchor: `{fam_name}`.** It is the highest-SNR above-random benchmark "
+        f"in **{fam_n} of {n_langs}** languages (`{g.variant}` SNR @ {ref}, leaving out `train_loss` and "
+        f"`bpb_macro`, which belong to no language). The language's own "
         f"BPB, ungated and on its own noise scale, outranks that benchmark in "
         f"{n_bpb_top} of the {n_with_bpb} languages that have both. "
-        f"Weakest variants overall: `{'`, `'.join(worst)}`.",
+        f"The weakest variants overall are `{'`, `'.join(worst)}`.",
     ]
     if hm is not None:
         bullets.append(
-            f"- **Seed holdout ({HOLDOUT[0]} → {HOLDOUT[1]})**: Spearman ρ of the global "
-            f"variant ranking **{fmt(hm[('spearman_rank_global','ckpt')])}** (DA-ckpt), "
-            f"**{fmt(hm[('spearman_rank_global','size')])}** (DA-size); family-level "
-            f"per-language agreement {hm[('family_agreement','ckpt')]:.0%} / "
+            f"- **Seed holdout ({HOLDOUT[0]} → {HOLDOUT[1]}).** The Spearman ρ of the global "
+            f"variant ranking is **{fmt(hm[('spearman_rank_global','ckpt')])}** under DA-ckpt and "
+            f"**{fmt(hm[('spearman_rank_global','size')])}** under DA-size, and the family-level "
+            f"per-language agreement is {hm[('family_agreement','ckpt')]:.0%} / "
             f"{hm[('family_agreement','size')]:.0%}. A ranking that does not survive the "
-            f"seed swap is noise-dominated — only the *family* recommendation transfers.")
+            f"seed swap is dominated by noise, so only the *family* recommendation transfers.")
     highlight = "\n".join(bullets)
 
     # 1) variant ranking — top 7 + bottom 2
@@ -514,21 +522,21 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
     results = [
         f"Headline numbers from the `{pool}` pool. Regenerate with "
         f"`python analysis/rq04_surrogates/snr_definition_postprocess.py --pool {pool}`.",
-        f"**Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across the trained languages "
-        f"with ≥ {MIN_LANG_TASKS} tasks (rule 8; {int(g.n_languages_da_size)} languages under DA-size, "
-        f"{int(g.n_languages_da_ckpt)} under DA-ckpt). DA-size = proxy final → {TARGET_SIZE} final only "
-        f"(the proxy-to-proxy scaling pairs are not DA-size, rule 9); DA-ckpt = a proxy size's early "
-        f"checkpoints → its final, the proxy sizes {', '.join(SMALL_SIZES)} pooled, never the "
+        f"**Global variant ranking.** The mean Pearson r of log₁₀(SNR) with DA across the trained languages "
+        f"with ≥ {MIN_LANG_TASKS} tasks (rule 8, {int(g.n_languages_da_size)} languages under DA-size, "
+        f"{int(g.n_languages_da_ckpt)} under DA-ckpt). DA-size is proxy final → {TARGET_SIZE} final only "
+        f"(the proxy-to-proxy scaling pairs are not DA-size, rule 9). DA-ckpt is a proxy size's early "
+        f"checkpoints → its final, with the proxy sizes {', '.join(SMALL_SIZES)} pooled and never the "
         f"{TARGET_SIZE} run's own checkpoints (rule 11):",
         t_variants,
         f"![SNR variants ranked by correlation with DA]({stage}/{pool}/top_variants_overall.png)",
-        "**Statistical power by pool** — each pool's best variant (mean r over both DA kinds):",
+        "**Statistical power by pool.** Each pool's best variant (mean r over both DA kinds):",
         t_power,
-        f"**Most reliable benchmark per language** — `{g.variant}` SNR @ {ref} over the "
+        f"**Most reliable benchmark per language.** `{g.variant}` SNR @ {ref} over the "
         f"above-random benchmarks, with the language's own BPB SNR alongside (ungated, "
-        f"on its own noise scale; DA-size is undefined at the reference size itself, so "
-        f"DA-ckpt@{ref} is shown; `train_loss` and `bpb_macro` measure the whole mixture "
-        f"and are not a row, rule 7):",
+        f"on its own noise scale). DA-size is undefined at the reference size itself, so "
+        f"DA-ckpt@{ref} is shown. `train_loss` and `bpb_macro` measure the whole mixture "
+        f"and are not a row (rule 7):",
         t_anchor,
         f"![Top-5 benchmarks per language by SNR]({stage}/{pool}/top_benchmarks_per_language.png)",
     ]
@@ -549,9 +557,9 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
              pct("retention", "size"), pct("retention", "ckpt")],
         ]
         results += [
-            f"**Seed generalization** — holdout `{HOLDOUT[0]}` → `{HOLDOUT[1]}` "
-            f"(the ×3 cells only). A variant ranking whose Spearman ρ is low here is "
-            f"noise-dominated; recommend the family that transfers, not the argmax:",
+            f"**Seed generalization.** Holdout `{HOLDOUT[0]}` → `{HOLDOUT[1]}` "
+            f"(the ×3 cells only). A variant ranking with a low Spearman ρ here is "
+            f"dominated by noise, so we recommend the family that transfers, not the argmax:",
             md_table(["metric", "DA-size", "DA-ckpt"], ho),
         ]
     return highlight, "\n\n".join(results)
@@ -585,8 +593,8 @@ def generate_slides(stage: str, pool: str) -> None:
             for _, r in shown.iterrows()]
     slide = (
         "---\n"
-        "title: RQ4 — Surrogates: SNR definition\n"
-        f"subtitle: \"Results (auto) — most reliable benchmark per language "
+        "title: \"RQ4. Surrogates: the SNR definition\"\n"
+        f"subtitle: \"Results (auto): the most reliable benchmark per language "
         f"(`{g_variant}` @ {ref})\"\n"
         "---\n\n"
         f"{md_table(['lang', 'top benchmark', 'SNR', f'DA-ckpt@{ref}', 'BPB SNR'], rows)}\n\n"

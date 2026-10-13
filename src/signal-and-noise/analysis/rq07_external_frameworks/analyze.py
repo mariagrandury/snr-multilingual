@@ -9,7 +9,7 @@ Outputs (all in this directory):
   pearson_r_per_variant.csv
   snr_apertus_vs_snr_allenai_<best_variant>.png
   snr_apertus_vs_snr_allenai_grid.png
-  snr_apertus_vs_snr_allenai_paper.png/.svg/.csv   the headline scatter for the paper, one named point per shared task
+  snr_apertus_vs_snr_allenai_paper.png/.csv   the headline scatter for the paper, one named point per shared task
   top_apertus.csv  top_allenai.csv  agreement.md
 
     python analysis/rq07_external_frameworks/analyze.py --pool predictivity
@@ -45,6 +45,7 @@ from evals.scripts.utils.configs import load_pools  # noqa: E402
 from analysis.autodoc import (  # noqa: E402
     ALLENAI_POOL, CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
 from analysis.rq03_noise_and_snr.run_apertus_snr_variants import variant_key
+from analysis.rq07_external_frameworks.build_allenai_variants import APERTUS_TASK
 from analysis.utils import TARGET_SIZE
 
 ROOT_OUT = EXTERNAL_FRAMEWORKS
@@ -56,6 +57,10 @@ ALLENAI_CSV = ROOT_OUT / "allenai_snr_variants_per_task.csv"
 # The unmatched pair is one row of the size sweep.
 APERTUS_SIZE = "1B"
 ALLENAI_SIZE = "1B"          # DataDecide's largest rung
+# The paper scatter's variant: rel_std, the SNR definition the paper's Setup names. rq04's
+# top_variants_overall ranks rel_std first by 0.0006 over rel_mpd (2026-10-10), so following
+# it would let a refresh swap the plotted variant under a caption that still says rel_std.
+PAPER_VARIANT = "rel_std"
 
 # Approximate matched-size pairs for the size-sweep (ours → AllenAI DataDecide).
 SIZE_PAIRS = [                # DataDecide has no 90M, so no pair for our 90M rung
@@ -72,34 +77,22 @@ VARIANT_TITLES = {variant_key(fd): fd["title"] for fd in AGGREGATION_FUNCTIONS}
 
 # --- task name aliasing ----------------------------------------------------
 
-# Direct (Apertus → AllenAI) aliases for tasks that are the same eval
-# under different lm-eval task keys. The MMLU family is handled
-# separately below since it's a per-subject prefix rewrite, not a single
-# rename.
-_TASK_ALIASES: dict[str, str] = {
-    "commonsense_qa": "csqa",
-    "social_iqa": "socialiqa",
-    # Add more obvious mismatches here as we discover them.
+# Our task -> its AllenAI DataDecide name: the inverse of the builder's
+# `APERTUS_TASK` (same items, same cloze format, same metric), so MMLU and CSQA
+# are our cloze twins `rf_mmlu` / `rf_commonsense_qa`. Our letter-format
+# originals take DataDecide's name for the MC format (`mmlu:mc`, `csqa:mc`),
+# which the checkpoint series does not carry, so they are not shared.
+_TASK_ALIASES: dict[str, str] = {ours: theirs for theirs, ours in APERTUS_TASK.items()} | {
+    "mmlu": "mmlu:mc",
+    "commonsense_qa": "csqa:mc",
 }
 
 
 def _canonicalise_apertus_task(t: str) -> str:
-    """Map Apertus task names to their AllenAI equivalents.
-
-    MMLU: Apertus only ran the multilingual ``global_mmlu_full_en_<subject>``
-    view on a full ckpt-series — the vanilla ``mmlu_<subject>`` rows are
-    single-shot and have no SNR. AllenAI exposes the same content under
-    the vanilla ``mmlu_<subject>`` names, so we alias. Note: Apertus's
-    ``global_mmlu_full_en`` is the **Cohere Full** translation of MMLU,
-    not the original — see ``agreement.md`` for the methodological
-    caveat.
-
-    Other one-off renames live in ``_TASK_ALIASES``.
-    """
-    if t == "global_mmlu_full_en":
-        return "mmlu"
-    if t.startswith("global_mmlu_full_en_"):
-        return "mmlu_" + t[len("global_mmlu_full_en_"):]
+    """Map an Apertus task name to its AllenAI equivalent (`_TASK_ALIASES`).
+    Until 2026-10-08 `global_mmlu_full_en` stood in for MMLU; the original
+    `mmlu` and its cloze twin `rf_mmlu` are evaluated now, so it no longer
+    does."""
     return _TASK_ALIASES.get(t, t)
 
 
@@ -248,7 +241,8 @@ def _plot_scatter(xy: pd.DataFrame, variant: str, r: float, n: int, path: Path) 
 
 
 _PAPER_TASKS = {"arc_easy": "ARC Easy", "arc_challenge": "ARC Challenge", "csqa": "CommonsenseQA", "piqa": "PIQA",
-                "openbookqa": "OpenBookQA", "mmlu": "MMLU"}
+                "openbookqa": "OpenBookQA", "mmlu": "MMLU", "hellaswag": "HellaSwag", "boolq": "BoolQ",
+                "winogrande": "Winogrande", "socialiqa": "Social IQa"}
 
 
 def _plot_scatter_paper(xy: pd.DataFrame, variant: str, path: Path) -> None:
@@ -356,18 +350,21 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
 
     n_shared = int(g.n_shared)
     weak = n_shared <= 5   # too few shared tasks for the correlation to be robust
+    shared = ", ".join(f"`{t}`" for t in pd.read_csv(ROOT_OUT / stage / ALLENAI_POOL / "top_apertus.csv").task)
     highlight = "\n".join([
-        f"- **On the `{ALLENAI_POOL}` pool SNR values and rank order "
-        f"{'cannot be compared' if weak else ('agree' if g.pearson_log_snr > 0.5 else 'do not clearly agree')} across corpora** — "
-        f"variant `{g.variant}` (rq04's global best, not selected here), Pearson r of log₁₀(SNR) "
-        f"**{fmt(g.pearson_log_snr)}**, Spearman ρ **{fmt(g.spearman_rank)}**"
-        + (f", over only **{n_shared}** shared English tasks after the above-random gate "
-           f"— too few for a correlation to mean anything."
-           if weak else f" over the {n_shared} shared English tasks."),
-        f"- **The shared universe is the English tasks both corpora evaluate** "
-        f"(ARC, HellaSwag, MMLU via the Global-MMLU English split, PIQA/CSQA/OpenBookQA "
-        f"where run), so the evidence is the SNR *correlation* over that handful, not "
-        f"top-K Jaccard (trivially 1.0 on so small a universe).",
+        f"- **On the `{ALLENAI_POOL}` pool, SNR values and rank order "
+        f"{'cannot be compared' if weak else ('agree' if g.pearson_log_snr > 0.5 else 'do not clearly agree')} across corpora.** "
+        f"With variant `{g.variant}` (rq04's global best, not selected here), the Pearson r of log₁₀(SNR) is "
+        f"**{fmt(g.pearson_log_snr)}** and the Spearman ρ **{fmt(g.spearman_rank)}**"
+        + (f", over only **{n_shared}** shared English tasks after the above-random gate. "
+           f"That is too few for a correlation to mean anything."
+           if weak else f", over the {n_shared} shared English tasks."),
+        f"- **The shared tasks are the English tasks both corpora evaluate** ({shared}, with MMLU and "
+        f"CSQA read through our cloze twins). The evidence is therefore the SNR *correlation* over this "
+        f"handful, not the top-K Jaccard, which is trivially 1.0 on so few tasks.",
+        f"- **Like for like since 2026-10-08.** Both sides use the same 20 % noise window (5 points at 1B), the "
+        f"same detrended checkpoint noise (rule 4) and the same metric (`build_allenai_variants.py`). "
+        f"The signal populations still differ: 25 pretraining corpora against our design variants.",
     ])
 
     rs = []
@@ -383,13 +380,13 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
     results = "\n\n".join([
         f"Cross-corpus agreement by pool (headline = `{ALLENAI_POOL}`). Regenerate with "
         f"`python analysis/rq07_external_frameworks/analyze.py --pool {CANONICAL_POOL}`.",
-        "**Cross-corpus agreement over the shared English tasks** — Pearson r of "
+        "**Cross-corpus agreement over the shared English tasks.** Pearson r of "
         "log₁₀(SNR) (values) and Spearman ρ (rank), at the variant rq04 selected "
-        "on our ladder (the per-variant grid below shows the other 21). The above-random gate leaves the `n_shared` shown per pool; where it "
-        "is small (≤5) the correlations are over a handful of points and should be read "
-        "as indicative, not robust:",
+        "on our ladder (the per-variant grid below shows the other 21). The above-random gate leaves "
+        "the `n_shared` shown per pool. Where it is small (≤ 5), the correlations rest on a handful of "
+        "points and are indicative, not robust:",
         t_pools,
-        f"![Ladder vs AllenAI SNR — rq04's variant]"
+        f"![Ladder vs AllenAI SNR, rq04's variant]"
         f"({stage}/{ALLENAI_POOL}/snr_apertus_vs_snr_allenai_{g.variant}.png)",
         f"![Ladder vs AllenAI SNR across variants]"
         f"({stage}/{ALLENAI_POOL}/snr_apertus_vs_snr_allenai_grid.png)",
@@ -484,7 +481,9 @@ def run(stage: str, pool: str, apertus_dir: Path, out_dir: Path) -> None:
     headline_path = out_dir / f"snr_apertus_vs_snr_allenai_{best_variant}.png"
     _plot_scatter(per_variant_xy[best_variant], best_variant, best_r, best_n, headline_path)
     print(f"\nHeadline scatter ({best_variant}, r={best_r:.3f}) → {headline_path.name}")
-    _plot_scatter_paper(per_variant_xy[best_variant], best_variant, out_dir / "snr_apertus_vs_snr_allenai_paper.png")
+    if best_variant != PAPER_VARIANT:
+        print(f"!!! rq04's top variant is {best_variant}; the paper scatter stays on {PAPER_VARIANT}")
+    _plot_scatter_paper(per_variant_xy[PAPER_VARIANT], PAPER_VARIANT, out_dir / "snr_apertus_vs_snr_allenai_paper.png")
 
     # Per-variant grid.
     grid_path = out_dir / "snr_apertus_vs_snr_allenai_grid.png"
@@ -532,7 +531,6 @@ def run(stage: str, pool: str, apertus_dir: Path, out_dir: Path) -> None:
     agreement_df = pd.DataFrame(rows)
 
     # Write agreement.md
-    aliased_mmlu = sorted(t for t in shared if t == "mmlu" or t.startswith("mmlu_"))
     other_aliases = sorted(
         f"{src} → {dst}" for src, dst in _TASK_ALIASES.items() if dst in shared
     )
@@ -544,20 +542,15 @@ def run(stage: str, pool: str, apertus_dir: Path, out_dir: Path) -> None:
         f"AllenAI SNR column: `snr_{best_variant}_{ALLENAI_SIZE}`",
         f"Shared-task universe: **{len(shared)}** tasks.",
         "",
-        "## ⚠️ Methodological caveat — MMLU aliasing",
+        "## Like for like",
         "",
-        "Apertus's `global_mmlu_full_en[_<subject>]` rows are aliased to "
-        "AllenAI's `mmlu[_<subject>]` rows so the cross-corpus comparison "
-        "can use the ~60 MMLU subjects. **The two are not the same content.** "
-        "Apertus runs the **Cohere Full** translation/post-edit of MMLU "
-        "(English split), AllenAI runs the original Hendrycks et al. MMLU. "
-        "Question wording, post-edits, and sample coverage may differ. "
-        "Plan: re-run the original `mmlu` lm-eval task on the multilingual "
-        "Apertus checkpoints; once that lands, drop the alias and compare "
-        "like-for-like.",
-        "",
-        f"MMLU rows aliased into the shared set: **{len(aliased_mmlu)}** "
-        f"of {len(shared)} total.",
+        "Both sides read the same noise window (the k/20 points in the last 20 % of each run, "
+        "5 points at 1B), the same checkpoint noise (the residual SD around a line through it, "
+        "RULES.md rule 4) and the same metric (our `acc_norm` is DataDecide's `acc_per_char`, our "
+        "`acc` its `acc_raw`; `build_allenai_variants.py`). MMLU and CSQA are our cloze twins "
+        "`rf_mmlu` / `rf_commonsense_qa` against DataDecide's RC format; our letter-format "
+        "originals are not shared. The signal populations still differ: 25 pretraining corpora "
+        "against our design variants.",
         "",
         "Other Apertus → AllenAI aliases that hit the shared set: "
         + (", ".join(f"`{a}`" for a in other_aliases) if other_aliases else "_none_")
@@ -633,8 +626,7 @@ def main():
         al_df = pd.read_csv(ALLENAI_CSV, index_col="task")
         overlap = _build_task_overlap(set(ap_df.index), set(al_df.index))
         summary, xy = _per_variant_pearson(ap_df, al_df, overlap[overlap["shared"]].index.tolist())
-        v = _rq04_variant(stage, args.pool, summary)
-        _plot_scatter_paper(xy[v], v, out_dir / "snr_apertus_vs_snr_allenai_paper.png")
+        _plot_scatter_paper(xy[PAPER_VARIANT], PAPER_VARIANT, out_dir / "snr_apertus_vs_snr_allenai_paper.png")
         return
     run(stage=stage, pool=args.pool,
         apertus_dir=SNR_DEFINITION_ROOT / stage / args.pool,

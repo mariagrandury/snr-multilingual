@@ -9,11 +9,15 @@ whether it saved 20, 40 or 60 times (launch_trainings.due_iters). Evaluate
 them on the "auto" benchmark group (configs/tasks.json) and push to W&B
 `mariagrandury-epflnlp/msnr` — the same project the training loss logs to.
 
-Idempotent, safe to run alongside the trainings (login node, tmux):
+Idempotent, safe to run alongside the trainings (login node, tmux). One
+pass at a time: a real pass, one-shot or --watch, takes a lock on the shared
+filesystem and refuses to start while another login node's watcher holds it
+(take_lock); --stop asks that holder to exit, from any node:
 
     cd src
     python3.11 pretrain/auto_evals_cscs.py --dry-run
-    python3.11 pretrain/auto_evals_cscs.py --watch 600   # one pass every 10 min
+    python3.11 -u pretrain/auto_evals_cscs.py --watch 1800   # a pass every 30 min
+    python3.11 pretrain/auto_evals_cscs.py --stop        # stop it, wherever it runs
     python3.11 pretrain/auto_evals_cscs.py --retry-held
     python3.11 pretrain/auto_evals_cscs.py --name lm-175M-L1-deep-seed1904 --max-submit 2
     python3.11 pretrain/auto_evals_cscs.py --convert-only
@@ -63,10 +67,13 @@ HF cache (see README "Before the first CSCS run").
 from __future__ import annotations
 
 import argparse
+import atexit
 import json
 import math
 import os
 import re
+import signal
+import socket
 import subprocess
 import sys
 import tempfile
@@ -220,6 +227,236 @@ def active_jobs() -> set[str] | None:
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return None
     return set(out.stdout.split()) if out.returncode == 0 else None
+
+
+def already_queued(job: str) -> str:
+    """Asks the controller again, right before an sbatch, whether a job named
+    JOB is pending or running (any user). `active_jobs()` is read once per
+    pass, so a second pass that started with the same snapshot sees none of
+    the first one's submissions. The reason to skip the sbatch, "" to go
+    ahead; a skip as well when squeue cannot answer, for active_jobs()'
+    reason: an unknown queue is not an empty one."""
+    try:
+        out = subprocess.run(["squeue", "-h", "-n", job, "-o", "%i"],
+                             capture_output=True, text=True, timeout=30)
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        out = None
+    if out is None or out.returncode != 0:
+        return "— squeue failed, cannot check the queue"
+    return "is already queued" if out.stdout.strip() else ""
+
+
+# --- one watcher at a time, across every login node --------------------------
+# Each pass reads the queue once (active_jobs), so two passes that start
+# together submit the same work twice: on 2026-10-08/09 a hand-started watcher
+# and the one launch_trainings.py spawned ran side by side on ln001 and both
+# submitted the same 231 evals, and the same happened twice before on ln004.
+# The old guards were `pgrep`, which sees only its own login node, while
+# $HOME and /iopsstor are shared by all of them. So a pass takes a lock on
+# the shared filesystem, nightly.sh's take_lock pattern: mkdir is the atomic
+# primitive, `owner` records "host pid start ttl". A holder on THIS host is
+# alive iff its pid is and runs this script (/proc; a reused pid is not a
+# watcher). A holder on another host cannot be asked, so it is alive until its
+# `heartbeat` (touched before every cell, between the post-pass steps and
+# every minute of the sleep) is older than its ttl, 3 x the watch interval.
+# A holder judged stale and taken over finds a stranger in `owner` at its
+# next beat and exits. Stopping one from another node is the `stop` file it
+# consumes at a heartbeat (`--stop`).
+LOCK_DIR = Path(os.environ.get(
+    "AUTO_EVALS_LOCK_DIR",
+    f"/iopsstor/scratch/cscs/{os.environ.get('USER', 'mariagrandury')}/logs/auto_evals"))
+_HELD: dict = {}   # the lock this process holds: {"path": Path, "owner": str}
+
+
+def lock_path(job_suffix: str = "") -> Path:
+    """Per user (LOCK_DIR is) and per benchmark group: a probe pass submits
+    differently named jobs, so it may run beside the watcher."""
+    return LOCK_DIR / f"watcher{job_suffix}.lock"
+
+
+def _read(path: Path) -> str:
+    try:
+        return path.read_text().strip()
+    except OSError:
+        return ""
+
+
+def lock_holder(path: Path) -> tuple[str, bool] | None:
+    """(owner line, alive) for the lock at PATH; None when nobody holds it."""
+    if not path.is_dir():
+        return None
+    owner = _read(path / "owner")
+    try:
+        host, pid, _, ttl = owner.split()
+        pid, ttl = int(pid), int(ttl)
+    except ValueError:
+        # Between a holder's mkdir and its write, or a crash in between:
+        # live for a minute, stale after.
+        try:
+            return owner or "?", time.time() - path.stat().st_mtime < 60
+        except OSError:
+            return None
+    if host == socket.gethostname():
+        cmd = _read(Path(f"/proc/{pid}/cmdline")).replace("\0", " ")
+        return owner, "auto_evals_cscs" in cmd
+    try:
+        age = time.time() - (path / "heartbeat").stat().st_mtime
+    except OSError:
+        # Between a holder's `owner` write and its first beat: the same
+        # minute's grace as above.
+        try:
+            return owner, time.time() - path.stat().st_mtime < 60
+        except OSError:
+            return None
+    return owner, age < ttl
+
+
+def _release() -> None:
+    """Remove the lock, if it is still ours (a node that judged us stale and
+    took it over owns it now)."""
+    path = _HELD.pop("path", None)
+    if path is None or _read(path / "owner") != _HELD.pop("owner"):
+        return
+    for f in ("stop", "heartbeat", "owner"):
+        (path / f).unlink(missing_ok=True)
+    try:
+        path.rmdir()
+    except OSError:
+        pass
+
+
+def _on_signal(signum, _frame):
+    raise SystemExit(128 + signum)      # unwinds through atexit -> _release
+
+
+def take_lock(path: Path, ttl: int) -> None:
+    """Hold PATH for the life of this process, or exit naming its holder."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    held = lock_holder(path)
+    if held and not held[1]:
+        # Stale. Re-read just before removing, so a node that took it over
+        # in between keeps it; the mkdir below then settles any race.
+        print(f"taking over a stale watcher lock ({held[0]})", file=sys.stderr)
+        if _read(path / "owner") == held[0]:
+            for f in ("stop", "heartbeat", "owner"):
+                (path / f).unlink(missing_ok=True)
+            try:
+                path.rmdir()
+            except OSError:
+                pass
+    try:
+        path.mkdir()
+    except FileExistsError:
+        held = lock_holder(path)
+        raise SystemExit(f"another auto-eval pass holds {path}: "
+                         f"{held[0] if held else '?'} (host pid start ttl) — "
+                         "not starting a second. `python /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/auto_evals_cscs.py --stop` "
+                         "stops it from any login node.")
+    owner = f"{socket.gethostname()} {os.getpid()} {int(time.time())} {ttl}"
+    (path / "owner").write_text(owner + "\n")
+    (path / "heartbeat").touch()
+    _HELD.update(path=path, owner=owner)
+    atexit.register(_release)
+    signal.signal(signal.SIGTERM, _on_signal)
+    # Not over nohup's SIG_IGN: a hangup must not end a detached watcher.
+    if signal.getsignal(signal.SIGHUP) is not signal.SIG_IGN:
+        signal.signal(signal.SIGHUP, _on_signal)
+
+
+def heartbeat() -> None:
+    """Prove this holder alive to the other nodes, and leave when asked or
+    when the lock is no longer ours."""
+    path = _HELD.get("path")
+    if path is None:
+        return
+    owner = _read(path / "owner")
+    if owner != _HELD["owner"]:
+        # Judged stale (no beat for a ttl) and taken over: the new holder owns
+        # the lock and the submissions now, so stop submitting, and touch
+        # neither its heartbeat nor, in _release, its files. An owner that
+        # reads empty while the lock dir stands is a read blip or a takeover
+        # caught mid-write: skip this beat and decide at the next.
+        try:
+            lost = bool(owner) or not path.is_dir()
+        except OSError:
+            lost = False
+        if lost:
+            _HELD.clear()
+            raise SystemExit(f"{path} is no longer ours (now: {owner or 'nobody'}) "
+                             "— another pass took it over as stale; exiting")
+        return
+    stop = path / "stop"
+    if _read(stop) == " ".join(owner.split()[:2]):
+        # Consumed, not just read: `--stop` withdraws a request that timed out
+        # by unlinking the same file, and only one of the two unlinks can
+        # succeed, so a withdrawn request never ends this holder after all.
+        try:
+            stop.unlink()
+        except FileNotFoundError:
+            pass
+        else:
+            print(f"stop requested ({stop}) — exiting", flush=True)
+            raise SystemExit(0)
+    try:
+        (path / "heartbeat").touch()
+    except OSError:
+        pass        # one missed beat is far inside the ttl
+
+
+def request_stop(path: Path, wait: int) -> int:
+    """Ask the pass holding PATH to exit, from any login node: a stop file it
+    consumes at its next heartbeat, plus SIGTERM when it runs on this host.
+    Waits up to WAIT seconds for the lock to be released; 0 once nothing live
+    holds it, 1 if the holder is still there — and then still running: a
+    request that timed out is withdrawn, never left behind."""
+    held = lock_holder(path)
+    if held is None or not held[1]:
+        print(f"no live watcher holds {path}" + (f" (stale: {held[0]})" if held else ""))
+        return 0
+    if len(held[0].split()) < 4:
+        print(f"{path} is being taken right now — retry in a minute", file=sys.stderr)
+        return 1
+    host, pid = held[0].split()[:2]
+
+    def stopped() -> bool:
+        held = lock_holder(path)
+        return held is None or not held[1] or held[0].split()[:2] != [host, pid]
+
+    (path / "stop").write_text(f"{host} {pid}\n")
+    print(f"stop requested for {host}:{pid}")
+    if host == socket.gethostname():
+        try:
+            os.kill(int(pid), signal.SIGTERM)
+        except OSError:
+            pass
+    deadline = time.time() + wait
+    while time.time() < deadline:
+        if stopped():
+            print(f"{host}:{pid} has stopped")
+            return 0
+        time.sleep(5)
+    # Timed out (mid-pass, a beat can be a long cell away). A request left
+    # behind would still end the holder at some later beat, after the caller
+    # (nightly.sh) had given up on starting a successor: no watcher at all.
+    # So withdraw it. Exactly one unlink wins: ours, and the holder keeps
+    # running; or the holder's, and it is on its way out. A holder that READ
+    # the file just before we withdrew it (a watcher started before
+    # 2026-10-10 reads without consuming) still exits too, so look again
+    # for half a minute before answering.
+    try:
+        (path / "stop").unlink()
+        withdrawn = True
+    except FileNotFoundError:
+        withdrawn = False
+    for _ in range(6):
+        if stopped():
+            print(f"{host}:{pid} has stopped")
+            return 0
+        time.sleep(5)
+    print(f"{host}:{pid} still holds {path} after {wait}s"
+          + (" — stop request withdrawn, it keeps running" if withdrawn else
+             " — it took the stop request and should exit shortly"), file=sys.stderr)
+    return 1
 
 
 def remaining_tasks(name: str, logs_root: Path, tasks: list[str]) -> list[str]:
@@ -491,7 +728,8 @@ def hf_staged(cell: str, it: int, staging: Path) -> bool:
 
 def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
                 task_list: list[str], size: str, dry_run: bool,
-                exclude: set[str] = frozenset(), suffix: str = "") -> None:
+                exclude: set[str] = frozenset(), suffix: str = "") -> bool:
+    """Submit one eval job; False when the last-moment queue check finds one."""
     name = f"{cell}-iter{it}"
     job = job_name("eval", name) + suffix
     hf_dir = staging / cell / f"iter_{it:07d}"
@@ -511,9 +749,16 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
     # worker can share, so x EVAL_WORKERS, because eval_minutes divides the
     # count across the workers. Without this the solo top-up job the watcher
     # gives it is 15 min, the kill is not a recorded failure, and it is
-    # resubmitted every pass forever.
+    # resubmitted every pass forever. The 2026-10-08 probe's MMLU-sized
+    # tasks (11-14.5k items: m_mmlu, MMMLU, ArabicMMLU, OALL's Arabic MMLU and
+    # their rf_ twins) weigh six too: global_mmlu_full_* and mmlu, the same
+    # item count, take 183-199 s per worker-task at 1.7B (per_task timings,
+    # seed 1904), not the 41 s the fit assumes.
     TASK_WEIGHT = {"bbq": 36 * EVAL_WORKERS}
-    n_tasks = sum(TASK_WEIGHT.get(t, 6 if t.startswith(("rf_global_mmlu_full", "rfgm_global_mmlu_full")) else 1)
+    n_tasks = sum(TASK_WEIGHT.get(t, 6 if t.startswith((
+        "rf_global_mmlu_full", "rfgm_global_mmlu_full", "m_mmlu_", "rf_m_mmlu_", "mmmlu_", "rf_mmmlu_",
+        "arabicmmlu", "rf_arabicmmlu", "arabic_leaderboard_arabic_mmlu", "rf_arabic_leaderboard_arabic_mmlu",
+        "arabic_mt_mmlu")) else 1)
                   for t in remaining)
     # Prefix-export via the process env rather than --export=ALL,K=V,...:
     # sbatch's --export uses commas as separators BETWEEN vars, so the
@@ -536,11 +781,15 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
     cmd = ["sbatch", f"--job-name={job}",
            f"--time={eval_walltime(size, n_tasks)}",
            "--export=ALL", "scripts/evaluate.sbatch", str(hf_dir), name]
+    if not dry_run and (why := already_queued(job)):
+        print(f"  skip: {job} {why}")
+        return False
     print(f"  submit: {job}")
     if dry_run:
         print(f"    (cd {EVALS_DIR} && TASKS=<{n_tasks} tasks> ... {' '.join(cmd)})")
     else:
         subprocess.run(cmd, cwd=EVALS_DIR, env=env, check=True)
+    return True
 
 
 def submit_convert(cell: str, iters: list[int], staging: Path,
@@ -553,6 +802,9 @@ def submit_convert(cell: str, iters: list[int], staging: Path,
            # keep the large intermediate torch checkpoint on scratch (fast,
            # transient) instead of churning it on capstor.
            "TMP_TORCH_BASE": f"/iopsstor/scratch/cscs/{os.environ.get('USER', 'mariagrandury')}/snr-hf-checkpoints/_tmp_torch"}
+    if not dry_run and (why := already_queued(convert_job_name(cell))):
+        print(f"  skip: {convert_job_name(cell)} {why}")
+        return
     print(f"  submit: convert {cell} iters {iters}")
     if dry_run:
         print(f"    (HF_TOKENIZER={TOKENIZER_MODEL} STAGING_BASE={staging} "
@@ -671,6 +923,7 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
             # controller timeout. The watcher runs unattended behind every
             # launch, so one blip must cost one cell for one pass, not kill
             # the whole loop.
+            heartbeat()
             try:
                 one_cell(args, {**c, "ladder": ladder}, cell, scheme, configs, root, staging,
                          logs_root, benchmarks, running, errors, submitted)
@@ -685,6 +938,10 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
     # submitted are the gate on every eval downstream of them. --ensure starts a
     # drainer only if none is running, so this is safe to call every pass; the
     # drainer exits on its own once nothing movable is left.
+    # Each long step after the cells beats first, so a slow tail cannot
+    # read as a dead holder (the watcher went 47 min without a beat on
+    # 2026-10-10) and a stop request lands between the steps.
+    heartbeat()
     if not args.dry_run:
         subprocess.run(["bash", str(EVALS_DIR / "scripts" / "debug_drain.sh"),
                         "--ensure"], check=False)
@@ -698,10 +955,26 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
               + ("(dry-run: not written)" if args.dry_run else f"details in {path}"))
 
 
-# (scheme, ladder, seed) of the runs evaluated in EVERY language, flag or not:
-# one full size x L ladder showing how each benchmark behaves in languages
-# the model never trained on (eval_progress_all_languages.png).
-ALL_LANGUAGES_RUNS = ("A", "deep", 1904)
+# The runs evaluated in EVERY language, flag or not, showing how each
+# benchmark behaves in languages the model never trained on
+# (eval_progress_all_languages.png): the deep ladder (deep, xielu, ademamix)
+# at seed 1904, in these schemes at these settings (None = every setting).
+# Scheme A is the full size x L ladder; ZH and ES (L2) and B at L8 add the
+# other recipes at a fixed L. AT3, the other ladders and the replicate seeds
+# stay on their trained languages.
+ALL_LANGUAGES_RUNS = {"A": None, "ZH": {2}, "ES": {2}, "B": {8}}
+# For the titles of the figures that draw them.
+ALL_LANGUAGES_LABEL = "deep seed-1904 runs of " + ", ".join(
+    s if Ls is None else f"{s} L{'/'.join(map(str, sorted(Ls)))}"
+    for s, Ls in ALL_LANGUAGES_RUNS.items())
+
+
+def all_languages_run(scheme: str, ladder: str, seed: int, L: int) -> bool:
+    """Whether the watcher evaluates this cell in every language."""
+    if ladder != "deep" or int(seed) != 1904 or scheme not in ALL_LANGUAGES_RUNS:
+        return False
+    settings = ALL_LANGUAGES_RUNS[scheme]
+    return settings is None or int(L) in settings
 
 
 def eval_languages(L: int, scheme: str, all_languages: bool = False):
@@ -721,6 +994,17 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     # unscaled 8540 makes due_iters return 3 checkpoints instead of 12.
     target = cell_schedule(configs[c["size"]], c["size"])[0]
     saved = saved_valid_iters(cell, root)
+    if not saved and (staging / cell).is_dir():
+        # iopsstor scratch purges files ~30 days old and leaves the iter dirs
+        # standing empty, so a finished run's Megatron shards go while its
+        # capstor HF snapshots — all an eval reads — stay. Without this the
+        # cell vanished from every pass without a line: lm-350M-L1-deep-
+        # seed1904, purged 2026-10-08, never got the 10-09 promotions.
+        saved = sorted(int(m.group(1)) for e in (staging / cell).iterdir()
+                       if (m := ITER_RE.match(e.name)) and hf_staged(cell, int(m.group(1)), staging))
+        if saved:
+            print(f"{cell}: Megatron checkpoints purged — evaluating the "
+                  f"{len(saved)} converted snapshots")
     if not saved:
         return
     # The ten tenths of training, read on the grid the run actually saved at
@@ -736,9 +1020,9 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
         due = due[-1:]
     # The cell's task list: every auto benchmark, in the languages this cell
     # trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...), or in all of them
-    # under --all-languages and for the ALL_LANGUAGES_RUNS.
+    # under --all-languages and for the all_languages_run cells.
     langs = eval_languages(c["L"], scheme, args.all_languages
-                           or (scheme, c["ladder"], c["seed"]) == ALL_LANGUAGES_RUNS)
+                           or all_languages_run(scheme, c["ladder"], c["seed"], c["L"]))
     task_list = tasks_for_benchmarks(benchmarks, langs)
     # Convert EVERY saved checkpoint (persist all of them to capstor), but
     # evaluate only the due ones — conversion is the durability step, eval
@@ -820,10 +1104,9 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
         name = f"{cell}-iter{it}"
         if hf_staged(cell, it, staging) \
                 and job_name("eval", name) + args.job_suffix not in running:
-            submit_eval(cell, it, staging, logs_root, task_list, c["size"],
-                        args.dry_run, exclude=set(held.get(it, {})),
-                        suffix=args.job_suffix)
-            submitted["evals"] += 1
+            submitted["evals"] += submit_eval(
+                cell, it, staging, logs_root, task_list, c["size"], args.dry_run,
+                exclude=set(held.get(it, {})), suffix=args.job_suffix)
 
 
 def main() -> None:
@@ -833,9 +1116,9 @@ def main() -> None:
     # Default: every ladder and every scheme. One watcher covers the whole
     # grid, so the shallow ladder and the non-A schemes cannot quietly fall
     # behind while a deep/A-only watcher runs. The flags narrow it for a
-    # targeted pass: --arch and --activation keep the ladders at that level
-    # (`--arch deep` is the deep and swiglu ladders).
-    for k in ("arch", "activation"):
+    # targeted pass: --arch, --activation and --optimizer keep the ladders at
+    # that level (`--arch deep` is the deep, swiglu and muon ladders).
+    for k in ("arch", "activation", "optimizer"):
         p.add_argument(f"--{k}", default=None,
                        choices=list(dict.fromkeys(v[k] for v in LADDERS.values())),
                        help=f"only the ladders at this {k} (default: every "
@@ -898,7 +1181,15 @@ def main() -> None:
                         "--watch the watcher protects itself again from the "
                         "second pass on.")
     p.add_argument("--watch", type=int, metavar="SECONDS",
-                   help="keep running, one pass every SECONDS")
+                   help="keep running, one pass every SECONDS. One pass at a "
+                        "time per user and group, across every login node: "
+                        "a pass refuses to start while another holds the lock "
+                        "(LOCK_DIR, overridable with AUTO_EVALS_LOCK_DIR)")
+    p.add_argument("--stop", type=int, nargs="?", const=600, metavar="WAIT",
+                   help="ask the running watcher (of this --group) to exit, "
+                        "from any login node, and wait up to WAIT seconds "
+                        "(default 600) for it; exit 1 if it is still there, "
+                        "the request then withdrawn so it keeps running")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--root", default=str(CKPT_ROOT),
                    help=f"Megatron run root (default: {CKPT_ROOT})")
@@ -910,7 +1201,8 @@ def main() -> None:
     # The pass iterates over these; a flag narrows the default "everything".
     args.ladders = [lad for lad in HYPERPARAMS
                     if args.arch in (None, LADDERS[lad]["arch"])
-                    and args.activation in (None, LADDERS[lad]["activation"])]
+                    and args.activation in (None, LADDERS[lad]["activation"])
+                    and args.optimizer in (None, LADDERS[lad]["optimizer"])]
     args.schemes = [args.scheme] if args.scheme else list(DATA_SCHEMES)
     args.sizes = args.size.split(",") if args.size else EVAL_SIZES
     if bad := set(args.sizes) - set(LADDER):
@@ -921,6 +1213,18 @@ def main() -> None:
     # two groups on one checkpoint are different work, so no watcher may read
     # another's job as its own and skip it.
     args.job_suffix = "" if args.group == "auto" else f"-{args.group.removeprefix('auto_')}"
+    if args.stop is not None:
+        sys.exit(request_stop(lock_path(args.job_suffix), args.stop))
+    # A dry-run submits nothing, so it may preview beside a running watcher.
+    # Every real pass takes the lock, the one-shot ones included: "refuse
+    # while a watcher runs" alone would still let two one-shots (or a
+    # one-shot and a watcher started a second later) overlap.
+    if args.dry_run:
+        held = lock_holder(lock_path(args.job_suffix))
+        if held and held[1]:
+            print(f"(a watcher is running: {held[0]} — this dry-run takes no lock)\n")
+    else:
+        take_lock(lock_path(args.job_suffix), ttl=3 * (args.watch or 1800))
     if args.retry_held:
         print("--retry-held: the failure gate is off for this pass only\n")
     while True:
@@ -945,7 +1249,9 @@ def main() -> None:
         if not args.dry_run:
             try:
                 from pretrain_progress import eval_progress
+                heartbeat()
                 eval_progress(root=Path(args.root), logs_root=Path(args.logs_root))
+                heartbeat()
                 eval_progress(root=Path(args.root), logs_root=Path(args.logs_root),
                               all_languages=True)
             except Exception as e:
@@ -954,12 +1260,18 @@ def main() -> None:
             # within a pass, and nothing else redraws it between launches.
             try:
                 from pretrain_progress import large_rung_status
+                heartbeat()
                 large_rung_status(root=Path(args.root))
             except Exception as e:
                 print(f"(1B/1.7B status not refreshed: {e})", file=sys.stderr)
         if not args.watch:
             break
-        time.sleep(args.watch)
+        # In steps, so the heartbeat stays fresh and a stop request lands
+        # within a minute even while idle.
+        wake = time.time() + args.watch
+        while (left := wake - time.time()) > 0:
+            heartbeat()
+            time.sleep(min(60, left))
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ Two overviews first: one collapsed across languages (benchmark by size pair)
 and one collapsed across benchmarks (language by size pair). Then the same
 numbers as the appendix tables `da_per_benchmark.py` writes, one heatmap per
 language: rows are benchmarks ordered most predictive first, columns are the
-small→large size pairs, cells are decision accuracy. 0.5 is a coin flip, so
+small→large size pairs, cells are decision accuracy. 0.5 is chance, so
 every scale diverges there: red below chance, blue above.
 """
 import sys
@@ -34,7 +34,7 @@ def _comparison_key(comp):
 
 
 def _draw(grid, rows, comps, subtitle, path, note=None, cellw=1.25, collab=None):
-    """Shared renderer: DA grid, diverging at the 0.5 coin flip."""
+    """Shared renderer: DA grid, diverging at chance (0.5)."""
     nrow, ncol = grid.shape
     fig, ax = plt.subplots(figsize=(cellw * ncol + 3.6, 0.42 * nrow + 1.9))
     im = ax.imshow(np.ma.masked_invalid(grid), cmap=S.DIV, vmin=0, vmax=1, aspect="auto")
@@ -59,7 +59,7 @@ def _draw(grid, rows, comps, subtitle, path, note=None, cellw=1.25, collab=None)
         sp.set_visible(False)
     cb = fig.colorbar(im, ax=ax, fraction=0.025, pad=0.02,
                       ticks=[0, 0.25, 0.5, BOLD, 1])
-    cb.ax.set_yticklabels(["0", "0.25", "0.5\ncoin flip", "0.75", "1"], fontsize=8)
+    cb.ax.set_yticklabels(["0", "0.25", "0.5\nchance", "0.75", "1"], fontsize=8)
     cb.outline.set_visible(False)
     cb.ax.tick_params(length=0, colors=S.MUTED)
     if note:
@@ -141,7 +141,7 @@ def language_heatmap(sub, lang, name, out, nfam):
 
 if __name__ == "__main__":
     long = pd.read_csv(SRC)
-    size = long[long["da_def"] == "DA-size"]
+    size = long[long["da_def"].str.startswith("DA-size")]   # every size pair, the ladder's own ("DA-size (ladder)") too
     names = {c: e["language"] for c, e in load_languages()["languages"].items()}
     langs = [l for l in load_languages()["groups"]["trained"] if l in set(size["language"])]
     langs = sorted(langs, key=lambda l: (l != "en", l))

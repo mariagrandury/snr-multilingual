@@ -1,0 +1,19 @@
+task: rf_careqa_es
+include: /capstor/store/cscs/swissai/infra01/msnr/msnr-harness/lm-evaluation-harness/lm_eval/tasks/careqa/careqa_es.yaml
+output_type: multiple_choice
+num_fewshot: 0
+doc_to_text: '{{question.strip()}}
+
+  Answer:'
+doc_to_choice: '{{[op1, op2, op3, op4]}}'
+doc_to_target: '{{cop - 1}}'
+metric_list:
+- metric: acc
+  aggregation: mean
+  higher_is_better: true
+- metric: acc_norm
+  aggregation: mean
+  higher_is_better: true
+metadata:
+  version: 0.0
+process_docs: !function utils.process_docs

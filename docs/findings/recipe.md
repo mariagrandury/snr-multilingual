@@ -15,23 +15,58 @@ model is by the right answer, which moves smoothly even before the model
 picks it. For each benchmark, which of these six versions makes the right
 decision from the smallest proxy?
 
-**How we measure it.** For every version of every benchmark we compute the
-decision accuracy of each proxy size against the 1.7B model (the share of
-pairs of training choices both order the same way). A version is
-**reliable** at a size when that decision accuracy is at least the threshold
-in the table note, and stays so at every larger proxy.
+**How we measure it.** For every version of every benchmark in every
+language (1,844 tasks over 43 benchmarks, seed-1904 runs, multi-axis design
+pairs) we compute the DA-size of each proxy 90M–1B against the 1.7B model:
+the share of pairs of training choices both order the same way. A version is
+**reliable** at a size when its DA-size is at least τ = 0.75 there and at
+every larger proxy. A bBPB version is checked in two ways: against the 1.7B
+model's **accuracy** (the same truth as the accuracy versions) or against its
+own **bBPB** at 1.7B (an easier target: the reference's bBPB ranking, not
+its decision).
 
 ## The recommendation
 
+Each benchmark appears once per way of checking bBPB; the version column
+names which.
+
 <div class="viz" data-viz="recipe"></div>
+
+## Your language, your proxy
+
+Choose your language and proxy size: each card is one benchmark, the bars
+compare its versions at that size (black tick: reliable, grey tick:
+chance), and the bold line is the version to evaluate.
+
+<div class="viz" data-viz="recipeCards"></div>
 
 ## How each version grows with proxy size
 
 <div class="viz" data-viz="recipeSizes"></div>
 
+## What we find
+
+- **No version reads the 1.7B model's accuracy decision reliably on
+  average at any proxy up to 1B.** The best mean DA-size is 0.62 (LLM-RF
+  scored by bBPB, at 90M); only the easier bBPB-against-bBPB target clears
+  τ (LLM-RF at 0.72–0.79 on 95 tasks, at every proxy but 600M).
+- **Against the same truth, bBPB matches or edges accuracy.** Over every
+  task, the original benchmarks scored by bBPB read 0.56–0.58 against 0.53–0.57 for their accuracy, and 0.57–0.61 on the tasks both have.
+- **The rewrites help only when scored by bBPB.** RF and LLM-RF scored by
+  accuracy read 0.48–0.56, below the original accuracy; scored by bBPB they
+  read 0.57–0.62.
+- **bBPB is the pick for 29 of the 36 benchmarks** with a value against the
+  1.7B accuracy, and accuracy for 7.
+- **Few benchmarks are reliable by 1B in most languages.** Against the 1.7B
+  accuracy, the share of languages reliable by 1B is 0.69 for HellaSwag,
+  0.50 for XStoryCloze and 0.40 for LAMBADA. Every other benchmark with more than three ranked languages is at 0.47 or below.
+
 !!! success "Takeaway"
-    Choose the version of a benchmark, not only the benchmark. Click a column
-    of the table to sort by it, and evaluate each benchmark in the version
-    listed for it.
+    Choose the version of a benchmark, not only the benchmark: score it by
+    the bits per byte of the correct answer, which reads the large model's
+    decision at least as well as accuracy and makes the rewritten formats
+    useful. Even then, few benchmarks decide reliably below 1B, so confirm a
+    small-model decision on the languages and sizes where the cards above
+    say it holds.
 
 [Full analysis →](../signal-noise/analysis.md)

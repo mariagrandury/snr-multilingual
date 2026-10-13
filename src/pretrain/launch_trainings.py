@@ -7,12 +7,13 @@ The grid (see plan/small-to-large-predictivity-training-plan.md):
   * size — the 7-rung ladder (90M..3B) shared by the reviewed hyperparams
            files; --arch / --activation / --optimizer pick the ladder, one
            reviewed hyperparams file each: deep (the baseline), shallow
-           (--arch shallow, the model-depth level) or swiglu (--activation
+           (--arch shallow, the model-depth level), swiglu (--activation
            swiglu, scheme A at L in {8, 15, 30} — deep's shape at a matched
-           parameter count). A rung is trained in a ladder only if that
-           ladder's file defines it AND the scheme plans it there
-           (ladders_for): 3B is deep only, and swiglu runs at three
-           settings, not six.
+           parameter count) or muon (--optimizer muon, the same settings —
+           deep's shape and LR with Muon instead of AdEMAMix). A rung is
+           trained in a ladder only if that ladder's file defines it AND the
+           scheme plans it there (ladders_for): 3B is deep only, and swiglu
+           and muon run at three settings, not six.
   * L    — language setting in {1, 2, 8, 15, 30, 50, 100}: English + L-1
            FineWeb-2 languages. Every size trains at every setting except 3B,
            the extrapolation check, which trains at L in {8, 15} only
@@ -58,7 +59,7 @@ Usage:
     python launch_trainings.py azure [filters]        # `source azure/env.sh` first
 
 Filters (both platforms): --arch {deep,shallow}, --activation {xielu,swiglu},
---optimizer {ademamix}, --scheme {A,AT3,B,ZH,ES}, --size 350M[,175M,...],
+--optimizer {ademamix,muon}, --scheme {A,AT3,B,ZH,ES}, --size 350M[,175M,...],
 --langs L, --seed N, --dry-run.
 
 Diagnostic overrides (CSCS only). Each needs a --size/--langs/--seed filter,
@@ -86,6 +87,8 @@ Examples:
     python3.11 pretrain/launch_trainings.py cscs --arch shallow --dry-run
     # activation intervention
     python3.11 pretrain/launch_trainings.py cscs --activation swiglu --dry-run
+    # optimizer intervention
+    python3.11 pretrain/launch_trainings.py cscs --optimizer muon --dry-run
     # diversity-first lists
     python3.11 pretrain/launch_trainings.py cscs --scheme B --langs 8
     # T=3: L15, L30 and L50
@@ -117,7 +120,9 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 # under `lm-...-swiglu-seed1904`). Deep is the baseline; the others each move
 # exactly ONE design level away from it: shallow the depth (width/depth 128 vs
 # 64), swiglu the activation (2026-10-03, deep's shape at a matched parameter
-# count — hyperparams/find_hyperparams_swiglu.py).
+# count — hyperparams/find_hyperparams_swiglu.py), muon the optimizer
+# (2026-10-08, deep's file with Muon on the hidden matrices instead of
+# AdEMAMix — hyperparams_muon.json).
 #
 # A ladder is therefore not one axis: a (deep, shallow) pair is an ARCH decision
 # and a (deep, swiglu) pair an ACTIVATION one, so the analysis reads the levels
@@ -128,6 +133,7 @@ HYPERPARAMS = {
     "deep": SCRIPT_DIR / "hyperparams" / "hyperparams_deep.json",
     "shallow": SCRIPT_DIR / "hyperparams" / "hyperparams_shallow.json",
     "swiglu": SCRIPT_DIR / "hyperparams" / "hyperparams_swiglu.json",
+    "muon": SCRIPT_DIR / "hyperparams" / "hyperparams_muon.json",
 }
 
 # Each ladder's design levels, one intervention axis each: `arch` is the depth
@@ -136,13 +142,16 @@ HYPERPARAMS = {
 # they differ from the baseline, so a deep or shallow cell's env dict stays
 # byte-identical to what the trained cells used.
 #
-# Adding an OPTIMIZER level (muon) needs Megatron work first: `--optimizer`
-# accepts only adam|sgd|ademamix (megatron/training/arguments.py), with no Muon
-# implementation in the checkout.
+# The muon level runs upstream Megatron's Muon, ported into the shared checkout
+# (patches/optimizer_muon.py and the three files beside it): Muon on the 2D
+# hidden weights, Adam on embeddings/output/norms, no distributed optimizer
+# (megatron_args.sh drops it for muon). Its one non-default setting,
+# MUON_EXTRA_SCALE_FACTOR, comes from the ladder's hyperparams file (cell_env).
 LADDERS = {
     "deep":    dict(arch="deep",    activation="xielu",  optimizer="ademamix"),
     "shallow": dict(arch="shallow", activation="xielu",  optimizer="ademamix"),
     "swiglu":  dict(arch="deep",    activation="swiglu", optimizer="ademamix"),
+    "muon":    dict(arch="deep",    activation="xielu",  optimizer="muon"),
 }
 BASELINE_LADDER = "deep"
 
@@ -184,10 +193,11 @@ CSCS_SUBMIT_SCRIPT = SCRIPT_DIR / "launch_pretraining_cscs.sh"
 CSCS_DEFAULT_DATA_DIR = "/iopsstor/scratch/cscs/mariagrandury/data"
 # Where data/launch_builds.sh stages the rebuilds of the builds the grid
 # outgrew: the same layout, FineWeb-2 prefixes only. 92B for the settings the
-# 1.7B row gained (A-L15, A-L50, B-L15); 165B for the four settings the 3B
-# rung trains (A/B at L8 and L15 — a 3B draws 150B from the multilingual
-# half). fineweb_source tries them in this order, smallest first, so a cell
-# keeps the smallest copy that covers its draw.
+# 1.7B row gained (A-L15, A-L50, B-L15); 165B for the settings the 3B
+# rung trains (A at L8/L15/L30/L50, B at L8/L15 — a 3B draws 150B from the
+# multilingual half; B-L30's 165B build is staged but no cell reads it).
+# fineweb_source tries them in this order, smallest first, so a cell keeps
+# the smallest copy that covers its draw.
 CSCS_REBUILD_DATA_DIR = "/iopsstor/scratch/cscs/mariagrandury/data-92B"
 CSCS_REBUILD_DATA_DIRS = (CSCS_REBUILD_DATA_DIR,
                           "/iopsstor/scratch/cscs/mariagrandury/data-165B")
@@ -233,10 +243,13 @@ SIZE_LANG_SETTINGS = {size: LANG_SETTINGS for size in LADDER}
 # WHY the extra two: the finished 2x2 (A/B at L8/L15) yields only 2 mono-axis
 # pairs on `L` and 2 on `list`, and rule 5 needs 3 — so NO design axis is
 # reportable at the 3B reference, and rq10 cannot answer its own question.
-# A-L30 + B-L30 take `L` to 6 and `list` to 3, the minimum that clears both;
+# A-L30 + B-L30 took `L` to 6 and `list` to 3, the minimum that clears both;
 # A-L50 takes `L` to 9 and gives the top rung the full language range.
 # A 165B T=1 build exhausts no language at either setting (the allocation is
 # proportional: every language draws ~47% of its capacity). plan/3b_models.md.
+# B-L30 was REMOVED from the grid on 2026-10-09 before it trained a step
+# (scheme B's max_size below): the 3B rung is the six cells A-L8/L15/L30/L50
+# and B-L8/L15, so `list` is back to 2 pairs at the 3B reference.
 SIZE_LANG_SETTINGS["3B"] = [8, 15, 30, 50]
 
 # --- Data schemes -----------------------------------------------------------
@@ -292,10 +305,12 @@ DATA_SCHEMES = {
     # two pairs, i.e. no activation reading at all (its 90M run stays on disk,
     # off the grid). `ladders_by_L` and not `ladders`, so no other setting
     # plans a swiglu cell; the replicate seeds stay deep-only via seeds_for.
+    # The optimizer axis (muon, 2026-10-08) rides the same three settings for
+    # the same reason.
     "A": dict(label="", subdir="", langs={1, 2, 8, 15, 30, 50},
               max_size={}, temp=1.0, letter="A", sets="A", seeds="grid",
               ladders=("deep", "shallow"),
-              ladders_by_L={L: ("deep", "shallow", "swiglu") for L in (8, 15, 30)}),
+              ladders_by_L={L: ("deep", "shallow", "swiglu", "muon") for L in (8, 15, 30)}),
     # AT3 runs the whole ladder at both settings: on the filtered subset a 92B
     # L50 build at T=3 realizes 87.1B (13 of 49 languages exhausted), enough
     # for the 83.6B a 1.7B draws (0.96 epochs) — decided 2026-09-10.
@@ -310,8 +325,11 @@ DATA_SCHEMES = {
                 # opening that setting would create an AT3 3B cell by accident.
                 max_size={15: "1.7B", 30: "1.7B", 50: "1.7B"}, temp=3.0, letter="A", sets="A", seeds="single",
                 ladders=("deep", "shallow"), ladders_by_L={15: ("deep",), 30: ("deep",)}),
+    # B-L30 stops at the 1.7B reference: its 3B cell was planned 2026-09-30
+    # and dropped 2026-10-09 with no checkpoint (its 165B build stays staged
+    # in data-165B/schemeB). Without the cap the 3B rung's L30 opens it.
     "B": dict(label="-schemeB", subdir="schemeB", langs={8, 15, 30},
-              max_size={}, temp=1.0, letter="B", sets="B", seeds="grid",
+              max_size={30: "1.7B"}, temp=1.0, letter="B", sets="B", seeds="grid",
               ladders=("deep", "shallow")),
     # ZH and ES are the second-language intervention at L=2. Their ceiling is
     # the SOURCE, not the budget: the swiss-ai filtered subset holds 71.8B
@@ -905,6 +923,11 @@ def cell_env(
         # hyperparams file already describes the shape.
         **{k.upper(): v for k, v in LADDERS[ladder].items()
            if k != "arch" and v != LADDERS[BASELINE_LADDER][k]},
+        # Muon's update scale (Moonlight's 0.2 x sqrt(max(A, B)), which lets it
+        # reuse AdamW's LR and weight decay): the ladder file's, emitted for a muon ladder only.
+        **({"MUON_EXTRA_SCALE_FACTOR": json.loads(HYPERPARAMS[ladder].read_text())
+            ["global"]["muon_extra_scale_factor"]}
+           if LADDERS[ladder]["optimizer"] == "muon" else {}),
         "SAVE_INTERVAL": save_interval(iters),
         "INIT_STD": init_std(cfg["hidden_size"]),
         "SEED": seed,
@@ -1067,6 +1090,15 @@ ITER_MS = {
 # above record for every other rung.
 ITER_MS["swiglu"] = {s: ms for s, ms in ITER_MS["deep"].items()
                      if s in SIZES_BY_LADDER["swiglu"]}
+# Muon has not run on the grid either: deep's values x 1.4. Same model FLOPs
+# per token, but every DP rank runs every Newton-Schulz step (no distributed
+# optimizer), a fixed per-step cost that does not shrink with the per-rank
+# batch. The 90M smoke pair (2026-10-08, 1 node, batch 84, mid-run median)
+# measured 726 ms/iter for muon against 633 for AdEMAMix: +94 ms, +15% at 1
+# node, which is ~+40% against the 229 ms the grid's 3-node 90M runs take.
+# Re-measure from the first grid runs and replace these.
+ITER_MS["muon"] = {s: round(ms * 1.4) for s, ms in ITER_MS["deep"].items()
+                   if s in SIZES_BY_LADDER["muon"]}
 TIME_MARGIN_SEC = 9000   # 2h30m: 1h SIGUSR2 grace + cold-start + buffer
 TIME_MIN_SEC = 5400      # 1h30m
 TIME_MAX_SEC = 43199     # 11:59:59 (slurm normal queue cap)
@@ -1344,8 +1376,8 @@ def main() -> None:
                              "activation level, scheme A at L in {8, 15, 30})")
     parser.add_argument("--optimizer", default=base["optimizer"],
                         choices=list(dict.fromkeys(v["optimizer"] for v in LADDERS.values())),
-                        help="Optimizer: ademamix (baseline; the only level "
-                             "trained so far)")
+                        help="Optimizer: ademamix (baseline) or muon (the "
+                             "optimizer level, scheme A at L in {8, 15, 30})")
     parser.add_argument("--scheme", choices=list(DATA_SCHEMES), default="A",
                         help="Data scheme to submit: A (resource-ranked, "
                              "T=1 — the baseline), AT3 (same lists at T=3; "
@@ -1700,17 +1732,25 @@ def main() -> None:
         # covers every ladder and scheme in a pass, so a launch of the deep
         # ladder no longer leaves the shallow and scheme-B cells waiting for
         # a watcher nobody remembered to start.
-        watcher = "auto_evals_cscs.py --watch"
-        if subprocess.run(["pgrep", "-f", watcher], capture_output=True).returncode:
+        # Asked of the watcher's own lock on the shared filesystem, not
+        # `pgrep`, which sees only this login node: on 2026-10-08 that let
+        # this start a second watcher beside a hand-started one on ln001, and
+        # both submitted the same 231 evals. Two launches racing here are
+        # still safe — the second watcher refuses at its own take_lock.
+        from auto_evals_cscs import lock_holder, lock_path
+        held = lock_holder(lock_path())
+        if held and held[1]:
+            print(f"(auto-evals already watching: {held[0]})")
+        else:
             AUTO_EVAL_LOGS.mkdir(parents=True, exist_ok=True)
             log = open(AUTO_EVAL_LOGS / "auto_evals.log", "a")
-            subprocess.Popen([sys.executable, "auto_evals_cscs.py",
+            # -u: block-buffered, a killed watcher loses its last output.
+            subprocess.Popen([sys.executable, "-u", "auto_evals_cscs.py",
                               "--watch", "1800"], cwd=str(SCRIPT_DIR),
-                             stdout=log, stderr=log, start_new_session=True)
+                             stdout=log, stderr=log, start_new_session=True,
+                             env={**os.environ, "PYTHONUNBUFFERED": "1"})
             print("started auto-evals (all ladders/schemes); opt out with "
                   "--no-auto-evals")
-        else:
-            print("(auto-evals already watching)")
 
     # Refresh the training-side figures (plan, simple, detailed), the generated
     # grid block in README.md / the plan doc and the 1B/1.7B status table.

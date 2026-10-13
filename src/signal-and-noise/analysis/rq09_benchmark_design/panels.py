@@ -59,7 +59,7 @@ def main(pool: str) -> None:
         return
     body = "\n\n".join([
         "## Per benchmark and per language",
-        f"The family medians above, per language (`{pool}` pool). Regenerate with `python analysis/rq09_benchmark_design/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\"; each figure's table sits next to it under the same name.",
+        f"The family medians above, per language (`{pool}` pool). Regenerate with `python analysis/rq09_benchmark_design/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\". Each figure's table sits next to it under the same name.",
         f"![rq09 in one figure]({stage}/{pool}/highlights.png)"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('SNR per benchmark and language', 'snr_family_by_language.png')]])
     replace_block(OUT_ROOT / "README.md", "panels", body, f"panels.py --pool {pool}")
