@@ -118,8 +118,8 @@ with the helpers `app.js` exposes there. Their data comes from
 - `requirements-docs.txt` — `mkdocs`, `mkdocs-material`, `pymdown-extensions`
 - `documents/package.json` — Slidev (pnpm)
 - `build.sh` — full build: mkdocs → `site/`, slidev → `site/slides/`
-- `netlify.toml` — runs `bash build.sh`, publishes `site/`,
-  ignores rebuilds when no `.md`, `docs/` or MkDocs config file changed
+- `netlify.toml` — runs `bash build.sh`, publishes `site/`, builds every
+  commit (no ignore rule, see `plan/website_deploy.md` for why)
 
 ## Preview locally
 
@@ -161,4 +161,3 @@ failed build.
 - Adding plot/notebook rendering (suggest `mkdocs-jupyter` or static
   PNG embeds)
 - Fixing a specific README link warning
-- Adjusting the Netlify ignore rule

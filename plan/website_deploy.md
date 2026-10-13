@@ -1,6 +1,6 @@
 # Website: serve the docs (no slides) at the Netlify URL, and rename the site
 
-Goal for the double-blind review: `https://snr-multilingual.netlify.app/`
+Goal for the double-blind review: `https://decision-reliability.netlify.app/`
 serves the MkDocs site (Home, Model ladder, Findings, Benchmarks,
 Recommender), and the Slidev deck is reachable nowhere.
 
@@ -43,36 +43,41 @@ deploy → Continuous deployment**.
    **Deploy previews** to "None" (or "Any pull request" only if you accept
    that a PR preview builds the same anonymous site). A branch deploy of an
    old branch could otherwise publish the deck under
-   `<branch>--snr-multilingual.netlify.app`.
+   `<branch>--decision-reliability.netlify.app`.
 5. **Deploys → Trigger deploy → Clear cache and deploy site**.
 6. Open the deploy log and check, in order: `==> Building MkDocs`,
    `==> Skipping Slidev slides (set BUILD_SLIDES=1 after review)`,
    `==> Build complete`. No line should say `Building Slidev slides`.
 
-Note on the ignore rule: `netlify.toml` skips a build when nothing under
-`docs/`, `*.md`, `mkdocs.yml`, `mkdocs_hooks.py`, `anonymity.py` or
-`configs/multilingual_benchmarks.csv` changed. A deploy listed as "Canceled
-(ignored)" is that rule, not a failure; "Clear cache and deploy" always builds.
+Why `netlify.toml` has no `ignore` rule (removed 2026-10-13): it ran
+`git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- <docs paths>`, and Netlify
+sets `CACHED_COMMIT_REF` to `COMMIT_REF` when a build has no cache. The diff
+is then empty, the command exits 0, and Netlify cancels the build. Production
+had no usable cache since the April Slidev build, so every merge to `main`
+was canceled ("Canceled build due to no content change", listed as an error)
+while deploy previews built. "Clear cache and deploy" hits the same case. The
+docs build takes about a minute, so building every commit is cheaper than
+the rule.
 
 ## 2. Verify (no dashboard needed)
 
 ```bash
 for u in / /findings/gate/ /recommend/ /slides/ /1; do
   printf '%-16s ' "$u"
-  curl -s -o /tmp/p.html -w '%{http_code}  ' "https://snr-multilingual.netlify.app$u"
+  curl -s -o /tmp/p.html -w '%{http_code}  ' "https://decision-reliability.netlify.app$u"
   grep -o '<title>[^<]*</title>' /tmp/p.html | head -1; echo
 done
 ```
 
-Expected: `/`, `/findings/gate/` and `/recommend/` titled "… - SNR
-Multilingual" (MkDocs); `/slides/` and `/1` return **404** (MkDocs's
+Expected: `/`, `/findings/gate/` and `/recommend/` titled "… - Scaling
+Reliability" (MkDocs); `/slides/` and `/1` return **404** (MkDocs's
 `404.html`), never a "- Slidev" title. Also open `/findings/gate/` in a
 browser and check the token-threshold table draws.
 
 ## 3. The old slide deploys
 
 Every past deploy stays reachable at its own permalink
-(`https://<deploy-id>--snr-multilingual.netlify.app`). The IDs are random
+(`https://<deploy-id>--decision-reliability.netlify.app`). The IDs are random
 and appear nowhere public, so a reviewer cannot reach the deck through
 them. If you want them gone anyway, the Netlify API has a delete-deploy
 endpoint (`DELETE https://api.netlify.com/api/v1/deploys/<deploy-id>`, with
@@ -116,7 +121,7 @@ URL).
 
 ### The title shown on the pages
 
-`mkdocs.yml` → `site_name` (today "SNR Multilingual", shown in the header and
+`mkdocs.yml` → `site_name` (today "Scaling Reliability", shown in the header and
 in every tab title) and `site_description`. Keep it free of names and
 affiliations; `mkdocs_hooks.py`'s anonymity check runs on every build
 (`mkdocs build --strict` fails on a leak).
