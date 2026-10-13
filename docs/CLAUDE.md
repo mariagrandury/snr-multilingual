@@ -9,10 +9,14 @@ Two-part static site, deployed by Netlify:
 - **Slidev** at `/slides/` — renders `documents/slides.md`
 
 Tabs of the MkDocs side:
-- **Home** (`index.md`), **Model ladder** (`ladder.md`), **Findings**
-  (`findings/*.md`, one page per RQ), **Benchmarks** (`benchmarks.md`) and
-  **Recommender** (`recommend.md`) are
-  hand-written showcase pages. Their charts are `<div class="viz"
+- **Home** (`index.md`: the paper's title, abstract, finding and
+  contributions, verbatim), **Model ladder** (`ladder.md`), **Findings**
+  (`findings/*.md`: Measurability, Agreement and Anticipation, the paper's
+  three analysis sections with its wording and interactive versions of its
+  figures), **Recommender** (`recommend.md`) and **Benchmarks**
+  (`benchmarks.md`) are hand-written showcase pages. The earlier one-page-per-RQ
+  findings are kept in `findings_all/`, excluded from the build
+  (`exclude_docs` in `mkdocs.yml`) until they are added back. Their charts are `<div class="viz"
   data-viz="NAME">` blocks drawn by `interactive/app.js` (one `VIEWS.NAME`
   function each, Observable Plot + d3 from jsdelivr) from
   `interactive/data/*.json`. Regenerate the JSON with
@@ -48,7 +52,12 @@ Tabs of the MkDocs side:
   the pages are still built, searchable, in the sitemap and linked from Home
   and the Findings pages (mkdocs lists them as "not included in the nav").
 
-A Findings page reads its RQ's main JSON plus the JSON of its additional
+The Findings pages draw the paper's four main-text figures with the views of
+`interactive/views/paper.js` (`paperRq0`–`paperRq3`) from `paper_rq*.json`,
+which `scripts/site_data/paper.py` builds from the very tables the paper
+figures are drawn from; the Measurability page also shows the token-threshold
+table of `gate.js`. The rest of this section describes the archived pages in
+`findings_all/`: a page there reads its RQ's main JSON plus the JSON of its additional
 views (`scripts/site_data/<page>.py`, often several files, e.g.
 `noise_snr_*.json`). RQ0 (`gate.md`) reads `gate.json`
 (the first-size map, the tokens-seen curves, the format examples from
@@ -83,16 +92,16 @@ its nav entry is commented out in `mkdocs.yml` and `build.sh` builds it only
 with `BUILD_SLIDES=1`. PNG figures under `repo/` are not scanned (text in an
 image cannot be redacted): check their titles and legends by eye.
 
-After the figures are regenerated, re-check the hand-written numbers (no
-data file feeds them yet): the `index.md` cards (218 runs, 47 of 95
-benchmarks, 40 % → 64 % of 933 tasks above chance, median R² 0.87, DA
-51–57 % against 91–95 %, seed noise 1.75× checkpoint noise, transfer 4.4 %
-/ 5.0 %), `recommend.md`, the "Key findings" admonition in
-`findings/gate.md`, and the hand-written numbers of every findings page. The
-2026-10-10 sweep logged every such number with its source CSV and column;
-redo that log rather than re-deriving each number. Captions in
-`interactive/views/*.js` read their numbers from the loaded JSON where they
-can, so they follow a rebuild on their own.
+The text of `index.md` and of the three Findings pages is the paper's
+(abstract, highlighted finding, contributions, sections 4.1–4.3), so it
+follows the paper, not the analysis: when the paper's wording or numbers
+change, copy them over. After the figures are regenerated, re-check the
+other hand-written numbers (no data file feeds them yet): the ladder counts
+in `ladder.md` (218 runs), `recommend.md`, and the archived pages in
+`findings_all/`. The 2026-10-10 sweep logged every such number with its
+source CSV and column; redo that log rather than re-deriving each number.
+Captions in `interactive/views/*.js` read their numbers from the loaded JSON
+where they can, so they follow a rebuild on their own.
 
 Additional views of a page live in `interactive/views/<page>.js`, loaded
 after `app.js` by `mkdocs.yml`: each registers on `window.SNRSITE.VIEWS`

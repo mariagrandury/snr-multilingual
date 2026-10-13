@@ -20,26 +20,26 @@ afford, and the question you want the proxy to answer.
 
 !!! tip "Rules of thumb from the ladder"
     1. **Drop what is at chance.** A benchmark below chance at your proxy size
-       ranks recipes at random. Check first; [RQ0](findings/gate.md) lists them.
+       ranks recipes at random. Check first; [Measurability](findings/measurability.md) lists them.
     2. **Prefer likelihood-based measurements.** Per-language bits per byte on a
        held-out set, and cloze-style benchmarks (HellaSwag, XStoryCloze,
        MultiBLiMP), scale predictably and decide early.
        Letter-format multiple choice does not, at these sizes.
     3. **Measure your seed noise once.** Train one recipe with two or three
        seeds. A decision whose effect is not clearly larger than that spread
-       cannot be read at any proxy size ([RQ5](findings/design-decisions.md)).
+       cannot be read at any proxy size ([Agreement](findings/agreement.md)).
     4. **Look at the full curve.** Early agreement can reverse later in
        training; compare several checkpoints before you stop a run
-       ([RQ2](findings/decision-accuracy.md)).
+       ([Agreement](findings/agreement.md)).
     5. **Pick per language.** The most reliable benchmark changes from one
        language to the next. INCLUDE has the highest SNR in 17 of 50 languages, HellaSwag in 10 and MultiBLiMP in 4
-       ([RQ4](findings/surrogates.md)).
+       ([Anticipation](findings/anticipation.md)).
 
 ## 2. Which evaluations can your proxy read? A look-up table
 
 A benchmark only ranks recipes once the model scores above chance on it, and
 in our ladder that depends mostly on **how many tokens of the language the
-model has seen** ([RQ0](findings/gate.md)). So you can check your own setup
+model has seen** ([Measurability](findings/measurability.md)). So you can check your own setup
 before you train:
 
 1. **Proxy size** – the model size of your ablation runs.
@@ -62,7 +62,7 @@ point in your run the evaluation becomes usable.
     evaluated tenth of every seed-1904 run of each size, so one point is one run
     configuration (number of languages L) at one checkpoint. A point is above
     chance when at least half of the benchmark's tasks in that language are
-    above chance, using the [same rule](findings/gate.md) as the rest of the site.
+    above chance, using the [same rule](findings/measurability.md) as the rest of the site.
     The threshold is the smallest token count from which **every** point with
     at least as many tokens is above chance. A benchmark that falls back to chance
     later in training therefore gets no threshold. Results outside the token

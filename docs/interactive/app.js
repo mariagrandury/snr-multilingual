@@ -188,13 +188,26 @@
   };
   const human = (n) => (n == null ? "–" : n >= 1e9 ? `${fmt(n / 1e9, n >= 1e10 ? 0 : 1)} B` : n >= 1e6 ? `${fmt(n / 1e6, n >= 1e7 ? 0 : 1)} M` : `${Math.round(n / 1e3)} k`);
 
+  // The paper's training-grid table (app_01, tab:training-grid): a data build sets the
+  // language-selection scheme M and the temperature T, a ladder the model recipe;
+  // one table row = one (build, ladder), in the table's order.
+  const BUILDS = {
+    A: { m: "A", t: 1, data: "resource-ranked lists" }, AT3: { m: "A", t: 3, data: "scheme-A lists, flattened" },
+    B: { m: "B", t: 1, data: "diversity-first lists" }, ZH: { m: "B", t: 1, data: "Chinese as second language" },
+    ES: { m: "C", t: 1, data: "Spanish as second language" }, DCLMP: { m: "B", t: 1, data: "DCLM without the edu filter" },
+    FWEB: { m: "C", t: 1, data: "FineWeb (crawls \u2264 2022)" },
+  };
+  const LADDERS = { deep: "deep", shallow: "shallow", swiglu: "deep + SwiGLU", muon: "deep + Muon" };
+  const GRID_ROWS = ["A|deep", "A|shallow", "A|swiglu", "A|muon", "AT3|deep", "AT3|shallow", "B|deep", "B|shallow",
+    "ZH|deep", "ES|deep", "DCLMP|deep", "FWEB|deep"];
+  const gridRow = (c) => `${c.scheme}|${c.ladder}`;
+  const gridLabel = (r) => { const [b, l] = r.split("|"); return `${b} \u00b7 ${LADDERS[l]}`; };
+
   VIEWS.ladder = async (el) => {
     const d = await languages().then(() => load("ladder"));
-    const ROWS = [...LS].reverse();   // L on the y axis: the largest setting on top
-    const variants = Object.entries(d.cells.reduce((m, c) => ((m[variantOf(c)] = (m[variantOf(c)] ?? 0) + 1), m), {}))
-      .sort((a, b) => (a[0] !== "baseline") - (b[0] !== "baseline") || b[1] - a[1]).map(([v]) => v);
-    const color = (c) => series(12)[variants.indexOf(variantOf(c)) % 12];
-    let selected = d.cells.find((c) => c.size === "1.7B" && c.L === 50 && variantOf(c) === "baseline" && c.seed === 1904) ?? d.cells[0];
+    const ROWS = [...LS].reverse();   // K on the y axis: the largest setting on top
+    const color = (c) => series(12)[GRID_ROWS.indexOf(gridRow(c)) % 12];
+    let selected = d.cells.find((c) => c.size === "1.7B" && c.L === 50 && gridRow(c) === "A|deep" && c.seed === 1904) ?? d.cells[0];
     const trainedSet = (c) => new Set(c.L === 1 ? [] : d.language_sets[c.sets]?.[`FW_L${c.L}`] ?? []);
 
     const detail = (c) => {
@@ -209,7 +222,8 @@
           h("dt", {}, "Size"), h("dd", {}, c.n_non_emb
             ? `${c.size} non-embedding (${(c.n_non_emb / 1e6).toFixed(0)} M; ${(c.params / 1e6).toFixed(0)} M with embeddings), d_model ${c.d_model}`
             : `${c.size} non-embedding`),
-          h("dt", {}, "Model"), h("dd", {}, `${c.arch} · ${AXES[5].fmt(c.activation)} · ${AXES[6].fmt(c.optimizer)}`),
+          h("dt", {}, "Build"), h("dd", {}, `${c.scheme}: ${BUILDS[c.scheme]?.data ?? ""} (M = ${BUILDS[c.scheme]?.m}, T = ${BUILDS[c.scheme]?.t})`),
+          h("dt", {}, "Ladder"), h("dd", {}, `${LADDERS[c.ladder] ?? c.ladder} (${c.arch} \u00b7 ${AXES[5].fmt(c.activation)} \u00b7 ${AXES[6].fmt(c.optimizer)})`),
           h("dt", {}, "Data"), h("dd", {}, c.L === 1 ? `100 % English (${c.english})` : `50 % English (${c.english})${fwHalf}`),
           h("dt", {}, "Budget"), h("dd", {}, c.tokens
             ? `${(c.tokens / 1e9).toFixed(1)} B tokens (100 × N, 5× Chinchilla), ${c.n_ckpts} checkpoints, seed ${c.seed}`
@@ -229,24 +243,24 @@
       );
     };
 
-    const axes = AXES.map((a) => ({ ...a, levels: uniq(d.cells.map((c) => c[a.key]).filter((v) => v != null)).sort() }))
-      .filter((a) => a.levels.length > 1);
     mount(el, [
-      ...axes.map((a) => ({ key: a.key, label: a.label, string: a.key !== "T",
-        options: [{ value: "all", label: "all" }, ...a.levels.map((v) => ({ value: v, label: a.fmt(v) }))] })),
+      { key: "build", label: "Build", string: true, options: [{ value: "all", label: "all" },
+        ...Object.entries(BUILDS).map(([b, v]) => ({ value: b, label: `${b} \u00b7 ${v.data} (M = ${v.m}, T = ${v.t})` }))] },
+      { key: "ladder", label: "Ladder", string: true, options: [{ value: "all", label: "all" },
+        ...Object.entries(LADDERS).map(([k, v]) => ({ value: k, label: v }))] },
       { key: "seeds", label: "Seeds", type: "seg", options: [{ value: "main", label: "1904" }, { value: "all", label: "all" }] },
     ], (s) => {
-      const keep = d.cells.filter((c) => axes.every((a) => s[a.key] === "all" || c[a.key] === s[a.key])
+      const keep = d.cells.filter((c) => (s.build === "all" || c.scheme === s.build) && (s.ladder === "all" || c.ladder === s.ladder)
         && (s.seeds === "all" || c.seed === 1904));
       const grid = h("div", { class: "ladder-grid", style: `grid-template-columns: 4em repeat(${SIZES.length}, 1fr)` });
       const detailBox = h("div");
       for (const L of ROWS) {
-        grid.append(h("div", { class: "rowhd" }, `L = ${L}`));
+        grid.append(h("div", { class: "rowhd" }, `K = ${L}`));
         for (const size of SIZES) {
           const chips = keep.filter((c) => c.size === size && c.L === L).map((c) => {
             const b = h("button", {
               class: `ladder-chip ${c === selected ? "sel" : ""}`, style: `--chip:${color(c)}`,
-              title: `${c.name} — ${variantOf(c)}`, "aria-label": c.name,
+              title: `${c.name} \u2014 ${gridLabel(gridRow(c))}`, "aria-label": c.name,
               onclick: () => { selected = c; grid.querySelectorAll(".sel").forEach((x) => x.classList.remove("sel")); b.classList.add("sel"); detailBox.replaceChildren(detail(c)); },
             });
             return b;
@@ -256,16 +270,16 @@
       }
       grid.append(h("div", {}), ...SIZES.map((sz) => h("div", { class: "hd" }, sz)));
       detailBox.append(detail(selected));
-      const shown = uniq(keep.map(variantOf));
+      const shown = uniq(keep.map(gridRow));
       const legend = h("div", { class: "ladder-legend" },
-        variants.filter((v) => shown.includes(v)).map((v) => {
-          const c = series(12)[variants.indexOf(v) % 12];
-          return h("span", {}, h("i", { style: `background:${c};border-color:${c}` }), v);
+        GRID_ROWS.filter((r) => shown.includes(r)).map((r) => {
+          const c = series(12)[GRID_ROWS.indexOf(r) % 12];
+          return h("span", {}, h("i", { style: `background:${c};border-color:${c}` }), gridLabel(r));
         }));
       return [tiles([[keep.length, "runs in this view"], [uniq(keep.map((c) => c.size)).length, "sizes"],
         [uniq(keep.map((c) => c.L)).length, "language settings"], [uniq(keep.map((c) => c.seed)).length, "seeds"]]),
         h("div", { style: "margin-top:1em" }, grid),
-        h("p", { class: "viz-note" }, "Columns: model size (non-embedding parameters). Rows: number of training languages L. Each square is one run, coloured by what it changes with respect to the baseline. Picking a level in a dropdown hides the runs where that intervention does not apply (for example, the second language exists only at L = 2)."),
+        h("p", { class: "viz-note" }, "Columns: model size (non-embedding parameters). Rows: number of training languages K. Each square is one run, coloured by its data build and ladder, one row of the paper's training-grid table. A build sets the language-selection scheme M and the sampling temperature T; a ladder sets the model recipe."),
         legend, detailBox];
     });
   };

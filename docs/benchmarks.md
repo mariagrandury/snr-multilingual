@@ -18,7 +18,7 @@ and the framework for the task names to run.
 
 **Before you pick one for small-model ablations**, check whether it carries
 signal at your scale: most four-option benchmarks sit at chance below 1B
-([RQ0](findings/gate.md)), and the [recommender](recommend.md) ranks the
+([Measurability](findings/measurability.md)), and the [recommender](recommend.md) ranks the
 benchmarks of our suite per language and proxy size.
 
 ## Columns
