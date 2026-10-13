@@ -11,9 +11,8 @@ the signal-to-noise ratio, decision accuracy and the above-chance test
 improve, and does it matter whether we filter the benchmarks
 ([RQ0](gate.md)) before or after choosing the questions?
 
-**How we measure it.** For every benchmark in every trained language (846
-tasks), a question is kept when the 1.7B final runs that trained on its
-language answer it above chance on average (4 to 29 runs per task). We
+**How we measure it.** For every benchmark in every trained language (933 tasks), a question is kept when the 1.7B final runs that trained on its
+language answer it above chance on average (4 to 32 runs per task). We
 compare three readings: the **full benchmark**; **gate, then items** (the
 tasks the above-chance gate passes, cut to their kept questions, so the same
 tasks as the full benchmark); and **items, then gate** (every task cut
@@ -54,23 +53,19 @@ accuracy changed (down to up).
 
 ## What we find
 
-- **Fewer than half the questions are kept:** 45 % of the questions of the
-  507 tasks the gate passes at 1.7B, 44 % over all 840 tasks with a question
+- **Fewer than half the questions are kept:** 43 % of the questions of the 595 tasks the gate passes at 1.7B, 42 % over all 932 tasks with a question
   above chance.
 - **Choosing the questions first makes the gate almost vacuous.**
-  Recomputed on the kept questions it passes 816 of those 840 tasks at 1.7B
-  and 83–90 % of them at the proxies, against 37 % (90M) to 60 % (1.7B) for
+  Recomputed on the kept questions it passes 910 of those 932 tasks at 1.7B and 84–91 % of them at the proxies, against 40 % (90M) to 64 % (1.7B) for
   the full benchmarks.
 - **The SNR rises through a lower noise, not a better ranking.** On the same
-  tasks the median SNR rises ×1.27 at 90M to ×1.50 at 1.7B, because the
-  noise falls (×0.58–0.86) while the signal stays flat (×0.86–1.07).
+  tasks the median SNR rises ×1.29 at 90M to ×1.51 at 1.7B, because the
+  noise falls (×0.58–0.86) while the signal stays flat (×0.89–1.09).
 - **Decision accuracy barely follows, although the selection reads the
-  reference it is scored against.** The paired gain is +0.041 at 90M and
-  +0.003 to +0.023 at 175M–1B, inside the full benchmark's band; the tasks
+  reference it is scored against.** The paired gain is +0.045 at 90M and +0.002 to +0.033 at 175M–1B, inside the full benchmark's band; the tasks
   the recomputed gate admits rank at or below chance (0.47–0.50).
 - **The held-out version gains about as much.** The questions half of the
-  1.7B runs solve, chosen on other runs ([RQ8](subsets.md)), gain +0.015 to
-  +0.033 at 90M–600M.
+  1.7B runs solve, chosen on other runs ([RQ8](subsets.md)), gain +0.018 to +0.039 at 90M–600M.
 
 !!! success "Takeaway"
     Dropping the questions the large model gets wrong makes a benchmark look

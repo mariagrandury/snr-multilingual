@@ -9,8 +9,7 @@ others do not. Is it how the items were made (written in the language or
 translated), the task format, the number of answer options, a reading
 passage, the item length, or what the benchmark tests (its domain)?
 
-**How we measure it.** We describe each of the 29 benchmark families that
-clear the above-chance gate (512 tasks in 50 languages) by its
+**How we measure it.** We describe each of the 40 benchmark families that clear the above-chance gate (592 tasks in 50 languages) by its
 characteristics: curation, source, task format, answer options, reading
 passage, domain and two item lengths. We then ask whether a characteristic
 orders the families, and their tasks, by two measures: the **SNR** at the
@@ -39,29 +38,30 @@ mean it does not.
 
 <!-- highlight: rq09_benchmark_design -->
 
-- **The answer count orders the SNR, not the decisions.** The six
-  two-option families reach a median SNR of 1.91 against 0.75 for the
-  four-option ones (ρ = −0.65, interval −0.84 to −0.33), but against DA-size
-  the same code gives ρ = −0.30 on the reliable tasks and −0.03 on every task
-  above chance, both intervals across zero. The two-option families are also
+- **The answer count orders the SNR, not the decisions.** The nine
+  two-option families reach a median SNR of 1.77 against 0.76 for the 23
+  four-option ones (ρ = −0.67, interval −0.82 to −0.44), but against DA-size
+  the same code gives ρ = −0.32 on the reliable tasks and −0.20 on every task
+  above chance. The two-option families are also
   all continuation or minimal-pair formats, so format and option count cannot
   be told apart here.
-- **No characteristic orders the benchmarks by DA-size in both readings.**
-  On the reliable tasks the reading passage comes closest (ρ = 0.41, interval
-  −0.02 to 0.73); on every task above chance only the source does (ρ = −0.39:
-  the benchmarks translated from English decide better), and neither holds in
-  the other reading.
+- **Item count and skill order the benchmarks by DA-size.** On every task
+  above chance, item count reaches ρ = 0.63 (interval 0.40 to 0.81) and the
+  LM-like skill (commonsense, grammaticality, language modelling against
+  knowledge, reading, reasoning) 0.39 (0.04 to 0.67); on the reliable tasks
+  the skill reaches 0.51 (0.09 to 0.78). No other characteristic has a
+  DA-size interval above zero in both readings.
 - **Read task by task, the levels overlap.** On the reliable tasks the
-  medians of every two-level characteristic lie between 0.63 and 0.67; on
+  medians of every two-level characteristic lie between 0.61 and 0.67, except skill (LM-like 0.72 against 0.60); on
   every task above chance the median task sits at chance agreement (0.50 to
   0.51) at every proxy size.
 - **Knowledge benchmarks have a lower SNR, not a lower DA-size.** Their
-  median SNR is 0.73 against 1.77 for the commonsense ones; their tasks
-  read a DA-size of 0.50 against 0.59, but the domain's correlation with
+  median SNR is 0.73 against 1.61 for the commonsense ones; their tasks
+  read a DA-size of 0.51 against 0.60, but the domain's correlation with
   DA-size has an interval across zero in both readings.
 - **HellaSwag is the clean example.** A four-option, translated benchmark
   with a passage, it has the highest DA-size on every task above chance (0.75)
-  and the second-highest SNR (2.29).
+  and the fourth-highest SNR (2.29).
 - **The same items read sharper in their own language.** INCLUDE v2 in the
   item's language reaches an SNR of 0.89 against 0.68 for its English
   translation.

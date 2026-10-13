@@ -30,7 +30,7 @@ varies in two pairs only.
       The gap between accuracy and BPB does not come from the choice of the
       1.7B reference.
     - **The larger reference measures more of the suite.** The above-chance
-      filter keeps 772 of 927 benchmark tasks at 3B against 607 at 1.7B
+      filter keeps 778 of 933 benchmark tasks at 3B against 612 at 1.7B
       (+27 %), mostly the letter-format originals of Belebele, Global-MMLU
       and INCLUDE, which their reformulations already make measurable at
       1.7B.

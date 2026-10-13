@@ -91,27 +91,36 @@ that task's language the run had seen at that point.
 
 Outside English, the share of cells above chance is flat at about 40 % up to
 10⁸ tokens of the language and rises with every tenfold increase after, to
-63 % at 10¹⁰–10¹¹ tokens. Exposure is necessary but not sufficient: at
-10⁸–10⁹ tokens, 43 % of the 90M cells are above chance against 63 % of the
+64 % at 10¹⁰–10¹¹ tokens. Exposure is necessary but not sufficient: at
+10⁸–10⁹ tokens, 43 % of the 90M cells are above chance against 62 % of the
 1.7B cells. A language with a small share of the training mixture can stay
 at chance even in a large model, which is why the same benchmark is above
 chance in one language and not in another. The format matters here too:
-the letter-format INCLUDE stays at 5–11 % of its cells above chance from
-10⁷ tokens on, while its reformatted version reaches 99 %.
+the letter-format INCLUDE stays at 3–17 % of its cells above chance from
+10⁷ tokens on, while its reformatted version reaches 99–100 % from 10¹⁰ tokens.
 
 **Token thresholds.** Per benchmark and format we read the token count of
 the language from which at least half (or 90 %) of its cells are above
-chance. Nine of the 31 benchmark formats never reach half, among them the
-letter-format Belebele, Global-MMLU and INCLUDE; their reformatted versions
-reach it at 2.2 × 10⁶ to 4.6 × 10⁸ tokens. The threshold also moves with the
-model size, by up to two orders of magnitude at the 90 % level: Belebele RF
-needs 2.2 × 10⁹ tokens at 90M and at most 4.6 × 10⁷ at 1.7B.
+chance, with a logistic fit of the cells' verdict on the tokens. Ten of the
+30 benchmark formats never reach half, among them the letter-format
+Belebele, Global-MMLU and INCLUDE; their reformatted versions reach it at
+4.4 × 10⁵ to 4.4 × 10⁸ tokens. The threshold also moves with the model size,
+by nearly three orders of magnitude at the 90 % level: Belebele RF never
+reaches it at 90M, needs 5.6 × 10⁹ tokens at 175M and 9 × 10⁶ at 1.7B. A
+1.7B model needs about ten times fewer tokens of a language than a 90M one
+before the same benchmark leaves chance.
 
 *Drag the token count: each row is a benchmark format, its dot the
 threshold. A blue dot left of the black line has reached it; red means it
 never does. Switch the model size to see the thresholds move.*
 
 <div class="viz" data-viz="gateTokenSlider"></div>
+
+*The same thresholds as a table, per model size: the token count of the
+language from which half (and 90 %) of a benchmark's cells are above chance.
+Filter by format or name, and click a column to sort.*
+
+<div class="viz" data-viz="gateThresholdTable"></div>
 
 ### Early passes come from a constant answer
 
@@ -207,7 +216,7 @@ rewritten (orange) version. Pick a model size.*
     - Scored on the answer text, the same questions are above chance in 86,
       31 and 35 of those languages at 1.7B, and the change is significant at
       most sizes (stars). Tokens of the language do not rescue the letter
-      format: the letter-format INCLUDE stays at 5–11 % above chance however
+      format: the letter-format INCLUDE stays at 3–17 % above chance however
       much of the language the model has read.
     - The LLM rewrite brings Belebele above chance in every language from the
       smallest model, and INCLUDE slightly further than the mechanical

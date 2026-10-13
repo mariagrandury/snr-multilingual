@@ -57,9 +57,9 @@ setting and how far up the ladder the fit reaches, and compare the forecast
   (IQR 0.76–0.94). Per-language BPB fits at 1.00 for all 50 trained languages.
   HellaSwag's family median is 0.88, LAMBADA's 0.96 and ARC's 0.98.
 - **74 % of the tasks with a fit are predictable along both size and
-  training.** Of the 420 accuracy and BPB tasks with a regime, 311 are, 56 are
-  predictable across size only, 42 are weak in both and 11 decline with size.
-  None is predictable during training but not across size (9 of the 609 bBPB
+  training.** Of the 419 accuracy and BPB tasks with a regime, 311 are, 57 are
+  predictable across size only, 40 are weak in both and 11 decline with size.
+  None is predictable during training but not across size (9 of the 688 bBPB
   twins are), so varying model size gives the signal without long training
   runs.
 - **The gate decides which benchmarks have a law at all.** 429 of 988

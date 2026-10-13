@@ -39,8 +39,7 @@ in levels.
 
 <!-- highlight: rq07_external_frameworks -->
 
-- **Both corpora rank the nine gated shared tasks alike** (Spearman ρ 0.77,
-  Pearson r of log₁₀ SNR 0.77, p = 0.016). Both put BoolQ last and OpenBookQA
+- **Both corpora rank the nine gated shared tasks alike** (Spearman ρ 0.78, Pearson r of log₁₀ SNR 0.75). Both put BoolQ last and OpenBookQA
   near the bottom. The top task differs (HellaSwag on ours, ARC Easy on
   DataDecide). Nine points make this indicative, not robust.
 - **Our SNR is 1.2–4.2× smaller.** DataDecide's SNR exceeds ours on every

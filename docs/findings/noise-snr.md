@@ -72,8 +72,8 @@ comparisons against 1.7B into agreements and flips (orange), and each into
   30 %, data scheme A vs B 29 %, A vs C 43 %, temperature 46 %,
   activation 27 %). The optimizer has a single cell so far.
 - **The 600M BPB misses are one seed of one depth pair.** Per-language BPB
-  ranks the variants like 1.7B from every proxy (DA-size 0.91–0.95) except
-  600M (0.73). There, 95 % of the depth comparisons flip against 4–27 % at
+  ranks the variants like 1.7B from every proxy (DA-size 0.89–0.94) except
+  600M (0.74). There, 95 % of the depth comparisons flip against 4–27 % at
   the other proxies, while language count, data scheme and temperature
   behave as everywhere else. Most of those flips are below the 600M seed
   noise, and re-drawing the deep run's seed flips 15, 43 or 50 of the 50
@@ -81,7 +81,7 @@ comparisons against 1.7B into agreements and flips (orange), and each into
   not size-matched, +3.7 % parameters for shallow).
 - **The ranking of SNR definitions survives a seed swap only as a
   family.** Across replicate seeds the ranking of the 22 definitions
-  correlates at Spearman ρ 0.72 (DA-ckpt) and 0.55 (DA-size), but that rests
+  correlates at Spearman ρ 0.73 (DA-ckpt) and 0.55 (DA-size), but that rests
   on one or two languages (English, Russian).
 
 !!! success "Takeaway"

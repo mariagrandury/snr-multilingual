@@ -41,7 +41,7 @@ which language.
 
 <a class="card" href="ladder/"><b>An open model ladder</b><span>218 runs from 90M to 3B non-embedding parameters, 1 to 50 training languages, seven single-choice interventions (depth, activation, optimizer, language list, sampling temperature, second language, English source) and seed replicates, each trained for 100 tokens per parameter.</span></a>
 
-<a class="card" href="ladder/#evaluation"><b>Per-checkpoint measurements</b><span>Bits per byte in 100 languages and 47 benchmarks (892 benchmark-language tasks, chosen from 95 considered), on ten aligned fractions of every run: 212 models and 4,392 intermediate checkpoints.</span></a>
+<a class="card" href="ladder/#evaluation"><b>Per-checkpoint measurements</b><span>Bits per byte in 100 languages and 52 benchmarks (938 benchmark-language tasks, chosen from 95 considered), on ten aligned fractions of every run: 213 models and 4,412 intermediate checkpoints.</span></a>
 
 <a class="card" href="findings/"><b>Signal and noise, multilingual</b><span>The signal-to-noise framework extended from English to a controlled multilingual ladder: chance threshold, scaling, decision accuracy, noise, cheap predictors, language transfer and a check one size above the reference.</span></a>
 
@@ -55,17 +55,17 @@ which language.
 
 <a class="card" href="findings/gate/"><b>Much of the suite is at chance</b><span>In the languages the models train on, only 40 % of the 933 benchmark tasks with a chance level are above chance at 90M and 64 % at 1.7B; 34 % never pass at any size.</span></a>
 
-<a class="card" href="findings/gate/"><b>The answer format decides who passes</b><span>Scoring the answer text instead of a letter lifts Belebele from 5 to 86 of 105 languages at 1.7B, Global-MMLU from 1 to 35 of 37 and INCLUDE from 3 to 31 of 43. More tokens of the language do not do it: letter-format INCLUDE stays at 5–11 % of its cells from 10<sup>7</sup> tokens on.</span></a>
+<a class="card" href="findings/gate/"><b>The answer format decides who passes</b><span>Scoring the answer text instead of a letter lifts Belebele from 5 to 86 of 105 languages at 1.7B, Global-MMLU from 1 to 35 of 37 and INCLUDE from 3 to 31 of 43. More tokens of the language do not do it: letter-format INCLUDE stays at 3–17 % of its cells from 10<sup>7</sup> tokens on.</span></a>
 
 <a class="card" href="findings/scaling/"><b>Above chance, scores scale</b><span>Where a task is above chance, a log-linear fit in model size explains most of its variance (median R² = 0.87), and per-language bits per byte fits almost perfectly (median R² ≈ 1.00).</span></a>
 
-<a class="card" href="findings/decision-accuracy/"><b>Accuracy ranks near chance, bits per byte do not</b><span>Against the 1.7B reference, a fully trained smaller model agrees on 51–57 % of the design decisions read on benchmark accuracy (90M to 1B), but on 91–95 % of those read on per-language bits per byte, at every proxy except 600M (73 %, where the depth pair is not size-matched).</span></a>
+<a class="card" href="findings/decision-accuracy/"><b>Accuracy ranks near chance, bits per byte do not</b><span>Against the 1.7B reference, a fully trained smaller model agrees on 51–57 % of the design decisions read on benchmark accuracy (90M to 1B), but on 89–94 % of those read on per-language bits per byte, at every proxy except 600M (74 %, where the depth pair is not size-matched).</span></a>
 
 <a class="card" href="findings/decision-accuracy/"><b>Training a proxy longer does not help</b><span>A proxy's ranking converges to its own final ranking, but its agreement with the 1.7B ranking stays flat over training. Two seeds of the same design already agree on 78–80 % of pairs at 90 % of a run, so early agreement is mostly persistence.</span></a>
 
 <a class="card" href="findings/noise-snr/"><b>Seed noise is the yardstick</b><span>A score moves 1.75× more between seeds than between late checkpoints (median). Against seed noise, no design decision with more than one cell clears 2× in half of its cells. Depth's median is 1.30×.</span></a>
 
-<a class="card" href="findings/surrogates/"><b>Cheap predictors reach ρ ≈ 0.6</b><span>Early-checkpoint ranking agreement and the relative-spread SNR predict decision accuracy best (Spearman ρ 0.53–0.60), already at 90M. The signal term alone and the margin above chance carry no information.</span></a>
+<a class="card" href="findings/surrogates/"><b>Cheap predictors reach ρ ≈ 0.6</b><span>Early-checkpoint ranking agreement and the relative-spread SNR predict decision accuracy best (Spearman ρ 0.53–0.62), already at 90M. The signal term alone and the margin above chance carry no information.</span></a>
 
 <a class="card" href="findings/language-transfer/"><b>Scaling transfers across languages</b><span>One 175M measurement plus an exponent pooled over the other languages predicts a language's 1.7B bits per byte within 4.4 % (median), and within 5.0 % for languages the model never trained on.</span></a>
 

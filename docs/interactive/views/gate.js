@@ -113,7 +113,7 @@
         S.control({ type: "seg", label: "Model size", options: [{ value: "all", label: "pooled" }, ...x.sizes], value: "all" }, (v) => { st.sizes = v; render(); }),
         S.control({ type: "seg", label: "Share of cells above chance", options: [{ value: 0.5, label: "≥ 50 %" }, { value: 0.9, label: "≥ 90 %" }], value: 0.5 }, (v) => { st.level = v; render(); }),
         h("label", {}, h("span", {}, "Tokens of the language seen: ", out),
-          h("input", { type: "range", min: 6, max: 11, step: 0.05, value: st.t,
+          h("input", { type: "range", min: 5, max: 11, step: 0.05, value: st.t,
             oninput: (e) => { st.t = +e.target.value; out.textContent = tok(10 ** st.t); render(); } })),
       ];
     }, () => {
@@ -129,7 +129,7 @@
         [n(SC.notyet), "reach it with more tokens"], [n(SC.never), "never reach it in the sweep"]]),
       plot({
         height: 17 * benches.length + 70, marginLeft: 190, marginRight: 80, marginTop: 30,
-        x: { type: "log", domain: [1e6, 1.5e11], label: "tokens of the language seen (log)", tickFormat: tok, ticks: [1e6, 1e7, 1e8, 1e9, 1e10, 1e11], axis: "top", grid: true },
+        x: { type: "log", domain: [1e5, 1.5e11], label: "tokens of the language seen (log)", tickFormat: tok, ticks: [1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11], axis: "top", grid: true },
         y: { domain: benches, label: null, tickFormat: (b) => name(x.names, b), tickSize: 0 },
         color: { domain: dom, range: [css("--viz-s1"), css("--viz-muted"), css("--viz-bad")], legend: true, label: "at the chosen token count" },
         marks: [
@@ -144,6 +144,62 @@
             tip: true, title: (r) => `${name(x.names, r.b)}: ${r.status === SC.never ? `never ${st.level * 100} % of cells above chance at any token count the sweep reached` : "fewer than 40 non-English cells at this size"}` }),
         ],
       }), note("Each row is one benchmark in one format. The grey bar spans the token counts the sweep covers for it; the dot is the token count from which at least the chosen share of its cells stays above chance in every higher bin. Drag the slider: a dot left of the black line is reached. Pick a model size to see how far the threshold moves with size.")];
+    });
+  };
+
+  // ---------- 3b. token thresholds: the paper's table (app_rq00_thresholds), sortable ----------
+  S.VIEWS.gateThresholdTable = async (el) => {
+    const x = await S.load("gate_extra");
+    const T = x.thresholds;
+    const get = (b, z, lv) => T.find((r) => r.benchmark === b && r.sizes === z && r.level === lv);
+    // the paper keeps a benchmark when some size has enough cells for a fit
+    const benches = uniq(T.map((r) => r.benchmark)).filter((b) => T.some((r) => r.benchmark === b && r.sizes !== "all" && r.status !== "no bin"));
+    const head = (b) => get(b, "all", 0.5) ?? T.find((r) => r.benchmark === b);
+    const FMT = ["Original", "RF", "LLM-RF"];
+    const order = [...benches].sort((a, b) => head(a).name.localeCompare(head(b).name) || FMT.indexOf(head(a).format_label) - FMT.indexOf(head(b).format_label));
+    // a cell as the paper writes it, and a sort value: a never sorts after every reached threshold, no fit last
+    const text = (r) => !r || r.status === "no bin" ? "–" : r.status === "never" ? `> ${tok(r.highest_tokens)}`
+      : (r.status === "<= lowest bin" ? "≤ " : "") + tok(r.bin_lo);
+    const value = (r) => !r || r.status === "no bin" ? null : r.status === "never" ? 1e13 + r.highest_tokens : r.bin_lo;
+    const shade = d3.scaleSequentialLog(d3.interpolateBlues).domain([1e5, 3e11]);
+    const cell = (r, label) => {
+      const v = value(r);
+      const bg = v == null ? null : v >= 1e13 ? `color-mix(in srgb, ${css("--viz-bad")} 22%, transparent)` : shade(v);
+      const dark = v != null && v < 1e13 && v > 3e8;
+      const [top, sub] = [label].flat();
+      return h("span", { style: `display:block;padding:.15em .35em;border-radius:3px;white-space:nowrap;line-height:1.25;${bg ? `background:${bg};` : ""}${dark ? "color:white;" : v != null ? "color:#1a1a1a;" : ""}`,
+        title: r ? `${r.name} (${r.format_label}), ${r.sizes}: ${[label].flat().join(" / ")}` : "" },
+        top, sub ? h("span", { style: "display:block;font-size:.85em;opacity:.8" }, sub) : null);
+    };
+    const formats = FMT.filter((f) => order.some((b) => head(b).format_label === f));
+    S.mount(el, [
+      { key: "lv", label: "Share of cells above chance", type: "seg", options: [{ value: "0.5", label: "50 %" }, { value: "0.9", label: "90 %" }, { value: "both", label: "50 % / 90 %" }], value: "both" },
+      { key: "fmt", label: "Format", type: "seg", options: ["all", ...formats], value: "all" },
+      { key: "q", label: "Benchmark", type: "text" },
+    ], (s) => {
+      const lv = s.lv === "both" ? 0.5 : +s.lv;
+      const q = (s.q ?? "").toLowerCase();
+      const rows = order.filter((b) => (s.fmt === "all" || head(b).format_label === s.fmt) && head(b).name.toLowerCase().includes(q))
+        .map((b, i) => {
+          const r = head(b);
+          const row = { order: -i, name: r.name + (r.english_text ? " †" : ""), format: r.format_label, langs: r.n_languages,
+            margin: r.margin_median, items: r.n_items_median };
+          for (const z of x.sizes) {
+            const a = get(b, z, lv), c = get(b, z, 0.9);
+            row[z] = value(a);
+            row[`_${z}`] = s.lv === "both" && text(a) !== text(c) ? cell(a, [text(a), text(c)]) : cell(a, text(a));
+          }
+          return row;
+        });
+      return [S.table(rows, [
+        { key: "name", label: "Benchmark" },
+        { key: "format", label: "Format" },
+        { key: "langs", label: "Lang.", num: true, digits: 0, title: "non-English trained languages with cells" },
+        ...x.sizes.map((z) => ({ key: z, label: z, render: (r) => r[`_${z}`], title: `sort by the ${s.lv === "0.9" ? "90" : "50"} % threshold at ${z}` })),
+        { key: "margin", label: "Margin", num: true, digits: 3, title: "median accuracy above chance a task needs for its Wilson bound to clear chance" },
+        { key: "items", label: "Items", render: (r) => d3.format(",")(r.items), num: true },
+      ], { sort: "order" }),
+      note("Training tokens of the language a model of each size needs before a benchmark is above chance: the token count at which a logistic fit of its (language, K, checkpoint) cells reaches 50 % (and 90 %) above chance, on the non-English cells. ≤ X: the share holds from the fewest tokens that size saw. > X: not reached by the most tokens that size saw. Darker = more tokens; red = never reached in the sweep. † the text is English while the task carries a country's language. With both shares shown, a cell gives 50 % on top and 90 % below. Click a column to sort; the paper's version is the thresholds table of the measurability appendix.")];
     });
   };
 

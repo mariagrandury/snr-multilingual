@@ -14,6 +14,8 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "src/signal-and-noise"))
 from analysis import paths  # noqa: E402
 from analysis.utils import PROBE_SIZES  # noqa: E402
+from analysis.grids import base  # noqa: E402
+from analysis.rq01_scaling_predictability.tokens_seen import CLOZE_RELEASES, ENGLISH_TEXT, FORMAT_NAMES  # noqa: E402
 
 SIZES = ["90M", "175M", "350M", "600M", "1B", "1.7B"]
 # internal checkpoints never reach the site (the same guard as build_site_data.UNRELEASED)
@@ -100,6 +102,10 @@ def build() -> dict:
     thr = pd.read_csv(tok / "predictivity_seeds/pass_threshold_tokens_by_benchmark_1904_ckpts.csv")
     thr = thr[["benchmark", "name", "format", "n_languages", "margin_median", "n_items_median", "sizes", "level",
                "status", "bin_lo", "lowest_tokens", "highest_tokens", "share_above"]]
+    # the paper table's format label and English-text mark (tokens_seen.pass_thresholds)
+    family = thr["benchmark"].map(base)
+    thr = thr.assign(format_label=np.where(family.isin(CLOZE_RELEASES), "RF", thr["format"].map(FORMAT_NAMES)),
+                     english_text=family.isin(ENGLISH_TEXT))
 
     ext = pd.read_csv(g / "above_random_external_lines.csv")
     ext = ext[~ext["line"].str.contains(UNRELEASED, case=False) & ~ext["model"].str.contains(UNRELEASED, case=False)]

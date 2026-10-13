@@ -46,14 +46,13 @@ decision accuracy.
 ## What we find
 
 - **No single surrogate leads at every proxy size.** On the pooled
-  benchmark tasks (accuracy + bBPB, 1175–1360 tasks) early-checkpoint
-  agreement reads ρ 0.53–0.60 and the relative-std SNR 0.53–0.59, trading
-  the lead: early agreement at 90M, 175M and 1B, SNR at 350M and 600M. The
-  scaling-fit R² follows at 0.42–0.46 from 350M. The signal is there at
+  benchmark tasks (accuracy + bBPB, 1274–1461 tasks) early-checkpoint
+  agreement reads ρ 0.54–0.62 and the relative-std SNR 0.53–0.60, trading
+  the lead: early agreement at 90M, 175M, 600M and 1B, SNR at 350M. The
+  scaling-fit R² follows at 0.45–0.49 from 350M. The signal is there at
   90M already and does not grow with the proxy.
-- **The predictive part of SNR is its noise.** Signal alone (ρ −0.09 to
-  0.05) and the margin above chance (−0.05 to 0.04) carry nothing. The
-  inverted noise alone reads 0.41–0.53.
+- **The predictive part of SNR is its noise.** Signal alone (ρ −0.16 to 0.00) and the margin above chance (−0.03 to 0.09) carry nothing. The
+  inverted noise alone reads 0.44–0.56.
 - **The ρ ≈ 0.6 level comes from the bBPB twins.** On the accuracy tasks
   alone (359–544) the relative-std SNR reads 0.31–0.36 and leads from
   90M to 600M (tied with the inverted noise at 600M). At 1B the inverted
@@ -61,12 +60,11 @@ decision accuracy.
   early agreement reads 0.57–0.70.
 - **Per-language BPB turns negative at 600M.** Every statistic but the
   inverted noise is positive from 90M to 350M and drops below zero at 600M
-  (SNR −0.34, scaling-fit R² −0.61), the proxy whose depth pairs disagree
+  (SNR −0.37, scaling-fit R² −0.60), the proxy whose depth pairs disagree
   with 1.7B ([RQ3](noise-snr.md)). No proxy statistic can see a reversal
   that only happens at the reference.
 - **Among the 22 SNR definitions the relative-spread family wins as a
-  block** (`rel_std`, `rel_mpd`, `rel_dispersion`: mean r 0.51–0.52 with
-  DA-size, 0.55–0.56 with DA-ckpt), and it is the best family for DA-size in
+  block** (`rel_std`, `rel_mpd`, `rel_dispersion`: mean r 0.52–0.53 with DA-size, 0.52–0.54 with DA-ckpt), and it is the best family for DA-size in
   26 of 50 languages; the depth definitions are null.
 
 <!-- highlight: rq04_surrogates -->
