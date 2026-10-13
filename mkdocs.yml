@@ -1,10 +1,11 @@
-site_name: SNR Multilingual
+site_name: Scaling Reliability
 site_description: Signal-Aware Framework for Multilingual LM Evaluation
 site_url: https://snr-multilingual.netlify.app/
 docs_dir: docs
 site_dir: site
 exclude_docs: |
   CLAUDE.md
+  findings_all/
 
 theme:
   name: material
@@ -40,29 +41,11 @@ nav:
   - Model ladder: ladder.md
   - Findings:
       - findings/index.md
-      - "A · Is the evaluation predictable?":
-          - "RQ0 · Above chance": findings/gate.md
-          - "RQ1 · Scaling": findings/scaling.md
-          - "RQ2 · Decision accuracy": findings/decision-accuracy.md
-      - "B · Can it be measured cheaply?":
-          - "RQ3 · Noise and SNR": findings/noise-snr.md
-          - "RQ4 · Cheap predictors": findings/surrogates.md
-      - "C · Does it generalise?":
-          - "RQ5 · Design decisions": findings/design-decisions.md
-          - "RQ6 · Language transfer": findings/language-transfer.md
-          - "RQ7 · External frameworks": findings/external.md
-      - "D · Can benchmarks be improved?":
-          - "RQ8 · Subsets": findings/subsets.md
-          - "RQ9 · Benchmark design": findings/benchmark-design.md
-          - "RQ12 · Above-chance items": findings/above-chance-items.md
-      - "E · Past the reference":
-          - "RQ10 · 3B": findings/size-generalisation.md
-      - "F · The recommendation":
-          - "RQ11 · Evaluation recipe": findings/recipe.md
-      - "Sanity check":
-          - "RQ13 · English only": findings/english-only.md
-  - Benchmarks: benchmarks.md
+      - "Measurability": findings/measurability.md
+      - "Agreement": findings/agreement.md
+      - "Anticipation": findings/anticipation.md
   - Recommender: recommend.md
+  - Benchmarks: benchmarks.md
   # Docs tab hidden for the double-blind review (uncomment to restore):
 #   - Docs:
 #       - Overview: repo.md
@@ -151,6 +134,7 @@ extra_javascript:
   - interactive/views/size-generalisation.js
   - interactive/views/subsets.js
   - interactive/views/surrogates.js
+  - interactive/views/paper.js
 
 extra_css:
   - interactive/app.css
