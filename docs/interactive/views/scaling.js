@@ -128,7 +128,7 @@
           st.L = "all"; controls(); render();
         }),
         select("Task", byFam.get(st.fam).map((x) => [x.task, tLabel(x)]).sort((a, b) => a[1].localeCompare(b[1])), st.task, (v) => { st.task = v; st.L = "all"; controls(); render(); }),
-        select("Language setting", [["all", "every L"], ...Ls.map((L) => [String(L), `L = ${L}`])], st.L, (v) => { st.L = v; render(); }),
+        select("Language setting", [["all", "every K"], ...Ls.map((L) => [String(L), `K = ${L}`])], st.L, (v) => { st.L = v; render(); }),
       );
     };
 
@@ -145,7 +145,7 @@
       const finals = shown.flatMap((L) => LADDER.map((size, i) => {
         const pts = curves[L]?.[size];
         const last = pts?.[pts.length - 1];
-        return last && last[0] === 10 ? { L: `L${L}`, Lnum: L, size, N: sizeNum(size), y: last[1], above: up(i) } : null;
+        return last && last[0] === 10 ? { L: `K${L}`, Lnum: L, size, N: sizeNum(size), y: last[1], above: up(i) } : null;
       }).filter(Boolean));
       // The fitted line over the rungs above chance: rq01's slope through the mean of those rungs.
       const lines = shown.flatMap((L) => {
@@ -153,7 +153,7 @@
         const g = finals.filter((f) => f.Lnum === L && f.above);
         if (r2 == null || g.length < 3) return [];
         const mx = d3.mean(g, (f) => Math.log10(f.N)), my2 = d3.mean(g, (f) => f.y);
-        return d3.extent(g, (f) => f.N).map((N) => ({ L: `L${L}`, N, y: my2 + slope * (Math.log10(N) - mx) }));
+        return d3.extent(g, (f) => f.N).map((N) => ({ L: `K${L}`, N, y: my2 + slope * (Math.log10(N) - mx) }));
       });
       const ys = finals.map((f) => f.y).concat(t.chance != null ? [t.chance] : []);
       const reg0 = regime[t.task];
@@ -180,7 +180,7 @@
       });
       const sizeLegend = legend(shown.map((L) => {
         const [r2, , , n] = t.fits[L];
-        return [lColor(L), r2 == null ? `L${L}: no fit (above chance at ${n} of ${LADDER.length} sizes)` : `L${L}: R² ${fmt(r2)} over ${n} sizes`];
+        return [lColor(L), r2 == null ? `K${L}: no fit (above chance at ${n} of ${LADDER.length} sizes)` : `K${L}: R² ${fmt(r2)} over ${n} sizes`];
       }));
 
       // Along training: one run per size at one language setting.
@@ -204,7 +204,7 @@
       out.replaceChildren(head,
         h("p", { class: "viz-note" }, "Across model size: each run's final score, one colour per language setting L. Filled dots are above chance and enter the fit (the line); hollow ones are at chance and do not."),
         sizeChart, sizeLegend,
-        h("p", { class: "viz-note", style: "margin-top:1em" }, `Along training at L = ${Lt}${st.L === "all" ? " (pick a language setting above to change it)" : ""}: one line per model size, light to dark blue from 90M to 1.7B. Dashed, faded runs are at chance at that size and stay out of the training fit.`),
+        h("p", { class: "viz-note", style: "margin-top:1em" }, `Along training at K = ${Lt}${st.L === "all" ? " (pick a language setting above to change it)" : ""}: one line per model size, light to dark blue from 90M to 1.7B. Dashed, faded runs are at chance at that size and stay out of the training fit.`),
         trainChart,
         legend(LADDER.filter((s) => runs.some((r) => r.size === s)).map((s) => [sc[LADDER.indexOf(s)], s])));
     };
@@ -233,12 +233,12 @@
     const signed = (e) => `${e > 0 ? "+" : ""}${fmt(100 * e, 1)} %`;
     S.mount(el, [
       { key: "task", label: "Language", options: tasksF.map((t) => ({ value: t, label: bpbName(t) })), string: true },
-      { key: "L", label: "Language setting", type: "seg", options: LS.map((L) => ({ value: L, label: `L${L}` })), value: 30 },
+      { key: "L", label: "Language setting", type: "seg", options: LS.map((L) => ({ value: L, label: `K${L}` })), value: 30 },
       { key: "top", label: "Fit on the sizes up to", type: "seg", options: TOPS, value: "600M" },
     ], (s) => {
       const fits = d.fits.filter((f) => f.task === s.task && f.L === s.L);
       const fit = fits.find((f) => f.top === s.top);
-      if (!fit) return h("div", { class: "viz-empty" }, `${bpbName(s.task)} is not a training language at L = ${s.L}: rq01 fits the BPB of trained languages only. Try another setting.`);
+      if (!fit) return h("div", { class: "viz-empty" }, `${bpbName(s.task)} is not a training language at K = ${s.L}: rq01 fits the BPB of trained languages only. Try another setting.`);
       const obs = d.observed.filter((o) => o.task === s.task && o.L === s.L).map((o) => ({ ...o, N: sizeNum(o.size), inFit: sizeNum(o.size) <= sizeNum(s.top) }));
       const law = (N) => fit.predicted * (N / sizeNum(REF)) ** -fit.alpha;
       const grid = d3.range(0, 41).map((i) => sizeNum(LADDER[0]) * (sizeNum(REF) / sizeNum(LADDER[0])) ** (i / 40));

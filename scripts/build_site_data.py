@@ -30,6 +30,14 @@ from analysis import paths  # noqa: E402
 OUT = REPO / "docs/interactive/data"
 PRED = "pretraining/predictivity"
 ALL = "pretraining/predictivity_seeds"   # every seed and data build
+# The site shows these "extra" families (MultiBLiMP's missing trained languages,
+# NorEval's MC extras) as part of their main benchmark.
+EXTRA_FAMILIES = {"multiblimp-extra": "multiblimp", "noreval_extra": "noreval"}
+
+
+def merge_extra(families: pd.Series) -> pd.Series:
+    """EXTRA_FAMILIES applied to family names, prefixed ones too (bbpb_noreval_extra)."""
+    return families.replace({rf"^(.*){re.escape(k)}$": rf"\g<1>{v}" for k, v in EXTRA_FAMILIES.items()}, regex=True)
 
 
 def rows(df: pd.DataFrame) -> list[dict]:
@@ -163,7 +171,8 @@ def evaluation(languages: list[str]) -> dict:
     `sizes` carries each rung's full-run tokens and FLOPs parameters (baseline
     ladder) so the page can show tokens or compute = 6 N D.
     Cards: configs/tasks.json (n_options, languages, the example and dataset
-    written by src/evals/scripts/derive_task_options.py --examples)."""
+    written by src/evals/scripts/derive_task_options.py --examples).
+    The EXTRA_FAMILIES are shown as part of their main benchmark."""
     from analysis.utils import benchmark_family
     from mkdocs_hooks import _ORGS, _PEOPLE
     from snr.download.ladder import cell_params
@@ -171,6 +180,7 @@ def evaluation(languages: list[str]) -> dict:
     hp = json.loads((REPO / "src/pretrain/hyperparams/hyperparams_deep.json").read_text())["configs"]
 
     sc = pd.read_csv(paths.GATE_AND_CURVES / PRED / "score_curves.csv")
+    sc["family"] = merge_extra(sc["family"])
     sc["c"] = (sc["chinchilla"] * 4).round() / 4          # the saves drift a few iterations off the grid
     sc["w"] = sc["score"] * sc["models"]
     g = sc.groupby(["language", "family", "size", "c"])
@@ -178,7 +188,7 @@ def evaluation(languages: list[str]) -> dict:
     chance = sc.groupby(["language", "family"])["chance"].mean()
 
     bc = pd.read_csv(paths.GATE_AND_CURVES / ALL / "benchmark_curves.csv")
-    bc["family"] = bc["task"].map(benchmark_family)
+    bc["family"] = merge_extra(bc["task"].map(benchmark_family))
     bc["size"] = bc["model"].str.extract(r"^lm-([\d.]+[MB])-", expand=False)
     bc["c"] = (bc["frac"] * 5 * 4).round() / 4
     per_cell = bc.groupby(["model", "size", "family", "c"])["primary_score"].mean().reset_index()
@@ -206,7 +216,7 @@ def evaluation(languages: list[str]) -> dict:
     fams = sorted({f for lang in curves.values() for f in lang})
     cards = {}
     for fam in fams:
-        tasks = {k: v for k, v in tj["tasks"].items() if v["benchmark"] == fam and "pretraining" in v["stages"]}
+        tasks = {k: v for k, v in tj["tasks"].items() if EXTRA_FAMILIES.get(v["benchmark"], v["benchmark"]) == fam and "pretraining" in v["stages"]}
         opts = pd.Series([v["n_options"] for v in tasks.values() if "n_options" in v])
         m = meta.get(fam) or meta.get(re.sub(r"^rf(gm)?_", "", fam)) or {}
         examples = {}
@@ -229,6 +239,8 @@ def evaluation(languages: list[str]) -> dict:
             # INCLUDE v2 "og" items have no English task of their own: the
             # English version of the same items is the include_v2_en family
             english_twin="include_v2_en" if fam == "include_v2_og" else None,
+            # no item of INCLUDE v2 records a dataset id: the card links the v1 release
+            fallback_source=dict(id="CohereForAI/include-base-44", label="INCLUDE v1") if fam.startswith("include_v2") else None,
             examples=examples)
     missing = [f for f in fams if f not in meta and re.sub(r"^rf(gm)?_", "", f) not in meta]
     if missing:
@@ -431,7 +443,7 @@ def lookup(cells: list[dict]) -> dict:
     if c["train_tokens"].isna().any():
         print(f"lookup: {c['train_tokens'].isna().mean():.0%} of the cells have no token count "
               "(the mixture plans were unreachable when rq tokens_seen ran) and are left out")
-    c = c.dropna(subset=["train_tokens"])
+    c = c.dropna(subset=["train_tokens"]).assign(benchmark=lambda x: merge_extra(x["benchmark"]))
     key = ["benchmark", "language", "model_size"]
     cell = (c.assign(above=c["above_chance"].astype(bool))
             .groupby([*key, "language_scheme", "frac"])
@@ -447,7 +459,8 @@ def lookup(cells: list[dict]) -> dict:
                               hi=g["tokens"].max(), n_cells=len(g), n_tasks=g["n_tasks"].max()))
 
     t = cell.groupby(key).apply(threshold, include_groups=False).reset_index()
-    t[["min_tokens", "lo", "hi"]] = t[["min_tokens", "lo", "hi"]].round(-6)
+    # three significant figures: rounding to millions turned sub-million counts into 0
+    t[["min_tokens", "lo", "hi"]] = t[["min_tokens", "lo", "hi"]].map(lambda v: v if pd.isna(v) else float(f"{v:.3g}"))
     sizes = [s for s in GATE_SIZES if s in set(t["model_size"])]
     budget = {s: int(pd.Series([r["tokens"] for r in cells if r["size"] == s]).mode().iloc[0]) for s in sizes}
     order = list(t.assign(ok=t["min_tokens"].notna()).groupby("benchmark")["ok"].mean()
@@ -485,7 +498,28 @@ def _tables() -> list:
         d = pd.read_csv(paths.DECISION_ACCURACY / PRED / "da_all_per_benchmark_multi_axes.csv")
         return dict(
             early_small=rows(pd.read_csv(paths.DECISION_ACCURACY / PRED / "early_small_da_goal_summary_multi_axes.csv")),
-            per_task=table(d[["language", "benchmark", "task", "da_def", "comparison", "decision_acc"]]))
+            per_task=table(d[["language", "benchmark", "task", "da_def", "comparison", "decision_acc"]]
+                           .assign(benchmark=lambda x: merge_extra(x["benchmark"]))))
+
+    def recommend():
+        """The recommender's DA per (task, comparison) and the BPB DA-goal per
+        (proxy size, tenth), for each pair set: rq02's own melt of its per-task
+        table (da_per_benchmark.melt_da) and the BPB mean of
+        early_small_da_goal_summary, read on the one-axis or every pair."""
+        from analysis.rq02_decision_accuracy.da_per_benchmark import melt_da
+        from analysis.utils import AXES_SUFFIX, LANGUAGE_AGGREGATES, assign_language, benchmark_family, one_axes
+        per_task = pd.read_csv(paths.DECISION_ACCURACY / PRED / "da_all_per_task_both_axes.csv")
+        early = pd.read_csv(paths.DECISION_ACCURACY / PRED / "da_goal_early_small_per_task_both_axes.csv")
+        early = early[(early["task"].map(benchmark_family) == "bpb") & ~early["task"].map(assign_language).isin(LANGUAGE_AGGREGATES)]
+        out = {"names": _names(merge_extra(per_task["task"].map(benchmark_family)))}
+        for axes in ("mono-axis", "multi-axis"):
+            d = melt_da(one_axes(per_task, axes).set_index("task"))
+            d = d[d["da_def"].isin(["DA-size", "DA-ckpt"])].assign(benchmark=lambda x: merge_extra(x["benchmark"]))
+            wide = d.pivot_table(index=["language", "benchmark", "task"], columns="comparison", values="decision_acc")
+            out[AXES_SUFFIX[axes].strip("_")] = dict(
+                per_task=table(wide.reset_index()),          # one row per task, one column per comparison
+                bpb_early=rows(one_axes(early, axes).groupby(["proxy_size", "frac"], as_index=False)["da"].mean()))
+        return out
 
     def ext():
         e = paths.EXTERNAL_FRAMEWORKS / "all/external"
@@ -503,6 +537,7 @@ def _tables() -> list:
             regimes=rows(pd.read_csv(paths.SCALING_PREDICTABILITY / ALL / "scaling_regimes.csv")),
             families=rows(pd.read_csv(paths.SCALING_PREDICTABILITY / ALL / "rq1_families.csv")))),
         ("decision_accuracy", da),
+        ("recommend", recommend),
         ("snr", lambda: dict(
             per_task=table(pd.read_csv(paths.NOISE_AND_SNR / PRED / "snr.csv")),
             effect_over_seed=table(pd.read_csv(paths.NOISE_AND_SNR / ALL / "effect_over_seed.csv")))),

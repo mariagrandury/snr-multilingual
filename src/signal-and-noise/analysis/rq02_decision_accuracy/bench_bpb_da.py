@@ -190,11 +190,11 @@ def heatmap(summ: pd.DataFrame, letter: dict, out_dir: Path, note: str) -> None:
 
 
 def bars_ax(ax, s: pd.DataFrame, title: str, ref: dict | None = None, names: dict = READINGS,
-            ref_label: str = "FineWeb2 val BPB (bpb_macro)") -> None:
+            ref_label: str = "FineWeb2 val BPB (bpb_macro)", colors: list = S.SERIES) -> None:
     """Grouped bars, one group per proxy size, one bar per reading (mean DA over tasks)."""
     x, w = np.arange(len(SMALL_SIZES)), 0.26
     for k, (col, name) in enumerate(names.items()):
-        ax.bar(x + (k - 1) * w, s[col], w, color=S.SERIES[k], edgecolor=S.SURFACE, linewidth=1, label=name)
+        ax.bar(x + (k - 1) * w, s[col], w, color=colors[k], edgecolor=S.SURFACE, linewidth=1, label=name)
     if ref:
         ax.scatter(x, [ref.get(z, np.nan) for z in SMALL_SIZES], marker="_", s=260, color=S.INK, linewidths=1.5,
                    label=ref_label, zorder=3)
@@ -260,7 +260,8 @@ def acc_gate_paper(gate: pd.DataFrame, ref: dict, out_dir: Path) -> None:
     d = d.assign(bpb_macro=d["size"].map(ref))
     fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.2), sharey=True)
     for ax, (pop, title) in zip(axes, ACC_GATE_PANELS.items()):
-        bars_ax(ax, d[d["population"] == pop].set_index("size"), title, ref, PAPER_READINGS, "Macro average BPB")
+        bars_ax(ax, d[d["population"] == pop].set_index("size"), title, ref, PAPER_READINGS, "Macro average BPB",
+                S.CATEGORIES)
         ax.set_xlabel("Proxy size")
     axes[0].set_ylabel("Decision accuracy against 1.7B")
     fig.legend(*axes[0].get_legend_handles_labels(), loc="upper center", bbox_to_anchor=(0.5, 1.0), ncol=4,

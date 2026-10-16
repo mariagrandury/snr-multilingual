@@ -1,11 +1,14 @@
 site_name: Scaling Reliability
 site_description: Signal-Aware Framework for Multilingual LM Evaluation
-site_url: https://decision-reliability.netlify.app/
+site_url: https://scaling-reliability.netlify.app/
 docs_dir: docs
 site_dir: site
 exclude_docs: |
   CLAUDE.md
   findings_all/
+  todo.md
+  # the upload-your-results recommender, not deployed until it is tested
+  recommend_custom.md
 
 theme:
   name: material
@@ -17,8 +20,6 @@ theme:
     - navigation.indexes
     - navigation.top
     - navigation.tracking
-    - search.suggest
-    - search.highlight
     - content.code.copy
     - content.code.annotate
     - toc.follow
@@ -99,8 +100,9 @@ markdown_extensions:
   - pymdownx.arithmatex:
       generic: true
 
-plugins:
-  - search
+# No search plugin for now: its box and index would expose the repo-docs pages
+# (READMEs built but not in the nav) that are not meant to be public yet.
+plugins: []
 
 # Double-blind review: the site must not link or name our HF orgs, W&B,
 # GitHub, personal pages, authors or cluster paths. Every such link shows

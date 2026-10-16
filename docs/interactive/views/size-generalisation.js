@@ -84,7 +84,7 @@
   // ---------- 3. how much the choice of reference moves DA-size ----------
   S.VIEWS.sgSeeds = async (el) => {
     const x = await S.load("size_generalisation_extra");
-    const BLOCK = { "1B seeds": "three seeds of a 1B reference", "3B K=30": "the 3B model at L = 30" };
+    const BLOCK = { "1B seeds": "three seeds of a 1B reference", "3B K=30": "the 3B model at K = 30" };
     S.mount(el, [
       { key: "block", label: "Reference", type: "seg", options: Object.entries(BLOCK).map(([value, label]) => ({ value, label })) },
       { key: "axes", label: "Design pairs", type: "seg", options: PAIRS },
@@ -110,7 +110,7 @@
         }),
         note(s.block === "1B seeds"
           ? "The four designs trained with three seeds at 1B, read against each 1B seed and against the 1.7B model. Within a row only the reference changes: its seed alone moves the agreement by up to 0.13, more than replacing the 1B reference with the 1.7B one."
-          : "The decisions between the one 3B model at L = 30 and the five other 3B models, read against 3B and against 1.7B, and every decision among the six 3B models. Benchmark accuracy stays near chance whichever reference is used."),
+          : "The decisions between the one 3B model at K = 30 and the five other 3B models, read against 3B and against 1.7B, and every decision among the six 3B models. Benchmark accuracy stays near chance whichever reference is used."),
       ];
     });
   };

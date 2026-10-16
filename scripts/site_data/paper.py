@@ -5,7 +5,8 @@ four main-text figures, each from the table the paper figure is drawn from:
   per benchmark, format and model size against the language's training tokens
   (pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_paper.csv, rq00, pool
   predictivity_seeds); a benchmark's formats are read off its name
-  (original, rf_ = RF, rfgm_ = LLM-RF).
+  (original, rf_ = RF, rfgm_ = LLM-RF). An extra family is pooled into its main
+  benchmark per (size, token bin), weighted by cells.
 - paper_rq1: one row per task, the median R² and Spearman rho of its model-size
   fits and the median R² of its training fits, and its regime
   (scaling_regimes.csv, rq01, pool predictivity_seeds).
@@ -21,8 +22,10 @@ import pandas as pd
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "src/signal-and-noise"))
 sys.path.insert(0, str(REPO / "src"))
+sys.path.insert(0, str(REPO / "scripts"))
 from analysis import paths  # noqa: E402
 from analysis.grids import paper_name  # noqa: E402
+from build_site_data import merge_extra  # noqa: E402
 
 FORMATS = {"rf_": "RF", "rfgm_": "LLM-RF"}
 
@@ -42,6 +45,10 @@ def _format(bench: str) -> tuple[str, str]:
 def build() -> dict:
     t = pd.read_csv(paths.CHANCE_VS_TRAIN_TOKENS / "pretraining/predictivity_seeds"
                     / "pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_paper.csv")
+    t = (t.assign(benchmark=merge_extra(t["benchmark"]), w=t["n_cells"],
+                  sw=t["share_above"] * t["n_cells"], tw=t["tokens"] * t["n_cells"])
+         .groupby(["benchmark", "model_size", "bin"], as_index=False)[["w", "sw", "tw"]].sum()
+         .assign(share_above=lambda x: x["sw"] / x["w"], tokens=lambda x: x["tw"] / x["w"], n_cells=lambda x: x["w"]))
     rq0 = []
     for r in t.itertuples():
         base, fmt = _format(r.benchmark)
@@ -50,6 +57,7 @@ def build() -> dict:
     names = {b: paper_name(b) for b in sorted({r["b"] for r in rq0})}
 
     reg = pd.read_csv(paths.SCALING_PREDICTABILITY / "pretraining/predictivity_seeds/scaling_regimes.csv")
+    reg["family"] = merge_extra(reg["family"])
     rq1 = [dict(task=r.task, family=r.family, name=paper_name(r.family), language=r.language, r2_size=_r(r.r2_size, 3),
                 rho_size=_r(r.rho_size, 3), r2_train=_r(r.r2_trajectory, 3), regime=r.regime) for r in reg.itertuples()]
 

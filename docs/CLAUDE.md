@@ -13,8 +13,10 @@ Tabs of the MkDocs side:
   contributions, verbatim), **Model ladder** (`ladder.md`), **Findings**
   (`findings/*.md`: Measurability, Agreement and Anticipation, the paper's
   three analysis sections with its wording and interactive versions of its
-  figures), **Recommender** (`recommend.md`) and **Benchmarks**
-  (`benchmarks.md`) are hand-written showcase pages. The earlier one-page-per-RQ
+  figures, each ending on the paper's Summary box), **Recommender**
+  (`recommend.md`; its upload-your-results section waits in
+  `recommend_custom.md`, excluded from the build until it is tested) and
+  **Benchmarks** (`benchmarks.md`) are hand-written showcase pages. The earlier one-page-per-RQ
   findings are kept in `findings_all/`, excluded from the build
   (`exclude_docs` in `mkdocs.yml`) until they are added back. Their charts are `<div class="viz"
   data-viz="NAME">` blocks drawn by `interactive/app.js` (one `VIEWS.NAME`
@@ -28,14 +30,21 @@ Tabs of the MkDocs side:
   `launch_trainings.py`'s registry and its data mixtures from the builder's
   plans via `src/pretrain/data/data_progress.py`, so run it on the cluster).
   The mixtures' hover cards read `hello`, `thank_you` and `speakers` from
-  `configs/languages.json`. The Recommender's look-up table (`lookup.json`)
+  `configs/languages.json`. The Recommender's per-size table reads
+  `recommend.json`: rq02's per-task DA-size and DA-ckpt, wide (one column per
+  comparison), on the one-axis and on every pair (the page's "Pairs" toggle),
+  plus the BPB DA-goal per proxy size and tenth. Its look-up table (`lookup.json`)
   is the one threshold the builder computes: per (benchmark, language, size)
   the fewest tokens of the language from which every checkpoint stays above
   chance, read from the tokens-seen cell table
   (`pass_prob_vs_train_tokens_by_benchmark_1904_ckpts.csv`, in
   `rq00_chance_vs_train_tokens/` or, before that move, `rq01_scaling_predictability/`);
   cells without a token count (mixture plans unreachable) are left out with a
-  printed warning. The Evaluation section's score curves read rq00's
+  printed warning. The site shows the "extra" families (`multiblimp-extra`,
+  `noreval_extra`) inside their main benchmark: `EXTRA_FAMILIES` /
+  `merge_extra()` in the builder pool them in the score curves, the look-up
+  table, the recommender and the Findings figures; the threshold table drops
+  them, as the paper's does. The Evaluation section's score curves read rq00's
   `score_curves.csv` and `predictivity_seeds/benchmark_curves.csv`; its
   benchmark cards read `configs/tasks.json`, whose per-task `example` and
   `source` come from `python3 src/evals/scripts/derive_task_options.py
@@ -49,8 +58,10 @@ Tabs of the MkDocs side:
   repo (e.g. `docs/pretraining.md` includes `src/pretrain/README.md`,
   `docs/repo.md` the root README). Edit the original READMEs, not the stubs.
   Its nav entry is commented out in `mkdocs.yml` for the double-blind review;
-  the pages are still built, searchable, in the sitemap and linked from Home
-  and the Findings pages (mkdocs lists them as "not included in the nav").
+  the pages are still built, in the sitemap and linked from Home and the
+  Findings pages (mkdocs lists them as "not included in the nav"). The search
+  plugin is off (`plugins: []`) until they are meant to be public: its box and
+  index would expose them.
 
 The Findings pages draw the paper's four main-text figures with the views of
 `interactive/views/paper.js` (`paperRq0`–`paperRq3`) from `paper_rq*.json`,
@@ -91,9 +102,11 @@ checkpoints (`apertus3-*`, `*from8b*`) are redacted in prose and code too;
 its nav entry is commented out in `mkdocs.yml` and `build.sh` builds it only
 with `BUILD_SLIDES=1`. PNG figures under `repo/` are not scanned (text in an
 image cannot be redacted): check their titles and legends by eye.
+Nothing published says when the site was last built: `on_post_build` strips
+the sitemap's `<lastmod>`, and no data file carries a build or report date.
 
 The text of `index.md` and of the three Findings pages is the paper's
-(abstract, highlighted finding, contributions, sections 4.1–4.3), so it
+(abstract, the sections' Summary boxes, contributions, sections 4.1–4.3), so it
 follows the paper, not the analysis: when the paper's wording or numbers
 change, copy them over. After the figures are regenerated, re-check the
 other hand-written numbers (no data file feeds them yet): the ladder counts
@@ -149,11 +162,13 @@ pnpm dev
 
 ## Known build warnings
 
-`mkdocs build --strict` builds cleanly (checked 2026-10-10): README links
-to source files are rewritten to the anonymity notice by `mkdocs_hooks.py`,
-so they no longer warn. Use `--strict`: the anonymity check in
-`on_post_build` reports a leak as a warning, which `--strict` turns into a
-failed build.
+`mkdocs build --strict` builds cleanly (checked 2026-10-16, also on a fresh
+checkout without the cluster-generated READMEs): README links to source
+files are rewritten to the anonymity notice by `mkdocs_hooks.py`, so they no
+longer warn. `build.sh`, and so every Netlify deploy, builds with `--strict`:
+the anonymity check in `on_post_build` reports a leak as a warning, which
+`--strict` turns into a failed build, so the last clean deploy stays up. Any
+new warning therefore blocks the deploy too.
 
 ## What the user is likely to ask
 

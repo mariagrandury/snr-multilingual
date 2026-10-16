@@ -31,7 +31,7 @@ another (DA ≥ 0.66 maps to tau ≥ 0.32 through the identity).
                                     depends on the statistic
     agreement_da_size_equivalence_multi_axes.tex       the paper's table: Pearson r between DA, tau_b and rho over
                                     every cell and per size, Spearman over every cell, the shared verdicts
-    agreement_da_size_correlation_multi_axes_paper.png the correlation figure for the paper (two-column width)
+    agreement_da_size_correlation_multi_axes_paper.png the correlation figure for the paper (one column, DA against τ_b and ρ)
 
     python analysis/rq02_decision_accuracy/agreement.py --paper   # the two paper outputs, from the per-cell table
 
@@ -180,11 +180,14 @@ def correlations(d: pd.DataFrame) -> pd.DataFrame:
 def figure_correlation(d: pd.DataFrame, corr: pd.DataFrame, path: Path, paper: bool = False) -> None:
     """The three statistics against each other, one point per cell, the
     correlation in the corner: the plain version of `agreement_da_size_identity_multi_axes`.
-    `paper`: the paper copy (`<stem>_paper`), two-column width, no header, the legend below."""
+    `paper`: the paper copy (`<stem>_paper`), one column wide: the two panels against decision accuracy
+    side by side, no header, the legend below."""
     sizes = size_order(d["size"].unique())
     colour = {s: S.SIZE_COLOR.get(s, S.MUTED) for s in sizes}   # RAMP has four steps; the ladder has more proxies
-    fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.6) if paper else (12.6, 4.3))
-    for ax, (x, y) in zip(axes, CORR_PAIRS):
+    pairs = [p for p in CORR_PAIRS if p[0] == "da"] if paper else CORR_PAIRS
+    fig, axes = (plt.subplots(1, len(pairs), figsize=(3.3, 2.1), layout="constrained") if paper
+                 else plt.subplots(1, 3, figsize=(12.6, 4.3)))
+    for ax, (x, y) in zip(axes, pairs):
         for s in sizes:
             g = d[d["size"] == s]
             ax.scatter(g[x], g[y], s=8, color=colour[s], alpha=.55, lw=0, label=f"{s} proxy ({len(g)} cells)")
@@ -193,18 +196,22 @@ def figure_correlation(d: pd.DataFrame, corr: pd.DataFrame, path: Path, paper: b
         else:
             ax.plot([-1, 1], [-1, 1], color=S.MUTED, lw=.8, ls=":", zorder=1)
         c = corr[(corr["size"] == "all") & (corr["x"] == x) & (corr["y"] == y)].iloc[0]
-        ax.text(0.03, 0.97, f"Pearson r = {c['pearson_r']:.2f}\nSpearman ρ = {c['spearman_rho']:.2f}"
+        ax.text(*((0.97, 0.03) if paper else (0.03, 0.97)),            # paper: the empty corner below the diagonal
+                f"Pearson r = {c['pearson_r']:.2f}\nSpearman ρ = {c['spearman_rho']:.2f}"
                 + ("" if paper else f"\n{int(c['cells'])} cells"),
-                transform=ax.transAxes, va="top", ha="left", fontsize=6.5 if paper else 7.5,
+                transform=ax.transAxes, va="bottom" if paper else "top", ha="right" if paper else "left",
+                fontsize=6.5 if paper else 7.5,
                 bbox=dict(boxstyle="round,pad=0.3", fc=S.SURFACE, ec=S.GRID, lw=.6))
         lab = (lambda k: (CORR_LABEL[k][0].upper() + CORR_LABEL[k][1:]).replace("τ_b", r"$\tau_b$")) if paper else CORR_LABEL.get
         ax.set_xlabel(lab(x)); ax.set_ylabel(lab(y))
+        if paper:     # a one-column panel holds three ticks per axis and a short label
+            ax.set_xticks([0, .5, 1]); ax.set_yticks([-1, 0, 1]); ax.set_xlabel("DA")
         ax.grid(color=S.GRID, lw=.6); S.clean(ax)
     if paper:
         h, labels = axes[0].get_legend_handles_labels()
         fig.legend(h, [l.split(" proxy")[0] for l in labels], fontsize=6.5, frameon=False, ncol=len(sizes),
-                   loc="lower center", bbox_to_anchor=(0.5, 0), markerscale=2)
-        fig.tight_layout(rect=(0, 0.08, 1, 1))
+                   loc="outside lower center", markerscale=2, columnspacing=0.8, handletextpad=0.2)
+        d[["task", "size", *dict.fromkeys(c for pair in pairs for c in pair)]].to_csv(path.with_suffix(".csv"), index=False)
         S.save_paper(fig, path.with_suffix(""))
         return
     axes[-1].legend(fontsize=6.5, frameon=False, loc="lower right")

@@ -1,1 +1,3 @@
 documents/slides.md
+# MkDocs pages: Prettier strips the indent of admonition bodies (!!! note) and tabs
+docs/**/*.md

@@ -28,10 +28,10 @@
       what: "How the non-English half is split: T = 1 in proportion to the available data (baseline), T = 3 flatter, so smaller languages get more tokens." },
     { key: "lang2", label: "Second language", levels: ["ru", "zh", "es"],
       name: { ru: "Russian (baseline)", zh: "Chinese", es: "Spanish" },
-      what: "At L = 2, the one language next to English: Russian (baseline), Chinese or Spanish." },
+      what: "At K = 2, the one language next to English: Russian (baseline), Chinese or Spanish." },
     { key: "english", label: "English data", levels: ENGLISH,
       name: { [ENGLISH[0]]: "DCLM, edu-filtered (baseline)", [ENGLISH[1]]: "DCLM, no edu filter", [ENGLISH[2]]: "FineWeb" },
-      what: "At L = 1 (English only), where the English text comes from: DCLM with its educational-quality filter (baseline), DCLM without it, or FineWeb." },
+      what: "At K = 1 (English only), where the English text comes from: DCLM with its educational-quality filter (baseline), DCLM without it, or FineWeb." },
     { key: "seed", label: "Seeds", levels: ["1904", "replicate"], of: (c) => (c.seed === 1904 ? "1904" : "replicate"),
       name: { 1904: "seed 1904 (every run)", replicate: "replicate seeds" },
       what: "The same configuration trained again from another seed: the yardstick of noise every design decision is compared with." },
@@ -130,7 +130,7 @@
         : s.analysed ? "In the current analysis tables." : "Not yet in the analysis tables.";
       return [
         h("b", {}, c.name),
-        h("span", {}, `${c.size} · L = ${c.L} · seed ${c.seed}`),
+        h("span", {}, `${c.size} · K = ${c.L} · seed ${c.seed}`),
         h("span", {}, model),
         h("span", {}, data),
         c.tokens ? h("span", {}, `${(c.tokens / 1e9).toFixed(1)} B training tokens (100 per parameter)`) : null,
@@ -170,7 +170,7 @@
       for (const g of rows) {
         const c0 = g[0];
         const extra = ctxKeys.filter((k) => k !== "L" && c0[k] != null && c0[k] !== BASE[k] && !(k === "T" && c0.L === 1)).map((k) => WORD[k](c0[k]));
-        grid.append(h("div", { class: "rowhd" }, `L = ${c0.L}`, extra.length ? h("small", {}, extra.join(" · ")) : null));
+        grid.append(h("div", { class: "rowhd" }, `K = ${c0.L}`, extra.length ? h("small", {}, extra.join(" · ")) : null));
         for (const z of sizes) {
           const here = g.filter((c) => c.size === z).sort((a, b) => lvl(a) - lvl(b) || a.seed - b.seed);
           grid.append(h("div", { class: `cell ${z === "3B" ? "above" : ""}` }, here.map((c) => {
@@ -193,7 +193,7 @@
 
       const training = shown.filter((c) => ["training", "evaluating", "queued"].includes(status(c).state)).length;
       const Ls = uniq(shown.map((c) => c.L)).sort((a, b) => a - b);
-      const summary = `${shown.length} runs in ${rows.length} comparison${rows.length > 1 ? "s" : ""} · L = ${Ls.join(", ")} · ${sizes[0]}–${sizes[sizes.length - 1]}`
+      const summary = `${shown.length} runs in ${rows.length} comparison${rows.length > 1 ? "s" : ""} · K = ${Ls.join(", ")} · ${sizes[0]}–${sizes[sizes.length - 1]}`
         + (training ? ` · ${training} still training or being evaluated` : " · all trained and evaluated");
       const states = Object.keys(STATES).filter((k) => shown.some((c) => status(c).state === k));
       const legend = h("div", { class: "lp-legend" },
@@ -208,7 +208,7 @@
         h("p", { class: "lp-axis" }, h("b", {}, `${dec.label}. `), dec.what, h("br"), h("span", { class: "viz-note" }, summary)),
         legend,
         h("div", { class: "viz-scroll" }, grid),
-        note("Each row is one comparison: runs identical in everything but this decision (the row label names what differs from the baseline besides L). Columns are model sizes, 1.7B is the reference and 3B (dashed) sits above it. Hover or focus a dot for the run. The bottom row counts, per size, the comparisons whose runs are all trained and evaluated."),
+        note("Each row is one comparison: runs identical in everything but this decision (the row label names what differs from the baseline besides K). Columns are model sizes, 1.7B is the reference and 3B (dashed) sits above it. Hover or focus a dot for the run. The bottom row counts, per size, the comparisons whose runs are all trained and evaluated."),
         h("details", {}, h("summary", {}, `The ${shown.length} runs as a table`),
           table(rowsTable, [
             { key: "name", label: "run" }, { key: "size", label: "size" }, { key: "L", label: "L" },

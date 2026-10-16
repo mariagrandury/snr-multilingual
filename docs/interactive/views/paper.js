@@ -96,7 +96,7 @@
               title: (r) => `${label(r.group)} at ${r.size}\nDA-size ${fmt(r.da)} over ${r.tasks} tasks${r.pairs ? `, ${r.pairs} pairs` : ""}` }),
             Plot.dot(ref.slice(0, 1), { x: "size", y: "da", r: 3.5, stroke: css("--md-default-fg-color"), fill: css("--md-default-bg-color") })] }),
         panel("DA-ckpt", "DA-ckpt"), panel("DA-goal", "DA-goal"),
-      ), note("(a) Scale agreement: DA of the final checkpoint of each size against the final 1.7B ranking, one line per design axis and the black line over all pairs. (b) Within-model training agreement: DA of each checkpoint against the final checkpoint of the same size. (c) Full-scale agreement: DA of each checkpoint against the final 1.7B checkpoint. The hollow marker is 1 by construction (a ranking compared with itself). Single-axis decisions, over the tasks whose median DA-size or DA-ckpt is at least 0.66.")];
+      ), note("(a) Scale agreement: DA of the final checkpoint of each size against the final 1.7B ranking, one line per design axis and the black line over all pairs. (b) Within-model training agreement: DA of each checkpoint against the final checkpoint of the same size. (c) Target agreement: DA of each checkpoint against the final 1.7B checkpoint. The hollow marker is 1 by construction (a ranking compared with itself). Single-axis decisions, over the tasks whose median DA-size or DA-ckpt is at least 0.66.")];
     });
   };
 

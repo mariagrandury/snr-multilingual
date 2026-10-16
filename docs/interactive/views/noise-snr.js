@@ -4,11 +4,11 @@
   const { h, css, fmt, pct, note, tiles, plot, mount, load, uniq } = S;
 
   const KINDS = [{ value: "acc", label: "accuracy tasks" }, { value: "bbpb", label: "bBPB twins" }, { value: "bpb", label: "per-language BPB" }];
-  const DATA_LABEL = { A: "data A", AT3: "data A at T = 3", B: "data B", ZH: "data B (Chinese at L2)", ES: "data C (Spanish at L2)",
+  const DATA_LABEL = { A: "data A", AT3: "data A at T = 3", B: "data B", ZH: "data B (Chinese at K2)", ES: "data C (Spanish at K2)",
     DCLMP: "data B (unfiltered DCLM)", FWEB: "data C (FineWeb English)" };
   // label a log axis at 1, 2 and 5 times a power of ten only, as plain decimals
   const logTick = (v) => ([1, 2, 5].includes(Math.round(v / 10 ** Math.floor(Math.log10(v) + 1e-9))) ? d3.format("~g")(v) : "");
-  const variantLabel = (m) => `L${m.L} · ${m.ladder} · ${DATA_LABEL[m.data] ?? m.data}`;
+  const variantLabel = (m) => `K${m.L} · ${m.ladder} · ${DATA_LABEL[m.data] ?? m.data}`;
   const matches = (p, q, names) => {
     if (!q) return false;
     const t = q.trim().toLowerCase();
@@ -36,15 +36,15 @@
         const lines = c.curves[p.task];
         if (!lines) { box.replaceWith(note("No curves for this task at this size.")); return; }
         const pts = lines.flatMap(([mi, ...ys]) => ys.map((y, j) => (y == null ? null : {
-          m: variantLabel(c.models[mi]), L: `L${c.models[mi].L}`, x: 100 * c.fracs[j], y: y / 1000 }))).filter(Boolean);
+          m: variantLabel(c.models[mi]), L: `K${c.models[mi].L}`, x: 100 * c.fracs[j], y: y / 1000 }))).filter(Boolean);
         const finals = pts.filter((q) => q.x === 100);
         const lo = d3.min(finals, (q) => q.y), hi = d3.max(finals, (q) => q.y);
-        const ls = S.LS.map((L) => `L${L}`).filter((L) => pts.some((q) => q.L === L));
+        const ls = S.LS.map((L) => `K${L}`).filter((L) => pts.some((q) => q.L === L));
         box.replaceWith(plot({
           height: 300, marginRight: 120, width: 720,
           x: { label: "share of the run (%)", domain: [10, 100] },
           y: { label: "accuracy", grid: true },
-          color: { domain: ls, range: S.series(S.LS.length).filter((_, i) => ls.includes(`L${S.LS[i]}`)), legend: true, label: "training languages" },
+          color: { domain: ls, range: S.series(S.LS.length).filter((_, i) => ls.includes(`K${S.LS[i]}`)), legend: true, label: "training languages" },
           marks: [
             Plot.rectX([0], { x1: 80, x2: 100, fill: css("--viz-s4"), fillOpacity: 0.12 }),
             Plot.text(["noise window:\nthe wobble of\neach line here"], { x: 80, frameAnchor: "top-left", dx: 4, dy: 4, fill: css("--viz-muted"), fontSize: 10, textAnchor: "start" }),
@@ -223,7 +223,7 @@
             Plot.ruleX([0], { stroke: css("--viz-muted") }),
           ],
         }),
-        note(`Shallow fixed at seed 1904, deep at each of its three seeds. The same 600M L50 pair flips on ${seedRows.filter((r) => r.size === "600M" && r.L === 50).map((r) => pct(r.share)).join(", ").replace(/, ([^,]*)$/, " or $1")} of its languages depending on the deep run's seed, and one 1B seed flips all 30 L30 languages where the other two flip none: the reversal is a draw of the seed, not a property of 600M.`),
+        note(`Shallow fixed at seed 1904, deep at each of its three seeds. The same 600M K50 pair flips on ${seedRows.filter((r) => r.size === "600M" && r.L === 50).map((r) => pct(r.share)).join(", ").replace(/, ([^,]*)$/, " or $1")} of its languages depending on the deep run's seed, and one 1B seed flips all 30 K30 languages where the other two flip none: the reversal is a draw of the seed, not a property of 600M.`),
       ];
     });
   };

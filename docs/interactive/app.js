@@ -70,7 +70,9 @@
     const render = () => out.replaceChildren(...[draw(state)].flat().filter(Boolean));
     for (const c of controls) {
       state[c.key] = c.value ?? (c.options ? optValue(c.options[0]) : undefined);
-      bar.append(control(c, (v) => { state[c.key] = v; render(); }));
+      const node = control(c, (v) => { state[c.key] = v; render(); });
+      if (c.inline && bar.lastChild) bar.append(h("div", { class: "viz-group" }, bar.lastChild, node));
+      else bar.append(node);
     }
     REDRAW.push(render);
     render();
@@ -98,6 +100,7 @@
       });
       return h("label", {}, h("span", {}, c.label, " ", val), inp);
     }
+    if (c.type === "check") return h("label", { class: "viz-check" }, h("input", { type: "checkbox", checked: c.value ? "" : null, onchange: (e) => set(e.target.checked) }), c.label);
     if (c.type === "text") return h("label", {}, c.label, h("input", { type: "text", placeholder: "name, task, note…", oninput: (e) => set(e.target.value) }));
     const sel = h("select", { onchange: (e) => set(isNaN(e.target.value) || c.string ? e.target.value : +e.target.value) },
       c.options.map((o) => h("option", { value: optValue(o) }, optLabel(o))));
@@ -106,6 +109,22 @@
   }
 
   const note = (text) => h("p", { class: "viz-note" }, text);
+  /* Instant hover cards for every [data-tip] inside el. The tip lives in the page
+     body, so a table scrolling inside .viz never clips it (a title= tooltip is slow
+     and easy to miss). */
+  function hoverTips(el) {
+    const tip = document.body.appendChild(h("div", { class: "viz-hovertip", hidden: "" }));
+    el.addEventListener("mouseover", (e) => {
+      const t = e.target.closest("[data-tip]");
+      if (!t) return;
+      tip.textContent = t.dataset.tip;
+      tip.hidden = false;
+      const b = t.getBoundingClientRect(), hh = tip.offsetHeight;
+      tip.style.left = `${Math.max(8, Math.min(b.left, innerWidth - tip.offsetWidth - 8))}px`;
+      tip.style.top = `${b.bottom + 6 + hh > innerHeight ? b.top - hh - 6 : b.bottom + 6}px`;
+    });
+    el.addEventListener("mouseout", (e) => { if (e.target.closest("[data-tip]")) tip.hidden = true; });
+  }
   const tiles = (items) => h("div", { class: "viz-tiles" },
     items.map(([v, label]) => h("div", { class: "viz-tile" }, h("b", { class: String(v).length > 8 ? "small" : null }, v), h("span", {}, label))));
 
@@ -163,12 +182,12 @@
 
   // The intervention axes of the grid, one dropdown each. A cell carries one
   // field per axis (null where the axis does not apply, e.g. the second
-  // language exists only at L = 2); an axis with a single level in the data
+  // language exists only at K = 2); an axis with a single level in the data
   // (the optimizer, for now) gets no dropdown until a second level is trained.
   const AXES = [
     { key: "list", label: "Language list", fmt: (v) => ({ A: "A · ranked by data size", B: "B · chosen for diversity" }[v] ?? v) },
     { key: "T", label: "Sampling temperature", fmt: (v) => `T = ${v}` },
-    { key: "lang2", label: "Second language (L = 2)", fmt: (v) => langName(v) },
+    { key: "lang2", label: "Second language (K = 2)", fmt: (v) => langName(v) },
     { key: "english", label: "English data", fmt: (v) => v },
     { key: "arch", label: "Depth", fmt: (v) => v },
     { key: "activation", label: "Activation", fmt: (v) => ({ xielu: "xIELU", swiglu: "SwiGLU" }[v] ?? v) },
@@ -182,7 +201,7 @@
     if (c.activation !== BASE.activation) diff.push(AXES[5].fmt(c.activation));
     if (c.list && c.list !== BASE.list) diff.push(`list ${c.list}`);
     if (c.T && c.T !== BASE.T) diff.push(`T = ${c.T}`);
-    if (c.lang2 && c.lang2 !== BASE.lang2) diff.push(`${langName(c.lang2)} at L = 2`);
+    if (c.lang2 && c.lang2 !== BASE.lang2) diff.push(`${langName(c.lang2)} at K = 2`);
     if (c.english !== BASE.english) diff.push(c.english);
     return diff.length ? diff.join(" + ") : "baseline";
   };
@@ -197,11 +216,17 @@
     ES: { m: "C", t: 1, data: "Spanish as second language" }, DCLMP: { m: "B", t: 1, data: "DCLM without the edu filter" },
     FWEB: { m: "C", t: 1, data: "FineWeb (crawls \u2264 2022)" },
   };
+  // The site shows builds by scheme M: the K = 2 and K = 1 variants join B and C.
+  const MERGE = { ZH: "B", DCLMP: "B", ES: "C", FWEB: "C" };
+  const buildOf = (scheme) => MERGE[scheme] ?? scheme;
+  const BUILD_LABEL = { A: "resource-ranked lists", AT3: "scheme-A lists, flattened",
+    B: "diversity-first lists; Chinese at K = 2, DCLM without the edu filter at K = 1",
+    C: "Spanish at K = 2, FineWeb at K = 1" };
   const LADDERS = { deep: "deep", shallow: "shallow", swiglu: "deep + SwiGLU", muon: "deep + Muon" };
   const GRID_ROWS = ["A|deep", "A|shallow", "A|swiglu", "A|muon", "AT3|deep", "AT3|shallow", "B|deep", "B|shallow",
-    "ZH|deep", "ES|deep", "DCLMP|deep", "FWEB|deep"];
-  const gridRow = (c) => `${c.scheme}|${c.ladder}`;
-  const gridLabel = (r) => { const [b, l] = r.split("|"); return `${b} \u00b7 ${LADDERS[l]}`; };
+    "C|deep"];
+  const gridRow = (c) => `${buildOf(c.scheme)}|${c.ladder}`;
+  const gridLabel = (r) => { const [b, l] = r.split("|"); return `${b === "AT3" ? "A \u00b7 T3" : b} \u00b7 ${LADDERS[l]}`; };
 
   VIEWS.ladder = async (el) => {
     const d = await languages().then(() => load("ladder"));
@@ -222,7 +247,7 @@
           h("dt", {}, "Size"), h("dd", {}, c.n_non_emb
             ? `${c.size} non-embedding (${(c.n_non_emb / 1e6).toFixed(0)} M; ${(c.params / 1e6).toFixed(0)} M with embeddings), d_model ${c.d_model}`
             : `${c.size} non-embedding`),
-          h("dt", {}, "Build"), h("dd", {}, `${c.scheme}: ${BUILDS[c.scheme]?.data ?? ""} (M = ${BUILDS[c.scheme]?.m}, T = ${BUILDS[c.scheme]?.t})`),
+          h("dt", {}, "Build"), h("dd", {}, `${buildOf(c.scheme)}: ${BUILDS[c.scheme]?.data ?? ""} (M = ${BUILDS[c.scheme]?.m}, T = ${BUILDS[c.scheme]?.t})`),
           h("dt", {}, "Ladder"), h("dd", {}, `${LADDERS[c.ladder] ?? c.ladder} (${c.arch} \u00b7 ${AXES[5].fmt(c.activation)} \u00b7 ${AXES[6].fmt(c.optimizer)})`),
           h("dt", {}, "Data"), h("dd", {}, c.L === 1 ? `100 % English (${c.english})` : `50 % English (${c.english})${fwHalf}`),
           h("dt", {}, "Budget"), h("dd", {}, c.tokens
@@ -245,12 +270,12 @@
 
     mount(el, [
       { key: "build", label: "Build", string: true, options: [{ value: "all", label: "all" },
-        ...Object.entries(BUILDS).map(([b, v]) => ({ value: b, label: `${b} \u00b7 ${v.data} (M = ${v.m}, T = ${v.t})` }))] },
+        ...Object.entries(BUILD_LABEL).map(([b, v]) => ({ value: b, label: `${b} \u00b7 ${v} (M = ${BUILDS[b]?.m ?? b}, T = ${BUILDS[b]?.t ?? 1})` }))] },
       { key: "ladder", label: "Ladder", string: true, options: [{ value: "all", label: "all" },
         ...Object.entries(LADDERS).map(([k, v]) => ({ value: k, label: v }))] },
       { key: "seeds", label: "Seeds", type: "seg", options: [{ value: "main", label: "1904" }, { value: "all", label: "all" }] },
     ], (s) => {
-      const keep = d.cells.filter((c) => (s.build === "all" || c.scheme === s.build) && (s.ladder === "all" || c.ladder === s.ladder)
+      const keep = d.cells.filter((c) => (s.build === "all" || buildOf(c.scheme) === s.build) && (s.ladder === "all" || c.ladder === s.ladder)
         && (s.seeds === "all" || c.seed === 1904));
       const grid = h("div", { class: "ladder-grid", style: `grid-template-columns: 4em repeat(${SIZES.length}, 1fr)` });
       const detailBox = h("div");
@@ -272,9 +297,10 @@
       detailBox.append(detail(selected));
       const shown = uniq(keep.map(gridRow));
       const legend = h("div", { class: "ladder-legend" },
-        GRID_ROWS.filter((r) => shown.includes(r)).map((r) => {
+        GRID_ROWS.filter((r) => shown.includes(r)).flatMap((r) => {
           const c = series(12)[GRID_ROWS.indexOf(r) % 12];
-          return h("span", {}, h("i", { style: `background:${c};border-color:${c}` }), gridLabel(r));
+          const item = h("span", {}, h("i", { style: `background:${c};border-color:${c}` }), gridLabel(r));
+          return r === "AT3|deep" ? [h("span", { class: "br" }), item] : item;   // the T = 3 and other builds on a second row
         }));
       return [tiles([[keep.length, "runs in this view"], [uniq(keep.map((c) => c.size)).length, "sizes"],
         [uniq(keep.map((c) => c.L)).length, "language settings"], [uniq(keep.map((c) => c.seed)).length, "seeds"]]),
@@ -294,14 +320,14 @@
       const rows = d.cells.filter((c) => c.seed === 1904 && c.scheme === "A" && c.ladder === s.arch && d.final_bpb[c.name]?.[s.lang] != null)
         .map((c) => {
           const sets = d.language_sets.A[`FW_L${c.L}`] ?? [];
-          return { ...c, bpb: d.final_bpb[c.name][s.lang], trained: sets.includes(s.lang) || s.lang === "eng_Latn", Lname: `L${c.L}` };
+          return { ...c, bpb: d.final_bpb[c.name][s.lang], trained: sets.includes(s.lang) || s.lang === "eng_Latn", Lname: `K${c.L}` };
         });
       if (!rows.length) return h("div", { class: "viz-empty" }, "No run of this architecture was scored on this language.");
       return [plot({
         height: 340,
         x: { type: "log", label: "model size (non-embedding)", ticks: uniq(rows.map((r) => r.n_non_emb)), tickFormat: (v) => rows.find((r) => r.n_non_emb === v)?.size },
         y: { label: "final bits per byte (lower is better)", grid: true },
-        color: { domain: LS.map((L) => `L${L}`), range: series(6), legend: true },
+        color: { domain: LS.map((L) => `K${L}`), range: series(6), legend: true },
         marks: [
           Plot.line(rows, { x: "n_non_emb", y: "bpb", stroke: "Lname", sort: "n_non_emb", strokeWidth: 2 }),
           Plot.dot(rows, { x: "n_non_emb", y: "bpb", stroke: "Lname", fill: css("--viz-surface"), r: 4.5, strokeWidth: 2 }),
@@ -333,7 +359,10 @@
   }
 
   function benchmarkCard(b, lang, twin) {
-    const src = (ex) => (ex?.anonymized ? ANON : ex?.source ?? "the benchmark's own release (no public dataset id recorded)");
+    const fb = b.fallback_source;
+    const src = (ex) => (ex?.anonymized ? ANON : ex?.source ?? (fb
+      ? [h("a", { href: `https://huggingface.co/datasets/${fb.id}`, target: "_blank", rel: "noopener" }, fb.id), ` (${fb.label})`]
+      : "the benchmark's own release (no public dataset id recorded)"));
     const names = b.languages.map((l) => (LANG?.iso[l] ? langName(l) : l));
     const own = lang !== "all" ? b.examples[lang] : null;
     return h("div", { class: "viz-card" },
@@ -352,13 +381,14 @@
   VIEWS.scoreCurves = async (el) => {
     await languages();
     const d = await load("evaluation");
-    const fams = Object.keys(d.benchmarks).sort();
+    const famLabel = (f) => `${d.benchmarks[f].name} [${f}]`;
+    const fams = Object.keys(d.benchmarks).sort((x, y) => famLabel(x).localeCompare(famLabel(y), "en", { sensitivity: "base" }));
     const ramp = sizeRamp();
     mount(el, [
       { key: "lang", label: "Language", string: true, value: "all",
         options: d.languages.map((l) => ({ value: l, label: l === "all" ? "All trained languages" : `${langName(l)} (${l})` })) },
-      { key: "fam", label: "Benchmark", string: true, value: fams.includes("belebele") ? "belebele" : fams[0],
-        options: fams.map((f) => ({ value: f, label: `${d.benchmarks[f].name} [${f}]` })) },
+      { key: "fam", label: "Benchmark", string: true, value: fams.includes("include_v2_og") ? "include_v2_og" : fams[0],
+        options: fams.map((f) => ({ value: f, label: famLabel(f) })) },
       { key: "x", label: "x axis", type: "seg", options: [{ value: "tokens", label: "training tokens" }, { value: "compute", label: "compute" }] },
     ], (s) => {
       const c = d.curves[s.lang]?.[s.fam];
@@ -434,8 +464,8 @@
     const famOrder = Object.entries(all.reduce((m, l) => ((m[l.top] = (m[l.top] ?? 0) + 1), m), {})).sort((a, b) => b[1] - a[1]).map(([f]) => f);
     const scriptOrder = Object.entries(all.reduce((m, l) => ((m[l.script] = (m[l.script] ?? 0) + 1), m), {})).sort((a, b) => b[1] - a[1]).map(([f]) => f);
     const famColor = (f) => series(12)[famOrder.indexOf(f) % 12];
-    const SCHEME_LABEL = { A: "A · ranked by data size", B: "B · chosen for diversity", ZH: "A with Chinese at L = 2", ES: "A with Spanish at L = 2" };
-    const schemes = uniq(mx.mixtures.map((m) => m.scheme));
+    const SCHEME_LABEL = { A: "A · ranked by data size", B: "B · chosen for diversity, Chinese at K = 2", C: "C · Spanish at K = 2" };
+    const schemes = uniq(mx.mixtures.map((m) => buildOf(m.scheme)));
     const tip = h("div", { class: "viz-tip", hidden: "" });
 
     const defs = (svg, id) => {
@@ -539,27 +569,31 @@
 
     mount(el, [
       { key: "scheme", label: "Scheme", string: true, value: "A", options: schemes.map((s) => ({ value: s, label: SCHEME_LABEL[s] ?? s })) },
-      { key: "L", label: "Languages (L)", value: 50, options: uniq(mx.mixtures.map((m) => m.L)).sort((a, b) => a - b).map((L) => ({ value: L, label: `L = ${L}` })) },
+      { key: "L", label: "Languages (K)", value: 50, options: uniq(mx.mixtures.map((m) => m.L)).sort((a, b) => a - b).map((L) => ({ value: L, label: `K = ${L}` })) },
       { key: "T", label: "Temperature", value: 3, options: uniq(mx.mixtures.map((m) => m.T)).sort().map((T) => ({ value: T, label: `T = ${T}` })) },
       { key: "scale", label: "Bar scale", type: "seg", options: ["linear", "log"] },
+      { key: "english", label: "Show English", type: "check", value: false, inline: true },
     ], (s) => {
-      const mix = mx.mixtures.find((m) => m.scheme === s.scheme && m.L === s.L && m.T === s.T);
+      const mix = mx.mixtures.find((m) => buildOf(m.scheme) === s.scheme && m.L === s.L && m.T === s.T);
       if (!mix) {
-        const have = mx.mixtures.filter((m) => m.scheme === s.scheme).map((m) => `L = ${m.L}, T = ${m.T}`);
-        return [h("div", { class: "viz-empty" }, `Scheme ${s.scheme} has no mixture at L = ${s.L} with T = ${s.T}. It exists at: ${have.join(" · ")}.`), tip];
+        const have = mx.mixtures.filter((m) => buildOf(m.scheme) === s.scheme).map((m) => `K = ${m.L}, T = ${m.T}`);
+        return [h("div", { class: "viz-empty" }, `Scheme ${s.scheme} has no mixture at K = ${s.L} with T = ${s.T}. It exists at:`,
+          h("ul", {}, have.map((x) => h("li", {}, x)))), tip];
       }
-      const rows = Object.entries(mix.shares).map(([fw, share]) => ({ ...info(fw), share, tokens: share * mix.ref_tokens }))
+      const rows = Object.entries(mix.shares).filter(([fw]) => s.english || fw !== "eng_Latn")
+        .map(([fw, share]) => ({ ...info(fw), share, tokens: share * mix.ref_tokens }))
         .sort((a, b) => b.share - a.share);
+      if (!rows.length) return [h("div", { class: "viz-empty" }, "At K = 1 the mixture is 100 % English: tick “Show English” to see it."), tip];
       // The bar plot keeps a slot for every language any mixture trains on, so mixtures line up.
-      const barRows = [...rows, ...all.filter((l) => !mix.shares[l.fw]).map((l) => ({ ...l, share: 0, tokens: 0 }))
+      const barRows = [...rows, ...all.filter((l) => !mix.shares[l.fw] && (s.english || l.fw !== "eng_Latn")).map((l) => ({ ...l, share: 0, tokens: 0 }))
         .sort((a, b) => a.name.localeCompare(b.name))];
       return [
-        tiles([[rows.length, "languages"], [human(mix.ref_tokens), `training tokens of the ${mix.ref_size} reference run`],
+        tiles([[Object.keys(mix.shares).length, "languages"], [human(mix.ref_tokens), `training tokens of the ${mix.ref_size} reference run`],
           [`${fmt(100 * (mix.shares.eng_Latn ?? 0), 0)} %`, "English"], [`T = ${mix.T}`, "sampling temperature"]]),
         h("div", { style: "margin-top:1em" }, treemap(rows)),
         bars(barRows, s.scale === "log"),
         legend(rows),
-        note(`Area and bar height: each language's training tokens in a run of the ${mix.ref_size} reference model (${human(mix.ref_tokens)} tokens; every size uses the same shares, scaled to its own budget). English is fixed at ${fmt(100 * (mix.shares.eng_Latn ?? 0), 0)} %; the rest is split over the other languages as the data builder's plan splits it. Hover a language for its details.`),
+        note(`Area and bar height: each language's training tokens in a run of the ${mix.ref_size} reference model (${human(mix.ref_tokens)} tokens; every size uses the same shares, scaled to its own budget). English is fixed at ${fmt(100 * (mix.shares.eng_Latn ?? 0), 0)} %; the rest is split over the other languages as the data builder's plan splits it. ${s.english ? "" : "English is hidden, so the plots show the non-English half at its own scale. "}Hover a language for its details.`),
         tip,
       ];
     });
@@ -761,7 +795,7 @@
       marks: [
         Plot.ruleX([1], { stroke: css("--viz-muted"), strokeDasharray: "4 3" }),
         Plot.dot(d.effect, { x: "median_effect_over_seed_sd", y: "label", stroke: "population", fill: "population", fillOpacity: 0.5, r: 6, tip: true,
-          title: (r) => `${r.label}, L = ${r.L} (${r.population}, ref ${r.reference_size})\neffect ${fmt(r.median_effect_over_seed_sd)}× seed sd, ${pct(r.share_above_2)} of tasks above 2×` }),
+          title: (r) => `${r.label}, K = ${r.L} (${r.population}, ref ${r.reference_size})\neffect ${fmt(r.median_effect_over_seed_sd)}× seed sd, ${pct(r.share_above_2)} of tasks above 2×` }),
       ],
     }), note("Left of the dashed line: changing the seed moves the scores more than the design decision does. There is nothing reliable to rank, whatever the proxy.")]);
   };
@@ -827,7 +861,7 @@
     const d = await languages().then(() => load("transfer"));
     const rows = expand(d.per_language);
     mount(el, [
-      { key: "L", label: "Training languages", options: uniq(rows.map((r) => r.L)).map((L) => ({ value: L, label: `L = ${L}` })), value: 8 },
+      { key: "L", label: "Training languages", options: uniq(rows.map((r) => r.L)).map((L) => ({ value: L, label: `K = ${L}` })), value: 8 },
       { key: "k", label: "Rungs observed", type: "seg", options: [1, 2, 3, 4] },
     ], (s) => {
       const sel = rows.filter((r) => r.L === s.L && r.k === s.k && r.pred_transfer != null)
@@ -915,7 +949,7 @@
     const langs = split("langs").sort((a, b) => langName(a).localeCompare(langName(b)));
     const all = (label, values, fmtv = (v) => v) => [{ value: "", label: `all ${label}` }, ...values.map((v) => ({ value: v, label: fmtv(v) }))];
     const link = (url, text) => (url ? h("a", { href: url, target: "_blank", rel: "noopener" }, text) : "–");
-    const csvOf = (list) => d3.csvFormat(list.map(({ langs: _l, cats: _c, sources: _s, ...r }) => r));
+    hoverTips(el);
     mount(el, [
       { key: "q", label: "Search", type: "text", value: "" },
       { key: "lang", label: "Language", options: all("languages", langs, (l) => `${langName(l)} (${l})`), string: true },
@@ -940,62 +974,65 @@
           y: { label: "benchmarks covering the language", grid: true },
           marks: [Plot.barY(perLang, { x: "l", y: "n", fill: css("--viz-s1"), rx: 3, tip: true, title: (d) => `${d.name} (${d.l}): ${d.n} benchmarks` })],
         }) : null,
-        h("div", { class: "viz-controls", style: "margin-top:.6em" }, h("span", { class: "viz-seg" },
-          h("button", { type: "button", onclick: () => { const a = h("a", { href: URL.createObjectURL(new Blob([csvOf(sel)], { type: "text/csv" })), download: "multilingual_benchmarks.csv" }); a.click(); } }, `download these ${sel.length} rows`))),
         table(sel, [
-          { key: "name", label: "Benchmark", render: (r) => [h("b", {}, r.name), r.suite ? h("div", { class: "viz-note" }, r.suite) : null] },
-          { key: "n_languages", label: "Languages", num: true, render: (r) => h("span", { title: r.langs.map((l) => `${langName(l)} (${l})`).join(", ") },
+          { key: "name", label: "Benchmark", render: (r) => h("b", {}, r.name) },
+          { key: "n_languages", label: "Languages", num: true, render: (r) => h("span", { class: "has-tip", "data-tip": r.langs.map((l) => `${langName(l)} (${l})`).join(", ") },
             r.langs.length <= 4 ? r.langs.join(", ") : `${r.langs.length} (${r.langs.slice(0, 3).join(", ")}, …)`) },
-          { key: "frameworks", label: "Framework", render: (r) => h("span", { title: [r.harness_tasks && `harness: ${r.harness_tasks}`, r.lighteval_tasks && `lighteval: ${r.lighteval_tasks}`].filter(Boolean).join("\n") }, r.frameworks) },
+          { key: "frameworks", label: "Framework", render: (r) => h("span", { class: "has-tip", "data-tip": [r.harness_tasks && `harness: ${r.harness_tasks}`, r.lighteval_tasks && `lighteval: ${r.lighteval_tasks}`].filter(Boolean).join("\n") }, r.frameworks) },
           { key: "format", label: "Format" },
           { key: "n_options", label: "Options" },
           { key: "n_items", label: "Items", num: true, render: (r) => (r.n_items == null ? "–" : d3.format(",")(r.n_items)) },
           { key: "categories", label: "Categories" },
           { key: "data_source", label: "Data source" },
           { key: "hf_dataset", label: "Links", render: (r) => [...r.hf_dataset.split(";").filter(Boolean).flatMap((u, i) => [i ? " " : "", link(u.trim(), i ? `HF${i + 1}` : "HF")]), " · ", link(r.paper, "paper")] },
-          { key: "notes", label: "Notes", render: (r) => h("span", { class: "viz-note" }, r.notes || "") },
         ], { sort: "n_languages" }),
       ];
     });
   };
 
   // ---------- recommendations ----------
+  // A task "ranks like the reference" from the paper's heuristic DA threshold on (§ Agreement).
+  const USE_DA = 0.66;
   VIEWS.recommend = async (el) => {
     await languages();
-    const [da, gate, snr] = await Promise.all([load("decision_accuracy"), load("gate"), load("snr")]);
-    const daRows = expand(da.per_task);
+    const [rc, gate, snr] = await Promise.all([load("recommend"), load("gate"), load("snr")]);
+    // one-axis pairs (the paper's figure, the default) or every pair of variants
+    const PAIRS = { mono: { rows: expand(rc.mono_axis.per_task), bpb: rc.mono_axis.bpb_early },
+      multi: { rows: expand(rc.multi_axes.per_task), bpb: rc.multi_axes.bpb_early } };
     const gateBy = byKey(expand(gate.tasks), (r) => r.task);
     const snrBy = byKey(expand(snr.per_task), (r) => `${r.task}|${r.size}`);
-    const langs = uniq(daRows.map((r) => r.language)).sort((a, b) => langName(a).localeCompare(langName(b)));
+    const langs = uniq(PAIRS.mono.rows.map((r) => r.language)).sort((a, b) => langName(a).localeCompare(langName(b)));
+    hoverTips(el);
     mount(el, [
       { key: "lang", label: "Target language", options: langs.map((l) => ({ value: l, label: `${langName(l)} (${l})` })), value: "de", string: true },
-      { key: "size", label: "Your proxy size", type: "seg", options: ["175M", "350M", "600M", "1B"], value: "350M" },
+      { key: "size", label: "Your proxy size", type: "seg", options: ["90M", "175M", "350M", "600M", "1B"], value: "350M" },
       { key: "q", label: "Your decision", options: [{ value: "size", label: "Will my small-model ranking hold at 1.7B?" }, { value: "ckpt", label: "Can I decide before the run ends?" }], string: true },
+      { key: "pairs", label: "Pairs", type: "seg", options: [{ value: "mono", label: "one-axis" }, { value: "multi", label: "multi-axis" }] },
       { key: "frac", label: "Decide at (% of run)", options: [10, 20, 30, 40, 50, 60].map((v) => ({ value: v, label: `${v} %` })), value: 20 },
     ], (s) => {
       const comp = s.q === "size" ? `${s.size}→1.7B` : `f${s.frac}@${s.size}`;
-      const rows = daRows.filter((r) => r.language === s.lang && r.comparison === comp).map((r) => {
+      const P = PAIRS[s.pairs];
+      const rows = P.rows.filter((r) => r.language === s.lang && r[comp] != null).map((r) => {
+        const decision_acc = r[comp];
         const share = r.benchmark === "bpb" ? 1 : gateBy[r.task]?.[s.size];
         const logSnr = snrBy[`${r.task}|${s.size}`]?.log_snr;
-        const verdict = share != null && share < 0.5 ? "avoid" : r.decision_acc == null ? null : r.decision_acc >= 0.75 ? "use" : r.decision_acc >= 0.6 ? "care" : "avoid";
-        const why = share != null && share < 0.5 ? "at chance at this size" : r.decision_acc >= 0.75 ? "ranks like the reference" : r.decision_acc >= 0.6 ? "often right, check with a second task" : "close to chance";
-        return { ...r, share, logSnr, verdict, why, rank: { use: 3, care: 2, avoid: 1 }[verdict] ?? 0 };
+        const use = !(share != null && share < 0.5) && decision_acc >= USE_DA;
+        return { task: r.task, name: rc.names[r.benchmark] ?? r.benchmark, decision_acc, share, logSnr, use, rank: use ? 1 : 0 };
       });
       if (!rows.length) return h("div", { class: "viz-empty" }, "No measurement for this language and comparison.");
-      const best = rows.filter((r) => r.verdict === "use").sort((a, b) => b.decision_acc - a.decision_acc);
-      const badge = (r) => (r.verdict ? [h("span", { class: `badge ${r.verdict}` }, { use: "✓ use", care: "! with care", avoid: "✕ avoid" }[r.verdict]), h("div", { class: "viz-note" }, r.why)] : "–");
-      const bpbEarly = da.early_small.filter((r) => r.group === "bpb" && r.proxy_size === s.size && r.da >= 0.75).sort((a, b) => a.frac - b.frac)[0];
+      const best = rows.filter((r) => r.use).sort((a, b) => b.decision_acc - a.decision_acc);
+      const badge = (r) => (r.use ? h("span", { class: "badge use" }, "✓ use") : "–");
+      const bpbEarly = P.bpb.filter((r) => r.proxy_size === s.size && r.da >= USE_DA).sort((a, b) => a.frac - b.frac)[0];
       return [
-        tiles([[best.length, `of ${rows.length} measurements to use`], [best[0]?.task ?? "none", "most reliable here"], [bpbEarly ? pct(bpbEarly.frac) : "not reached", `of a ${s.size} run for BPB to rank like 1.7B (DA ≥ 0.75, all languages)`]]),
+        tiles([[best.length, `of ${rows.length} measurements to use`], [best[0]?.name ?? "none", "most reliable here"], [bpbEarly ? pct(bpbEarly.frac) : "not reached", `of a ${s.size} run for BPB to rank like 1.7B (mean DA over languages ≥ ${USE_DA})`]]),
         h("div", { style: "margin-top:1em" }, table(rows, [
           { key: "rank", label: "Verdict", render: badge },
-          { key: "task", label: "Task" },
-          { key: "benchmark", label: "Family" },
+          { key: "name", label: "Benchmark", render: (r) => h("span", { class: "has-tip", "data-tip": r.task }, r.name) },
           { key: "share", label: "Runs above chance", num: true, render: (r) => pct(r.share), title: `share of ${s.size} runs above chance (rq00)` },
           { key: "logSnr", label: "log₁₀ SNR", num: true, title: `at ${s.size} (rq03)` },
           { key: "decision_acc", label: "Decision accuracy", num: true, title: `${comp} (rq02)` },
-        ], { sort: "rank" })),
-        note(`Decision accuracy here is ${s.q === "size" ? `the ranking of our design variants at ${s.size} against 1.7B` : `the ranking at ${s.frac} % of a ${s.size} run against its final checkpoint`}, on the ladder's own decisions (language count, depth, language list, temperature). Treat it as a prior; confirm on your own runs with the upload tool below.`),
+        ], { sort: "decision_acc" })),
+        note(`Decision accuracy here is ${s.q === "size" ? `the ranking of our design variants at ${s.size} against 1.7B` : `the ranking at ${s.frac} % of a ${s.size} run against its final checkpoint`}, over ${s.pairs === "mono" ? "the one-axis pairs (variants that differ in a single design choice, as in the paper's figure)" : "every pair of design variants, whatever choices they differ in"}. ✓ use: above chance at this size (at least half of the runs) and decision accuracy ≥ ${USE_DA}, the paper's threshold. Treat it as a prior and confirm it on your own runs.`),
       ];
     });
   };
@@ -1010,6 +1047,7 @@
   }
 
   function parseCSV(text) {
+    text = text.replace(/^\uFEFF/, "");   // Excel's byte-order mark would rename the first column
     const rows = [[]];
     let cell = "", quoted = false;
     for (let i = 0; i < text.length; i++) {
@@ -1101,7 +1139,7 @@
     const iso = (fw) => LANG.fw[fw.split("_")[0]] ?? fw;
     // A preset's shares are keyed by FineWeb subset; the table by language (Arabic varieties add up).
     const preset = (m) => Object.entries(m.shares).reduce((o, [fw, s]) => ((o[iso(fw)] = (o[iso(fw)] ?? 0) + 100 * s), o), {});
-    const presets = mx.mixtures.map((m, i) => ({ value: i, label: `Scheme ${m.scheme} · L = ${m.L}${m.T !== 1 ? ` · T = ${m.T}` : ""}` }));
+    const presets = mx.mixtures.map((m, i) => ({ value: i, label: `Scheme ${buildOf(m.scheme)} · K = ${m.L}${m.T !== 1 ? ` · T = ${m.T}` : ""}` }));
     const start = Math.max(0, mx.mixtures.findIndex((m) => m.scheme === "A" && m.L === 8 && m.T === 1));
     const size0 = lk.sizes.includes("350M") ? "350M" : lk.sizes[0];
     const s = { size: size0, budget: lk.budget[size0] / 1e9, ownBudget: false, shares: preset(mx.mixtures[start]), only: false };
@@ -1120,8 +1158,9 @@
         s.shares = preset(mx.mixtures[i]); editor(); render();
       }));
 
+    const totalText = () => `Shares add up to ${fmt(Object.values(s.shares).reduce((a, b) => a + b, 0), 1)} %; they are rescaled to 100 % of the budget.`;
+    let totalNote;
     function editor() {
-      const total = Object.values(s.shares).reduce((a, b) => a + b, 0);
       const add = h("select", { onchange: (e) => { if (e.target.value) { s.shares[e.target.value] = 1; editor(); render(); } } },
         h("option", { value: "" }, "+ add a language"),
         measured.filter((l) => !(l in s.shares)).map((l) => h("option", { value: l }, `${langName(l)} (${l})`)));
@@ -1129,11 +1168,11 @@
         h("div", { class: "lk-mix-rows" }, Object.entries(s.shares).sort((a, b) => b[1] - a[1]).map(([l, v]) =>
           h("label", {}, `${langName(l)} (${l})`, h("span", {},
             h("input", { type: "number", min: 0, step: 0.1, value: +v.toFixed(2), "aria-label": `share of ${langName(l)} in %`,
-              oninput: (e) => { s.shares[l] = Math.max(0, +e.target.value || 0); render(); } }), " %",
+              oninput: (e) => { s.shares[l] = Math.max(0, +e.target.value || 0); totalNote.textContent = totalText(); render(); } }), " %",
             h("button", { type: "button", title: "remove", "aria-label": `remove ${langName(l)}`,
               onclick: () => { delete s.shares[l]; editor(); render(); } }, "×"))))),
         h("div", { class: "viz-controls" }, h("label", {}, "Mixture", add)),
-        note(`Shares add up to ${fmt(total, 1)} %; they are rescaled to 100 % of the budget.`));
+        totalNote = note(totalText()));
     }
 
     function cell(b, l, tokens) {
@@ -1159,9 +1198,9 @@
       const langUse = langs.filter((_, i) => rowsAll.some((r) => r.cells[i].k === "use")).length;
       if (!langs.length) return out.replaceChildren(h("div", { class: "viz-empty" }, "Add at least one language to the mixture."));
       const head = h("tr", {}, h("th", {}, "Evaluation"), langs.map(({ l, tokens }) =>
-        h("th", { title: `${langName(l)}: ${human(tokens)} training tokens` }, l, h("div", { class: "viz-note" }, human(tokens)))));
+        h("th", { "data-tip": `${langName(l)}: ${human(tokens)} training tokens` }, l, h("div", { class: "viz-note" }, human(tokens)))));
       const body = shown.map((r) => h("tr", {}, h("td", {}, lk.names[r.b] ?? r.b), r.cells.map((c) =>
-        h("td", { title: c.why ?? "not measured for this language" }, c.k === "none" ? "–" : h("span", { class: `badge ${c.k}` }, c.text)))));
+        h("td", { "data-tip": c.why ? `${c.why}. Based on ${c.r.n_cells} measurements (${s.size} runs × checkpoints${c.r.n_tasks > 1 ? `, ${c.r.n_tasks} tasks` : ""})` : "not measured for this language" }, c.k === "none" ? "–" : h("span", { class: `badge ${c.k}` }, c.text)))));
       out.replaceChildren(
         tiles([[`${nUse} / ${flat.length}`, `(evaluation, language) pairs above chance at ${s.size}`],
                [`${langUse} / ${langs.length}`, "languages with at least one usable evaluation"],
@@ -1170,12 +1209,17 @@
           control({ key: "only", label: "Show", type: "seg", options: [{ value: false, label: "all evaluations" }, { value: true, label: "usable only" }], value: s.only },
             (v) => { s.only = v; render(); })),
         h("div", { class: "viz-scroll" }, h("table", { class: "viz-table lk-table" }, h("thead", {}, head), h("tbody", {}, body))),
-        note(`✓ x % = above chance from x % of your run on (≤ x %: already at our first measured checkpoint); x % is the tokens of the language it needs over the tokens your run gives it. ` +
-             `✕ n = needs n tokens of the language first. ✕ chance = at chance in all our ${s.size} runs. ` +
-             `? = outside the token range we measured, so we cannot say. – = not measured. ` +
-             `Bits per byte has no chance level and is usable at every size.`));
+        h("ul", { class: "viz-note" }, [
+          "✓ x % = above chance from x % of your run on (≤ x %: already at our first measured checkpoint)",
+          "x % is the tokens of the language it needs over the tokens your run gives it",
+          "✕ n = needs n tokens of the language first",
+          `✕ chance = at chance in all our ${s.size} runs`,
+          "? = outside the token range we measured, so we cannot say",
+          "– = not measured",
+        ].map((t) => h("li", {}, t))));
     }
     el.replaceChildren(bar, mixBox, out);
+    hoverTips(out);
     editor();
     REDRAW.push(render);
     render();
@@ -1203,6 +1247,7 @@
         h("button", { type: "button", onclick: () => download("snr-template.csv", exampleCSV()) }, "download template"))));
     function render() {
       if (!state.records) return out.replaceChildren(note("Required columns: recipe, task, score. Optional: size, step, chance, lower_is_better."));
+      if (!state.records.length) return out.replaceChildren(h("div", { class: "viz-empty" }, "The file has a header but no rows."));
       const missing = ["recipe", "task", "score"].filter((c) => !(c in state.records[0]));
       if (missing.length) return out.replaceChildren(h("div", { class: "viz-empty" }, `Missing column(s): ${missing.join(", ")}.`));
       const rows = analyse(state.records, state);

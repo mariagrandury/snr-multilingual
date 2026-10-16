@@ -147,6 +147,7 @@ from analysis.utils import (AXES_SUFFIX, NON_EMB, SMALL_SIZES, TARGET_SIZE, boot
 
 OUT_ROOT = DECISION_ACCURACY
 YLIM = (0.25, 1.02)           # one scale for the three panels; 1.0 (the hollow self-references) inside it
+YLIM_RQ2 = (0.4, 1.02)        # the paper figure (lowest line 0.42); a variant going lower starts at its own floor
 Y_SIZE = "reliability_macro"  # DA-size as a mean over tasks, the other two panels' average
 # rq2 variant -> the tables the three panels read: the DA-size panel's stem in
 # full (so the GROUPING is data too, not only the filter), then the DA-ckpt and
@@ -264,10 +265,13 @@ def figure(out_dir: Path, variant: str = "", axes: str = "multi-axis") -> None:
     rows = [_scale_panel(ax3[0], out_dir, sz + a),
             _run_panel(ax3[1], out_dir, "ckpt", "DA-ckpt (reference is the final checkpoint of the same size)", True, ck + a),
             _run_panel(ax3[2], out_dir, "goal", f"DA-goal (reference is the final checkpoint of {TARGET_SIZE})", False, gl + a)]
-    for ax in ax3:
-        ax.set_ylim(*YLIM); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    drawn = pd.concat(rows, ignore_index=True)
+    lo = min(YLIM_RQ2[0], np.floor(drawn[[c for c in ("da", Y_SIZE) if c in drawn]].min().min() * 20) / 20)
+    for ax, name, x in zip(ax3, ("size", "ckpt", "goal"), ("Model size", "Proxy training tokens", "Proxy training tokens")):
+        ax.set_ylim(lo, YLIM_RQ2[1]); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+        ax.set_ylabel(f"DA-{name}"); ax.set_xlabel(x)     # the caption says what each panel ranks against
     fig.tight_layout()
-    pd.concat(rows, ignore_index=True).to_csv(out_dir / f"rq2_da_all{suffix}.csv", index=False)
+    drawn.to_csv(out_dir / f"rq2_da_all{suffix}.csv", index=False)
     S.save_paper(fig, out_dir / f"rq2_da_all{suffix}")       # rule 18: every rq2 figure is a bare paper figure
 
 

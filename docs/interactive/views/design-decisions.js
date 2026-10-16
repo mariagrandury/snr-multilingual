@@ -49,7 +49,7 @@
     const eff = (key, pop) => d.effect.find((e) => e.key === key && e.pop === pop);
     // rows of a population, ordered by the effect at the reference (largest first; unmeasured last)
     const keys = (pop) => {
-      // a data build read on benchmarks only (L1, L2) has no row on BPB; the activation and optimizer ladders stay
+      // a data build read on benchmarks only (K1, K2) has no row on BPB; the activation and optimizer ladders stay
       // listed without a row (Muon has no 1.7B evaluation yet), with why
       const ks = Object.keys(d.names).filter((k) => k === "optimizer" || k === "activation" || d.rows.some((r) => r.key === k && r.pop === pop));
       return ks.sort((a, b) => (eff(b, pop)?.ratio ?? -1) - (eff(a, pop)?.ratio ?? -1)
@@ -104,7 +104,7 @@
         }
         const e = m.eff(k, s.pop);
         grid.append(e
-          ? h("div", { class: "dd-eff", title: `Median |effect| at the 1.7B reference in seed standard deviations, per L: ${e.Ls.map((L, i) => `L${L} ${fmt(e.per_L[i])}× (${S.pct(e.share_above_2[i])} of items above 2×)`).join(", ")}` },
+          ? h("div", { class: "dd-eff", title: `Median |effect| at the 1.7B reference in seed standard deviations, per L: ${e.Ls.map((L, i) => `K${L} ${fmt(e.per_L[i])}× (${S.pct(e.share_above_2[i])} of items above 2×)`).join(", ")}` },
             h("div", { class: "dd-bar" }, h("b", { style: `width:${LX(e.ratio)}%` }), h("i", { style: `left:${LX(1)}%` }), h("i", { style: `left:${LX(2)}%` })),
             h("span", {}, `${fmt(e.ratio, 1)}×`))
           : h("div", { class: "dd-eff" }, h("span", {}, "not measured")));

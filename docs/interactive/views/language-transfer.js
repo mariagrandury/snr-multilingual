@@ -66,7 +66,7 @@ button.lt-chip:hover { background: var(--viz-neutral); }
     const code = (task) => { const fw = task.replace("bpb_", "").split("_")[0]; return fw === "dclm" ? "en" : LANG.fw[fw]; };
     const rows = S.expand(d.per_language).map((r) => ({ ...r, code: code(r.task) })).filter((r) => r.code);
     mount(el, [
-      { key: "L", label: "Training languages", options: S.LS.map((L) => ({ value: L, label: `L = ${L}` })), value: 8 },
+      { key: "L", label: "Training languages", options: S.LS.map((L) => ({ value: L, label: `K = ${L}` })), value: 8 },
       { key: "k", label: "Proxy rungs measured", type: "seg", options: [1, 2, 3, 4] },
       { key: "m", label: "Forecast", type: "seg", options: [{ value: "transfer", label: "pooled exponent" }, { value: "last", label: "largest proxy as is" }] },
     ], (s) => {
@@ -83,7 +83,7 @@ button.lt-chip:hover { background: var(--viz-neutral); }
         if (!r || r[key] == null) return null;
         const e = err(r);
         return { color: col(1 - Math.min(e, MAX) / MAX), cls: r.trained ? "tr" : null,
-          tip: `${S.langName(c)} (${r.trained ? "trained" : "never trained"} at L = ${s.L})\nobserved BPB at 1.7B ${fmt(r.observed, 3)}, forecast ${fmt(s.m === "transfer" ? r.pred_transfer : r.pred_last, 3)}: ${pct(e)} off` };
+          tip: `${S.langName(c)} (${r.trained ? "trained" : "never trained"} at K = ${s.L})\nobserved BPB at 1.7B ${fmt(r.observed, 3)}, forecast ${fmt(s.m === "transfer" ? r.pred_transfer : r.pred_last, 3)}: ${pct(e)} off` };
       });
       return [
         h("div", { class: "lt-legend" },
@@ -112,7 +112,7 @@ button.lt-chip:hover { background: var(--viz-neutral); }
         for (const p of PROX) {
           const r = d.groups.find((x) => x.group === g && x.kind === "size" && x.x === p);
           grid.append(r?.da == null ? h("div", {}, h("small", {}, "–"))
-            : h("div", { title: `${LABEL[g]}: the ${p} proxy's final ranking of A vs B matches the 1.7B final on ${pct(r.da)} of the languages (mean over L8, L15, L30)` },
+            : h("div", { title: `${LABEL[g]}: the ${p} proxy's final ranking of A vs B matches the 1.7B final on ${pct(r.da)} of the languages (mean over K8, K15, K30)` },
               h("i", { class: r.da >= s.thr ? "lt-dot on" : "lt-dot" }), h("small", {}, fmt(r.da))));
         }
         const ck = d.groups.filter((x) => x.group === g && x.kind === "ckpt").sort((a, b) => +a.x - +b.x);
@@ -172,7 +172,7 @@ button.lt-chip:hover { background: var(--viz-neutral); }
     style();
     const d = await load("language_transfer_views");
     const CELLS = uniq(d.family.lift.map((r) => r.cell));
-    const CNAME = { "L2 A": "L2 A (English + Russian)", "L8 A": "L8 A (adds zh, de, ja, es, fr, it)", "L8 B": "L8 B (diversity-first list)" };
+    const CNAME = { "L2 A": "K2 A (English + Russian)", "L8 A": "K8 A (adds zh, de, ja, es, fr, it)", "L8 B": "K8 B (diversity-first list)" };
     mount(el, [
       { key: "mode", label: "Show", type: "seg", options: [{ value: "lift", label: "lift per subfamily" }, { value: "share", label: "share above chance by size" }] },
       { key: "level", label: "Family level", type: "seg", options: [{ value: "sub", label: "subfamily" }, { value: "top", label: "top-level family" }] },
@@ -210,7 +210,7 @@ button.lt-chip:hover { background: var(--viz-neutral); }
           Plot.dot(rows.filter((r) => r.line === "cell"), { x: "size", y: "v", fill: "group", r: 4, tip: true,
             title: (r) => `${r.group} (${s.level === "sub" ? "subfamily" : "top-level family"}), ${r.size}\n${CNAME[s.cell] ?? s.cell}: ${pct(r.share)} of ${r.n} tasks in ${r.langs} languages above chance\nEnglish only, same tasks: ${pct(r.base)}` }),
         ],
-      }), note("Solid: the cell; dashed: the English-only L1 cell on exactly the same tasks. The gap between a solid line and its dashed twin is what training the cell's languages adds; same family = the untrained language shares the family of a trained non-English language.")];
+      }), note("Solid: the cell; dashed: the English-only K1 cell on exactly the same tasks. The gap between a solid line and its dashed twin is what training the cell's languages adds; same family = the untrained language shares the family of a trained non-English language.")];
     });
   };
 })();

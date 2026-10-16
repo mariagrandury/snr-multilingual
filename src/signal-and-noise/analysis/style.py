@@ -21,6 +21,9 @@ RAMP = ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"]
 # Categorical slots, in fixed order, for series that are different KINDS of
 # thing rather than steps of one magnitude. Never cycled past slot 3.
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a"]
+# Muted categorical slots (the near-tie categories of the DA sensitivity figure), for bars of
+# up to four kinds of thing on a light page: navy, salmon, mint, warm grey.
+CATEGORIES = ["#0d366b", "#f2b08f", "#8fd0b5", "#dcdbd6"]
 # Okabe-Ito, colourblind safe, for a figure with more than three kinds of line
 # (yellow left out: it does not read on white).
 OKABE_ITO = {"black": "#000000", "orange": "#e69f00", "sky": "#56b4e9", "green": "#009e73",
