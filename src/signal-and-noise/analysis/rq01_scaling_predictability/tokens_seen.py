@@ -228,7 +228,13 @@ def plot_da(summary: pd.DataFrame, cells: pd.DataFrame, out_dir: Path, mode: str
     ax.set_ylabel(f"Mean DA-{mode} of a language's BPB")
     ax.legend(frameon=False, loc="lower right", title="Proxy size"); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
     stem = DA_STEM.format(mode=mode, axes=AXES_SUFFIX[axes]) + ("_vs_frac" if x == "frac" else "")
-    if paper:
+    if paper:     # short: the y axis from the lowest error bar, the legend (sizes only) beside the panel
+        fig.set_size_inches(6.4, 2.6)
+        ax.set_ylabel(f"Mean DA-{mode} of BPB")
+        ax.set_ylim(np.floor((summary["da"] - summary["da_se"].fillna(0)).min() * 20) / 20, 1.0)
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles, [l.split()[0] for l in labels], frameon=False, title="Proxy size",
+                  loc="center left", bbox_to_anchor=(1.01, 0.5))
         fig.tight_layout()
         summary.to_csv(out_dir / f"{stem}_paper.csv", index=False)
         S.save_paper(fig, out_dir / f"{stem}_paper")
