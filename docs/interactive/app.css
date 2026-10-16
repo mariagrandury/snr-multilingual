@@ -84,7 +84,8 @@
 .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: .3em; }
 .hero p.lead { font-size: .95rem; max-width: 42em; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(13em, 1fr)); gap: .9em; margin: 1em 0; }
-.cards a.card { display: block; padding: .9em 1em; border-radius: 8px; border: 1px solid var(--md-default-fg-color--lightest); color: inherit; }
+.cards > p { display: flex; margin: 0; }   /* markdown wraps each card in a <p>: let it fill the row */
+.cards a.card { display: block; flex: 1; padding: .9em 1em; border-radius: 8px; border: 1px solid var(--md-default-fg-color--lightest); color: inherit; }
 .cards a.card:hover { border-color: var(--md-accent-fg-color); }
 .cards a.card b { display: block; margin-bottom: .3em; color: var(--md-typeset-a-color); }
 .cards a.card span { font-size: .68rem; color: var(--viz-muted); }

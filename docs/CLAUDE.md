@@ -95,7 +95,7 @@ Nothing published says when the site was last built: `on_post_build` strips
 the sitemap's `<lastmod>`, and no data file carries a build or report date.
 
 The text of `index.md` and of the three Findings pages is the paper's
-(abstract, highlighted finding, contributions, sections 4.1–4.3), so it
+(abstract, the sections' Summary boxes, contributions, sections 4.1–4.3), so it
 follows the paper, not the analysis: when the paper's wording or numbers
 change, copy them over. After the figures are regenerated, re-check the
 other hand-written numbers (no data file feeds them yet): the ladder counts
