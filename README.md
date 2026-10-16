@@ -1,3 +1,5 @@
+[![Netlify Status](https://api.netlify.com/api/v1/badges/6f55adfb-a7ff-465d-a7cb-1f8c73d63376/deploy-status)](https://app.netlify.com/projects/scaling-reliability/deploys)
+
 # Signal-Aware Framework for Multilingual LM Evaluation
 
 > Which (subsets of) benchmarks provide reliable signal at each stage of
