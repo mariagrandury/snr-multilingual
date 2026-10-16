@@ -13,8 +13,10 @@ Tabs of the MkDocs side:
   contributions, verbatim), **Model ladder** (`ladder.md`), **Findings**
   (`findings/*.md`: Measurability, Agreement and Anticipation, the paper's
   three analysis sections with its wording and interactive versions of its
-  figures), **Recommender** (`recommend.md`) and **Benchmarks**
-  (`benchmarks.md`) are hand-written showcase pages. The earlier one-page-per-RQ
+  figures, each ending on the paper's Summary box), **Recommender**
+  (`recommend.md`; its upload-your-results section waits in
+  `recommend_custom.md`, excluded from the build until it is tested) and
+  **Benchmarks** (`benchmarks.md`) are hand-written showcase pages. The earlier one-page-per-RQ
   findings are kept in `findings_all/`, excluded from the build
   (`exclude_docs` in `mkdocs.yml`) until they are added back. Their charts are `<div class="viz"
   data-viz="NAME">` blocks drawn by `interactive/app.js` (one `VIEWS.NAME`
@@ -28,7 +30,10 @@ Tabs of the MkDocs side:
   `launch_trainings.py`'s registry and its data mixtures from the builder's
   plans via `src/pretrain/data/data_progress.py`, so run it on the cluster).
   The mixtures' hover cards read `hello`, `thank_you` and `speakers` from
-  `configs/languages.json`. The Recommender's look-up table (`lookup.json`)
+  `configs/languages.json`. The Recommender's per-size table reads
+  `recommend.json`: rq02's per-task DA-size and DA-ckpt, wide (one column per
+  comparison), on the one-axis and on every pair (the page's "Pairs" toggle),
+  plus the BPB DA-goal per proxy size and tenth. Its look-up table (`lookup.json`)
   is the one threshold the builder computes: per (benchmark, language, size)
   the fewest tokens of the language from which every checkpoint stays above
   chance, read from the tokens-seen cell table

@@ -991,42 +991,48 @@
   };
 
   // ---------- recommendations ----------
+  // A task "ranks like the reference" from the paper's heuristic DA threshold on (§ Agreement).
+  const USE_DA = 0.66;
   VIEWS.recommend = async (el) => {
     await languages();
-    const [da, gate, snr] = await Promise.all([load("decision_accuracy"), load("gate"), load("snr")]);
-    const daRows = expand(da.per_task);
+    const [rc, gate, snr] = await Promise.all([load("recommend"), load("gate"), load("snr")]);
+    // one-axis pairs (the paper's figure, the default) or every pair of variants
+    const PAIRS = { mono: { rows: expand(rc.mono_axis.per_task), bpb: rc.mono_axis.bpb_early },
+      multi: { rows: expand(rc.multi_axes.per_task), bpb: rc.multi_axes.bpb_early } };
     const gateBy = byKey(expand(gate.tasks), (r) => r.task);
     const snrBy = byKey(expand(snr.per_task), (r) => `${r.task}|${r.size}`);
-    const langs = uniq(daRows.map((r) => r.language)).sort((a, b) => langName(a).localeCompare(langName(b)));
+    const langs = uniq(PAIRS.mono.rows.map((r) => r.language)).sort((a, b) => langName(a).localeCompare(langName(b)));
+    hoverTips(el);
     mount(el, [
       { key: "lang", label: "Target language", options: langs.map((l) => ({ value: l, label: `${langName(l)} (${l})` })), value: "de", string: true },
-      { key: "size", label: "Your proxy size", type: "seg", options: ["175M", "350M", "600M", "1B"], value: "350M" },
+      { key: "size", label: "Your proxy size", type: "seg", options: ["90M", "175M", "350M", "600M", "1B"], value: "350M" },
       { key: "q", label: "Your decision", options: [{ value: "size", label: "Will my small-model ranking hold at 1.7B?" }, { value: "ckpt", label: "Can I decide before the run ends?" }], string: true },
+      { key: "pairs", label: "Pairs", type: "seg", options: [{ value: "mono", label: "one-axis" }, { value: "multi", label: "multi-axis" }] },
       { key: "frac", label: "Decide at (% of run)", options: [10, 20, 30, 40, 50, 60].map((v) => ({ value: v, label: `${v} %` })), value: 20 },
     ], (s) => {
       const comp = s.q === "size" ? `${s.size}→1.7B` : `f${s.frac}@${s.size}`;
-      const rows = daRows.filter((r) => r.language === s.lang && r.comparison === comp).map((r) => {
+      const P = PAIRS[s.pairs];
+      const rows = P.rows.filter((r) => r.language === s.lang && r[comp] != null).map((r) => {
+        const decision_acc = r[comp];
         const share = r.benchmark === "bpb" ? 1 : gateBy[r.task]?.[s.size];
         const logSnr = snrBy[`${r.task}|${s.size}`]?.log_snr;
-        const verdict = share != null && share < 0.5 ? "avoid" : r.decision_acc == null ? null : r.decision_acc >= 0.75 ? "use" : r.decision_acc >= 0.6 ? "care" : "avoid";
-        const why = share != null && share < 0.5 ? "at chance at this size" : r.decision_acc >= 0.75 ? "ranks like the reference" : r.decision_acc >= 0.6 ? "often right, check with a second task" : "close to chance";
-        return { ...r, share, logSnr, verdict, why, rank: { use: 3, care: 2, avoid: 1 }[verdict] ?? 0 };
+        const use = !(share != null && share < 0.5) && decision_acc >= USE_DA;
+        return { task: r.task, name: rc.names[r.benchmark] ?? r.benchmark, decision_acc, share, logSnr, use, rank: use ? 1 : 0 };
       });
       if (!rows.length) return h("div", { class: "viz-empty" }, "No measurement for this language and comparison.");
-      const best = rows.filter((r) => r.verdict === "use").sort((a, b) => b.decision_acc - a.decision_acc);
-      const badge = (r) => (r.verdict ? [h("span", { class: `badge ${r.verdict}` }, { use: "✓ use", care: "! with care", avoid: "✕ avoid" }[r.verdict]), h("div", { class: "viz-note" }, r.why)] : "–");
-      const bpbEarly = da.early_small.filter((r) => r.group === "bpb" && r.proxy_size === s.size && r.da >= 0.75).sort((a, b) => a.frac - b.frac)[0];
+      const best = rows.filter((r) => r.use).sort((a, b) => b.decision_acc - a.decision_acc);
+      const badge = (r) => (r.use ? h("span", { class: "badge use" }, "✓ use") : "–");
+      const bpbEarly = P.bpb.filter((r) => r.proxy_size === s.size && r.da >= USE_DA).sort((a, b) => a.frac - b.frac)[0];
       return [
-        tiles([[best.length, `of ${rows.length} measurements to use`], [best[0]?.task ?? "none", "most reliable here"], [bpbEarly ? pct(bpbEarly.frac) : "not reached", `of a ${s.size} run for BPB to rank like 1.7B (DA ≥ 0.75, all languages)`]]),
+        tiles([[best.length, `of ${rows.length} measurements to use`], [best[0]?.name ?? "none", "most reliable here"], [bpbEarly ? pct(bpbEarly.frac) : "not reached", `of a ${s.size} run for BPB to rank like 1.7B (mean DA over languages ≥ ${USE_DA})`]]),
         h("div", { style: "margin-top:1em" }, table(rows, [
           { key: "rank", label: "Verdict", render: badge },
-          { key: "task", label: "Task" },
-          { key: "benchmark", label: "Family" },
+          { key: "name", label: "Benchmark", render: (r) => h("span", { class: "has-tip", "data-tip": r.task }, r.name) },
           { key: "share", label: "Runs above chance", num: true, render: (r) => pct(r.share), title: `share of ${s.size} runs above chance (rq00)` },
           { key: "logSnr", label: "log₁₀ SNR", num: true, title: `at ${s.size} (rq03)` },
           { key: "decision_acc", label: "Decision accuracy", num: true, title: `${comp} (rq02)` },
-        ], { sort: "rank" })),
-        note(`Decision accuracy here is ${s.q === "size" ? `the ranking of our design variants at ${s.size} against 1.7B` : `the ranking at ${s.frac} % of a ${s.size} run against its final checkpoint`}, on the ladder's own decisions (language count, depth, language list, temperature). Treat it as a prior; confirm on your own runs with the upload tool below.`),
+        ], { sort: "decision_acc" })),
+        note(`Decision accuracy here is ${s.q === "size" ? `the ranking of our design variants at ${s.size} against 1.7B` : `the ranking at ${s.frac} % of a ${s.size} run against its final checkpoint`}, over ${s.pairs === "mono" ? "the one-axis pairs (variants that differ in a single design choice, as in the paper's figure)" : "every pair of design variants, whatever choices they differ in"}. ✓ use: above chance at this size (at least half of the runs) and decision accuracy ≥ ${USE_DA}, the paper's threshold. Treat it as a prior and confirm it on your own runs.`),
       ];
     });
   };
@@ -1041,6 +1047,7 @@
   }
 
   function parseCSV(text) {
+    text = text.replace(/^\uFEFF/, "");   // Excel's byte-order mark would rename the first column
     const rows = [[]];
     let cell = "", quoted = false;
     for (let i = 0; i < text.length; i++) {
@@ -1151,8 +1158,9 @@
         s.shares = preset(mx.mixtures[i]); editor(); render();
       }));
 
+    const totalText = () => `Shares add up to ${fmt(Object.values(s.shares).reduce((a, b) => a + b, 0), 1)} %; they are rescaled to 100 % of the budget.`;
+    let totalNote;
     function editor() {
-      const total = Object.values(s.shares).reduce((a, b) => a + b, 0);
       const add = h("select", { onchange: (e) => { if (e.target.value) { s.shares[e.target.value] = 1; editor(); render(); } } },
         h("option", { value: "" }, "+ add a language"),
         measured.filter((l) => !(l in s.shares)).map((l) => h("option", { value: l }, `${langName(l)} (${l})`)));
@@ -1160,11 +1168,11 @@
         h("div", { class: "lk-mix-rows" }, Object.entries(s.shares).sort((a, b) => b[1] - a[1]).map(([l, v]) =>
           h("label", {}, `${langName(l)} (${l})`, h("span", {},
             h("input", { type: "number", min: 0, step: 0.1, value: +v.toFixed(2), "aria-label": `share of ${langName(l)} in %`,
-              oninput: (e) => { s.shares[l] = Math.max(0, +e.target.value || 0); render(); } }), " %",
+              oninput: (e) => { s.shares[l] = Math.max(0, +e.target.value || 0); totalNote.textContent = totalText(); render(); } }), " %",
             h("button", { type: "button", title: "remove", "aria-label": `remove ${langName(l)}`,
               onclick: () => { delete s.shares[l]; editor(); render(); } }, "×"))))),
         h("div", { class: "viz-controls" }, h("label", {}, "Mixture", add)),
-        note(`Shares add up to ${fmt(total, 1)} %; they are rescaled to 100 % of the budget.`));
+        totalNote = note(totalText()));
     }
 
     function cell(b, l, tokens) {
@@ -1190,9 +1198,9 @@
       const langUse = langs.filter((_, i) => rowsAll.some((r) => r.cells[i].k === "use")).length;
       if (!langs.length) return out.replaceChildren(h("div", { class: "viz-empty" }, "Add at least one language to the mixture."));
       const head = h("tr", {}, h("th", {}, "Evaluation"), langs.map(({ l, tokens }) =>
-        h("th", { title: `${langName(l)}: ${human(tokens)} training tokens` }, l, h("div", { class: "viz-note" }, human(tokens)))));
+        h("th", { "data-tip": `${langName(l)}: ${human(tokens)} training tokens` }, l, h("div", { class: "viz-note" }, human(tokens)))));
       const body = shown.map((r) => h("tr", {}, h("td", {}, lk.names[r.b] ?? r.b), r.cells.map((c) =>
-        h("td", { title: c.why ?? "not measured for this language" }, c.k === "none" ? "–" : h("span", { class: `badge ${c.k}` }, c.text)))));
+        h("td", { "data-tip": c.why ? `${c.why}. Based on ${c.r.n_cells} measurements (${s.size} runs × checkpoints${c.r.n_tasks > 1 ? `, ${c.r.n_tasks} tasks` : ""})` : "not measured for this language" }, c.k === "none" ? "–" : h("span", { class: `badge ${c.k}` }, c.text)))));
       out.replaceChildren(
         tiles([[`${nUse} / ${flat.length}`, `(evaluation, language) pairs above chance at ${s.size}`],
                [`${langUse} / ${langs.length}`, "languages with at least one usable evaluation"],
@@ -1201,12 +1209,17 @@
           control({ key: "only", label: "Show", type: "seg", options: [{ value: false, label: "all evaluations" }, { value: true, label: "usable only" }], value: s.only },
             (v) => { s.only = v; render(); })),
         h("div", { class: "viz-scroll" }, h("table", { class: "viz-table lk-table" }, h("thead", {}, head), h("tbody", {}, body))),
-        note(`✓ x % = above chance from x % of your run on (≤ x %: already at our first measured checkpoint); x % is the tokens of the language it needs over the tokens your run gives it. ` +
-             `✕ n = needs n tokens of the language first. ✕ chance = at chance in all our ${s.size} runs. ` +
-             `? = outside the token range we measured, so we cannot say. – = not measured. ` +
-             `Bits per byte has no chance level and is usable at every size.`));
+        h("ul", { class: "viz-note" }, [
+          "✓ x % = above chance from x % of your run on (≤ x %: already at our first measured checkpoint)",
+          "x % is the tokens of the language it needs over the tokens your run gives it",
+          "✕ n = needs n tokens of the language first",
+          `✕ chance = at chance in all our ${s.size} runs`,
+          "? = outside the token range we measured, so we cannot say",
+          "– = not measured",
+        ].map((t) => h("li", {}, t))));
     }
     el.replaceChildren(bar, mixBox, out);
+    hoverTips(out);
     editor();
     REDRAW.push(render);
     render();
@@ -1234,6 +1247,7 @@
         h("button", { type: "button", onclick: () => download("snr-template.csv", exampleCSV()) }, "download template"))));
     function render() {
       if (!state.records) return out.replaceChildren(note("Required columns: recipe, task, score. Optional: size, step, chance, lower_is_better."));
+      if (!state.records.length) return out.replaceChildren(h("div", { class: "viz-empty" }, "The file has a header but no rows."));
       const missing = ["recipe", "task", "score"].filter((c) => !(c in state.records[0]));
       if (missing.length) return out.replaceChildren(h("div", { class: "viz-empty" }, `Missing column(s): ${missing.join(", ")}.`));
       const rows = analyse(state.records, state);

@@ -459,7 +459,8 @@ def lookup(cells: list[dict]) -> dict:
                               hi=g["tokens"].max(), n_cells=len(g), n_tasks=g["n_tasks"].max()))
 
     t = cell.groupby(key).apply(threshold, include_groups=False).reset_index()
-    t[["min_tokens", "lo", "hi"]] = t[["min_tokens", "lo", "hi"]].round(-6)
+    # three significant figures: rounding to millions turned sub-million counts into 0
+    t[["min_tokens", "lo", "hi"]] = t[["min_tokens", "lo", "hi"]].map(lambda v: v if pd.isna(v) else float(f"{v:.3g}"))
     sizes = [s for s in GATE_SIZES if s in set(t["model_size"])]
     budget = {s: int(pd.Series([r["tokens"] for r in cells if r["size"] == s]).mode().iloc[0]) for s in sizes}
     order = list(t.assign(ok=t["min_tokens"].notna()).groupby("benchmark")["ok"].mean()
@@ -497,7 +498,28 @@ def _tables() -> list:
         d = pd.read_csv(paths.DECISION_ACCURACY / PRED / "da_all_per_benchmark_multi_axes.csv")
         return dict(
             early_small=rows(pd.read_csv(paths.DECISION_ACCURACY / PRED / "early_small_da_goal_summary_multi_axes.csv")),
-            per_task=table(d[["language", "benchmark", "task", "da_def", "comparison", "decision_acc"]]))
+            per_task=table(d[["language", "benchmark", "task", "da_def", "comparison", "decision_acc"]]
+                           .assign(benchmark=lambda x: merge_extra(x["benchmark"]))))
+
+    def recommend():
+        """The recommender's DA per (task, comparison) and the BPB DA-goal per
+        (proxy size, tenth), for each pair set: rq02's own melt of its per-task
+        table (da_per_benchmark.melt_da) and the BPB mean of
+        early_small_da_goal_summary, read on the one-axis or every pair."""
+        from analysis.rq02_decision_accuracy.da_per_benchmark import melt_da
+        from analysis.utils import AXES_SUFFIX, LANGUAGE_AGGREGATES, assign_language, benchmark_family, one_axes
+        per_task = pd.read_csv(paths.DECISION_ACCURACY / PRED / "da_all_per_task_both_axes.csv")
+        early = pd.read_csv(paths.DECISION_ACCURACY / PRED / "da_goal_early_small_per_task_both_axes.csv")
+        early = early[(early["task"].map(benchmark_family) == "bpb") & ~early["task"].map(assign_language).isin(LANGUAGE_AGGREGATES)]
+        out = {"names": _names(merge_extra(per_task["task"].map(benchmark_family)))}
+        for axes in ("mono-axis", "multi-axis"):
+            d = melt_da(one_axes(per_task, axes).set_index("task"))
+            d = d[d["da_def"].isin(["DA-size", "DA-ckpt"])].assign(benchmark=lambda x: merge_extra(x["benchmark"]))
+            wide = d.pivot_table(index=["language", "benchmark", "task"], columns="comparison", values="decision_acc")
+            out[AXES_SUFFIX[axes].strip("_")] = dict(
+                per_task=table(wide.reset_index()),          # one row per task, one column per comparison
+                bpb_early=rows(one_axes(early, axes).groupby(["proxy_size", "frac"], as_index=False)["da"].mean()))
+        return out
 
     def ext():
         e = paths.EXTERNAL_FRAMEWORKS / "all/external"
@@ -515,6 +537,7 @@ def _tables() -> list:
             regimes=rows(pd.read_csv(paths.SCALING_PREDICTABILITY / ALL / "scaling_regimes.csv")),
             families=rows(pd.read_csv(paths.SCALING_PREDICTABILITY / ALL / "rq1_families.csv")))),
         ("decision_accuracy", da),
+        ("recommend", recommend),
         ("snr", lambda: dict(
             per_task=table(pd.read_csv(paths.NOISE_AND_SNR / PRED / "snr.csv")),
             effect_over_seed=table(pd.read_csv(paths.NOISE_AND_SNR / ALL / "effect_over_seed.csv")))),

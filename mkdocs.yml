@@ -6,6 +6,9 @@ site_dir: site
 exclude_docs: |
   CLAUDE.md
   findings_all/
+  todo.md
+  # the upload-your-results recommender, not deployed until it is tested
+  recommend_custom.md
 
 theme:
   name: material
