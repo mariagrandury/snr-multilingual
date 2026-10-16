@@ -103,6 +103,12 @@
   background: var(--md-default-bg-color); color: var(--md-default-fg-color);
   border: 1px solid var(--md-default-fg-color--lighter); box-shadow: 0 2px 8px rgba(0,0,0,.15); }
 .viz-tip[hidden] { display: none; }
+.viz-table .has-tip { border-bottom: 1px dotted var(--viz-muted); cursor: help; }
+.viz-hovertip { position: fixed; z-index: 10; max-width: 26em; padding: .5em .7em; border-radius: 6px; pointer-events: none;
+  white-space: pre-line; overflow-wrap: anywhere; font-size: .64rem; line-height: 1.4;
+  color: var(--md-default-fg-color); background: var(--md-default-bg-color); border: 1px solid var(--md-default-fg-color--lighter);
+  box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.viz-hovertip[hidden] { display: none; }
 .viz-tip .hello { font-size: .85rem; }
 .mix-legend { display: grid; gap: .4em; margin: .6em 0; color: var(--viz-muted); }
 .mix-legend div { display: flex; flex-wrap: wrap; gap: .3em 1em; align-items: center; }

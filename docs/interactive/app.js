@@ -109,6 +109,22 @@
   }
 
   const note = (text) => h("p", { class: "viz-note" }, text);
+  /* Instant hover cards for every [data-tip] inside el. The tip lives in the page
+     body, so a table scrolling inside .viz never clips it (a title= tooltip is slow
+     and easy to miss). */
+  function hoverTips(el) {
+    const tip = document.body.appendChild(h("div", { class: "viz-hovertip", hidden: "" }));
+    el.addEventListener("mouseover", (e) => {
+      const t = e.target.closest("[data-tip]");
+      if (!t) return;
+      tip.textContent = t.dataset.tip;
+      tip.hidden = false;
+      const b = t.getBoundingClientRect(), hh = tip.offsetHeight;
+      tip.style.left = `${Math.max(8, Math.min(b.left, innerWidth - tip.offsetWidth - 8))}px`;
+      tip.style.top = `${b.bottom + 6 + hh > innerHeight ? b.top - hh - 6 : b.bottom + 6}px`;
+    });
+    el.addEventListener("mouseout", (e) => { if (e.target.closest("[data-tip]")) tip.hidden = true; });
+  }
   const tiles = (items) => h("div", { class: "viz-tiles" },
     items.map(([v, label]) => h("div", { class: "viz-tile" }, h("b", { class: String(v).length > 8 ? "small" : null }, v), h("span", {}, label))));
 
@@ -933,7 +949,7 @@
     const langs = split("langs").sort((a, b) => langName(a).localeCompare(langName(b)));
     const all = (label, values, fmtv = (v) => v) => [{ value: "", label: `all ${label}` }, ...values.map((v) => ({ value: v, label: fmtv(v) }))];
     const link = (url, text) => (url ? h("a", { href: url, target: "_blank", rel: "noopener" }, text) : "–");
-    const csvOf = (list) => d3.csvFormat(list.map(({ langs: _l, cats: _c, sources: _s, ...r }) => r));
+    hoverTips(el);
     mount(el, [
       { key: "q", label: "Search", type: "text", value: "" },
       { key: "lang", label: "Language", options: all("languages", langs, (l) => `${langName(l)} (${l})`), string: true },
@@ -958,20 +974,17 @@
           y: { label: "benchmarks covering the language", grid: true },
           marks: [Plot.barY(perLang, { x: "l", y: "n", fill: css("--viz-s1"), rx: 3, tip: true, title: (d) => `${d.name} (${d.l}): ${d.n} benchmarks` })],
         }) : null,
-        h("div", { class: "viz-controls", style: "margin-top:.6em" }, h("span", { class: "viz-seg" },
-          h("button", { type: "button", onclick: () => { const a = h("a", { href: URL.createObjectURL(new Blob([csvOf(sel)], { type: "text/csv" })), download: "multilingual_benchmarks.csv" }); a.click(); } }, `download these ${sel.length} rows`))),
         table(sel, [
-          { key: "name", label: "Benchmark", render: (r) => [h("b", {}, r.name), r.suite ? h("div", { class: "viz-note" }, r.suite) : null] },
-          { key: "n_languages", label: "Languages", num: true, render: (r) => h("span", { title: r.langs.map((l) => `${langName(l)} (${l})`).join(", ") },
+          { key: "name", label: "Benchmark", render: (r) => h("b", {}, r.name) },
+          { key: "n_languages", label: "Languages", num: true, render: (r) => h("span", { class: "has-tip", "data-tip": r.langs.map((l) => `${langName(l)} (${l})`).join(", ") },
             r.langs.length <= 4 ? r.langs.join(", ") : `${r.langs.length} (${r.langs.slice(0, 3).join(", ")}, …)`) },
-          { key: "frameworks", label: "Framework", render: (r) => h("span", { title: [r.harness_tasks && `harness: ${r.harness_tasks}`, r.lighteval_tasks && `lighteval: ${r.lighteval_tasks}`].filter(Boolean).join("\n") }, r.frameworks) },
+          { key: "frameworks", label: "Framework", render: (r) => h("span", { class: "has-tip", "data-tip": [r.harness_tasks && `harness: ${r.harness_tasks}`, r.lighteval_tasks && `lighteval: ${r.lighteval_tasks}`].filter(Boolean).join("\n") }, r.frameworks) },
           { key: "format", label: "Format" },
           { key: "n_options", label: "Options" },
           { key: "n_items", label: "Items", num: true, render: (r) => (r.n_items == null ? "–" : d3.format(",")(r.n_items)) },
           { key: "categories", label: "Categories" },
           { key: "data_source", label: "Data source" },
           { key: "hf_dataset", label: "Links", render: (r) => [...r.hf_dataset.split(";").filter(Boolean).flatMap((u, i) => [i ? " " : "", link(u.trim(), i ? `HF${i + 1}` : "HF")]), " · ", link(r.paper, "paper")] },
-          { key: "notes", label: "Notes", render: (r) => h("span", { class: "viz-note" }, r.notes || "") },
         ], { sort: "n_languages" }),
       ];
     });
