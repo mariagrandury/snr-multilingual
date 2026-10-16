@@ -20,8 +20,6 @@ theme:
     - navigation.indexes
     - navigation.top
     - navigation.tracking
-    - search.suggest
-    - search.highlight
     - content.code.copy
     - content.code.annotate
     - toc.follow
@@ -102,8 +100,9 @@ markdown_extensions:
   - pymdownx.arithmatex:
       generic: true
 
-plugins:
-  - search
+# No search plugin for now: its box and index would expose the repo-docs pages
+# (READMEs built but not in the nav) that are not meant to be public yet.
+plugins: []
 
 # Double-blind review: the site must not link or name our HF orgs, W&B,
 # GitHub, personal pages, authors or cluster paths. Every such link shows

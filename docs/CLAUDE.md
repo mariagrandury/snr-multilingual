@@ -58,8 +58,10 @@ Tabs of the MkDocs side:
   repo (e.g. `docs/pretraining.md` includes `src/pretrain/README.md`,
   `docs/repo.md` the root README). Edit the original READMEs, not the stubs.
   Its nav entry is commented out in `mkdocs.yml` for the double-blind review;
-  the pages are still built, searchable, in the sitemap and linked from Home
-  and the Findings pages (mkdocs lists them as "not included in the nav").
+  the pages are still built, in the sitemap and linked from Home and the
+  Findings pages (mkdocs lists them as "not included in the nav"). The search
+  plugin is off (`plugins: []`) until they are meant to be public: its box and
+  index would expose them.
 
 The Findings pages draw the paper's four main-text figures with the views of
 `interactive/views/paper.js` (`paperRq0`–`paperRq3`) from `paper_rq*.json`,
