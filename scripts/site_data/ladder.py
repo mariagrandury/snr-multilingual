@@ -54,4 +54,4 @@ def build() -> dict:
     missing = sorted(set(per.index) - set(names))
     if missing:
         print(f"ladder_status: {len(missing)} report cell(s) not in the registry, left out: {', '.join(missing)}")
-    return {"ladder_status": dict(runs=out, tenths=TENTHS, report_mtime=pd.Timestamp(f.stat().st_mtime, unit="s").strftime("%Y-%m-%d"))}
+    return {"ladder_status": dict(runs=out, tenths=TENTHS)}

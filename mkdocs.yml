@@ -1,6 +1,6 @@
 site_name: Scaling Reliability
 site_description: Signal-Aware Framework for Multilingual LM Evaluation
-site_url: https://snr-multilingual.netlify.app/
+site_url: https://scaling-reliability.netlify.app/
 docs_dir: docs
 site_dir: site
 exclude_docs: |

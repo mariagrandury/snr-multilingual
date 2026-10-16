@@ -13,7 +13,9 @@ echo "==> Installing Python doc deps"
 pip install --quiet -r requirements-docs.txt
 
 echo "==> Building MkDocs"
-mkdocs build --clean
+# --strict: the anonymity check (mkdocs_hooks.on_post_build) reports a leaked
+# name as a warning, so a leak fails the build and the last clean deploy stays up
+mkdocs build --clean --strict
 
 # The Slidev deck is not anonymized: skip it during double-blind review.
 if [[ "${BUILD_SLIDES:-0}" != "1" ]]; then

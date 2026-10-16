@@ -91,6 +91,8 @@ checkpoints (`apertus3-*`, `*from8b*`) are redacted in prose and code too;
 its nav entry is commented out in `mkdocs.yml` and `build.sh` builds it only
 with `BUILD_SLIDES=1`. PNG figures under `repo/` are not scanned (text in an
 image cannot be redacted): check their titles and legends by eye.
+Nothing published says when the site was last built: `on_post_build` strips
+the sitemap's `<lastmod>`, and no data file carries a build or report date.
 
 The text of `index.md` and of the three Findings pages is the paper's
 (abstract, highlighted finding, contributions, sections 4.1–4.3), so it
@@ -149,11 +151,13 @@ pnpm dev
 
 ## Known build warnings
 
-`mkdocs build --strict` builds cleanly (checked 2026-10-10): README links
-to source files are rewritten to the anonymity notice by `mkdocs_hooks.py`,
-so they no longer warn. Use `--strict`: the anonymity check in
-`on_post_build` reports a leak as a warning, which `--strict` turns into a
-failed build.
+`mkdocs build --strict` builds cleanly (checked 2026-10-16, also on a fresh
+checkout without the cluster-generated READMEs): README links to source
+files are rewritten to the anonymity notice by `mkdocs_hooks.py`, so they no
+longer warn. `build.sh`, and so every Netlify deploy, builds with `--strict`:
+the anonymity check in `on_post_build` reports a leak as a warning, which
+`--strict` turns into a failed build, so the last clean deploy stays up. Any
+new warning therefore blocks the deploy too.
 
 ## What the user is likely to ask
 

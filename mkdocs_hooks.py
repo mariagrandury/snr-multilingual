@@ -1,3 +1,4 @@
+import gzip
 import logging
 import posixpath
 import re
@@ -315,7 +316,14 @@ def on_post_page(output, page, config):
 
 
 def on_post_build(config):
-    """Warn (fails `mkdocs build --strict`) on any identity left in the site."""
+    """Drop the sitemap's <lastmod> (the build date says when the site was last
+    updated), then warn (fails `mkdocs build --strict`) on any identity left in
+    the site."""
+    sitemap = Path(config["site_dir"]) / "sitemap.xml"
+    if sitemap.exists():
+        xml = re.sub(r"\s*<lastmod>[^<]*</lastmod>", "", sitemap.read_text())
+        sitemap.write_text(xml)
+        (sitemap.parent / "sitemap.xml.gz").write_bytes(gzip.compress(xml.encode(), mtime=0))
     for f in Path(config["site_dir"]).rglob("*"):
         if f.is_file() and f.suffix.lower() in IMAGE_EXTS - {".svg"} and _LEAK.search(str(f.relative_to(config["site_dir"]))):
             log.warning("anonymity: published file name %s names the affiliation", f.relative_to(config["site_dir"]))
