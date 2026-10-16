@@ -25,7 +25,7 @@
     "English accuracy at least as predictable in size": "English accuracy follows the size trend at least as cleanly",
     "higher decision accuracy (mirrored families)": "Small models rank the training variants more like 1.7B does",
     "higher SNR (mirrored families)": "Higher signal-to-noise across the training variants",
-    "higher SNR (deep against shallow, the shared decision)": "Higher signal-to-noise on the decision every L shares (deep vs shallow)",
+    "higher SNR (deep against shallow, the shared decision)": "Higher signal-to-noise on the decision every K shares (deep vs shallow)",
     "L1 DA-size in DataDecide's range": "Ranking agreement inside the range of DataDecide's English ladder",
     "L1 SNR next to DataDecide": "Signal-to-noise next to DataDecide's",
   };
@@ -101,10 +101,10 @@
             Plot.dot(all, { x: "size", y: "y", r: (r) => (r.L === 1 ? 5 : 3.5), stroke: (r) => lColor(r.L), strokeWidth: 1.5,
               fill: (r) => (r.gated ? css("--viz-surface") : lColor(r.L)) }),
             Plot.dot(all, { x: "size", y: "y", r: 8, fill: "transparent", tip: true,
-              title: (r) => `${r.L === 1 ? "English only (L1)" : `multilingual L${r.L}`} · ${r.size}: ${fmt(r.y, 3)}${r.sd ? ` (seed sd ${fmt(r.sd, 4)})` : ""}${r.gated ? "\nat chance here: not counted in the gap" : ""}` }),
+              title: (r) => `${r.L === 1 ? "English only (K1)" : `multilingual K${r.L}`} · ${r.size}: ${fmt(r.y, 3)}${r.sd ? ` (seed sd ${fmt(r.sd, 4)})` : ""}${r.gated ? "\nat chance here: not counted in the gap" : ""}` }),
           ].filter(Boolean),
         }),
-        legend([[lColor(1), "English only (L1), with ±2 seed sd where replicates exist"], ...d.others.map((L) => [lColor(L), `L${L}`])]),
+        legend([[lColor(1), "English only (K1), with ±2 seed sd where replicates exist"], ...d.others.map((L) => [lColor(L), `K${L}`])]),
         note(`Bold: the model trained on English only. Thin: the ${s.arch} baseline model of the same size at each other language setting, which gives English half of its tokens. Hollow dots: at chance at that size, so the comparison is left out of the averages above. ★ marks the widely used benchmarks.`),
       ];
     });

@@ -70,7 +70,9 @@
     const render = () => out.replaceChildren(...[draw(state)].flat().filter(Boolean));
     for (const c of controls) {
       state[c.key] = c.value ?? (c.options ? optValue(c.options[0]) : undefined);
-      bar.append(control(c, (v) => { state[c.key] = v; render(); }));
+      const node = control(c, (v) => { state[c.key] = v; render(); });
+      if (c.inline && bar.lastChild) bar.append(h("div", { class: "viz-group" }, bar.lastChild, node));
+      else bar.append(node);
     }
     REDRAW.push(render);
     render();
@@ -98,6 +100,7 @@
       });
       return h("label", {}, h("span", {}, c.label, " ", val), inp);
     }
+    if (c.type === "check") return h("label", { class: "viz-check" }, h("input", { type: "checkbox", checked: c.value ? "" : null, onchange: (e) => set(e.target.checked) }), c.label);
     if (c.type === "text") return h("label", {}, c.label, h("input", { type: "text", placeholder: "name, task, note…", oninput: (e) => set(e.target.value) }));
     const sel = h("select", { onchange: (e) => set(isNaN(e.target.value) || c.string ? e.target.value : +e.target.value) },
       c.options.map((o) => h("option", { value: optValue(o) }, optLabel(o))));
@@ -163,12 +166,12 @@
 
   // The intervention axes of the grid, one dropdown each. A cell carries one
   // field per axis (null where the axis does not apply, e.g. the second
-  // language exists only at L = 2); an axis with a single level in the data
+  // language exists only at K = 2); an axis with a single level in the data
   // (the optimizer, for now) gets no dropdown until a second level is trained.
   const AXES = [
     { key: "list", label: "Language list", fmt: (v) => ({ A: "A · ranked by data size", B: "B · chosen for diversity" }[v] ?? v) },
     { key: "T", label: "Sampling temperature", fmt: (v) => `T = ${v}` },
-    { key: "lang2", label: "Second language (L = 2)", fmt: (v) => langName(v) },
+    { key: "lang2", label: "Second language (K = 2)", fmt: (v) => langName(v) },
     { key: "english", label: "English data", fmt: (v) => v },
     { key: "arch", label: "Depth", fmt: (v) => v },
     { key: "activation", label: "Activation", fmt: (v) => ({ xielu: "xIELU", swiglu: "SwiGLU" }[v] ?? v) },
@@ -182,7 +185,7 @@
     if (c.activation !== BASE.activation) diff.push(AXES[5].fmt(c.activation));
     if (c.list && c.list !== BASE.list) diff.push(`list ${c.list}`);
     if (c.T && c.T !== BASE.T) diff.push(`T = ${c.T}`);
-    if (c.lang2 && c.lang2 !== BASE.lang2) diff.push(`${langName(c.lang2)} at L = 2`);
+    if (c.lang2 && c.lang2 !== BASE.lang2) diff.push(`${langName(c.lang2)} at K = 2`);
     if (c.english !== BASE.english) diff.push(c.english);
     return diff.length ? diff.join(" + ") : "baseline";
   };
@@ -197,11 +200,17 @@
     ES: { m: "C", t: 1, data: "Spanish as second language" }, DCLMP: { m: "B", t: 1, data: "DCLM without the edu filter" },
     FWEB: { m: "C", t: 1, data: "FineWeb (crawls \u2264 2022)" },
   };
+  // The site shows builds by scheme M: the K = 2 and K = 1 variants join B and C.
+  const MERGE = { ZH: "B", DCLMP: "B", ES: "C", FWEB: "C" };
+  const buildOf = (scheme) => MERGE[scheme] ?? scheme;
+  const BUILD_LABEL = { A: "resource-ranked lists", AT3: "scheme-A lists, flattened",
+    B: "diversity-first lists; Chinese at K = 2, DCLM without the edu filter at K = 1",
+    C: "Spanish at K = 2, FineWeb at K = 1" };
   const LADDERS = { deep: "deep", shallow: "shallow", swiglu: "deep + SwiGLU", muon: "deep + Muon" };
   const GRID_ROWS = ["A|deep", "A|shallow", "A|swiglu", "A|muon", "AT3|deep", "AT3|shallow", "B|deep", "B|shallow",
-    "ZH|deep", "ES|deep", "DCLMP|deep", "FWEB|deep"];
-  const gridRow = (c) => `${c.scheme}|${c.ladder}`;
-  const gridLabel = (r) => { const [b, l] = r.split("|"); return `${b} \u00b7 ${LADDERS[l]}`; };
+    "C|deep"];
+  const gridRow = (c) => `${buildOf(c.scheme)}|${c.ladder}`;
+  const gridLabel = (r) => { const [b, l] = r.split("|"); return `${b === "AT3" ? "A \u00b7 T3" : b} \u00b7 ${LADDERS[l]}`; };
 
   VIEWS.ladder = async (el) => {
     const d = await languages().then(() => load("ladder"));
@@ -222,7 +231,7 @@
           h("dt", {}, "Size"), h("dd", {}, c.n_non_emb
             ? `${c.size} non-embedding (${(c.n_non_emb / 1e6).toFixed(0)} M; ${(c.params / 1e6).toFixed(0)} M with embeddings), d_model ${c.d_model}`
             : `${c.size} non-embedding`),
-          h("dt", {}, "Build"), h("dd", {}, `${c.scheme}: ${BUILDS[c.scheme]?.data ?? ""} (M = ${BUILDS[c.scheme]?.m}, T = ${BUILDS[c.scheme]?.t})`),
+          h("dt", {}, "Build"), h("dd", {}, `${buildOf(c.scheme)}: ${BUILDS[c.scheme]?.data ?? ""} (M = ${BUILDS[c.scheme]?.m}, T = ${BUILDS[c.scheme]?.t})`),
           h("dt", {}, "Ladder"), h("dd", {}, `${LADDERS[c.ladder] ?? c.ladder} (${c.arch} \u00b7 ${AXES[5].fmt(c.activation)} \u00b7 ${AXES[6].fmt(c.optimizer)})`),
           h("dt", {}, "Data"), h("dd", {}, c.L === 1 ? `100 % English (${c.english})` : `50 % English (${c.english})${fwHalf}`),
           h("dt", {}, "Budget"), h("dd", {}, c.tokens
@@ -245,12 +254,12 @@
 
     mount(el, [
       { key: "build", label: "Build", string: true, options: [{ value: "all", label: "all" },
-        ...Object.entries(BUILDS).map(([b, v]) => ({ value: b, label: `${b} \u00b7 ${v.data} (M = ${v.m}, T = ${v.t})` }))] },
+        ...Object.entries(BUILD_LABEL).map(([b, v]) => ({ value: b, label: `${b} \u00b7 ${v} (M = ${BUILDS[b]?.m ?? b}, T = ${BUILDS[b]?.t ?? 1})` }))] },
       { key: "ladder", label: "Ladder", string: true, options: [{ value: "all", label: "all" },
         ...Object.entries(LADDERS).map(([k, v]) => ({ value: k, label: v }))] },
       { key: "seeds", label: "Seeds", type: "seg", options: [{ value: "main", label: "1904" }, { value: "all", label: "all" }] },
     ], (s) => {
-      const keep = d.cells.filter((c) => (s.build === "all" || c.scheme === s.build) && (s.ladder === "all" || c.ladder === s.ladder)
+      const keep = d.cells.filter((c) => (s.build === "all" || buildOf(c.scheme) === s.build) && (s.ladder === "all" || c.ladder === s.ladder)
         && (s.seeds === "all" || c.seed === 1904));
       const grid = h("div", { class: "ladder-grid", style: `grid-template-columns: 4em repeat(${SIZES.length}, 1fr)` });
       const detailBox = h("div");
@@ -272,9 +281,10 @@
       detailBox.append(detail(selected));
       const shown = uniq(keep.map(gridRow));
       const legend = h("div", { class: "ladder-legend" },
-        GRID_ROWS.filter((r) => shown.includes(r)).map((r) => {
+        GRID_ROWS.filter((r) => shown.includes(r)).flatMap((r) => {
           const c = series(12)[GRID_ROWS.indexOf(r) % 12];
-          return h("span", {}, h("i", { style: `background:${c};border-color:${c}` }), gridLabel(r));
+          const item = h("span", {}, h("i", { style: `background:${c};border-color:${c}` }), gridLabel(r));
+          return r === "AT3|deep" ? [h("span", { class: "br" }), item] : item;   // the T = 3 and other builds on a second row
         }));
       return [tiles([[keep.length, "runs in this view"], [uniq(keep.map((c) => c.size)).length, "sizes"],
         [uniq(keep.map((c) => c.L)).length, "language settings"], [uniq(keep.map((c) => c.seed)).length, "seeds"]]),
@@ -294,14 +304,14 @@
       const rows = d.cells.filter((c) => c.seed === 1904 && c.scheme === "A" && c.ladder === s.arch && d.final_bpb[c.name]?.[s.lang] != null)
         .map((c) => {
           const sets = d.language_sets.A[`FW_L${c.L}`] ?? [];
-          return { ...c, bpb: d.final_bpb[c.name][s.lang], trained: sets.includes(s.lang) || s.lang === "eng_Latn", Lname: `L${c.L}` };
+          return { ...c, bpb: d.final_bpb[c.name][s.lang], trained: sets.includes(s.lang) || s.lang === "eng_Latn", Lname: `K${c.L}` };
         });
       if (!rows.length) return h("div", { class: "viz-empty" }, "No run of this architecture was scored on this language.");
       return [plot({
         height: 340,
         x: { type: "log", label: "model size (non-embedding)", ticks: uniq(rows.map((r) => r.n_non_emb)), tickFormat: (v) => rows.find((r) => r.n_non_emb === v)?.size },
         y: { label: "final bits per byte (lower is better)", grid: true },
-        color: { domain: LS.map((L) => `L${L}`), range: series(6), legend: true },
+        color: { domain: LS.map((L) => `K${L}`), range: series(6), legend: true },
         marks: [
           Plot.line(rows, { x: "n_non_emb", y: "bpb", stroke: "Lname", sort: "n_non_emb", strokeWidth: 2 }),
           Plot.dot(rows, { x: "n_non_emb", y: "bpb", stroke: "Lname", fill: css("--viz-surface"), r: 4.5, strokeWidth: 2 }),
@@ -434,8 +444,8 @@
     const famOrder = Object.entries(all.reduce((m, l) => ((m[l.top] = (m[l.top] ?? 0) + 1), m), {})).sort((a, b) => b[1] - a[1]).map(([f]) => f);
     const scriptOrder = Object.entries(all.reduce((m, l) => ((m[l.script] = (m[l.script] ?? 0) + 1), m), {})).sort((a, b) => b[1] - a[1]).map(([f]) => f);
     const famColor = (f) => series(12)[famOrder.indexOf(f) % 12];
-    const SCHEME_LABEL = { A: "A · ranked by data size", B: "B · chosen for diversity", ZH: "A with Chinese at L = 2", ES: "A with Spanish at L = 2" };
-    const schemes = uniq(mx.mixtures.map((m) => m.scheme));
+    const SCHEME_LABEL = { A: "A · ranked by data size", B: "B · chosen for diversity, Chinese at K = 2", C: "C · Spanish at K = 2" };
+    const schemes = uniq(mx.mixtures.map((m) => buildOf(m.scheme)));
     const tip = h("div", { class: "viz-tip", hidden: "" });
 
     const defs = (svg, id) => {
@@ -539,27 +549,31 @@
 
     mount(el, [
       { key: "scheme", label: "Scheme", string: true, value: "A", options: schemes.map((s) => ({ value: s, label: SCHEME_LABEL[s] ?? s })) },
-      { key: "L", label: "Languages (L)", value: 50, options: uniq(mx.mixtures.map((m) => m.L)).sort((a, b) => a - b).map((L) => ({ value: L, label: `L = ${L}` })) },
+      { key: "L", label: "Languages (K)", value: 50, options: uniq(mx.mixtures.map((m) => m.L)).sort((a, b) => a - b).map((L) => ({ value: L, label: `K = ${L}` })) },
       { key: "T", label: "Temperature", value: 3, options: uniq(mx.mixtures.map((m) => m.T)).sort().map((T) => ({ value: T, label: `T = ${T}` })) },
       { key: "scale", label: "Bar scale", type: "seg", options: ["linear", "log"] },
+      { key: "english", label: "Show English", type: "check", value: false, inline: true },
     ], (s) => {
-      const mix = mx.mixtures.find((m) => m.scheme === s.scheme && m.L === s.L && m.T === s.T);
+      const mix = mx.mixtures.find((m) => buildOf(m.scheme) === s.scheme && m.L === s.L && m.T === s.T);
       if (!mix) {
-        const have = mx.mixtures.filter((m) => m.scheme === s.scheme).map((m) => `L = ${m.L}, T = ${m.T}`);
-        return [h("div", { class: "viz-empty" }, `Scheme ${s.scheme} has no mixture at L = ${s.L} with T = ${s.T}. It exists at: ${have.join(" · ")}.`), tip];
+        const have = mx.mixtures.filter((m) => buildOf(m.scheme) === s.scheme).map((m) => `K = ${m.L}, T = ${m.T}`);
+        return [h("div", { class: "viz-empty" }, `Scheme ${s.scheme} has no mixture at K = ${s.L} with T = ${s.T}. It exists at:`,
+          h("ul", {}, have.map((x) => h("li", {}, x)))), tip];
       }
-      const rows = Object.entries(mix.shares).map(([fw, share]) => ({ ...info(fw), share, tokens: share * mix.ref_tokens }))
+      const rows = Object.entries(mix.shares).filter(([fw]) => s.english || fw !== "eng_Latn")
+        .map(([fw, share]) => ({ ...info(fw), share, tokens: share * mix.ref_tokens }))
         .sort((a, b) => b.share - a.share);
+      if (!rows.length) return [h("div", { class: "viz-empty" }, "At K = 1 the mixture is 100 % English: tick “Show English” to see it."), tip];
       // The bar plot keeps a slot for every language any mixture trains on, so mixtures line up.
-      const barRows = [...rows, ...all.filter((l) => !mix.shares[l.fw]).map((l) => ({ ...l, share: 0, tokens: 0 }))
+      const barRows = [...rows, ...all.filter((l) => !mix.shares[l.fw] && (s.english || l.fw !== "eng_Latn")).map((l) => ({ ...l, share: 0, tokens: 0 }))
         .sort((a, b) => a.name.localeCompare(b.name))];
       return [
-        tiles([[rows.length, "languages"], [human(mix.ref_tokens), `training tokens of the ${mix.ref_size} reference run`],
+        tiles([[Object.keys(mix.shares).length, "languages"], [human(mix.ref_tokens), `training tokens of the ${mix.ref_size} reference run`],
           [`${fmt(100 * (mix.shares.eng_Latn ?? 0), 0)} %`, "English"], [`T = ${mix.T}`, "sampling temperature"]]),
         h("div", { style: "margin-top:1em" }, treemap(rows)),
         bars(barRows, s.scale === "log"),
         legend(rows),
-        note(`Area and bar height: each language's training tokens in a run of the ${mix.ref_size} reference model (${human(mix.ref_tokens)} tokens; every size uses the same shares, scaled to its own budget). English is fixed at ${fmt(100 * (mix.shares.eng_Latn ?? 0), 0)} %; the rest is split over the other languages as the data builder's plan splits it. Hover a language for its details.`),
+        note(`Area and bar height: each language's training tokens in a run of the ${mix.ref_size} reference model (${human(mix.ref_tokens)} tokens; every size uses the same shares, scaled to its own budget). English is fixed at ${fmt(100 * (mix.shares.eng_Latn ?? 0), 0)} %; the rest is split over the other languages as the data builder's plan splits it. ${s.english ? "" : "English is hidden, so the plots show the non-English half at its own scale. "}Hover a language for its details.`),
         tip,
       ];
     });
@@ -761,7 +775,7 @@
       marks: [
         Plot.ruleX([1], { stroke: css("--viz-muted"), strokeDasharray: "4 3" }),
         Plot.dot(d.effect, { x: "median_effect_over_seed_sd", y: "label", stroke: "population", fill: "population", fillOpacity: 0.5, r: 6, tip: true,
-          title: (r) => `${r.label}, L = ${r.L} (${r.population}, ref ${r.reference_size})\neffect ${fmt(r.median_effect_over_seed_sd)}× seed sd, ${pct(r.share_above_2)} of tasks above 2×` }),
+          title: (r) => `${r.label}, K = ${r.L} (${r.population}, ref ${r.reference_size})\neffect ${fmt(r.median_effect_over_seed_sd)}× seed sd, ${pct(r.share_above_2)} of tasks above 2×` }),
       ],
     }), note("Left of the dashed line: changing the seed moves the scores more than the design decision does. There is nothing reliable to rank, whatever the proxy.")]);
   };
@@ -827,7 +841,7 @@
     const d = await languages().then(() => load("transfer"));
     const rows = expand(d.per_language);
     mount(el, [
-      { key: "L", label: "Training languages", options: uniq(rows.map((r) => r.L)).map((L) => ({ value: L, label: `L = ${L}` })), value: 8 },
+      { key: "L", label: "Training languages", options: uniq(rows.map((r) => r.L)).map((L) => ({ value: L, label: `K = ${L}` })), value: 8 },
       { key: "k", label: "Rungs observed", type: "seg", options: [1, 2, 3, 4] },
     ], (s) => {
       const sel = rows.filter((r) => r.L === s.L && r.k === s.k && r.pred_transfer != null)
@@ -1101,7 +1115,7 @@
     const iso = (fw) => LANG.fw[fw.split("_")[0]] ?? fw;
     // A preset's shares are keyed by FineWeb subset; the table by language (Arabic varieties add up).
     const preset = (m) => Object.entries(m.shares).reduce((o, [fw, s]) => ((o[iso(fw)] = (o[iso(fw)] ?? 0) + 100 * s), o), {});
-    const presets = mx.mixtures.map((m, i) => ({ value: i, label: `Scheme ${m.scheme} · L = ${m.L}${m.T !== 1 ? ` · T = ${m.T}` : ""}` }));
+    const presets = mx.mixtures.map((m, i) => ({ value: i, label: `Scheme ${buildOf(m.scheme)} · K = ${m.L}${m.T !== 1 ? ` · T = ${m.T}` : ""}` }));
     const start = Math.max(0, mx.mixtures.findIndex((m) => m.scheme === "A" && m.L === 8 && m.T === 1));
     const size0 = lk.sizes.includes("350M") ? "350M" : lk.sizes[0];
     const s = { size: size0, budget: lk.budget[size0] / 1e9, ownBudget: false, shares: preset(mx.mixtures[start]), only: false };
