@@ -35,7 +35,11 @@ Tabs of the MkDocs side:
   (`pass_prob_vs_train_tokens_by_benchmark_1904_ckpts.csv`, in
   `rq00_chance_vs_train_tokens/` or, before that move, `rq01_scaling_predictability/`);
   cells without a token count (mixture plans unreachable) are left out with a
-  printed warning. The Evaluation section's score curves read rq00's
+  printed warning. The site shows the "extra" families (`multiblimp-extra`,
+  `noreval_extra`) inside their main benchmark: `EXTRA_FAMILIES` /
+  `merge_extra()` in the builder pool them in the score curves, the look-up
+  table, the recommender and the Findings figures; the threshold table drops
+  them, as the paper's does. The Evaluation section's score curves read rq00's
   `score_curves.csv` and `predictivity_seeds/benchmark_curves.csv`; its
   benchmark cards read `configs/tasks.json`, whose per-task `example` and
   `source` come from `python3 src/evals/scripts/derive_task_options.py

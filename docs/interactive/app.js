@@ -343,7 +343,10 @@
   }
 
   function benchmarkCard(b, lang, twin) {
-    const src = (ex) => (ex?.anonymized ? ANON : ex?.source ?? "the benchmark's own release (no public dataset id recorded)");
+    const fb = b.fallback_source;
+    const src = (ex) => (ex?.anonymized ? ANON : ex?.source ?? (fb
+      ? [h("a", { href: `https://huggingface.co/datasets/${fb.id}`, target: "_blank", rel: "noopener" }, fb.id), ` (${fb.label})`]
+      : "the benchmark's own release (no public dataset id recorded)"));
     const names = b.languages.map((l) => (LANG?.iso[l] ? langName(l) : l));
     const own = lang !== "all" ? b.examples[lang] : null;
     return h("div", { class: "viz-card" },
@@ -362,13 +365,14 @@
   VIEWS.scoreCurves = async (el) => {
     await languages();
     const d = await load("evaluation");
-    const fams = Object.keys(d.benchmarks).sort();
+    const famLabel = (f) => `${d.benchmarks[f].name} [${f}]`;
+    const fams = Object.keys(d.benchmarks).sort((x, y) => famLabel(x).localeCompare(famLabel(y), "en", { sensitivity: "base" }));
     const ramp = sizeRamp();
     mount(el, [
       { key: "lang", label: "Language", string: true, value: "all",
         options: d.languages.map((l) => ({ value: l, label: l === "all" ? "All trained languages" : `${langName(l)} (${l})` })) },
-      { key: "fam", label: "Benchmark", string: true, value: fams.includes("belebele") ? "belebele" : fams[0],
-        options: fams.map((f) => ({ value: f, label: `${d.benchmarks[f].name} [${f}]` })) },
+      { key: "fam", label: "Benchmark", string: true, value: fams.includes("include_v2_og") ? "include_v2_og" : fams[0],
+        options: fams.map((f) => ({ value: f, label: famLabel(f) })) },
       { key: "x", label: "x axis", type: "seg", options: [{ value: "tokens", label: "training tokens" }, { value: "compute", label: "compute" }] },
     ], (s) => {
       const c = d.curves[s.lang]?.[s.fam];

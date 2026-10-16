@@ -12,10 +12,12 @@ import pandas as pd
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "src/signal-and-noise"))
+sys.path.insert(0, str(REPO / "scripts"))
 from analysis import paths  # noqa: E402
 from analysis.utils import PROBE_SIZES  # noqa: E402
 from analysis.grids import base  # noqa: E402
 from analysis.rq01_scaling_predictability.tokens_seen import CLOZE_RELEASES, ENGLISH_TEXT, FORMAT_NAMES  # noqa: E402
+from build_site_data import EXTRA_FAMILIES  # noqa: E402
 
 SIZES = ["90M", "175M", "350M", "600M", "1B", "1.7B"]
 # internal checkpoints never reach the site (the same guard as build_site_data.UNRELEASED)
@@ -100,6 +102,7 @@ def build() -> dict:
     fam = (fam["n_matching"] / fam["n_pairs"]).rename("da").reset_index()
 
     thr = pd.read_csv(tok / "predictivity_seeds/pass_threshold_tokens_by_benchmark_1904_ckpts.csv")
+    thr = thr[~thr["benchmark"].isin(EXTRA_FAMILIES)]   # the paper's table has no extra rows
     thr = thr[["benchmark", "name", "format", "n_languages", "margin_median", "n_items_median", "sizes", "level",
                "status", "bin_lo", "lowest_tokens", "highest_tokens", "share_above"]]
     # the paper table's format label and English-text mark (tokens_seen.pass_thresholds)

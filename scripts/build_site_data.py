@@ -30,6 +30,14 @@ from analysis import paths  # noqa: E402
 OUT = REPO / "docs/interactive/data"
 PRED = "pretraining/predictivity"
 ALL = "pretraining/predictivity_seeds"   # every seed and data build
+# The site shows these "extra" families (MultiBLiMP's missing trained languages,
+# NorEval's MC extras) as part of their main benchmark.
+EXTRA_FAMILIES = {"multiblimp-extra": "multiblimp", "noreval_extra": "noreval"}
+
+
+def merge_extra(families: pd.Series) -> pd.Series:
+    """EXTRA_FAMILIES applied to family names, prefixed ones too (bbpb_noreval_extra)."""
+    return families.replace({rf"^(.*){re.escape(k)}$": rf"\g<1>{v}" for k, v in EXTRA_FAMILIES.items()}, regex=True)
 
 
 def rows(df: pd.DataFrame) -> list[dict]:
@@ -163,7 +171,8 @@ def evaluation(languages: list[str]) -> dict:
     `sizes` carries each rung's full-run tokens and FLOPs parameters (baseline
     ladder) so the page can show tokens or compute = 6 N D.
     Cards: configs/tasks.json (n_options, languages, the example and dataset
-    written by src/evals/scripts/derive_task_options.py --examples)."""
+    written by src/evals/scripts/derive_task_options.py --examples).
+    The EXTRA_FAMILIES are shown as part of their main benchmark."""
     from analysis.utils import benchmark_family
     from mkdocs_hooks import _ORGS, _PEOPLE
     from snr.download.ladder import cell_params
@@ -171,6 +180,7 @@ def evaluation(languages: list[str]) -> dict:
     hp = json.loads((REPO / "src/pretrain/hyperparams/hyperparams_deep.json").read_text())["configs"]
 
     sc = pd.read_csv(paths.GATE_AND_CURVES / PRED / "score_curves.csv")
+    sc["family"] = merge_extra(sc["family"])
     sc["c"] = (sc["chinchilla"] * 4).round() / 4          # the saves drift a few iterations off the grid
     sc["w"] = sc["score"] * sc["models"]
     g = sc.groupby(["language", "family", "size", "c"])
@@ -178,7 +188,7 @@ def evaluation(languages: list[str]) -> dict:
     chance = sc.groupby(["language", "family"])["chance"].mean()
 
     bc = pd.read_csv(paths.GATE_AND_CURVES / ALL / "benchmark_curves.csv")
-    bc["family"] = bc["task"].map(benchmark_family)
+    bc["family"] = merge_extra(bc["task"].map(benchmark_family))
     bc["size"] = bc["model"].str.extract(r"^lm-([\d.]+[MB])-", expand=False)
     bc["c"] = (bc["frac"] * 5 * 4).round() / 4
     per_cell = bc.groupby(["model", "size", "family", "c"])["primary_score"].mean().reset_index()
@@ -206,7 +216,7 @@ def evaluation(languages: list[str]) -> dict:
     fams = sorted({f for lang in curves.values() for f in lang})
     cards = {}
     for fam in fams:
-        tasks = {k: v for k, v in tj["tasks"].items() if v["benchmark"] == fam and "pretraining" in v["stages"]}
+        tasks = {k: v for k, v in tj["tasks"].items() if EXTRA_FAMILIES.get(v["benchmark"], v["benchmark"]) == fam and "pretraining" in v["stages"]}
         opts = pd.Series([v["n_options"] for v in tasks.values() if "n_options" in v])
         m = meta.get(fam) or meta.get(re.sub(r"^rf(gm)?_", "", fam)) or {}
         examples = {}
@@ -229,6 +239,8 @@ def evaluation(languages: list[str]) -> dict:
             # INCLUDE v2 "og" items have no English task of their own: the
             # English version of the same items is the include_v2_en family
             english_twin="include_v2_en" if fam == "include_v2_og" else None,
+            # no item of INCLUDE v2 records a dataset id: the card links the v1 release
+            fallback_source=dict(id="CohereForAI/include-base-44", label="INCLUDE v1") if fam.startswith("include_v2") else None,
             examples=examples)
     missing = [f for f in fams if f not in meta and re.sub(r"^rf(gm)?_", "", f) not in meta]
     if missing:
@@ -431,7 +443,7 @@ def lookup(cells: list[dict]) -> dict:
     if c["train_tokens"].isna().any():
         print(f"lookup: {c['train_tokens'].isna().mean():.0%} of the cells have no token count "
               "(the mixture plans were unreachable when rq tokens_seen ran) and are left out")
-    c = c.dropna(subset=["train_tokens"])
+    c = c.dropna(subset=["train_tokens"]).assign(benchmark=lambda x: merge_extra(x["benchmark"]))
     key = ["benchmark", "language", "model_size"]
     cell = (c.assign(above=c["above_chance"].astype(bool))
             .groupby([*key, "language_scheme", "frac"])
