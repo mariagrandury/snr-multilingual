@@ -64,7 +64,7 @@ Bits per byte (BPB) on a fixed validation set in 100 languages is the ladder's m
 ## Evaluation
 
 Every run is scored on the benchmarks of the languages it trained on, at ten
-checkpoints spread evenly over the run the ones corresponding to the 85% and 95% of training. 
+checkpoints spread evenly over the run, plus the ones at 85% and 95% of training. 
 
 <!--
 We considered 95 benchmarks (1,488 benchmark-language tasks in the trained
