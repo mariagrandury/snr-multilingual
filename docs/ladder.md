@@ -4,7 +4,7 @@ title: Model ladder
 
 # Model ladder
 
-We release a controlled grid of 128 small multilingual language models. This page
+We release a controlled grid of 218 small multilingual language models. This page
 describes the data the models were trained on, the models themselves and how
 they were evaluated.
 
@@ -88,6 +88,6 @@ We release the ladder and the per-checkpoint measurements to support cheaper, be
 
 | What | Where |
 |---|---|
-| Checkpoints (Hugging Face model format) | One repository per run, named like the run (`lm-<size>-L<L>[-<data build>][-b<batch>]-<deep|shallow|swiglu|muon>-seed<seed>`), 218 models from 90M to 1.7B and 4,412 intermediate checkpoints. *{{ anonymity_notice }}*. |
+| Checkpoints (Hugging Face model format) | One repository per run, named like the run (`lm-<size>-L<L>[-<data build>][-b<batch>]-<deep|shallow|swiglu|muon>-seed<seed>`), 218 models from 90M to 3B and 4,412 intermediate checkpoints. *{{ anonymity_notice }}*. |
 | Per-checkpoint measurements (Hugging Face dataset format) | Ladder evaluation report. *{{ anonymity_notice }}.* |
 | How the models were trained (Github repository) | Pretraining docs. *{{ anonymity_notice }}.* |
