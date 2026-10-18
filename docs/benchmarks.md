@@ -7,8 +7,8 @@ hide:
 
 # Multilingual benchmarks
 
-The followinb table displays every multilingual (or non-English) benchmark we found implemented in [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) or [lighteval](https://github.com/huggingface/lighteval).
-Filter by language, evaluation framework, or benchark characteristics.
+The following table lists every multilingual (or non-English) benchmark we found implemented in [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) or [lighteval](https://github.com/huggingface/lighteval).
+The Paper column marks the ones the paper analyses (🔬) or screened (🔍), as listed in its Table 6. Filter by language, evaluation framework, or benchmark characteristics.
 
 <div class="viz" data-viz="benchmarks"></div>
 
@@ -19,6 +19,7 @@ signal at your scale, since most four-option benchmarks sit at chance below 1B i
 
 | column | meaning |
 |---|---|
+| Paper | 🔬 analysed in the paper, 🔍 screened but not analysed (Table 6), - not evaluated |
 | Languages | ISO 639-1 codes (639-3 where no 639-1 exists), hover for the full list |
 | Framework | `harness`, `lighteval` or both; hover for the task or group names |
 | Format | `mcqa`: scored by comparing the answer options; `generative`: free generation, exact match, or next-word / perplexity scoring |

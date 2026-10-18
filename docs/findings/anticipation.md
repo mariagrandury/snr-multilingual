@@ -19,7 +19,7 @@ Specifically, we test whether statistics computed from proxy evaluations
 alone can serve as surrogates for DA. For each benchmark–language task and
 proxy size, we compute each surrogate without using the reference model. We
 then measure its Spearman correlation ($\rho$) with DA across
-benchmark–language tasks at each proxy size. The figure below reports these
+benchmark–language tasks at each proxy size. Figure 4 reports these
 correlations across proxy sizes for tasks passing the above-chance
 threshold. We compare scaling-fit $R^2$, SNR variants and their signal/noise
 components, margin above chance, and early-checkpoint ranking agreement.
@@ -30,7 +30,7 @@ same size.
 
 <div class="viz" data-viz="paperRq3"></div>
 
-*Spearman rank correlation ($\rho$) between each surrogate and DA for the
+***Figure 4:** Spearman rank correlation ($\rho$) between each surrogate and DA for the
 1.7B model across benchmark–language tasks. Cells report the $\rho$ and
 sample size (n).*
 

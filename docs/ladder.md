@@ -66,15 +66,21 @@ Bits per byte (BPB) on a fixed validation set in 100 languages is the ladder's m
 Every run is scored on the benchmarks of the languages it trained on, at ten
 checkpoints spread evenly over the run, plus the ones at 85% and 95% of training. 
 
-<!--
-We considered 95 benchmarks (1,488 benchmark-language tasks in the trained
-languages). The analysis follows 52 of them (938 tasks) through training,
-together with the per-language bits per byte. The other 43 (550 tasks) were screened on
-the final checkpoints of the 600M, 1B and 1.7B models only, and 229 of their
-tasks, at chance at both 1B and 1.7B, were discarded. Several benchmarks are
-also scored in a reformulated version, with the answer text in place of an
-answer letter (see [Measurability](findings/measurability.md)).
--->
+!!! note "How the benchmark counts relate"
+    - **95 benchmarks, 1,488 benchmark–language tasks**: every benchmark we
+      considered, on the 50 trained languages (Appendix C.2).
+    - **52 benchmarks, 938 tasks**: the benchmarks evaluated throughout
+      training and analysed (§3.2, §4), each reformulated version (RF,
+      LLM-RF) of a letter-format benchmark counted as its own benchmark and
+      task. A model is evaluated on the tasks of the languages it trains: 113
+      tasks at K = 1, 134 at K = 2, 326 at K = 8, 485 at K = 15, 720 at
+      K = 30 and 938 at K = 50 (Appendix C.2).
+    - **20 multilingual benchmark families** (abstract): the analysed
+      benchmarks with more than one trained language, reformulated versions
+      not counted separately.
+    - **Table 6** lists each benchmark once, its reformulated versions folded
+      into the row of the original, and counts each set of items once: 40
+      analysed benchmarks (695 tasks) and 26 screened ones (485 tasks).
 
 Pick a language, a benchmark and the x axis. Each line is one model size. The card under the chart describes the selected benchmark.
 <!-- its number of answer options, the languages it covers, where its data comes from, and one item in the selected language and in English, exactly as the model reads it (long passages are cut at the start). -->
@@ -88,6 +94,6 @@ We release the ladder and the per-checkpoint measurements to support cheaper, be
 
 | What | Where |
 |---|---|
-| Checkpoints (Hugging Face model format) | One repository per run, named like the run (`lm-<size>-L<L>[-<data build>][-b<batch>]-<deep|shallow|swiglu|muon>-seed<seed>`), 218 models from 90M to 3B and 4,412 intermediate checkpoints. *{{ anonymity_notice }}*. |
+| Checkpoints (Hugging Face model format) | One repository per run, named like the run (`lm-<size>-L<K>[-<data build>][-b<batch>]-<deep|shallow|swiglu|muon>-seed<seed>`), 218 models from 90M to 3B and 4,412 intermediate checkpoints. *{{ anonymity_notice }}*. |
 | Per-checkpoint measurements (Hugging Face dataset format) | Ladder evaluation report. *{{ anonymity_notice }}.* |
 | How the models were trained (Github repository) | Pretraining docs. *{{ anonymity_notice }}.* |

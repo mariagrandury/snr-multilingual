@@ -15,11 +15,11 @@ Our findings inform the following recommendations for multilingual ablations.
     2. **Reformat tasks to score the answer text directly.** Letter-format
        multiple choice stays at chance at these sizes; the same items scored on
        the answer text become measurable
-       ([Measurability](findings/measurability.md#answer-format-and-reformulation)).
+       ([Measurability](findings/measurability.md#42-factors-influencing-chance-threshold)).
     3. **Consider likelihood-based scores alongside accuracy.** Per-language
        bits per byte and bBPB preserve rankings more reliably than accuracy,
        above all at small sizes and early checkpoints
-       ([Agreement](findings/agreement.md#sensitivity-analysis)).
+       ([Agreement](findings/agreement.md#54-sensitivity-analysis)).
     4. **Do not take smooth scaling or a stable proxy ranking as agreement.**
        Neither guarantees that the proxy orders design choices like the
        reference model ([Agreement](findings/agreement.md),
@@ -27,7 +27,7 @@ Our findings inform the following recommendations for multilingual ablations.
     5. **Assess reliability for your benchmark, language and design
        intervention.** Agreement depends on all three, so check the one you
        are testing in the tools below
-       ([Agreement](findings/agreement.md#scale-agreement)).
+       ([Agreement](findings/agreement.md#52-scale-agreement)).
 
 Moreover, developers can use the tables below to adapt our findings to their custom use cases and design reliable multilingual ablations.
 

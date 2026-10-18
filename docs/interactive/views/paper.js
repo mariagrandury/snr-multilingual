@@ -15,9 +15,10 @@
     const d = await load("paper_rq0");
     const benches = uniq(d.rows.map((r) => r.b)).sort((a, b) => d.names[a].localeCompare(d.names[b]));
     mount(el, [{ key: "b", label: "Benchmark", string: true, value: "include_base_44",
-      options: benches.map((b) => ({ value: b, label: d.names[b] })) }], (s) => {
+      options: benches.map((b) => ({ value: b, label: d.names[b] })) },
+    { key: "llm", label: "Formats", type: "seg", options: [{ value: false, label: "original and RF (paper)" }, { value: true, label: "also LLM-RF" }] }], (s) => {
       const rows = d.rows.filter((r) => r.b === s.b && r.tokens > 0);
-      const formats = ["Original", "RF", "LLM-RF"].filter((f) => rows.some((r) => r.f === f));
+      const formats = ["Original", "RF", ...(s.llm ? ["LLM-RF"] : [])].filter((f) => rows.some((r) => r.f === f));
       return [row(...formats.map((f) => plot({
         width: formats.length > 1 ? 360 : 560, height: 260, marginLeft: 45,
         title: f === "Original" ? "Original format" : f,
@@ -35,29 +36,53 @@
 
   // ---------- Figure 2: benchmark scaling predictability ----------
   S.VIEWS.paperRq1 = async (el) => {
-    const d = await load("paper_rq1");
-    const fams = uniq(d.map((r) => r.family)).sort((a, b) => d.find((r) => r.family === a).name.localeCompare(d.find((r) => r.family === b).name));
-    const regimes = uniq(d.map((r) => r.regime)).sort();
-    mount(el, [{ key: "fam", label: "Highlight", string: true,
-      options: [{ value: "all", label: "every benchmark" }, ...fams.map((f) => ({ value: f, label: d.find((r) => r.family === f).name }))] }], (s) => {
+    const all = await load("paper_rq1");
+    const regimes = uniq(all.map((r) => r.regime)).sort();
+    // the legend lists the regimes on screen; a regime keeps its colour when the filter changes
+    const colorOf = (d) => {
+      const shown = regimes.filter((g) => d.some((r) => r.regime === g));
+      return { domain: shown, range: shown.map((g) => series(regimes.length)[regimes.indexOf(g)]), legend: true, label: "Regime" };
+    };
+    const PANELS = ["bpb", "hellaswag", "xnli", "multiblimp", "xwinograd", "xcopa"];   // the paper's panel (b)
+    const name = (f) => all.find((r) => r.family === f).name;
+    const tip = (r) => `${r.name}, ${r.language}\nsize R² ${fmt(r.r2_size)}, ρ ${fmt(r.rho_size)}, training R² ${fmt(r.r2_train)}\n${r.regime}`;
+    const axes = { x: { domain: [0, 1], label: "Median R² across model-size fits", grid: true } };
+    const ref = [Plot.ruleX([0.5], { stroke: css("--viz-muted"), strokeDasharray: "4 3" }), Plot.ruleY([0.5], { stroke: css("--viz-muted"), strokeDasharray: "4 3" })];
+    const fams = uniq(all.map((r) => r.family)).sort((a, b) => name(a).localeCompare(name(b)));
+    mount(el, [
+      { key: "fam", label: "Highlight", string: true, options: [{ value: "all", label: "every benchmark" }, ...fams.map((f) => ({ value: f, label: name(f) }))] },
+      { key: "scores", label: "Tasks", type: "seg", options: [{ value: "paper", label: "accuracy and BPB (paper)" }, { value: "all", label: "also bBPB" }] },
+      { key: "a", label: "Panel (a)", type: "seg", options: [{ value: "bench", label: "one dot per benchmark (paper)" }, { value: "task", label: "one dot per task" }] },
+      { key: "b", label: "Panel (b)", type: "seg", options: [{ value: "paper", label: "six benchmarks (paper)" }, { value: "all", label: "every benchmark" }] },
+    ], (s) => {
+      const d = s.scores === "paper" ? all.filter((r) => !r.family.startsWith("bbpb_")) : all;
+      const color = colorOf(d);
       const on = (r) => s.fam === "all" || r.family === s.fam;
-      const color = { domain: regimes, range: series(regimes.length), legend: true, label: "Regime" };
-      const dots = (y) => [
-        Plot.dot(d.filter((r) => !on(r)), { x: "r2_size", y, r: 2.5, fill: css("--viz-grid") }),
-        Plot.dot(d.filter(on), { x: "r2_size", y, r: 3, fill: "regime", fillOpacity: 0.75, tip: true,
-          title: (r) => `${r.name}, ${r.language}\nsize R² ${fmt(r.r2_size)}, ρ ${fmt(r.rho_size)}, training R² ${fmt(r.r2_train)}\n${r.regime}` }),
-      ];
+      // the highlighted benchmark in colour, the others in grey
+      const dots = (data, y, opts) => [Plot.dot(data.filter((r) => !on(r)), { x: "r2_size", y, r: 2.5, ...opts, fill: css("--viz-grid") }),
+        Plot.dot(data.filter(on), { x: "r2_size", y, r: 3, fill: "regime", fillOpacity: 0.75, tip: true, title: tip, ...opts })];
+      const bench = d3.groups(d, (r) => r.family).map(([f, rs]) => ({
+        family: f, name: name(f), n: rs.length, r2_size: d3.median(rs, (r) => r.r2_size), rho_size: d3.median(rs, (r) => r.rho_size),
+        regime: d3.greatest(d3.rollups(rs, (v) => v.length, (r) => r.regime), (g) => g[1])[0] }));
+      const a = s.a === "bench"
+        ? dots(bench, "rho_size", { r: "n", title: (b) => `${b.name} (${b.n} task${b.n > 1 ? "s" : ""})\nmedian size R² ${fmt(b.r2_size)}, median ρ ${fmt(b.rho_size)}` })
+        : dots(d, "rho_size");
+      const trainY = { domain: [0, 1], label: "Median R² across training fits", grid: true };
+      const b = s.b === "paper"
+        ? plot({ width: 720, height: 420, color: { ...color, legend: false }, ...axes, y: trainY,
+          fx: { axis: null }, fy: { axis: null },
+          marks: [...ref, Plot.text(d.filter((r) => PANELS.includes(r.family)), { x: "r2_size", y: "r2_train", text: "language", fill: "regime",
+            fx: (r) => PANELS.indexOf(r.family) % 3, fy: (r) => Math.floor(PANELS.indexOf(r.family) / 3), tip: true, title: tip }),
+          Plot.text(PANELS, { fx: (f) => PANELS.indexOf(f) % 3, fy: (f) => Math.floor(PANELS.indexOf(f) / 3), frameAnchor: "top-left", dx: 4, dy: 4, fontWeight: "bold",
+            text: (f) => `${name(f)} (${d.filter((r) => r.family === f).length} tasks)` })],
+          title: "(b) Across size and along training" })
+        : plot({ width: 360, height: 330, title: "(b) Across size and along training", color: { ...color, legend: false }, ...axes, y: trainY,
+          marks: [...ref, ...dots(d, "r2_train")] });
       return [row(
-        plot({ width: 360, height: 330, title: "(a) Fit quality and direction across size", color,
-          x: { domain: [0, 1], label: "Median R² across model-size fits", grid: true },
-          y: { domain: [-1, 1], label: "Median Spearman ρ with model size", grid: true },
-          marks: [Plot.ruleY([0], { stroke: css("--viz-muted") }), ...dots("rho_size")] }),
-        plot({ width: 360, height: 330, title: "(b) Across size and along training", color: { ...color, legend: false },
-          x: { domain: [0, 1], label: "Median R² across model-size fits", grid: true },
-          y: { domain: [0, 1], label: "Median R² across training fits", grid: true },
-          marks: [Plot.ruleX([0.5], { stroke: css("--viz-muted"), strokeDasharray: "4 3" }),
-            Plot.ruleY([0.5], { stroke: css("--viz-muted"), strokeDasharray: "4 3" }), ...dots("r2_train")] }),
-      ), note("One dot per benchmark-language task above chance: (a) the median R² and Spearman ρ of its log-linear fits across model size, (b) the same R² against the median R² of its fits along training. Pick a benchmark to highlight its tasks.")];
+        plot({ width: 360, height: 330, title: "(a) Fit quality and direction across size", color, ...axes,
+          y: { domain: [-1, 1], label: "Median Spearman ρ with model size", grid: true }, r: { range: [3, 14] },
+          marks: [Plot.ruleY([0], { stroke: css("--viz-muted") }), ...a] }), b),
+      note(`${d.length} benchmark-language tasks above chance${s.scores === "paper" ? " (accuracy and BPB, as in the paper)" : " (accuracy, BPB and bBPB)"}. (a) ${s.a === "bench" ? "One dot per benchmark at the median over its tasks, sized by its number of tasks" : "One dot per task"}: the R² and Spearman ρ of the log-linear fits across model size. (b) ${s.b === "paper" ? "The paper's six benchmarks, one label per task (its language)" : "One dot per task"}: the same R² against the median R² of the fits along training. Hover a mark for its benchmark and language.`)];
     });
   };
 
@@ -95,7 +120,7 @@
             Plot.dot(real, { x: "size", y: "da", fill: "group", r: 2.8, tip: true,
               title: (r) => `${label(r.group)} at ${r.size}\nDA-size ${fmt(r.da)} over ${r.tasks} tasks${r.pairs ? `, ${r.pairs} pairs` : ""}` }),
             Plot.dot(ref.slice(0, 1), { x: "size", y: "da", r: 3.5, stroke: css("--md-default-fg-color"), fill: css("--md-default-bg-color") })] }),
-        panel("DA-ckpt", "DA-ckpt"), panel("DA-goal", "DA-goal"),
+        panel("DA-ckpt", "DA-ckpt"), panel("DA-target", "DA-target"),
       ), note("(a) Scale agreement: DA of the final checkpoint of each size against the final 1.7B ranking, one line per design axis and the black line over all pairs. (b) Within-model training agreement: DA of each checkpoint against the final checkpoint of the same size. (c) Target agreement: DA of each checkpoint against the final 1.7B checkpoint. The hollow marker is 1 by construction (a ranking compared with itself). Single-axis decisions, over the tasks whose median DA-size or DA-ckpt is at least 0.66.")];
     });
   };

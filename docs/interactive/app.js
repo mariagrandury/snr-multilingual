@@ -976,6 +976,9 @@
         }) : null,
         table(sel, [
           { key: "name", label: "Benchmark", render: (r) => h("b", {}, r.name) },
+          { key: "in_paper", label: "Paper", render: (r) => (r.in_paper
+            ? h("span", { class: "has-tip", "data-tip": r.in_paper === "analysed" ? "analysed in the paper (Table 6)" : "screened, not analysed (Table 6)" }, r.in_paper === "analysed" ? "🔬" : "🔍")
+            : "-") },
           { key: "n_languages", label: "Languages", num: true, render: (r) => h("span", { class: "has-tip", "data-tip": r.langs.map((l) => `${langName(l)} (${l})`).join(", ") },
             r.langs.length <= 4 ? r.langs.join(", ") : `${r.langs.length} (${r.langs.slice(0, 3).join(", ")}, …)`) },
           { key: "frameworks", label: "Framework", render: (r) => h("span", { class: "has-tip", "data-tip": [r.harness_tasks && `harness: ${r.harness_tasks}`, r.lighteval_tasks && `lighteval: ${r.lighteval_tasks}`].filter(Boolean).join("\n") }, r.frameworks) },
