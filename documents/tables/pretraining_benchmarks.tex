@@ -1,0 +1,40 @@
+% Pretraining benchmarks evaluated in the multilingual SNR study.
+% Source: src/evals/configs/signal_to_ratio/tasks_pretraining_full.txt
+% Tasks are grouped by harness family; per-language subtasks are listed in the
+% "canonical languages included" column using ISO-639 codes.
+\begin{table}[t]
+\centering
+\caption{Pretraining benchmarks. For multilingual families, the listed languages are exactly the per-language subtasks evaluated in this study (a subset of each harness's full language coverage).}
+\label{tab:pretraining-benchmarks}
+\begin{tabular}{ll}
+\toprule
+\textbf{Harness name} & \textbf{Canonical languages included} \\
+\midrule
+arc\_easy                  & en \\
+arc\_challenge             & en \\
+arc (multilingual)         & ar, es, eu, hi, ru, vi, zh \\
+belebele                   & ar, en, eu, hi, ja, ru, es, sw, te, th, tr, vi, zh \\
+global\_mmlu\_full         & ar, en, es, hi, ja, ru, sw, tr, vi, zh \\
+global\_piqa\_completions  & ar, en, es, hi, ja, ru, sw, th, tr, vi, zh \\
+hellaswag                  & en, ar, es, eu, hi, ru, vi \\
+multiblimp                 & en, es, eu, ru, tr, hi, ar \\
+truthfulqa\_mc1            & en, ar, es, eu, hi, ru, vi, zh \\
+xnli                       & ar, en, es, eu, hi, ru, sw, th, tr, vi, zh \\
+xstorycloze                & ar, en, es, eu, hi, ru, sw, te, zh \\
+paws                       & en, es, eu, ja, zh \\
+xcopa                      & eu, sw, th, tr, vi, zh \\
+xwinograd                  & en, ja, ru, zh \\
+include\_base\_44          & ar, eu, hi, ja, ru, es, te, tr, vi, zh \\
+piqa                       & en \\
+mmlu                       & en \\
+triviaqa                   & en \\
+squadv2                    & en \\
+agieval\_en                & en \\
+agieval\_cn                & zh \\
+winogrande                 & en \\
+openbookqa                 & en \\
+commonsense\_qa            & en \\
+arabic\_leaderboard\_complete & ar \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,36 @@
+% Post-training benchmarks evaluated in the multilingual SNR study.
+% Source: src/evals/configs/signal_to_ratio/tasks_posttraining.txt
+% Multilingual aggregates report the project's canonical language set; the
+% underlying harness task may expose additional languages.
+\begin{table}[t]
+\centering
+\caption{Post-training benchmarks. English-only entries are evaluated on a single language; multilingual entries are aggregate harness tasks evaluated on the project's canonical multilingual set.}
+\label{tab:posttraining-benchmarks}
+\begin{tabular}{ll}
+\toprule
+\textbf{Harness name} & \textbf{Canonical languages included} \\
+\midrule
+mmlu\_flan\_cot\_zeroshot   & en \\
+truthfulqa                  & en \\
+bbh                         & en \\
+drop                        & en \\
+acp\_bench                  & en \\
+gsm8k\_cot                  & en \\
+hendrycks\_math             & en \\
+mathqa                      & en \\
+humaneval\_instruct         & en (code) \\
+mbpp\_instruct              & en (code) \\
+ifeval                      & en \\
+hellaswag                   & en \\
+harmbench                   & en \\
+toxigen                     & en \\
+bbq                         & en \\
+global\_mmlu                & ar, en, es, hi, ja, ru, sw, tr, vi, zh \\
+truthfulqa\_multilingual    & ar, en, es, eu, hi, ru, vi, zh \\
+mgsm\_cot\_native           & en, es, eu, ja, ru, sw, th, zh \\
+hellaswag\_multilingual     & en, ar, es, eu, hi, ru, vi \\
+blend                       & multilingual (cultural QA) \\
+cultural\_bench             & multilingual (cultural QA) \\
+\bottomrule
+\end{tabular}
+\end{table}

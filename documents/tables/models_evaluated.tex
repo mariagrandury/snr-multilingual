@@ -1,0 +1,66 @@
+% Models evaluated in the multilingual SNR study.
+% Source files:
+%   src/evals/configs/signal_to_ratio/models_pretraining_custom_all.txt
+%   src/evals/configs/signal_to_ratio/models_pretraining_hf.txt
+%   src/evals/configs/signal_to_ratio/models_posttraining_hf.txt
+%   src/evals/configs/signal_to_ratio/models_midtraining_hf.txt
+\begin{table}[t]
+\centering
+\caption{Models evaluated. Custom \texttt{apertus-*} models are trained from scratch on FineWeb-Edu (EN) and FineWeb2 (multilingual) at three EN/multilingual ratios (30/70, 60/40, 90/10) and three seeds (28, 1797, 1904), for a total of 36 training runs. Reference HuggingFace models are evaluated at multiple revisions (intermediate training checkpoints when available, otherwise \texttt{main}).}
+\label{tab:models-evaluated}
+\begin{tabular}{lr}
+\toprule
+\textbf{Model ID} & \textbf{Size (B params)} \\
+\midrule
+\multicolumn{2}{l}{\emph{Custom pretrained (Apertus, $\times$ 3 seeds = 36 runs)}} \\
+\midrule
+apertus-175M-fwEdu30-fw270 & 0.175 \\
+apertus-175M-fwEdu60-fw240 & 0.175 \\
+apertus-175M-fwEdu90-fw210 & 0.175 \\
+apertus-350M-fwEdu30-fw270 & 0.35 \\
+apertus-350M-fwEdu60-fw240 & 0.35 \\
+apertus-350M-fwEdu90-fw210 & 0.35 \\
+apertus-600M-fwEdu30-fw270 & 0.6 \\
+apertus-600M-fwEdu60-fw240 & 0.6 \\
+apertus-600M-fwEdu90-fw210 & 0.6 \\
+apertus-1B-fwEdu30-fw270   & 1.0 \\
+apertus-1B-fwEdu60-fw240   & 1.0 \\
+apertus-1B-fwEdu90-fw210   & 1.0 \\
+\midrule
+\multicolumn{2}{l}{\emph{Reference pretrained (HuggingFace)}} \\
+\midrule
+Qwen/Qwen3-0.6B-Base                  & 0.6 \\
+Qwen/Qwen3-1.7B-Base                  & 1.7 \\
+google/gemma-3-1b-pt                  & 1.0 \\
+HuggingFaceTB/SmolLM3-3B-checkpoints  & 3.0 \\
+google/gemma-3-4b-pt                  & 4.0 \\
+Qwen/Qwen3.5-4B-Base                  & 4.0 \\
+allenai/Olmo-3-1025-7B                & 7.0 \\
+Qwen/Qwen3-8B-Base                    & 8.0 \\
+swiss-ai/Apertus-8B-2509              & 8.0 \\
+google/gemma-3-12b-pt                 & 12.0 \\
+Qwen/Qwen3-14B-Base                   & 14.0 \\
+google/gemma-3-27b-pt                 & 27.0 \\
+swiss-ai/Apertus-70B-2509             & 70.0 \\
+\midrule
+\multicolumn{2}{l}{\emph{Reference post-trained / instruction-tuned (HuggingFace)}} \\
+\midrule
+Qwen/Qwen3-0.6B                            & 0.6 \\
+google/gemma-3-1b-it                       & 1.0 \\
+Qwen/Qwen3-1.7B                            & 1.7 \\
+daslab-testing/Apertus-1.7B-it800000-SFT   & 1.7 \\
+HuggingFaceTB/SmolLM3-3B                   & 3.0 \\
+Qwen/Qwen3.5-4B                            & 4.0 \\
+google/gemma-3-4b-it                       & 4.0 \\
+allenai/Olmo-3-7B-Instruct-SFT             & 7.0 \\
+allenai/Olmo-3-7B-Instruct-DPO             & 7.0 \\
+allenai/Olmo-3-7B-Instruct                 & 7.0 \\
+Qwen/Qwen3-8B                              & 8.0 \\
+swiss-ai/Apertus-8B-Instruct-2509          & 8.0 \\
+google/gemma-3-12b-it                      & 12.0 \\
+Qwen/Qwen3-14B                             & 14.0 \\
+google/gemma-3-27b-it                      & 27.0 \\
+swiss-ai/Apertus-70B-Instruct-2509         & 70.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
