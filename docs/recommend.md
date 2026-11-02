@@ -45,6 +45,8 @@ Check your own setup:
 
 We calculate the tokens of each language your proxy sees multiplying share x budget. For each evaluation and language, Table 4 gives the fewest tokens of that language from which the evaluation *stays* above chance in our runs of the same size. Your setup either reaches that number or it does not. A ✓ also says at what point in your run the evaluation becomes usable. Bits per byte has no chance level and is usable at every size.
 
+Table 4 is a stricter rule we use only on this site; the paper's guide is [Table 2](findings/measurability.md#table-2) (Table 7 of the paper), the tokens of the language from which 50% and 90% of the evaluations are above chance.
+
 <div class="viz" data-viz="lookup"></div>
 
 ***Table 4:** Above chance per training tokens: for your proxy size, token budget and

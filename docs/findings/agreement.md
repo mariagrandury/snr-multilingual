@@ -22,11 +22,15 @@ sensitivity of ranking agreement to near-tied model scores, evaluation
 scoring protocols, and per-language training-token budgets
 ([§2.4](#24-sensitivity-analysis)).
 
-| Setting | DA | Proxy | Reference | Question |
+<div class="da-settings" markdown>
+
+| Setting | DA | Proxy | Reference | Research Question |
 |---|---|---|---|---|
 | Scale agreement | DA-size | ($N$, $f=1$) | ($N_{\mathrm{ref}}$, $f=1$) | How small can the proxy model be? |
 | Within-model training agreement | DA-ckpt | ($N$, $f<1$) | ($N$, $f=1$) | How early does the ranking stabilize? |
 | Target agreement | DA-target | ($N$, $f<1$) | ($N_{\mathrm{ref}}$, $f=1$) | How small and early can the proxy be? |
+
+</div>
 
 ***Table 3:** Ranking-agreement settings. $N$ is the non-embedding parameter
 count, $N_{\mathrm{ref}}$ the reference size (1.7B) and $f$ the training
@@ -44,24 +48,18 @@ DA across proxy points reaches at least 0.66 in either model-size or
 training-checkpoint DA. This heuristic threshold selects tasks with higher
 observed ranking agreement.
 
-<div class="viz" data-viz="paperRq2"></div>
-
-***Figure 6:** Decision accuracy of proxy models for the 1.7B reference, over the
-benchmark–language tasks (accuracy and bBPB) whose median DA in the scale or
-within-model training agreement setting is at least 0.66. **(a) Scale
-agreement**: DA of the final checkpoint of each model size against the final
-1.7B ranking, pooled over decisions, one line per design axis and a black
-line over all pairs. **(b) Within-model training agreement**: DA of each
-intermediate checkpoint relative to the final checkpoint of the same model
-size, averaged over tasks. **(c) Target agreement**: DA of each intermediate
-checkpoint relative to the final 1.7B reference model, measuring how early
-partially trained and smaller models recover the decision at the reference
-size. This figure corresponds to Figure 3 from the paper.*
-{ #figure-6 }
-
 ## 2.1 Within-Model Training Agreement
 
-Figure 6b shows the mean DA across benchmark–language tasks and model-variant
+<div class="viz" data-viz="paperRq2" data-panel="ckpt"></div>
+
+***Figure 7: Within-model training agreement.** DA of each intermediate
+checkpoint relative to the final checkpoint of the same model size, averaged
+over tasks, over the benchmark–language tasks (accuracy and bBPB) whose median DA in
+the scale or within-model training agreement setting is at least 0.66. This figure corresponds to
+Figure 3b from the paper.*
+{ #figure-7 }
+
+Figure 7 shows the mean DA across benchmark–language tasks and model-variant
 comparisons at each training checkpoint, using the final checkpoint at the
 same model size as the reference. Ranking agreement generally increases with
 training progress across all model sizes, rising from approximately 62–68%
@@ -74,7 +72,16 @@ and ranking agreement.
 
 ## 2.2 Scale Agreement
 
-Figure 6a shows the mean DA between fully trained models at different scales
+<div class="viz" data-viz="paperRq2" data-panel="size"></div>
+
+***Figure 8: Scale agreement.** DA of the final checkpoint of each
+model size against the final 1.7B ranking, pooled over decisions, one line
+per design axis and a black line over all pairs, over the benchmark–language tasks (accuracy and bBPB) whose median DA in
+the scale or within-model training agreement setting is at least 0.66. This figure corresponds to
+Figure 3a from the paper.*
+{ #figure-8 }
+
+Figure 8 shows the mean DA between fully trained models at different scales
 and the fully trained 1.7B reference, across model-variant comparisons
 grouped by intervention type. Overall, agreement remains modest (59–61%
 across all pairs) and shows no consistent improvement with increasing model
@@ -86,13 +93,22 @@ the size of the proxy model alone.
 
 ## 2.3 Target Agreement
 
-Figure 6c shows the mean DA between intermediate checkpoints across model
+<div class="viz" data-viz="paperRq2" data-panel="target"></div>
+
+***Figure 9: Target agreement.** DA of each intermediate checkpoint
+relative to the final 1.7B reference model, measuring how early partially
+trained and smaller models recover the decision at the reference size, over the benchmark–language tasks (accuracy and bBPB) whose median DA in
+the scale or within-model training agreement setting is at least 0.66. This figure corresponds to
+Figure 3c from the paper.*
+{ #figure-9 }
+
+Figure 9 shows the mean DA between intermediate checkpoints across model
 sizes and the target (the fully trained 1.7B reference model), measuring the
 combined effects of model scale and training progress. For smaller models,
 agreement remains modest (approximately 58–64%) and shows little systematic
 improvement with additional training. In contrast, agreement at 1.7B
 increases steadily throughout training, consistent with the within-model
-training agreement observed in Figure 6b. This contrast indicates that
+training agreement observed in Figure 7. This contrast indicates that
 improvements in ranking agreement during training do not necessarily
 transfer across model scales, limiting the ability of smaller, partially
 trained models to predict decisions at the reference size. To test whether
@@ -112,19 +128,6 @@ scores as expected increases DA without substantially changing the main
 trends, while BPB-based evaluations generally preserve rankings more reliably
 than benchmark accuracy, particularly at smaller scales and earlier training
 stages.
-
-Seed-to-seed noise in the reference models accounts for part of the
-disagreement. Figure 7 keeps only the design-variant pairs that the
-1.7B reference model separates by more than two seed standard deviations.
-
-<div class="viz" data-viz="daDecisive"></div>
-
-***Figure 7: Decision accuracy on the pairs the reference separates.** DA-size of the
-final checkpoint of each proxy against the final 1.7B checkpoint, on every
-pair of design variants (grey) and on the pairs whose 1.7B gap exceeds two
-seed standard deviations (blue), for benchmark tasks (accuracy and bBPB) and
-per-language BPB. Use the button to change the seed-noise filter.*
-{ #figure-7 }
 
 !!! success "Summary"
     On accuracy-scored benchmarks, the share of variant pairs that a proxy

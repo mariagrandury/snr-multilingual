@@ -8,7 +8,8 @@ already made: the repo-docs pages are no longer built (`exclude_docs`), the
 Findings pages use the paper's subsection titles, numbered 1.x, 2.x and 3.x
 for the paper's Sections 4, 5 and 6, every figure and table has a site number
 and, where it has one, names its paper counterpart, every figure opens on the paper's view (other filters are buttons), "DA-target"
-replaces "DA-goal", the §5 Summary's seed-noise claim has its figure, the
+replaces "DA-goal", paper Figures 2 and 3 are split into one site figure per
+panel, each under its subsection, the
 ladder page says how the benchmark counts relate, run names read `L<K>`, and
 the Benchmarks table has a Paper column (🔬 analysed, 🔍 screened, - not
 evaluated). This file lists what is still open. Figure and table numbers
@@ -41,8 +42,9 @@ of the paper's 22 SNR definitions it uses (it should be the
 relative-standard-deviation SNR of Figure 4), and it shows "100 % runs above
 chance" for BPB, which the paper exempts from the filter.
 
-Decision so far: keep both tables as they are. Options for later, if
-reviewers are expected to use the Recommender:
+Decision (2026-11-02): option 1 is done, a sentence under the Recommender's
+look-up (site Table 4) calls it a stricter, site-only rule and links site
+Table 2 (the paper's Table 7) as the paper's guide. Options 2 and 3 stay open:
 
 1. Label the look-up as a stricter, site-only rule and link Table 7 as the
    paper's guide (one sentence on the Recommender page).
@@ -53,6 +55,16 @@ reviewers are expected to use the Recommender:
 
 ## 2. Not yet done
 
+0. **INCLUDE v2 links, after the review.** The benchmark card (Model ladder,
+   site Figure 3) links INCLUDE v1 (`CohereForAI/include-base-44`) as the data
+   source and no paper. Set the data source to
+   `https://huggingface.co/datasets/epfl-nlp/include-2.0` and the paper to
+   `https://aclanthology.org/2026.emnlp-main.1344/`: `fallback_source` in
+   `scripts/build_site_data.py` (`evaluation()`), the `paper` field of
+   `include_v2_og` / `include_v2_en` under `benchmarks` in
+   `configs/tasks.json`, and `evaluation.json`. Not done during the review:
+   the dataset org names the affiliation, which the anonymity guard of
+   `mkdocs_hooks.py` blocks (the strict build fails).
 1. **Map the paper to the site on Home.** One line saying the charts are
    interactive versions of the paper's figures, drawn from the same tables,
    and a short map: contribution 1 → Model ladder, contribution 2 (the guide)
@@ -99,6 +111,7 @@ help a reviewer check the paper. Rules for each one:
 
 | View | Paper | Why |
 |---|---|---|
+| `daDecisive` (was on the site, hidden 2026-11-02) | §5 Summary | The pairs the 1.7B reference separates by more than two seed SDs: 0.69–0.73 (benchmarks, pooled over pairs) and 0.74–0.94 (BPB, mean over languages, as App. E.3). Its default already matches the paper (2 seed SD, a button for 1 SD); review it with the other appendix views. |
 | `daChannels` | Figure 16 | Accuracy against bBPB against per-language BPB; backs §5.4 "BPB-based evaluations generally preserve rankings more reliably". |
 | near-ties sensitivity (no view yet) | Figure 13, Table 9 | Backs "accounting for near-tied scores increases DA without changing the main trends". |
 | `ltCross` | Figure 15 | HellaSwag cross-language DA; English predicts the others at 0.45, as in §E.5. |

@@ -97,16 +97,15 @@ model size at the final checkpoint and against log training tokens across
 checkpoints, using $R^2$ to measure goodness of fit and Spearman's $\rho$ to
 measure monotonicity and direction.
 
-<div class="viz" data-viz="paperRq1"></div>
+<div class="viz" data-viz="paperRq1" data-panel="a"></div>
 
-***Figure 5: Benchmark scaling predictability.** (a) Median $R^2$ versus Spearman
-$\rho$ across model-size fits for each benchmark, showing scaling
-predictability and direction. (b) Median $R^2$ across model-size and
-training-trajectory fits for selected benchmarks, with each point
-representing a benchmark–language task. This figure corresponds to Figure 2 from the paper.*
+***Figure 5: Benchmark scaling predictability across model size.** Median
+$R^2$ versus Spearman $\rho$ across model-size fits for each benchmark,
+showing scaling predictability and direction. This figure corresponds to
+Figure 2a from the paper.*
 { #figure-5 }
 
-Figure 5a shows substantial variation in scaling predictability across
+Figure 5 shows substantial variation in scaling predictability across
 benchmarks. Across 431 tasks retained by the above-chance filter, the median
 $R^2$ of the model-size fits is 0.87, reaching 1.00 for the BPB across 50
 languages. For the letter-format benchmarks (Global-MMLU, INCLUDE and
@@ -117,7 +116,15 @@ across scales. For example, TruthfulQA has a median model size-fit $R^2$ of
 0.97 but $\rho=-0.75$, indicating a strong and consistent decrease in
 predictability with model size.
 
-Figure 5b compares scaling predictability across model size and training
+<div class="viz" data-viz="paperRq1" data-panel="b"></div>
+
+***Figure 6: Benchmark scaling predictability across model size and
+training.** Median $R^2$ across model-size and training-trajectory fits for
+selected benchmarks, with each point representing a benchmark–language task.
+This figure corresponds to Figure 2b from the paper.*
+{ #figure-6 }
+
+Figure 6 compares scaling predictability across model size and training
 checkpoints. Among accuracy and BPB tasks with valid fits along both
 dimensions, 74% (311 tasks) achieve $R^2 \geq 0.5$ on both. Notably, no
 accuracy or BPB task exhibits predictable scaling across training

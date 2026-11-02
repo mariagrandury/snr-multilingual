@@ -73,14 +73,17 @@ The Findings pages draw the paper's four main-text figures with the views of
 `interactive/views/paper.js` (`paperRq0`–`paperRq3`) from `paper_rq*.json`,
 which `scripts/site_data/paper.py` builds from the very tables the paper
 figures are drawn from; the Measurability page also shows the token-threshold
-table of `gate.js` (the paper's Table 7) and the Agreement page the decisive-pairs view of
-`decision-accuracy.js` (`daDecisive`, the §5 Summary's seed-noise claim).
+table of `gate.js` (the paper's Table 7). A view that draws one panel of a
+paper figure reads it from the div: `data-viz="paperRq1" data-panel="a"` (or
+`"b"`) for Figure 2a/2b, `data-viz="paperRq2" data-panel="size"` (`"ckpt"`,
+`"target"`) for Figure 3a/3b/3c, each panel under the subsection it
+illustrates. Figures are centered in their box (`row()` in `paper.js`).
 Every figure opens on the paper's view (its task filter, formats and panels)
 and offers the other settings as buttons. Headings keep the paper's subsection
 titles, numbered 1.x–3.x for its Sections 4–6 (the Findings landing page says
 so). Figures and tables are numbered in site order (Home, Model ladder,
 Findings 1–3, Recommender, Benchmarks: Table 1 notation … Table 6 catalogue,
-Figure 1 mixtures … Figure 8 surrogates), each caption carries an anchor
+Figure 1 mixtures … Figure 10 surrogates), each caption carries an anchor
 (`{ #figure-N }` / `{ #table-N }`), and a caption ends with "This figure/table
 corresponds to … from the paper." only when it has a paper counterpart. A new
 figure or table shifts the numbers after it: renumber the captions and the
