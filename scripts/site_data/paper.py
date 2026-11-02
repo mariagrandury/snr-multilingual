@@ -11,7 +11,7 @@ four main-text figures, each from the table the paper figure is drawn from:
   fits and the median R² of its training fits, and its regime
   (scaling_regimes.csv, rq01, pool predictivity_seeds).
 - paper_rq2: the three panels of rq2.png (rq2_da_all_above_66_either_transformation_mono_axis.csv):
-  DA-size per design axis, DA-ckpt and DA-goal per proxy size.
+  DA-size per design axis, DA-ckpt and DA-target (the table's DA-goal) per proxy size.
 - paper_rq3: the surrogate x proxy-size grid of rq3.png (rq3_surrogates_heatmap_paper.csv).
 """
 import sys
@@ -67,7 +67,7 @@ def build() -> dict:
     run = d[d["panel"] != "DA-size"]
     rq2 = dict(size=[dict(group=r.group, size=r.size, da=_r(r.reliability_macro, 3), tasks=None if pd.isna(r.n_tasks) else int(r.n_tasks),
                           pairs=None if pd.isna(r.n_units) else int(r.n_units)) for r in size.itertuples()],
-               run=[dict(panel=r.panel, size=r.proxy_size, x=_r(r.chinchilla, 2), da=_r(r.da, 3),
+               run=[dict(panel=r.panel.replace("DA-goal", "DA-target"), size=r.proxy_size, x=_r(r.chinchilla, 2), da=_r(r.da, 3),
                          tasks=None if pd.isna(r.tasks) else int(r.tasks)) for r in run.itertuples()])
 
     h = pd.read_csv(paths.SURROGATES / "pretraining/predictivity/rq3_surrogates_heatmap_paper.csv")

@@ -33,7 +33,7 @@ Tabs of the MkDocs side:
   `configs/languages.json`. The Recommender's per-size table reads
   `recommend.json`: rq02's per-task DA-size and DA-ckpt, wide (one column per
   comparison), on the one-axis and on every pair (the page's "Pairs" toggle),
-  plus the BPB DA-goal per proxy size and tenth. Its look-up table (`lookup.json`)
+  plus the BPB DA-target (the analysis calls it DA-goal) per proxy size and tenth. Its look-up table (`lookup.json`)
   is the one threshold the builder computes: per (benchmark, language, size)
   the fewest tokens of the language from which every checkpoint stays above
   chance, read from the tokens-seen cell table
@@ -53,21 +53,43 @@ Tabs of the MkDocs side:
   "Highlighted result" block with `<!-- highlight: rqNN_name -->`, expanded by
   `mkdocs_hooks.py` at build time — so its numbers follow the pipeline. The
   Benchmarks table reads `configs/multilingual_benchmarks.csv`, which the
-  same hook publishes as `interactive/data/benchmarks.csv`.
+  same hook publishes as `interactive/data/benchmarks.csv`. Its `in_paper`
+  column (`analysed`, `screened` or empty, drawn as 🔬, 🔍 or -) says whether
+  the paper analyses the benchmark or only screened it (its Table 6): a row
+  is analysed when one of its harness tasks belongs to a benchmark of the
+  `auto` group of `configs/tasks.json` (or its RF/LLM-RF version), screened
+  when it belongs to `auto_probe` or `discarded`.
 - **Docs** — thin stubs that `--8<--` include a README from elsewhere in the
   repo (e.g. `docs/pretraining.md` includes `src/pretrain/README.md`,
   `docs/repo.md` the root README). Edit the original READMEs, not the stubs.
-  Its nav entry is commented out in `mkdocs.yml` for the double-blind review;
-  the pages are still built, in the sitemap and linked from Home and the
-  Findings pages (mkdocs lists them as "not included in the nav"). The search
-  plugin is off (`plugins: []`) until they are meant to be public: its box and
-  index would expose them.
+  During the double-blind review they are not built at all: their nav entry
+  is commented out and the stubs are in `exclude_docs` (`mkdocs.yml`), because
+  their numbers and wording are the pipeline's, not the paper's, and a page
+  outside the nav is still public and in the sitemap. To restore them, undo
+  both. The search plugin is off (`plugins: []`) until they are meant to be
+  public: its box and index would expose them.
 
 The Findings pages draw the paper's four main-text figures with the views of
 `interactive/views/paper.js` (`paperRq0`–`paperRq3`) from `paper_rq*.json`,
 which `scripts/site_data/paper.py` builds from the very tables the paper
 figures are drawn from; the Measurability page also shows the token-threshold
-table of `gate.js`. The rest of this section describes the archived pages in
+table of `gate.js` (the paper's Table 7). A view that draws one panel of a
+paper figure reads it from the div: `data-viz="paperRq1" data-panel="a"` (or
+`"b"`) for Figure 2a/2b, `data-viz="paperRq2" data-panel="size"` (`"ckpt"`,
+`"target"`) for Figure 3a/3b/3c, each panel under the subsection it
+illustrates. Figures are centered in their box (`row()` in `paper.js`).
+Every figure opens on the paper's view (its task filter, formats and panels)
+and offers the other settings as buttons. Headings keep the paper's subsection
+titles, numbered 1.x–3.x for its Sections 4–6 (the Findings landing page says
+so). Figures and tables are numbered in site order (Home, Model ladder,
+Findings 1–3, Recommender, Benchmarks: Table 1 notation … Table 6 catalogue,
+Figure 1 mixtures … Figure 10 surrogates), each caption carries an anchor
+(`{ #figure-N }` / `{ #table-N }`), and a caption ends with "This figure/table
+corresponds to … from the paper." only when it has a paper counterpart. A new
+figure or table shifts the numbers after it: renumber the captions and the
+in-text references. The Access table and the Benchmarks Columns legend are not
+numbered. What is still open is in
+`plan/website.md`. The rest of this section describes the archived pages in
 `findings_all/`: a page there reads its RQ's main JSON plus the JSON of its additional
 views (`scripts/site_data/<page>.py`, often several files, e.g.
 `noise_snr_*.json`). RQ0 (`gate.md`) reads `gate.json`
@@ -106,7 +128,7 @@ Nothing published says when the site was last built: `on_post_build` strips
 the sitemap's `<lastmod>`, and no data file carries a build or report date.
 
 The text of `index.md` and of the three Findings pages is the paper's
-(abstract, the sections' Summary boxes, contributions, sections 4.1–4.3), so it
+(abstract, the sections' Summary boxes, contributions, sections 4.1–6), so it
 follows the paper, not the analysis: when the paper's wording or numbers
 change, copy them over. After the figures are regenerated, re-check the
 other hand-written numbers (no data file feeds them yet): the ladder counts

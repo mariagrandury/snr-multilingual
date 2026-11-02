@@ -43,7 +43,7 @@
   // ---------- 1. the checkpoint slider: agreeing with the reference vs with oneself ----------
   S.VIEWS.daCheckpoints = async (el) => {
     const x = await S.load("decision_accuracy_extra");
-    const SERIES = ["against the 1.7B final (DA-goal)", "against its own final (DA-ckpt)", "two seeds of one design (seed null)"];
+    const SERIES = ["against the 1.7B final (DA-target)", "against its own final (DA-ckpt)", "two seeds of one design (seed null)"];
     const rowsAt = (score, f) => {
       const rows = [];
       const grp = score === "bpb" ? "bpb" : "all benchmarks";
@@ -140,19 +140,22 @@
   S.VIEWS.daDecisive = async (el) => {
     const x = await S.load("decision_accuracy_extra");
     const POP = { "all benchmarks": "benchmarks (accuracy + bBPB)", bpb: "per-language BPB" };
-    S.mount(el, [{ key: "k", label: "Keep the pairs the 1.7B reference separates by more than", type: "seg", options: [
-      { value: 1, label: "1 seed sd" }, { value: 2, label: "2 seed sd" }] }], (s) => {
+    // As in the paper: benchmarks pooled over pairs, per-language BPB averaged over its languages (App. E.3).
+    const val = (r) => (r.population === "bpb" ? r.da_cell_mean : r.da);
+    S.mount(el, [{ key: "k", label: "Keep the pairs the 1.7B reference separates by more than", type: "seg", value: 2, options: [
+      { value: 2, label: "2 seed sd (paper)" }, { value: 1, label: "1 seed sd" }] }], (s) => {
       const rows = [];
       for (const r of x.decisive.filter((r) => r.axes === "multi-axis" && (r.k === 0 || r.k === s.k))) {
         const nl = x.null.find((n) => n.axes === r.axes && n.population === r.population && n.size === r.size);
-        rows.push({ pop: POP[r.population], size: r.size, kind: r.k === 0 ? "every pair" : "decisive pairs only", da: r.da, kept: r.share_kept, tasks: r.n_tasks, nullm: nl?.null_mean });
+        rows.push({ pop: POP[r.population], size: r.size, kind: r.k === 0 ? "every pair" : "decisive pairs only", da: val(r), kept: r.share_kept, tasks: r.n_tasks,
+          nullm: r.population === "bpb" ? nl?.null_cell_mean : nl?.null_mean });
       }
       const sizes = S.LADDER.filter((z) => rows.some((r) => r.size === z));
       const KINDS = ["every pair", "decisive pairs only"];
       const nulls = rows.filter((r) => r.kind === KINDS[0] && r.nullm != null);
       const kept = rows.filter((r) => r.kind === KINDS[1]);
       const share = (p) => kept.find((r) => r.pop === p)?.kept;
-      const das = (pop, k) => x.decisive.filter((r) => r.axes === "multi-axis" && r.population === pop && r.k === k).map((r) => r.da);
+      const das = (pop, k) => x.decisive.filter((r) => r.axes === "multi-axis" && r.population === pop && r.k === k).map(val);
       const f3 = (v) => fmt(v, v >= 0.995 ? 3 : 2);
       const span = (pop, k) => `${f3(d3.min(das(pop, k)))}–${f3(d3.max(das(pop, k)))}`;
       const links = sizes.flatMap((z) => Object.values(POP).map((p) => {
@@ -163,9 +166,9 @@
       return [tiles([[pct(share(POP["all benchmarks"])), `of the benchmark pairs are decisive at ${s.k} seed sd`],
         [pct(share(POP.bpb)), `of the BPB pairs are decisive at ${s.k} seed sd`]]),
       plot({
-        height: 2 * (28 * sizes.length) + 120, marginLeft: 60, marginTop: 30,
+        height: 2 * (28 * sizes.length) + 120, marginLeft: 60, marginTop: 30, marginRight: 130,
         fy: { domain: Object.values(POP), label: null },
-        x: { domain: [0.4, 1], label: "DA-size against the 1.7B final, pooled over pairs", tickFormat: "%", grid: true },
+        x: { domain: [0.4, 1], label: "DA-size against the 1.7B final (benchmarks: pooled over pairs; BPB: mean over languages)", tickFormat: "%", grid: true },
         y: { domain: sizes, label: null },
         color: { domain: KINDS, range: [css("--viz-s12"), css("--viz-s1")], legend: true },
         marks: [
@@ -176,7 +179,7 @@
           Plot.dot(rows, { x: "da", y: "size", fy: "pop", fill: "kind", r: 5.5, stroke: css("--viz-surface"), strokeWidth: 1.5, tip: true,
             title: (r) => `${r.pop}, ${r.size}\n${r.kind}: ${fmt(r.da)}` + (r.kind === KINDS[1] ? ` (${pct(r.kept)} of the pairs kept)` : "") + ` · ${r.tasks} tasks` }),
         ],
-      }), note(`Dark tick: what a proxy scores with its final scores shuffled across the designs (the no-signal null, measured cell by cell). Grey dot: every pair. Blue dot: only the pairs whose 1.7B gap exceeds k √2 seed standard deviations, the pairs the reference itself decides. On benchmarks DA rises from about ${fmt(d3.mean(das("all benchmarks", 0)))} to ${span("all benchmarks", 1)} (1 sd) and ${span("all benchmarks", 2)} (2 sd), but the decisive pairs are only half and a quarter of the pairs. BPB reaches ${span("bpb", 1)} and ${span("bpb", 2)}, and its 600M dip shrinks.`)];
+      }), note(`Grey dot: every pair (benchmarks ${span("all benchmarks", 0)}, per-language BPB ${span("bpb", 0)}). Blue dot: only the pairs whose 1.7B gap exceeds ${s.k} seed standard deviation${s.k > 1 ? "s" : ""} of a difference, the pairs the reference itself separates (${pct(share(POP["all benchmarks"]))} of the benchmark pairs): benchmarks ${span("all benchmarks", s.k)}, per-language BPB ${span("bpb", s.k)}. Dark tick: the proxy's final scores shuffled across the designs (the no-signal null).`)];
     });
   };
 

@@ -9,6 +9,15 @@ exclude_docs: |
   todo.md
   # the upload-your-results recommender, not deployed until it is tested
   recommend_custom.md
+  # the repo docs (READMEs of the analysis and the pipelines), not published
+  # during the double-blind review: their numbers and wording are the
+  # pipeline's, not the paper's
+  repo.md
+  documents.md
+  pretraining.md
+  pretraining/
+  evaluation/
+  signal-noise/
 
 theme:
   name: material
@@ -47,7 +56,8 @@ nav:
       - "Anticipation": findings/anticipation.md
   - Recommender: recommend.md
   - Benchmarks: benchmarks.md
-  # Docs tab hidden for the double-blind review (uncomment to restore):
+  # Docs tab hidden for the double-blind review (uncomment to restore, and
+  # remove its pages from exclude_docs):
 #   - Docs:
 #       - Overview: repo.md
 #       - Pretraining:

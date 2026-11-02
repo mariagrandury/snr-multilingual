@@ -149,3 +149,12 @@
 
 /* Plot tooltips follow the theme (white boxes in dark mode otherwise). */
 .viz { --plot-background: var(--viz-surface); }
+
+/* Findings 2, Table 3: narrow Setting and DA columns, wide Reference and Research Question */
+.da-settings table { display: table; width: 100%; table-layout: fixed; }
+.da-settings th:nth-child(1) { width: 18%; }
+.da-settings th:nth-child(2) { width: 11%; }
+.da-settings th:nth-child(3) { width: 15%; }
+.da-settings th:nth-child(4) { width: 20%; }
+.da-settings th:nth-child(5) { width: 36%; }
+.da-settings td:nth-child(3), .da-settings td:nth-child(4) { white-space: nowrap; }

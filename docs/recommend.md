@@ -15,11 +15,11 @@ Our findings inform the following recommendations for multilingual ablations.
     2. **Reformat tasks to score the answer text directly.** Letter-format
        multiple choice stays at chance at these sizes; the same items scored on
        the answer text become measurable
-       ([Measurability](findings/measurability.md#answer-format-and-reformulation)).
+       ([Measurability](findings/measurability.md#12-factors-influencing-chance-threshold)).
     3. **Consider likelihood-based scores alongside accuracy.** Per-language
        bits per byte and bBPB preserve rankings more reliably than accuracy,
        above all at small sizes and early checkpoints
-       ([Agreement](findings/agreement.md#sensitivity-analysis)).
+       ([Agreement](findings/agreement.md#24-sensitivity-analysis)).
     4. **Do not take smooth scaling or a stable proxy ranking as agreement.**
        Neither guarantees that the proxy orders design choices like the
        reference model ([Agreement](findings/agreement.md),
@@ -27,7 +27,7 @@ Our findings inform the following recommendations for multilingual ablations.
     5. **Assess reliability for your benchmark, language and design
        intervention.** Agreement depends on all three, so check the one you
        are testing in the tools below
-       ([Agreement](findings/agreement.md#scale-agreement)).
+       ([Agreement](findings/agreement.md#22-scale-agreement)).
 
 Moreover, developers can use the tables below to adapt our findings to their custom use cases and design reliable multilingual ablations.
 
@@ -43,9 +43,17 @@ Check your own setup:
 3. **Mixture**: the share of each language in the training data. You can start from one
    of our mixtures and edit the shares, or add and remove languages.
 
-We calculate the tokens of each language your proxy sees multiplying share x budget. For each evaluation and language, the table gives the fewest tokens of that language from which the evaluation *stays* above chance in our runs of the same size. Your setup either reaches that number or it does not. A ✓ also says at what point in your run the evaluation becomes usable. Bits per byte has no chance level and is usable at every size.
+We calculate the tokens of each language your proxy sees multiplying share x budget. For each evaluation and language, Table 4 gives the fewest tokens of that language from which the evaluation *stays* above chance in our runs of the same size. Your setup either reaches that number or it does not. A ✓ also says at what point in your run the evaluation becomes usable. Bits per byte has no chance level and is usable at every size.
+
+Table 4 is a stricter rule we use only on this site; the paper's guide is [Table 2](findings/measurability.md#table-2) (Table 7 of the paper), the tokens of the language from which 50% and 90% of the evaluations are above chance.
 
 <div class="viz" data-viz="lookup"></div>
+
+***Table 4:** Above chance per training tokens: for your proxy size, token budget and
+mixture, the tokens of each language the proxy sees and, per evaluation and
+language, whether they reach the fewest tokens from which the evaluation stays
+above chance in our runs of that size.*
+{ #table-4 }
 
 <!--
 ??? note "How the minimum-tokens table is built"
@@ -65,3 +73,8 @@ We calculate the tokens of each language your proxy sees multiplying share x bud
 Select the language you care about, the size of the proxy models given your compute budget, and the reliability question you want the proxy to answer.
 
 <div class="viz" data-viz="recommend"></div>
+
+***Table 5:** Decision reliability per size: for the selected language, proxy size
+and question, each benchmark's share of runs above chance, its log₁₀ SNR and
+its decision accuracy, with a verdict.*
+{ #table-5 }
