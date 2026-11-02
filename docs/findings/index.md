@@ -18,5 +18,6 @@ designing their ablation configurations.
    developer can estimate how well they can trust their proxy evaluation
    configuration without training the reference model?
 
-Each page follows the corresponding section of the paper, with interactive
-versions of its figures.
+Findings 1, 2 and 3 correspond to the research questions analysed in
+Sections 4, 5 and 6 of the paper. Each page follows that section, with
+interactive versions of its figures.

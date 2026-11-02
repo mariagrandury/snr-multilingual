@@ -73,11 +73,19 @@ The Findings pages draw the paper's four main-text figures with the views of
 `interactive/views/paper.js` (`paperRq0`–`paperRq3`) from `paper_rq*.json`,
 which `scripts/site_data/paper.py` builds from the very tables the paper
 figures are drawn from; the Measurability page also shows the token-threshold
-table of `gate.js` (Table 7) and the Agreement page the decisive-pairs view of
+table of `gate.js` (the paper's Table 7) and the Agreement page the decisive-pairs view of
 `decision-accuracy.js` (`daDecisive`, the §5 Summary's seed-noise claim).
 Every figure opens on the paper's view (its task filter, formats and panels)
-and offers the other settings as buttons; headings and captions carry the
-paper's section, figure and table numbers. What is still open is in
+and offers the other settings as buttons. Headings keep the paper's subsection
+titles, numbered 1.x–3.x for its Sections 4–6 (the Findings landing page says
+so). Figures and tables are numbered in site order (Home, Model ladder,
+Findings 1–3, Recommender, Benchmarks: Table 1 notation … Table 6 catalogue,
+Figure 1 mixtures … Figure 8 surrogates), each caption carries an anchor
+(`{ #figure-N }` / `{ #table-N }`), and a caption ends with "This figure/table
+corresponds to … from the paper." only when it has a paper counterpart. A new
+figure or table shifts the numbers after it: renumber the captions and the
+in-text references. The Access table and the Benchmarks Columns legend are not
+numbered. What is still open is in
 `plan/website.md`. The rest of this section describes the archived pages in
 `findings_all/`: a page there reads its RQ's main JSON plus the JSON of its additional
 views (`scripts/site_data/<page>.py`, often several files, e.g.
@@ -117,7 +125,7 @@ Nothing published says when the site was last built: `on_post_build` strips
 the sitemap's `<lastmod>`, and no data file carries a build or report date.
 
 The text of `index.md` and of the three Findings pages is the paper's
-(abstract, the sections' Summary boxes, contributions, sections 4.1–4.3), so it
+(abstract, the sections' Summary boxes, contributions, sections 4.1–6), so it
 follows the paper, not the analysis: when the paper's wording or numbers
 change, copy them over. After the figures are regenerated, re-check the
 other hand-written numbers (no data file feeds them yet): the ladder counts

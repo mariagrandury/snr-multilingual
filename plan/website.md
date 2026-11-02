@@ -5,12 +5,14 @@ submission) must help reviewers, and the LLM they may use, read the paper. It
 must never add a number, a name or a claim that the paper does not have. The
 review of 2026-10-18 compared the site with the submitted PDF. The fixes
 already made: the repo-docs pages are no longer built (`exclude_docs`), the
-Findings pages use the paper's section numbers, titles and figure labels,
-every figure opens on the paper's view (other filters are buttons), "DA-target"
+Findings pages use the paper's subsection titles, numbered 1.x, 2.x and 3.x
+for the paper's Sections 4, 5 and 6, every figure and table has a site number
+and, where it has one, names its paper counterpart, every figure opens on the paper's view (other filters are buttons), "DA-target"
 replaces "DA-goal", the §5 Summary's seed-noise claim has its figure, the
 ladder page says how the benchmark counts relate, run names read `L<K>`, and
 the Benchmarks table has a Paper column (🔬 analysed, 🔍 screened, - not
-evaluated). This file lists what is still open.
+evaluated). This file lists what is still open. Figure and table numbers
+below are the paper's; "site Table 2" is the site's own number.
 
 ## 1. The two guides
 
@@ -19,7 +21,7 @@ has two tables that answer "from how many tokens of a language is this
 benchmark usable?", and they use different rules, so they give different
 numbers for the same benchmark and size.
 
-| | Table 7 (Measurability page, `gateThresholdTable`) | Look-up table (Recommender, `lookup`) |
+| | Table 7 (site Table 2, Measurability page, `gateThresholdTable`) | Look-up table (Recommender, `lookup`) |
 |---|---|---|
 | In the paper | yes: Table 7, Appendix D.3 | no |
 | Unit | benchmark × answer format × model size, languages pooled | benchmark × language × model size |
@@ -45,7 +47,7 @@ reviewers are expected to use the Recommender:
 1. Label the look-up as a stricter, site-only rule and link Table 7 as the
    paper's guide (one sentence on the Recommender page).
 2. Point the Home card "A guide to evaluation configuration" at Table 7
-   (`findings/measurability/#table-7`) instead of the Recommender.
+   (`findings/measurability/#table-2`) instead of the Recommender.
 3. Rename the `log₁₀ SNR` column to the SNR it uses, and show BPB's
    above-chance cell as "n/a (no chance level)".
 

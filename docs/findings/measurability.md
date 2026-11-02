@@ -25,12 +25,12 @@ later analyses. BPB and bBPB are exempt from the filter because they have no
 defined chance level. We report how this pass rate changes with model size
 and as a function of *target-language tokens*, the number of training tokens
 seen by the evaluated model on the given task's language
-([§4.1](#41-answer-format-and-reformulation)). We then relate it to the
-answer format ([§4.2](#42-factors-influencing-chance-threshold)) and ask
+([§1.1](#11-answer-format-and-reformulation)). We then relate it to the
+answer format ([§1.2](#12-factors-influencing-chance-threshold)) and ask
 whether model performance on the filtered tasks scales predictably
-([§4.3](#43-benchmark-scaling-behavior)).
+([§1.3](#13-benchmark-scaling-behavior)).
 
-## 4.1 Answer Format and Reformulation
+## 1.1 Answer Format and Reformulation
 
 We analyse 938 benchmark–language tasks. For only 38% of tasks does every
 model size pass the above-chance filter; for 34% of tasks, no model up to
@@ -42,7 +42,7 @@ answer text, such as HellaSwag (Okapi) and MultiBLiMP, training
 configurations score above chance in all trained languages even at our
 smallest size (90M). This finding suggests that evaluation format affects
 measurability, which we explore below
-([§4.2](#42-factors-influencing-chance-threshold)).
+([§1.2](#12-factors-influencing-chance-threshold)).
 
 Model size is not the only factor that determines whether a configuration
 scores significantly above chance on a task. We also ask how many
@@ -58,14 +58,15 @@ tokens score above chance. The effect of target-language tokens also varies
 with model size, with 43% of training configurations at 90M parameters
 scoring above chance after 100M–1B target-language tokens, compared with 62%
 at 1.7B. These findings suggest that both the number of target-language
-tokens and model size influence measurability ([Table 7](#table-7)).
+tokens and model size influence measurability ([Table 2](#table-2)).
 
 <div class="viz" data-viz="paperRq0"></div>
 
-***Figure 1:** Original and reformulated (RF) INCLUDE results across
-training. Pick any benchmark to see its plot.*
+***Figure 4:** Original and reformulated (RF) INCLUDE results across
+training. Pick any benchmark to see its plot. This figure corresponds to Figures 1 and 8 from the paper.*
+{ #figure-4 }
 
-## 4.2 Factors Influencing Chance Threshold
+## 1.2 Factors Influencing Chance Threshold
 
 Multiple-choice benchmarks, where the answer is a letter, require mapping
 answer labels to their content, an ability that may only emerge at larger
@@ -81,14 +82,14 @@ These reformulations substantially increase the number of languages for
 which training configurations pass the above-chance filter. At the 1.7B
 size, programmatic reformulation increases this number from 5 to 86 of 105
 languages for Belebele, from 1 to 35 of 37 for Global-MMLU, and from 3 to 31
-of 43 for INCLUDE. Figure 1 illustrates this effect for INCLUDE. In
+of 43 for INCLUDE. Figure 4 illustrates this effect for INCLUDE. In
 the original letter format, accuracy rarely exceeds chance, while in the
 reformulated version, the share of training configurations that pass the
 filter rises as training progresses. Model-based reformulation yields further
 improvements: on Belebele, every model size passes the filter in all trained
 languages.
 
-## 4.3 Benchmark Scaling Behavior
+## 1.3 Benchmark Scaling Behavior
 
 Next, we examine how predictably performance scales along both dimensions.
 We assess scaling predictability by fitting task performance against log
@@ -98,13 +99,14 @@ measure monotonicity and direction.
 
 <div class="viz" data-viz="paperRq1"></div>
 
-***Figure 2: Benchmark scaling predictability.** (a) Median $R^2$ versus Spearman
+***Figure 5: Benchmark scaling predictability.** (a) Median $R^2$ versus Spearman
 $\rho$ across model-size fits for each benchmark, showing scaling
 predictability and direction. (b) Median $R^2$ across model-size and
 training-trajectory fits for selected benchmarks, with each point
-representing a benchmark–language task.*
+representing a benchmark–language task. This figure corresponds to Figure 2 from the paper.*
+{ #figure-5 }
 
-Figure 2a shows substantial variation in scaling predictability across
+Figure 5a shows substantial variation in scaling predictability across
 benchmarks. Across 431 tasks retained by the above-chance filter, the median
 $R^2$ of the model-size fits is 0.87, reaching 1.00 for the BPB across 50
 languages. For the letter-format benchmarks (Global-MMLU, INCLUDE and
@@ -115,7 +117,7 @@ across scales. For example, TruthfulQA has a median model size-fit $R^2$ of
 0.97 but $\rho=-0.75$, indicating a strong and consistent decrease in
 predictability with model size.
 
-Figure 2b compares scaling predictability across model size and training
+Figure 5b compares scaling predictability across model size and training
 checkpoints. Among accuracy and BPB tasks with valid fits along both
 dimensions, 74% (311 tasks) achieve $R^2 \geq 0.5$ on both. Notably, no
 accuracy or BPB task exhibits predictable scaling across training
@@ -126,16 +128,17 @@ ablation compute on additional model sizes rather than on a longer run of
 one size: the model-size fits give a consistent trend on every task the
 training fits do, and on more.
 
-### Above-chance thresholds (Table 7) { #table-7 }
+### Above-chance thresholds
 
-To make these results practically useful, Table 7 provides, per benchmark
+To make these results practically useful, Table 2 provides, per benchmark
 and answer format, the *above-chance thresholds*: the target-language token
 counts at which at least 50% and 90% of the evaluations pass the filter.
 
 <div class="viz" data-viz="gateThresholdTable"></div>
 
-***Table 7:** Training tokens of the language a model of each size needs
-before a benchmark is above chance.*
+***Table 2:** Training tokens of the language a model of each size needs
+before a benchmark is above chance. This table corresponds to Table 7 from the paper.*
+{ #table-2 }
 
 !!! success "Summary"
     A large share of the suite does not perform measurably on these

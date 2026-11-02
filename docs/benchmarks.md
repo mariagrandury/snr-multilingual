@@ -7,10 +7,15 @@ hide:
 
 # Multilingual benchmarks
 
-The following table lists every multilingual (or non-English) benchmark we found implemented in [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) or [lighteval](https://github.com/huggingface/lighteval).
-The Paper column marks the ones the paper analyses (🔬) or screened (🔍), as listed in its Table 6. Filter by language, evaluation framework, or benchmark characteristics.
+Table 6 lists every multilingual (or non-English) benchmark we found implemented in [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) or [lighteval](https://github.com/huggingface/lighteval).
+The Paper column marks the ones the paper analyses (🔬) or screened (🔍), as listed in Table 6 of the paper. Filter by language, evaluation framework, or benchmark characteristics.
 
 <div class="viz" data-viz="benchmarks"></div>
+
+***Table 6:** Multilingual and non-English benchmarks implemented in lm-evaluation-harness
+or lighteval, with the languages they cover and whether the paper analyses or
+screened them. This table corresponds to Table 6 from the paper.*
+{ #table-6 }
 
 **Before you pick benchmarks for your small-model ablations**, check whether it carries
 signal at your scale, since most four-option benchmarks sit at chance below 1B in our model ladder ([Measurability](findings/measurability.md)). Tip: the [recommender](recommend.md) ranks the benchmarks of our suite per language and proxy size.
@@ -19,7 +24,7 @@ signal at your scale, since most four-option benchmarks sit at chance below 1B i
 
 | column | meaning |
 |---|---|
-| Paper | 🔬 analysed in the paper, 🔍 screened but not analysed (Table 6), - not evaluated |
+| Paper | 🔬 analysed in the paper, 🔍 screened but not analysed (Table 6 of the paper), - not evaluated |
 | Languages | ISO 639-1 codes (639-3 where no 639-1 exists), hover for the full list |
 | Framework | `harness`, `lighteval` or both; hover for the task or group names |
 | Format | `mcqa`: scored by comparing the answer options; `generative`: free generation, exact match, or next-word / perplexity scoring |
