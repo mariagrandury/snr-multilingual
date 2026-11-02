@@ -298,7 +298,8 @@ def gate() -> dict:
     above chance), the smallest size above chance per (benchmark, language),
     the share of cells above chance against the tokens a language was trained
     on (rq01 tokens_seen.py, every checkpoint of seed 1904), the format story
-    (one INCLUDE item in each format, the reformulation figure's table) and the
+    (one INCLUDE and one Belebele item as published, RF and LLM-RF; the paper's
+    Figure 7 table) and the
     benchmark floors of the public models."""
     g = paths.GATE_AND_CURVES / PRED
     share = pd.read_csv(g / "above_random_share.csv")
@@ -314,11 +315,14 @@ def gate() -> dict:
     every = pd.read_csv(tok / "pass_prob_vs_train_tokens_all_1904_ckpts.csv").assign(benchmark="all")
     pts = pd.concat([by_b, every])[["benchmark", "model_size", "share_above", "n_cells", "tokens", "bin_lo", "bin_hi"]]
 
+    # one item of a letter-format benchmark as published, RF and LLM-RF (the same item in all three)
     tj = json.loads((REPO / "configs/tasks.json").read_text())["tasks"]
-    fmt = {k: dict(tj[t]["example"], task=t, language=tj[t]["language"])
-           for k, t in [("og", "include_v2_og_greek_greece"), ("en", "include_v2_en_greek_greece"),
-                        ("letter", "include_base_44_greek"), ("rf", "rf_include_base_44_greek"),
-                        ("llm", "rfgm_include_base_44_greek")] if "example" in tj.get(t, {})}
+    fmt = []
+    for fam, lang in [("include_base_44", "greek"), ("belebele", "eng_Latn")]:
+        ts = dict(letter=f"{fam}_{lang}", rf=f"rf_{fam}_{lang}", llm=f"rfgm_{fam}_{lang}")
+        if all("example" in tj.get(t, {}) for t in ts.values()):
+            fmt.append(dict(name=_names([fam])[fam], language=tj[ts["letter"]]["language"],
+                            **{k: tj[t]["example"] for k, t in ts.items()}))
 
     rf = pd.read_csv(paths.GATE_AND_CURVES.parent / "rq00_task_reformulation/reformulations_gate_paper.csv")
 
@@ -338,8 +342,9 @@ def gate() -> dict:
         first_size=dict(languages=langs, benchmarks=order, levels=sizes,
                         cells=first[["benchmark", "language", "level"]].values.tolist()),
         pass_tokens=rows(pts),
-        format_example=fmt,
-        reformulation=rows(rf),
+        format_example=dict(items=fmt),
+        # p kept to two significant digits (rows() rounds to 4 decimals, which zeroes most of them)
+        reformulation=[dict(r, p_mcnemar=float(f"{p:.2g}")) if p == p else r for r, p in zip(rows(rf), rf["p_mcnemar"])],
         floors=dict(tasks=rows(floors), readers=readers))
 
 

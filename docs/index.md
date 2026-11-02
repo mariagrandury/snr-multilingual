@@ -67,11 +67,14 @@ lead to cheaper, better-informed multilingual model development.
 
 ## Contributions
 
+The charts on this site are interactive versions of the paper's figures, drawn
+from the same tables. Each contribution below links to the page that holds it.
+
 <div class="cards" markdown>
 
 <a class="card" href="ladder/"><b>An open multilingual scaling ladder</b><span>An openly-available controlled multilingual scaling ladder together with evaluation measurements.</span></a>
 
-<a class="card" href="recommend/"><b>A guide to evaluation configuration</b><span>Per benchmark, the per-language training-token counts at which scores clear the above-chance threshold and at which we observe decision reliability.</span></a>
+<a class="card" href="findings/measurability/#table-2"><b>A guide to evaluation configuration</b><span>Per benchmark, the per-language training-token counts at which scores clear the above-chance threshold and at which we observe decision reliability.</span></a>
 
 <a class="card" href="findings/"><b>Trends in decision reliability</b><span>An analysis of general trends in decision reliability to inform multilingual ablation design, including recommendations on task filtering, reformatting, and scoring.</span></a>
 
@@ -81,4 +84,4 @@ lead to cheaper, better-informed multilingual model development.
 
 We study when small-scale multilingual evaluation supports reliable pretraining decisions using a controlled ladder of 218 models. Our findings challenge the assumption that ablations at smaller scales reliably identify the best choices for larger multilingual models. Measurable scores, smooth scaling curves, and stable proxy rankings do not guarantee cross-scale agreement, and increasing proxy size does not consistently resolve this problem within our ladder. Reformulating tasks can improve evaluations' decision reliability, but reliability remains conditional on the benchmark, language, and intervention axis. 
 
-These results raise a broader question: how reliably do current model-development practices select the best pretraining choices? If proxy experiments are noisy or favour choices that become inferior at larger scales, they may lead developers to discard promising alternatives and limit the performance of the resulting models. Our study does not establish how often this occurs in practice or quantify its impact, but suggests the issue may be more prevalent than currently believed. Future work should therefore investigate two questions:  how much performance have current models lost through unreliable proxy decisions, and how can we better predict the effects of pretraining choices at the reference scale? We release our model ladder, evaluation measurements, and per-benchmark guide to help assess these conditions. 
+These results raise a broader question: how reliably do current model-development practices select the best pretraining choices? If proxy experiments are noisy or favour choices that become inferior at larger scales, they may lead developers to discard promising alternatives and limit the performance of the resulting models. Future work should therefore investigate two questions:  how much performance have current models lost through unreliable proxy decisions, and how can we better predict the effects of pretraining choices at the reference scale? We release our model ladder, evaluation measurements, and per-benchmark guide to help assess these conditions. 

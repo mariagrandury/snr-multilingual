@@ -304,9 +304,16 @@ def _link_repo_images(text, page_path, page_uri):
 _HREF = re.compile(r'<a\b[^>]*\bhref="([^"]*)"[^>]*>(.*?)</a>', re.S)
 
 
+_VIZ = re.compile(r'(<div class="viz"[^>]*>)')
+# readers without JavaScript (and LLM page fetchers) see this in place of a chart
+_NOSCRIPT = ("<noscript><p>This chart is interactive and needs JavaScript. Its caption below says "
+             "what it shows; the paper has the static version.</p></noscript>")
+
+
 def on_post_page(output, page, config):
-    """Safety net on the rendered HTML (theme, raw HTML in pages), and the
-    <meta> app.js reads the notice from."""
+    """Safety net on the rendered HTML (theme, raw HTML in pages), the <meta>
+    app.js reads the notice from, and a no-JavaScript note in every chart box."""
+    output = _VIZ.sub(lambda m: m.group(1) + _NOSCRIPT, output)
     output = _HREF.sub(
         lambda m: f'{m.group(2)} (<em>{_NOTICE["text"]}</em>)' if _BLOCKED_URL.search(m.group(1)) else m.group(0),
         output,

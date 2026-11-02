@@ -78,12 +78,21 @@ paper figure reads it from the div: `data-viz="paperRq1" data-panel="a"` (or
 `"b"`) for Figure 2a/2b, `data-viz="paperRq2" data-panel="size"` (`"ckpt"`,
 `"target"`) for Figure 3a/3b/3c, each panel under the subsection it
 illustrates. Figures are centered in their box (`row()` in `paper.js`).
+The Findings pages also carry views from the archived pages, rewritten to open
+on the paper's appendix figure (`firstSize` Fig. 6, `reformulation` Fig. 7,
+`llmRewrite`, `gateMarginCalc`, `scalingCurves` Figs. 9–10 from
+`scaling_paper/*.json`, `englishRegimes` Fig. 11; `sgReference`, `sgGate`,
+`daChannels` Fig. 16, `daDecisive`, `ltCross` Fig. 15; `surrogatesVariants`
+Fig. 19, `surrogatesBench`, `surrogatesScoring` Fig. 20), with the paper's
+names; Table 4 (near ties) is the paper's Table 9 typed in, as no table of the
+pipeline holds it. `mkdocs_hooks.on_post_page` puts a `<noscript>` note in
+every chart box for readers without JavaScript.
 Every figure opens on the paper's view (its task filter, formats and panels)
 and offers the other settings as buttons. Headings keep the paper's subsection
 titles, numbered 1.x–3.x for its Sections 4–6 (the Findings landing page says
 so). Figures and tables are numbered in site order (Home, Model ladder,
-Findings 1–3, Recommender, Benchmarks: Table 1 notation … Table 6 catalogue,
-Figure 1 mixtures … Figure 10 surrogates), each caption carries an anchor
+Findings 1–3, Recommender, Benchmarks: Table 1 notation … Table 7 catalogue,
+Figure 1 mixtures … Figure 24 surrogates by scoring), each caption carries an anchor
 (`{ #figure-N }` / `{ #table-N }`), and a caption ends with "This figure/table
 corresponds to … from the paper." only when it has a paper counterpart. A new
 figure or table shifts the numbers after it: renumber the captions and the
