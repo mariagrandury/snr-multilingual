@@ -307,8 +307,28 @@ def gate() -> dict:
 
     first = pd.read_csv(g / "first_size_above_random_paper.csv")
     langs = list(dict.fromkeys(first["language"]))          # the paper's order: English, then scheme A's resource order
-    order = list(first.assign(ok=first["level"].ne("never")).groupby("benchmark")["ok"].sum()
-                 .sort_values(ascending=False, kind="stable").index)
+    # 3B (Figure 5): a cell never above chance up to 1.7B is above from 3B where at least half its tasks pass on the
+    # six configurations trained to 3B, tasks pooled per (benchmark, language) as gate_panels does
+    from analysis.grids import smallest_safe
+    from analysis.rq00_gate_and_curves.above_random import MIN_SHARE
+    from analysis.utils import FAMILY_MERGE
+    at3 = (pd.read_csv(paths.SIZE_GENERALISATION / PRED / "gate_crossover_per_task.csv")
+           .groupby(["benchmark", "language"])["above_3B"].mean().ge(MIN_SHARE))
+    first["level"] = [("3B" if at3.get((b, l), False) else lv) if lv == "never" else lv
+                      for b, l, lv in first[["benchmark", "language", "level"]].values]
+    # the screened benchmarks (Figure 5's *), read at 600M, 1B and 1.7B (3B where passes_3B has a verdict); their
+    # tasks of an analysed benchmark stay out, its cells are the analysed ones
+    scr = pd.read_csv(g / "gate_screened_verdicts_all_considered.csv")
+    scr = scr[~scr["family"].isin(first["benchmark"]) & scr["language"].isin(langs)]
+    scr = scr.assign(benchmark=scr["family"].map(lambda f: FAMILY_MERGE.get(f, f)))
+    probe = ["600M", "1B", "1.7B"]
+    ok = scr.groupby(["benchmark", "language"])[[f"above_{s}" for s in probe] + ["passes_3B"]].mean().ge(MIN_SHARE)
+    lv = smallest_safe(ok[[f"above_{s}" for s in probe]].astype(float))
+    screened = pd.DataFrame({"level": [probe[int(i)] if i >= 0 else "3B" if ok.loc[k, "passes_3B"] else "never"
+                                       for k, i in lv.items()]}, index=ok.index).reset_index()
+    first = pd.concat([first, screened], ignore_index=True)
+    order = list(first.assign(ok=~first["level"].isin(["never", "3B"])).groupby("benchmark")["ok"].sum()
+                 .sort_values(ascending=False, kind="stable").index)    # the paper's order (screened ones by the same rule)
 
     tok = _tokens_dir()
     by_b = pd.read_csv(tok / "pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_points.csv")
@@ -339,7 +359,7 @@ def gate() -> dict:
     return dict(
         sizes=sizes, names=_names(keys),
         tasks=table(share[["task", "family", "language", "n_options", "random_baseline", *sizes]]),
-        first_size=dict(languages=langs, benchmarks=order, levels=sizes,
+        first_size=dict(languages=langs, benchmarks=order, levels=[*sizes, "3B"], screened=sorted(set(screened["benchmark"])),
                         cells=first[["benchmark", "language", "level"]].values.tolist()),
         pass_tokens=rows(pts),
         format_example=dict(items=fmt),

@@ -4,18 +4,18 @@
   const { h, css, fmt, pct, note, tiles, plot, mount, load, uniq } = S;
 
   const SCORINGS = [
-    { value: "pooled", label: "accuracy + bBPB (Figure 4)" },
+    { value: "pooled", label: "accuracy + bBPB" },
     { value: "accuracy", label: "benchmark accuracy" },
     { value: "bBPB", label: "benchmark bBPB" },
     { value: "BPB", label: "per-language BPB" },
   ];
-  const scoringColor = () => ({ pooled: css("--md-default-fg-color"), accuracy: css("--viz-s1"), bBPB: css("--viz-s3"), BPB: css("--viz-s2") });
+  const scoringColor = () => ({ accuracy: css("--viz-s1"), bBPB: css("--viz-s3"), BPB: css("--viz-s2") });
   const PROX = ["90M", "175M", "350M", "600M", "1B"];
   const short = (m) => m.replace(" (proxy rungs only)", "").replace(" (relative std, inverted)", ", inverted").replace(" (relative std)", "");
   const row = (...nodes) => h("div", { style: "display:flex;flex-wrap:wrap;gap:8px;justify-content:center" }, ...nodes);
   const proxyColors = () => d3.quantize(d3.interpolateRgb(S.sizeRamp()[0], S.sizeRamp().at(-1)), PROX.length);
 
-  // ---------- surrogate x proxy size, by scoring (paper Figure 20; the pooled grid is Figure 4) ----------
+  // ---------- surrogate x proxy size, by scoring (paper Figure 20; the pooled grid is paper Figure 4) ----------
   S.VIEWS.surrogatesScoring = async (el) => {
     const d = await load("surrogates_scoring");
     const pooled = d.filter((r) => r.scoring === "pooled");
@@ -24,9 +24,11 @@
     const PANELS = SCORINGS.slice(1);
     mount(el, [
       { key: "show", label: "Show", type: "seg", options: [{ value: "panels", label: "three scorings side by side (paper)" },
-        { value: "grid", label: "one scoring as a grid" }, { value: "lines", label: "one panel per statistic" }] },
-      { key: "sc", label: "Scoring (grid)", type: "seg", options: SCORINGS },
+        { value: "grid", label: "one scoring as a grid" }] },
+      { key: "sc", label: "Scoring", type: "seg", options: SCORINGS },
     ], (s) => {
+      // the scoring buttons act on the grid alone: show them only there
+      el.querySelector(".viz-controls").children[1].style.display = s.show === "grid" ? "" : "none";
       if (s.show === "panels") {
         const rows = d.filter((r) => r.scoring !== "pooled").map((r) => ({ ...r, lab: SCORINGS.find((o) => o.value === r.scoring).label }));
         const metrics = order.filter((m) => rows.some((r) => r.metric === m));
@@ -47,31 +49,9 @@
             ]),
           ],
         })), note("Spearman ρ between each surrogate and DA-size against 1.7B at each proxy size, on the benchmark tasks above chance scored by accuracy (left), their bBPB versions (middle) and per-language BPB (right); n is the number of tasks. " +
-          "bBPB raises the level of the correlations of Figure 4: early-checkpoint agreement reads " +
+          "bBPB raises the level of the correlations of the pooled grid (paper Figure 4): early-checkpoint agreement reads " +
           `${rangeOf(d, "bBPB", "early-checkpoint agreement (10 %)")} on bBPB against ${rangeOf(d, "accuracy", "early-checkpoint agreement (10 %)")} on accuracy. ` +
           "The discrepancy and the margin above chance exist for accuracy only, the scaling-fit R² needs three sizes and starts at 350M.")];
-      }
-      if (s.show === "lines") {
-        const col = scoringColor();
-        const legend = Plot.legend({ color: { domain: SCORINGS.map((o) => o.label), range: SCORINGS.map((o) => col[o.value]) } });
-        const panels = order.map((m) => {
-          const rows = d.filter((r) => r.metric === m).map((r) => ({ ...r, lab: SCORINGS.find((o) => o.value === r.scoring).label }));
-          return h("div", {}, h("b", { style: "font-size:.68rem" }, short(m)), plot({
-            width: 250, height: 170, marginLeft: 34, marginRight: 10, marginTop: 10,
-            x: { domain: PROX, label: null, tickFormat: (v) => v },
-            y: { domain: [-0.7, 0.8], label: null, grid: true, ticks: [-0.5, 0, 0.5] },
-            color: { domain: SCORINGS.map((o) => o.label), range: SCORINGS.map((o) => col[o.value]) },
-            marks: [
-              Plot.ruleY([0], { stroke: css("--viz-muted") }),
-              Plot.line(rows, { x: "proxy", y: "rho", stroke: "lab", strokeWidth: 2, sort: (r) => PROX.indexOf(r.proxy) }),
-              Plot.dot(rows, { x: "proxy", y: "rho", fill: "lab", r: 3, tip: true,
-                title: (r) => `${short(m)} at ${r.proxy}, ${r.lab}\nρ = ${fmt(r.rho)} (n = ${r.n}${r.p < 0.05 ? ", p < 0.05" : ""})` }),
-            ],
-          }));
-        });
-        return [row(legend),
-          h("div", { style: "display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.6em 1em;margin-top:.6em" }, panels),
-          note("One panel per statistic: its Spearman ρ with DA-size at each proxy, one line per way of scoring the tasks. The pooled line (accuracy and bBPB, Figure 4) runs with the green bBPB line, above the blue accuracy line. On per-language BPB (orange), five of the six statistics turn negative at 600M.")];
       }
       const rows = d.filter((r) => r.scoring === s.sc);
       const metrics = order.filter((m) => rows.some((r) => r.metric === m));
@@ -89,7 +69,7 @@
           Plot.text(lead, { x: "proxy", y: "metric", text: () => "▲", dx: -24, dy: -6, fontSize: 8 }),
         ],
       })), note(`Leader per proxy (▲): ${lead.map((r) => `${r.proxy} ${short(r.metric)} ${fmt(r.rho)}`).join(" · ")}. ` +
-        "Rows keep the order of the pooled grid (Figure 4, strongest on top), so switching the scoring shows which statistics hold up and which fall.")];
+        "Rows keep the order of the pooled accuracy + bBPB grid (paper Figure 4, strongest on top), so switching the scoring shows which statistics hold up and which fall.")];
     });
   };
   const rangeOf = (d, sc, m) => {

@@ -27,32 +27,47 @@ own number.
     carries a `<noscript>` note (`mkdocs_hooks.on_post_page`).
   - The Findings text is cut to the sentences that carry a result: whole
     sentences removed, no wording changed.
-  - The appendix views are back on the Findings pages, each on the paper's
-    default, with paper names and captions (site Figures 4–24, site Table 4):
+  - The appendix views are back on the Findings pages (site Figures 4–21,
+    site Table 4):
 
 | Site | View | Paper |
 |---|---|---|
 | Figure 4 | `gateMarginCalc` | App. D.1 margins (no figure) |
-| Figure 5 | `firstSize` | Figure 6 (button: Figure 5-style bars) |
+| Figure 5 | `firstSize` | Figure 6 (buttons: Figure 5-style bars, original versions only, every considered benchmark; 3B from the six configurations trained to 3B) |
 | Figure 7 | `llmRewrite` | §4.2 / D.2 (no figure) |
 | Figure 8 | `reformulation` | Figure 7 |
 | Figure 11 | `scalingCurves` | Figures 9 and 10 |
 | Figure 12 | `englishRegimes` | Figure 11 |
-| Figure 16 | `sgReference` | App. E.6 text (not Figure 21's task set) |
-| Figure 17 | `sgGate` | App. E.6 text |
 | Table 4 | static | Table 9 |
-| Figure 18 | `daChannels` | Figure 16 |
-| Figure 19 | `daDecisive` | §5 Summary, App. E.3 |
-| Figure 20 | `ltCross` | Figure 15 |
-| Figure 22 | `surrogatesVariants` | Figure 19 |
-| Figure 23 | `surrogatesBench` (new) | §6 "up to ρ = 0.93 for HellaSwag" |
-| Figure 24 | `surrogatesScoring` | Figure 20 |
+| Figure 16 | `daChannels` | Figure 16 |
+| Figure 17 | `ltCross` | Figure 15 |
+| Figure 19 | `surrogatesVariants` | Figure 19 |
+| Figure 20 | `surrogatesBench` (new) | §6 "up to ρ = 0.93 for HellaSwag" |
+| Figure 21 | `surrogatesScoring` | Figure 20 (its "accuracy + bBPB" grid repeats site Figure 18) |
 
-  Left out: `gateMajority`, `formatExample` (a subset of `llmRewrite`),
-  `bestVariant` (per language; `surrogatesBench` backs the 0.93), and the
-  views of questions the paper does not ask (DataDecide, subsets, benchmark
-  design, noise maps, above-chance items, design effects, BPB forecasting,
-  recipe, public-model floors, early passes, token exclusion).
+  Removed again on 2026-11-03: `sgReference`, `sgGate` (App. E.6) and
+  `daDecisive` (§5 Summary). Left out: `gateMajority`, `formatExample` (a
+  subset of `llmRewrite`), `bestVariant`, and the views of questions the paper
+  does not ask.
+- 2026-11-03: the Findings text is the paper's main text again, word for
+  word; a collapsed box gives the formal definition of the above-chance
+  threshold (App. D.1); site Figures 9 and 10 open on every task with bBPB.
+
+## Proposal: site Figure 11 (accuracy curves, `scalingCurves`)
+
+Not done yet, for discussion:
+
+1. Move it next to the reformulation figures (§1.2): its paper caption, "the
+   reformulated versions rise with model size while the letter-format
+   original benchmarks stay at chance up to 1.7B", is a §4.2 result, while
+   §1.3 is about fits.
+2. Show less by default: one line per K (the mean over ladders, builds and
+   seeds) instead of every run, so the legend is the five K values only;
+   "every run" becomes a button. Drop the "one task, with its fits" mode, or
+   keep it collapsed under the chart.
+3. Keep one of site Figure 3 (Model ladder score curves) and Figure 11: both
+   draw benchmark accuracy across sizes and training and both point to the
+   paper's Figures 9 and 10.
 
 ## Open
 
@@ -82,13 +97,12 @@ own number.
    - §5.2 "59–61% across all pairs": Figure 3a (site Figure 14) reads
      0.60–0.64.
    - §5 Summary "0.51–0.56" on accuracy: the data give 0.50–0.56. App. E.3
-     "0.58, 0.57, 0.58, 0.58, 0.58" on every pair: site Figure 19's grey dots
-     read 0.57–0.59, because its table keeps only the tasks with a seed SD.
+     "0.58, 0.57, 0.58, 0.58, 0.58" on every pair: the decisive-pairs view (now off the site) read 0.57–0.59, because its table keeps only the tasks with a seed SD.
    - App. F.4 accuracy rel-std SNR "0.33–0.40": the data give 0.326–0.395.
      Figure 20's caption "on accuracy alone the relative-standard-deviation SNR
      leads or ties" fails at 350M and 1B; Figure 19's caption says "ordered by
      their DA-size correlation", the figure orders by the mean of DA-size and
-     DA-ckpt (site Figures 22 and 24 keep the figure's data and drop those
+     DA-ckpt (site Figures 19 and 21 keep the figure's data and drop those
      claims from their captions).
    - Figure 5 counts INCLUDE v2 (OG) in 36 languages, the site in 42; the
      site has no 3B or screened-benchmark data for its Figure 5-style bars.

@@ -4,7 +4,9 @@ title: "Agreement: How Early Can We Trust Proxy Evaluations?"
 
 # Agreement: How Early Can We Trust Proxy Evaluations?
 
-We study ranking
+Building on the results from the [previous section](measurability.md), we
+investigate whether evaluations at smaller model scales or earlier training
+stages can reliably inform decisions made at full scale. We study ranking
 agreement by comparing the relative ordering of model variants at a cheaper
 proxy point (model size and training checkpoint) with a reference point (the
 final checkpoint at the same or largest model size). We examine three
@@ -15,7 +17,10 @@ compares fully trained smaller models with the fully trained largest model
 ([§2.2](#22-scale-agreement)); and *Target agreement*, which evaluates
 whether intermediate checkpoints across model sizes recover the rankings of
 the fully trained largest model ([§2.3](#23-target-agreement)). These
-settings are summarised in Table 3 below.
+settings are summarised in Table 3 below. We additionally examine the
+sensitivity of ranking agreement to near-tied model scores, evaluation
+scoring protocols, and per-language training-token budgets
+([§2.4](#24-sensitivity-analysis)).
 
 <div class="da-settings" markdown>
 
@@ -40,7 +45,8 @@ binary agreement scores. We compare model variants across the intervention
 dimensions of the [model ladder](../ladder.md), using model sizes ranging
 from 90M to 1.7B parameters. We focus on accuracy and bBPB tasks whose median
 DA across proxy points reaches at least 0.66 in either model-size or
-training-checkpoint DA.
+training-checkpoint DA. This heuristic threshold selects tasks with higher
+observed ranking agreement.
 
 ## 2.1 Within-Model Training Agreement
 
@@ -57,7 +63,10 @@ Figure 13 shows the mean DA across benchmark–language tasks and model-variant
 comparisons at each training checkpoint, using the final checkpoint at the
 same model size as the reference. Ranking agreement generally increases with
 training progress across all model sizes, rising from approximately 62–68%
-at early checkpoints to 83–93% in the later stages of training. Although 350M models generally exhibit the
+at early checkpoints to 83–93% in the later stages of training.
+Nevertheless, disagreement persists even near the end of training,
+indicating that intermediate evaluations do not always reproduce final
+model-selection decisions. Although 350M models generally exhibit the
 highest agreement, we observe no consistent relationship between model size
 and ranking agreement.
 
@@ -99,25 +108,16 @@ combined effects of model scale and training progress. For smaller models,
 agreement remains modest (approximately 58–64%) and shows little systematic
 improvement with additional training. In contrast, agreement at 1.7B
 increases steadily throughout training, consistent with the within-model
-training agreement observed in Figure 13. To test whether
+training agreement observed in Figure 13. This contrast indicates that
+improvements in ranking agreement during training do not necessarily
+transfer across model scales, limiting the ability of smaller, partially
+trained models to predict decisions at the reference size. To test whether
 reliable cross-scale ranking agreement emerges at larger proxy sizes, we
 extend the model ladder to 3B for a subset of configurations. Even at 1.7B,
 benchmark accuracy shows low agreement with the 3B reference, with DA of
-0.51–0.52.
-
-<div class="viz" data-viz="sgReference"></div>
-
-***Figure 16: A 3B reference ranks the proxies no better than the 1.7B one.** On identical decisions, DA-size against 3B is 0.49–0.54 for accuracy and
-0.78–0.91 for per-language BPB, against the 1.7B and the 3B final
-checkpoints.*
-{ #figure-16 }
-
-<div class="viz" data-viz="sgGate"></div>
-
-***Figure 17: At 3B more tasks pass the above-chance threshold.** From 612 to 778 of 933 tasks (+27%), mostly the letter-format Belebele,
-Global-MMLU and INCLUDE tasks: the share of each benchmark's tasks above
-chance at 1.7B and at 3B, on the six configurations trained to 3B.*
-{ #figure-17 }
+0.51–0.52. This indicates that increasing proxy model size to 1.7B is still
+not sufficient to recover reliable rankings at the reference size from
+multilingual benchmark accuracy.
 
 ## 2.4 Sensitivity Analysis
 
@@ -149,29 +149,21 @@ unchanged. This table corresponds to Table 9 from the paper.*
 
 <div class="viz" data-viz="daChannels"></div>
 
-***Figure 18: Where accuracy is at chance at the proxy, bBPB still ranks the design
+***Figure 16: Where accuracy is at chance at the proxy, bBPB still ranks the design
 variants like the 1.7B bBPB, though far below per-language BPB.** DA-size against the 1.7B final checkpoint on multi-axis pairs, for the
 tasks above chance at the proxy, at chance at the proxy and at chance at
 every size. Blue: accuracy against the 1.7B accuracy. Orange: the proxy's
 bBPB against the 1.7B accuracy. Green: bBPB against the 1.7B bBPB. Black
 tick: the macro average of per-language BPB. Dashed: 0.5. This figure corresponds to Figure 16 from the paper.*
-{ #figure-18 }
-
-<div class="viz" data-viz="daDecisive"></div>
-
-***Figure 19: Decision accuracy on the pairs the reference separates.** On the design-variant pairs that the 1.7B reference separates by more than
-two seed standard deviations (blue), the share ordered correctly is 0.69 to
-0.73, while per-language BPB orders 0.74–0.94 of all pairs (grey) like the
-reference.*
-{ #figure-19 }
+{ #figure-16 }
 
 <div class="viz" data-viz="ltCross"></div>
 
-***Figure 20: On HellaSwag, the languages that the K = 8 list trains together predict
+***Figure 17: On HellaSwag, the languages that the K = 8 list trains together predict
 each other's 1.7B ranking, while English does not.** DA-size of the ranking on the HellaSwag task of one language at the proxy
 (rows) against the 1.7B ranking on another language (columns), averaged
 over 90M–1B; the diagonal is the task's own DA-size. This figure corresponds to Figure 15 from the paper.*
-{ #figure-20 }
+{ #figure-17 }
 
 !!! success "Summary"
     On accuracy-scored benchmarks, the share of variant pairs that a proxy

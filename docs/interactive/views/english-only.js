@@ -157,14 +157,15 @@
     const nFit = uniq(d.rows.filter((r) => r.regime !== "filtered").map((r) => r.task)).length;
     const summary = () => tiles([
       [`${allThree.length} of ${nFit}`, "English accuracy tasks predictable across both size and training in all three corpora"],
-      [CORPORA.map((c) => fitted(c).filter((r) => r.regime === BOTH).length).join(" / "), `in each corpus (${CORPORA.join(" / ")})`],
-      [`${popAll.length} of ${popAbove.length}`, `commonly used benchmarks above chance that do so in all three${popNot.length ? ` (all but ${popNot.map((t) => meta[t].name).join(", ")})` : ""}`],
+      [CORPORA.map((c) => fitted(c).filter((r) => r.regime === BOTH).length).join(" / "),
+        `of the ${nFit} tasks with a fit predictable across both size and training on ${CORPORA.join(" / ")}, each corpus on its own`],
+      [`${popAll.length} of ${popAbove.length}`, `commonly used tasks above chance that do so in all three${popNot.length ? ` (all but ${popNot.map((t) => meta[t].name).join(", ")})` : ""}`],
     ]);
 
     // the paper's view: R² of the model-size fit against the median R² of the training fits, one panel per corpus
     const scatter = (box) => {
       tipBg(box);
-      S.mount(box, [{ key: "q", label: "Find a benchmark", type: "text" }], (s) => {
+      S.mount(box, [{ key: "q", label: "Find a task", type: "text" }], (s) => {
         const q = (s.q ?? "").trim().toLowerCase();
         const pts = d.rows.filter((r) => r.regime !== "filtered");
         const hit = (r) => q && `${r.name} ${r.task}`.toLowerCase().includes(q);
@@ -188,7 +189,7 @@
               Plot.dot(pts, { fx: "corpus", x: "r2_size", y: "r2_trajectory", r: 7, fill: "transparent", tip: true, title: tip }),
             ],
           })),
-          note(`One dot per English accuracy task with a fit, for the monolingual English models (K = 1) trained on each corpus: the R² of the fit across model size against the median R² of the fits along training, coloured by regime (the ringed dots get worse with size). ${q ? "Hover" : "Type a name above to label its dots; hover"} a dot for its benchmark. These single-cell fits are not comparable in level with the medians over K of the multilingual figure.`)];
+          note(`One dot per English accuracy task with a fit, for the monolingual English models (K = 1) trained on each corpus: the R² of the fit across model size against the median R² of the fits along training, coloured by regime (the ringed dots get worse with size). ${q ? "Hover" : "Type a name above to label its dots; hover"} a dot for its task. These single-cell fits are not comparable in level with the medians over K of the multilingual figure.`)];
       });
       const input = box.querySelector("input[type=text]");
       if (input) input.placeholder = "hellaswag, mmlu, piqa…";
@@ -201,8 +202,9 @@
         || nBoth(b) - nBoth(a) || meta[a].name.localeCompare(meta[b].name));
       let selected = "hellaswag";
       const { render } = S.mount(box, [
-        { key: "show", label: "Rows", type: "seg", options: [{ value: "popular", label: "commonly used benchmarks" }, { value: "fitted", label: "every task with a fit" }, { value: "all", label: "every English task" }] },
-        { key: "q", label: "Find a benchmark", type: "text" },
+        { key: "show", label: "Tasks", type: "seg", options: [{ value: "popular", label: `commonly used tasks (${pop.length})` },
+          { value: "fitted", label: `every task with a fit (${nFit})` }, { value: "all", label: `every English task (${tasks.length})` }] },
+        { key: "q", label: "Find a task", type: "text" },
       ], (s) => {
         const q = (s.q ?? "").trim().toLowerCase();
         const keep = sorted.filter((t) => (s.show === "all" || (s.show === "popular" ? meta[t].popular : nFilt(t) < 3))
@@ -220,15 +222,15 @@
         ...CORPORA.map((c) => chip(cell[`${t}|${c}`]))));
         const table = h("div", { class: "viz-scroll", style: s.show === "popular" ? "max-height:none" : null },
           h("table", { class: "viz-table" },
-            h("thead", {}, h("tr", {}, h("th", {}, "benchmark (click a row for its curves)"), ...CORPORA.map((c) => h("th", { title: CORPUS_NOTE[c] }, c)))),
+            h("thead", {}, h("tr", {}, h("th", {}, "task (click one for its curves)"), ...CORPORA.map((c) => h("th", { title: CORPUS_NOTE[c] }, c)))),
             h("tbody", {}, rows)));
         return [
           summary(),
           h("div", { class: "ladder-legend" }, Object.entries(REGIMES).map(([k, [word, long]]) => h("span", { title: long },
             h("i", { style: `display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:.35em;vertical-align:-2px;background:${regColor(k)}` }), `${word}: ${long}`))),
-          keep.length ? table : h("div", { class: "viz-empty" }, "No English benchmark matches."),
+          keep.length ? table : h("div", { class: "viz-empty" }, "No English task matches."),
           curves(selected),
-          note("★ marks the benchmarks commonly used in model development. A task is fitted when it passes the above-chance filter at enough model sizes."),
+          note(`★ marks the tasks commonly used in model development. A task has a fit when it passes the above-chance filter at enough model sizes; the same ${nFit} of the ${tasks.length} English tasks do in every corpus, the other ${tasks.length - nFit} stay at chance.`),
         ];
       });
       const input = box.querySelector("input[type=text]");
