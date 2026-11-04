@@ -111,12 +111,15 @@ def pairs() -> dict:
 
 
 def extra() -> dict:
-    """The per-size summaries the dot plot, the checkpoint slider and the
-    decisive-pair view read."""
+    """The per-size summaries the score-channel bars (paper Figure 16), the
+    checkpoint slider and the decisive-pair view read."""
     da = paths.DECISION_ACCURACY / PRED
     summ = pd.read_csv(da / "bench_bpb_da_size_summary_multi_axes.csv")
     summ = summ[summ["group"] == "all benchmarks"][["size", "acc_acc", "acc_acc_n", "bbpb_acc", "bbpb_acc_n",
-                                                    "bbpb_bbpb", "bbpb_bbpb_n"]]
+                                                    "bbpb_bbpb", "bbpb_bbpb_n",
+                                                    # bBPB against accuracy, both read against the 1.7B accuracy (App. E.3)
+                                                    "n_paired", "gain", "bbpb_better", "p"]]
+    summ = summ.assign(log10_p=np.log10(summ.pop("p")))      # Wilcoxon p, too small to round to 4 decimals
     gate = pd.read_csv(da / "bench_bpb_da_size_by_acc_gate_multi_axes_paper.csv")
     gate = gate[gate["group"] == "all benchmarks"].drop(columns=["group", "axes"])
     early = pd.read_csv(da / "early_small_da_goal_summary_multi_axes.csv")

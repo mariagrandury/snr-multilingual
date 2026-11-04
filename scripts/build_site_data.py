@@ -298,7 +298,8 @@ def gate() -> dict:
     above chance), the smallest size above chance per (benchmark, language),
     the share of cells above chance against the tokens a language was trained
     on (rq01 tokens_seen.py, every checkpoint of seed 1904), the format story
-    (one INCLUDE item in each format, the reformulation figure's table) and the
+    (one INCLUDE and one Belebele item as published, RF and LLM-RF; the paper's
+    Figure 7 table) and the
     benchmark floors of the public models."""
     g = paths.GATE_AND_CURVES / PRED
     share = pd.read_csv(g / "above_random_share.csv")
@@ -306,19 +307,42 @@ def gate() -> dict:
 
     first = pd.read_csv(g / "first_size_above_random_paper.csv")
     langs = list(dict.fromkeys(first["language"]))          # the paper's order: English, then scheme A's resource order
-    order = list(first.assign(ok=first["level"].ne("never")).groupby("benchmark")["ok"].sum()
-                 .sort_values(ascending=False, kind="stable").index)
+    # 3B (Figure 5): a cell never above chance up to 1.7B is above from 3B where at least half its tasks pass on the
+    # six configurations trained to 3B, tasks pooled per (benchmark, language) as gate_panels does
+    from analysis.grids import smallest_safe
+    from analysis.rq00_gate_and_curves.above_random import MIN_SHARE
+    from analysis.utils import FAMILY_MERGE
+    at3 = (pd.read_csv(paths.SIZE_GENERALISATION / PRED / "gate_crossover_per_task.csv")
+           .groupby(["benchmark", "language"])["above_3B"].mean().ge(MIN_SHARE))
+    first["level"] = [("3B" if at3.get((b, l), False) else lv) if lv == "never" else lv
+                      for b, l, lv in first[["benchmark", "language", "level"]].values]
+    # the screened benchmarks (Figure 5's *), read at 600M, 1B and 1.7B (3B where passes_3B has a verdict); their
+    # tasks of an analysed benchmark stay out, its cells are the analysed ones
+    scr = pd.read_csv(g / "gate_screened_verdicts_all_considered.csv")
+    scr = scr[~scr["family"].isin(first["benchmark"]) & scr["language"].isin(langs)]
+    scr = scr.assign(benchmark=scr["family"].map(lambda f: FAMILY_MERGE.get(f, f)))
+    probe = ["600M", "1B", "1.7B"]
+    ok = scr.groupby(["benchmark", "language"])[[f"above_{s}" for s in probe] + ["passes_3B"]].mean().ge(MIN_SHARE)
+    lv = smallest_safe(ok[[f"above_{s}" for s in probe]].astype(float))
+    screened = pd.DataFrame({"level": [probe[int(i)] if i >= 0 else "3B" if ok.loc[k, "passes_3B"] else "never"
+                                       for k, i in lv.items()]}, index=ok.index).reset_index()
+    first = pd.concat([first, screened], ignore_index=True)
+    order = list(first.assign(ok=~first["level"].isin(["never", "3B"])).groupby("benchmark")["ok"].sum()
+                 .sort_values(ascending=False, kind="stable").index)    # the paper's order (screened ones by the same rule)
 
     tok = _tokens_dir()
     by_b = pd.read_csv(tok / "pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_points.csv")
     every = pd.read_csv(tok / "pass_prob_vs_train_tokens_all_1904_ckpts.csv").assign(benchmark="all")
     pts = pd.concat([by_b, every])[["benchmark", "model_size", "share_above", "n_cells", "tokens", "bin_lo", "bin_hi"]]
 
+    # one item of a letter-format benchmark as published, RF and LLM-RF (the same item in all three)
     tj = json.loads((REPO / "configs/tasks.json").read_text())["tasks"]
-    fmt = {k: dict(tj[t]["example"], task=t, language=tj[t]["language"])
-           for k, t in [("og", "include_v2_og_greek_greece"), ("en", "include_v2_en_greek_greece"),
-                        ("letter", "include_base_44_greek"), ("rf", "rf_include_base_44_greek"),
-                        ("llm", "rfgm_include_base_44_greek")] if "example" in tj.get(t, {})}
+    fmt = []
+    for fam, lang in [("include_base_44", "greek"), ("belebele", "eng_Latn")]:
+        ts = dict(letter=f"{fam}_{lang}", rf=f"rf_{fam}_{lang}", llm=f"rfgm_{fam}_{lang}")
+        if all("example" in tj.get(t, {}) for t in ts.values()):
+            fmt.append(dict(name=_names([fam])[fam], language=tj[ts["letter"]]["language"],
+                            **{k: tj[t]["example"] for k, t in ts.items()}))
 
     rf = pd.read_csv(paths.GATE_AND_CURVES.parent / "rq00_task_reformulation/reformulations_gate_paper.csv")
 
@@ -335,11 +359,12 @@ def gate() -> dict:
     return dict(
         sizes=sizes, names=_names(keys),
         tasks=table(share[["task", "family", "language", "n_options", "random_baseline", *sizes]]),
-        first_size=dict(languages=langs, benchmarks=order, levels=sizes,
+        first_size=dict(languages=langs, benchmarks=order, levels=[*sizes, "3B"], screened=sorted(set(screened["benchmark"])),
                         cells=first[["benchmark", "language", "level"]].values.tolist()),
         pass_tokens=rows(pts),
-        format_example=fmt,
-        reformulation=rows(rf),
+        format_example=dict(items=fmt),
+        # p kept to two significant digits (rows() rounds to 4 decimals, which zeroes most of them)
+        reformulation=[dict(r, p_mcnemar=float(f"{p:.2g}")) if p == p else r for r, p in zip(rows(rf), rf["p_mcnemar"])],
         floors=dict(tasks=rows(floors), readers=readers))
 
 

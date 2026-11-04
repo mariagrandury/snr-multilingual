@@ -110,17 +110,35 @@
     });
   };
 
-  // ---------- 3. which English benchmarks scale, per English corpus ----------
+  // ---------- 3. which English benchmarks scale, per English corpus (the paper's Figure 11) ----------
+  // The regimes in the order and colours of the scaling-predictability figures (paper.js, paperRq1).
+  const REG_ORDER = ["declines with size", "predictable across both", "predictable across size only", "predictable during training only", "weak / unpredictable in both"];
+  const regColor = (r) => (r === "filtered" ? css("--viz-grid") : S.series(REG_ORDER.length)[REG_ORDER.indexOf(r)] ?? css("--viz-neutral"));
   const REGIMES = {
-    "predictable across both": ["scales", "scales with size and along training", "--viz-s1"],
-    "predictable across size only": ["size only", "scales with size, not along training", "--viz-s2"],
-    "predictable during training only": ["training only", "scales along training, not with size", "--viz-s3"],
-    "weak / unpredictable in both": ["no trend", "no clear trend either way", "--viz-s4"],
-    "declines with size": ["worse", "gets worse with size", "--viz-s5"],
-    filtered: ["at chance", "never leaves chance: above it at fewer than three sizes", "--viz-grid"],
+    "predictable across both": ["scales", "scales with size and along training"],
+    "predictable across size only": ["size only", "scales with size, not along training"],
+    "predictable during training only": ["training only", "scales along training, not with size"],
+    "weak / unpredictable in both": ["no trend", "no clear trend either way"],
+    "declines with size": ["worse", "gets worse with size"],
+    filtered: ["at chance", "does not pass the above-chance filter at enough sizes to fit"],
   };
   const CORPORA = ["DCLM-Edu", "DCLM", "FineWeb"];
-  const CORPUS_NOTE = { "DCLM-Edu": "DCLM, educational filter (the baseline)", DCLM: "DCLM without the filter", FineWeb: "FineWeb" };
+  const CORPUS_NOTE = { "DCLM-Edu": "DCLM-Edu, the default English data", DCLM: "DCLM without the educational filter", FineWeb: "FineWeb" };
+  const BOTH = "predictable across both";
+  const row = (...nodes) => h("div", { style: "display:flex;flex-wrap:wrap;gap:8px;justify-content:center" }, ...nodes);
+
+  // A seg control choosing between modes, each drawn the first time it is shown.
+  const modes = (el, label, options) => {
+    const boxes = options.map(() => h("div"));
+    const started = new Set();
+    const seg = S.control({ type: "seg", label, options: options.map((o, i) => ({ value: i, label: o.label })) }, (i) => show(i));
+    const show = (i) => {
+      boxes.forEach((b, j) => { b.hidden = i !== j; });
+      if (!started.has(i)) { started.add(i); options[i].draw(boxes[i]); }
+    };
+    el.replaceChildren(h("div", { class: "viz-controls" }, seg), ...boxes);
+    show(0);
+  };
 
   S.VIEWS.englishRegimes = async (el) => {
     const d = await loadOr(el, "english_only_regimes");
@@ -128,53 +146,96 @@
     const tasks = uniq(d.rows.map((r) => r.task));
     const cell = Object.fromEntries(d.rows.map((r) => [`${r.task}|${r.corpus}`, r]));
     const meta = Object.fromEntries(d.rows.map((r) => [r.task, r]));
-    const nBoth = (t) => CORPORA.filter((c) => cell[`${t}|${c}`]?.regime === "predictable across both").length;
+    const nBoth = (t) => CORPORA.filter((c) => cell[`${t}|${c}`]?.regime === BOTH).length;
     const nFilt = (t) => CORPORA.filter((c) => cell[`${t}|${c}`]?.regime === "filtered").length;
-    const sorted = [...tasks].sort((a, b) => meta[b].popular - meta[a].popular || (nFilt(a) === 3) - (nFilt(b) === 3)
-      || nBoth(b) - nBoth(a) || meta[a].name.localeCompare(meta[b].name));
-    let selected = "hellaswag";
-    const { render } = S.mount(el, [
-      { key: "show", label: "Show", type: "seg", options: [{ value: "popular", label: "widely used benchmarks" }, { value: "fitted", label: "every task above chance" }, { value: "all", label: "every English task" }] },
-      { key: "q", label: "Find a benchmark", type: "text" },
-    ], (s) => {
-      const q = (s.q ?? "").trim().toLowerCase();
-      const keep = sorted.filter((t) => (s.show === "all" || (s.show === "popular" ? meta[t].popular : nFilt(t) < 3))
-        && (!q || `${meta[t].name} ${t}`.toLowerCase().includes(q)));
-      const fitted = (c) => d.rows.filter((r) => r.corpus === c && r.regime !== "filtered");
-      const share = (c) => fitted(c).filter((r) => r.regime === "predictable across both").length / fitted(c).length;
-      const pop = tasks.filter((t) => meta[t].popular);
-      const popAll = pop.filter((t) => nBoth(t) === 3);
-      const popChance = pop.filter((t) => nFilt(t) === 3);
-      const twins = (c) => d.summary.find((r) => r.corpus === c)?.["predictable across both"];
-      const chip = (r) => {
-        const [word, long, col] = REGIMES[r?.regime] ?? ["–", "no value", "--viz-neutral"];
-        const tip = r && r.regime !== "filtered" ? `${long}\nR² across size ${fmt(r.r2_size)} · along training ${fmt(r.r2_trajectory)} · ρ with size ${fmt(r.rho_size)}` : long;
-        return h("td", { title: tip, style: "white-space:nowrap" },
-          h("i", { style: `display:inline-block;width:.8em;height:.8em;border-radius:3px;margin-right:.4em;vertical-align:-1px;background:${css(col)}` }), word);
-      };
-      const rows = keep.map((t) => h("tr", {
-        style: `cursor:pointer;${t === selected ? "outline:2px solid var(--viz-s1);outline-offset:-2px" : ""}`,
-        onclick: () => { selected = t; render(); },
-      }, h("td", {}, meta[t].popular ? h("b", {}, `★ ${meta[t].name}`) : meta[t].name,
-        h("span", { class: "viz-muted" }, meta[t].format === "original" ? "" : ` · ${meta[t].format === "rf" ? "reformulated" : "LLM-reformulated"}`)),
-      ...CORPORA.map((c) => chip(cell[`${t}|${c}`]))));
-      const table = h("div", { class: "viz-scroll", style: s.show === "popular" ? "max-height:none" : null },
-        h("table", { class: "viz-table" },
-          h("thead", {}, h("tr", {}, h("th", {}, "benchmark (click a row for its curves)"), ...CORPORA.map((c) => h("th", { title: CORPUS_NOTE[c] }, c)))),
-          h("tbody", {}, rows)));
-      return [
-        tiles([[CORPORA.map((c) => pct(share(c))).join(" / "), `of the ${CORPORA.map((c) => fitted(c).length).join(" / ")} tasks above chance scale with size and training (${CORPORA.join(" / ")})`],
-          [`${popAll.length} of ${pop.length}`, "widely used benchmarks scale in all three corpora"],
-          [popChance.length, `widely used benchmarks never leave chance in any corpus (${popChance.map((t) => meta[t].name).join(", ")})`]]),
-        h("div", { class: "ladder-legend" }, Object.values(REGIMES).map(([word, long, col]) => h("span", { title: long },
-          h("i", { style: `display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:.35em;vertical-align:-2px;background:${css(col)}` }), `${word}: ${long}`))),
-        keep.length ? table : h("div", { class: "viz-empty" }, "No English benchmark matches."),
-        curves(selected),
-        note(`With the bBPB twins counted (${CORPORA.map((c) => d.summary.find((r) => r.corpus === c)?.n_tasks).join(" / ")} tasks) the corpora differ: ${CORPORA.map((c) => `${c} ${pct(twins(c))}`).join(", ")} scale with size and training. On the accuracy tasks all three corpora share, they tie.`),
-      ];
-    });
-    const input = el.querySelector("input[type=text]");
-    if (input) input.placeholder = "mmlu, piqa, arc…";
+    const fitted = (c) => d.rows.filter((r) => r.corpus === c && r.regime !== "filtered");
+    const pop = tasks.filter((t) => meta[t].popular);
+    const popAbove = pop.filter((t) => nFilt(t) < 3);
+    const popAll = pop.filter((t) => nBoth(t) === 3);
+    const popNot = popAbove.filter((t) => nBoth(t) < 3);
+    const allThree = tasks.filter((t) => nBoth(t) === 3);
+    const nFit = uniq(d.rows.filter((r) => r.regime !== "filtered").map((r) => r.task)).length;
+    const summary = () => tiles([
+      [`${allThree.length} of ${nFit}`, "English accuracy tasks predictable across both size and training in all three corpora"],
+      [CORPORA.map((c) => fitted(c).filter((r) => r.regime === BOTH).length).join(" / "),
+        `of the ${nFit} tasks with a fit predictable across both size and training on ${CORPORA.join(" / ")}, each corpus on its own`],
+      [`${popAll.length} of ${popAbove.length}`, `commonly used tasks above chance that do so in all three${popNot.length ? ` (all but ${popNot.map((t) => meta[t].name).join(", ")})` : ""}`],
+    ]);
+
+    // the paper's view: R² of the model-size fit against the median R² of the training fits, one panel per corpus
+    const scatter = (box) => {
+      tipBg(box);
+      S.mount(box, [{ key: "q", label: "Find a task", type: "text" }], (s) => {
+        const q = (s.q ?? "").trim().toLowerCase();
+        const pts = d.rows.filter((r) => r.regime !== "filtered");
+        const hit = (r) => q && `${r.name} ${r.task}`.toLowerCase().includes(q);
+        const shown = REG_ORDER.filter((g) => pts.some((r) => r.regime === g));
+        const lo = Math.min(0, d3.min(pts, (r) => r.r2_size), d3.min(pts, (r) => r.r2_trajectory));
+        const tip = (r) => `${r.name}${r.popular ? " (commonly used)" : ""}\n${r.corpus}: ${r.regime}\nmodel-size R² ${fmt(r.r2_size)}, ρ ${fmt(r.rho_size)} · training R² ${fmt(r.r2_trajectory)}`;
+        return [summary(),
+          row(plot({
+            width: 720, height: 300, marginLeft: 45, marginTop: 30,
+            fx: { domain: CORPORA, label: null, tickFormat: (c) => `${c} (${fitted(c).length} tasks)`, padding: 0.12 },
+            x: { domain: [lo, 1], label: "R² of the model-size scaling fit", grid: true, ticks: [0, 0.5, 1] },
+            y: { domain: [lo, 1], label: "Median R² across training-trajectory fits", grid: true },
+            color: { domain: shown, range: shown.map((g) => regColor(g)), legend: true, label: "Regime" },
+            marks: [
+              Plot.ruleX([0.5], { stroke: css("--viz-muted"), strokeDasharray: "4 3" }),
+              Plot.ruleY([0.5], { stroke: css("--viz-muted"), strokeDasharray: "4 3" }),
+              Plot.dot(pts, { fx: "corpus", x: "r2_size", y: "r2_trajectory", fill: "regime", r: (r) => (hit(r) ? 5.5 : 3.2), fillOpacity: q ? 0.35 : 0.85,
+                stroke: (r) => (r.regime === "declines with size" ? css("--md-default-fg-color") : "none"), strokeWidth: 0.8 }),
+              Plot.dot(pts.filter(hit), { fx: "corpus", x: "r2_size", y: "r2_trajectory", fill: "regime", r: 5.5, stroke: css("--md-default-fg-color"), strokeWidth: 1.2 }),
+              Plot.text(pts.filter(hit), { fx: "corpus", x: "r2_size", y: "r2_trajectory", text: "name", dx: -9, textAnchor: "end", fontSize: 10, fill: css("--md-default-fg-color"), stroke: css("--viz-surface"), strokeWidth: 3, paintOrder: "stroke" }),
+              Plot.dot(pts, { fx: "corpus", x: "r2_size", y: "r2_trajectory", r: 7, fill: "transparent", tip: true, title: tip }),
+            ],
+          })),
+          note(`One dot per English accuracy task with a fit, for the monolingual English models (K = 1) trained on each corpus: the R² of the fit across model size against the median R² of the fits along training, coloured by regime (the ringed dots get worse with size). ${q ? "Hover" : "Type a name above to label its dots; hover"} a dot for its task. These single-cell fits are not comparable in level with the medians over K of the multilingual figure.`)];
+      });
+      const input = box.querySelector("input[type=text]");
+      if (input) input.placeholder = "hellaswag, mmlu, piqa…";
+    };
+
+    // the regime of every English task in each corpus, with its final accuracy per size
+    const tableView = (box) => {
+      tipBg(box);
+      const sorted = [...tasks].sort((a, b) => meta[b].popular - meta[a].popular || (nFilt(a) === 3) - (nFilt(b) === 3)
+        || nBoth(b) - nBoth(a) || meta[a].name.localeCompare(meta[b].name));
+      let selected = "hellaswag";
+      const { render } = S.mount(box, [
+        { key: "show", label: "Tasks", type: "seg", options: [{ value: "popular", label: `commonly used tasks (${pop.length})` },
+          { value: "fitted", label: `every task with a fit (${nFit})` }, { value: "all", label: `every English task (${tasks.length})` }] },
+        { key: "q", label: "Find a task", type: "text" },
+      ], (s) => {
+        const q = (s.q ?? "").trim().toLowerCase();
+        const keep = sorted.filter((t) => (s.show === "all" || (s.show === "popular" ? meta[t].popular : nFilt(t) < 3))
+          && (!q || `${meta[t].name} ${t}`.toLowerCase().includes(q)));
+        const chip = (r) => {
+          const [word, long] = REGIMES[r?.regime] ?? ["–", "no value"];
+          const tip = r && r.regime !== "filtered" ? `${long}\nmodel-size R² ${fmt(r.r2_size)} · training R² ${fmt(r.r2_trajectory)} · ρ with size ${fmt(r.rho_size)}` : long;
+          return h("td", { title: tip, style: "white-space:nowrap" },
+            h("i", { style: `display:inline-block;width:.8em;height:.8em;border-radius:3px;margin-right:.4em;vertical-align:-1px;background:${r ? regColor(r.regime) : css("--viz-neutral")}` }), word);
+        };
+        const rows = keep.map((t) => h("tr", {
+          style: `cursor:pointer;${t === selected ? "outline:2px solid var(--viz-s1);outline-offset:-2px" : ""}`,
+          onclick: () => { selected = t; render(); },
+        }, h("td", {}, meta[t].popular ? h("b", {}, `★ ${meta[t].name}`) : meta[t].name),
+        ...CORPORA.map((c) => chip(cell[`${t}|${c}`]))));
+        const table = h("div", { class: "viz-scroll", style: s.show === "popular" ? "max-height:none" : null },
+          h("table", { class: "viz-table" },
+            h("thead", {}, h("tr", {}, h("th", {}, "task (click one for its curves)"), ...CORPORA.map((c) => h("th", { title: CORPUS_NOTE[c] }, c)))),
+            h("tbody", {}, rows)));
+        return [
+          summary(),
+          h("div", { class: "ladder-legend" }, Object.entries(REGIMES).map(([k, [word, long]]) => h("span", { title: long },
+            h("i", { style: `display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:.35em;vertical-align:-2px;background:${regColor(k)}` }), `${word}: ${long}`))),
+          keep.length ? table : h("div", { class: "viz-empty" }, "No English task matches."),
+          curves(selected),
+          note(`★ marks the tasks commonly used in model development. A task has a fit when it passes the above-chance filter at enough model sizes; the same ${nFit} of the ${tasks.length} English tasks do in every corpus, the other ${tasks.length - nFit} stay at chance.`),
+        ];
+      });
+      const input = box.querySelector("input[type=text]");
+      if (input) input.placeholder = "mmlu, piqa, arc…";
+    };
 
     function curves(t) {
       const c = d.curves[t];
@@ -183,19 +244,24 @@
       const col = (i) => S.series(3)[i];
       const chance = d.chance[t];
       return h("div", { style: "margin-top:1em" },
-        h("p", { class: "viz-note" }, h("b", {}, meta[t].name), `: the final score of the English-only model of each corpus at each size. Hollow: at chance at that size (the fit leaves it out).`),
-        plot({
+        h("p", { class: "viz-note" }, h("b", {}, meta[t].name), ": the final accuracy of the English-only model (K = 1) of each corpus at each size. Hollow: at chance at that size (the fit leaves it out)."),
+        row(plot({
           height: 260, marginLeft: 55,
           x: { type: "point", domain: LADDER, label: "model size →", padding: 0.3 },
-          y: { label: "↑ score", grid: true, domain: d3.extent(pts.map((p) => p.y).concat(chance != null ? [chance] : [])), nice: true },
+          y: { label: "↑ accuracy", grid: true, domain: d3.extent(pts.map((p) => p.y).concat(chance != null ? [chance] : [])), nice: true },
           marks: [
-            chance != null ? Plot.ruleY([chance], { stroke: css("--viz-muted"), strokeDasharray: "4 3" }) : null,
+            chance != null ? Plot.ruleY([chance], { stroke: css("--viz-bad"), strokeDasharray: "2 3" }) : null,
             Plot.line(pts, { x: "size", y: "y", z: "corpus", stroke: (p) => col(p.i), strokeWidth: 2 }),
             Plot.dot(pts, { x: "size", y: "y", r: 4.5, stroke: (p) => col(p.i), strokeWidth: 1.5, fill: (p) => (p.above ? col(p.i) : css("--viz-surface")), tip: true,
               title: (p) => `${p.corpus} · ${p.size}: ${fmt(p.y, 3)}${p.above ? "" : " (at chance)"}` }),
           ].filter(Boolean),
-        }),
+        })),
         legend(CORPORA.map((corpus, i) => [col(i), CORPUS_NOTE[corpus]])));
     }
+
+    modes(el, "Show", [
+      { label: "R² of the fits (paper)", draw: scatter },
+      { label: "regime per corpus, with the scores", draw: tableView },
+    ]);
   };
 })();

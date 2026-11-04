@@ -11,7 +11,8 @@ paragraph of paper §4.2).
              against 3B, summed the same way from above_reference_3B_per_task.csv
              (final checkpoint).
   gate       per benchmark, the tasks above chance at 1.7B and at 3B
-             (gate_crossover_by_benchmark.csv).
+             (gate_crossover_by_benchmark.csv), the extra families counted in
+             their main benchmark, with the paper's benchmark name (`name`).
   seeds      DA-size against each seed of the 1B reference, against 1.7B and
              against 3B at K = 30 (reference_choice_da_size_both_axes.csv).
 """
@@ -21,10 +22,12 @@ from pathlib import Path
 import pandas as pd
 
 REPO = Path(__file__).resolve().parents[2]
-for p in (REPO / "src/signal-and-noise", REPO):
+for p in (REPO / "src/signal-and-noise", REPO, REPO / "scripts"):
     if str(p) not in sys.path:
         sys.path.insert(0, str(p))
 from analysis import paths  # noqa: E402
+from analysis.grids import paper_name  # noqa: E402
+from build_site_data import merge_extra  # noqa: E402
 
 PRED = paths.SIZE_GENERALISATION / "pretraining/predictivity"
 
@@ -60,8 +63,18 @@ def reference() -> list[dict]:
     return _rows(df.assign(da=df["n_matching"] / df["n_pairs"]))
 
 
+def gate() -> list[dict]:
+    g = pd.read_csv(PRED / "gate_crossover_by_benchmark.csv")
+    g = g.assign(benchmark=merge_extra(g["benchmark"])).groupby("benchmark", as_index=False)[
+        ["n_tasks", "above_ref", "above", "gained", "lost"]].sum()
+    g = g.assign(name=g["benchmark"].map(paper_name), share_ref=g["above_ref"] / g["n_tasks"],
+                 share_above=g["above"] / g["n_tasks"])
+    g["delta"] = g["share_above"] - g["share_ref"]
+    return _rows(g.sort_values(["delta", "share_above", "benchmark"], ascending=[False, False, True]))
+
+
 def build() -> dict:
     return {"size_generalisation_extra": dict(
         reference=reference(),
-        gate=_rows(pd.read_csv(PRED / "gate_crossover_by_benchmark.csv")),
+        gate=gate(),
         seeds=_rows(pd.read_csv(PRED / "reference_choice_da_size_both_axes.csv")))}

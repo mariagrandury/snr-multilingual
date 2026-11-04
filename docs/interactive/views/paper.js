@@ -8,7 +8,9 @@
     const r = S.sizeRamp();
     return d3.quantize(d3.interpolateRgb(r[0], r[r.length - 1]), SIZES.length);
   };
-  const row = (...nodes) => h("div", { style: "display:flex;flex-wrap:wrap;gap:8px;justify-content:center" }, ...nodes);
+  // a Plot figure holds its legend and its chart: centre both inside it, and the figure in the row
+const centred = (n) => (n?.tagName === "FIGURE" ? Object.assign(n.style, { display: "flex", flexDirection: "column", alignItems: "center" }) && n : n);
+  const row = (...nodes) => h("div", { style: "display:flex;flex-wrap:wrap;gap:8px;justify-content:center" }, ...nodes.map(centred));
 
   // ---------- site Figure 4 (paper Figure 1): above chance against the training tokens of the language ----------
   S.VIEWS.paperRq0 = async (el) => {
@@ -19,8 +21,8 @@
       const rows = d.rows.filter((r) => r.b === s.b && r.tokens > 0);
       const formats = ["Original", "RF", "LLM-RF"].filter((f) => rows.some((r) => r.f === f));
       return [row(...formats.map((f) => plot({
-        width: formats.length > 1 ? 360 : 560, height: 260, marginLeft: 45,
-        title: f === "Original" ? "Original format" : f,
+        width: 640, height: 300, marginLeft: 45,
+        title: { Original: "Original format", RF: "Reformulated", "LLM-RF": "LLM-Reformulated" }[f],
         x: { type: "log", label: "Training tokens of the language", grid: true },
         y: { domain: [0, 1], label: "Share above chance", grid: true, tickFormat: "%" },
         color: { domain: SIZES, range: sizeColor(), legend: f === formats[0], label: "Model size" },
@@ -38,10 +40,9 @@
     const panel = el.dataset.panel;   // "a" or "b", the panel of the paper's Figure 2
     const all = await load("paper_rq1");
     const regimes = uniq(all.map((r) => r.regime)).sort();
-    // the legend lists the regimes on screen; a regime keeps its colour when the filter changes
-    const colorOf = (d) => {
-      const shown = regimes.filter((g) => d.some((r) => r.regime === g));
-      return { domain: shown, range: shown.map((g) => series(regimes.length)[regimes.indexOf(g)]), legend: true, label: "Regime" };
+    // every regime in the legend, whatever the filter shows
+    const colorOf = () => {
+      return { domain: regimes, range: series(regimes.length), legend: true, label: "Regime" };
     };
     const PANELS = ["bpb", "hellaswag", "xnli", "multiblimp", "xwinograd", "xcopa"];   // the paper's panel (b)
     const name = (f) => all.find((r) => r.family === f).name;
@@ -50,11 +51,11 @@
     const ref = [Plot.ruleX([0.5], { stroke: css("--viz-muted"), strokeDasharray: "4 3" }), Plot.ruleY([0.5], { stroke: css("--viz-muted"), strokeDasharray: "4 3" })];
     const fams = uniq(all.map((r) => r.family)).sort((a, b) => name(a).localeCompare(name(b)));
     const mode = panel === "a"
-      ? { key: "mode", label: "Points", type: "seg", options: [{ value: "paper", label: "one dot per benchmark (paper)" }, { value: "all", label: "one dot per task" }] }
-      : { key: "mode", label: "Benchmarks", type: "seg", options: [{ value: "paper", label: "six benchmarks (paper)" }, { value: "all", label: "every benchmark" }] };
+      ? { key: "mode", label: "Points", type: "seg", value: "all", options: [{ value: "paper", label: "one dot per benchmark (paper)" }, { value: "all", label: "one dot per task" }] }
+      : { key: "mode", label: "Benchmarks", type: "seg", value: "all", options: [{ value: "paper", label: "highlighted examples (paper)" }, { value: "all", label: "every benchmark" }] };
     mount(el, [
       { key: "fam", label: "Highlight", string: true, options: [{ value: "all", label: "every benchmark" }, ...fams.map((f) => ({ value: f, label: name(f) }))] },
-      { key: "scores", label: "Tasks", type: "seg", options: [{ value: "paper", label: "accuracy and BPB (paper)" }, { value: "all", label: "also bBPB" }] },
+      { key: "scores", label: "Tasks", type: "seg", value: "all", options: [{ value: "paper", label: "accuracy and BPB (paper)" }, { value: "all", label: "also bBPB" }] },
       mode,
     ], (s) => {
       const d = s.scores === "paper" ? all.filter((r) => !r.family.startsWith("bbpb_")) : all;
@@ -84,7 +85,7 @@
           marks: [...ref, Plot.text(six, { x: "r2_size", y: "r2_train", text: "language", fill: "regime", fx: (r) => fx(r.family), fy: (r) => fy(r.family), tip: true, title: tip }),
             Plot.text(PANELS, { fx, fy, frameAnchor: "top-left", dx: 4, dy: 4, fontWeight: "bold", text: (f) => `${name(f)} (${d.filter((r) => r.family === f).length} tasks)` })] })
         : plot({ width: 520, height: 400, color, ...axes, y: trainY, marks: [...ref, ...dots(d, "r2_train")] });
-      return [row(chart), note(`${tasks}. ${s.mode === "paper" ? "The paper's six benchmarks, one label per task (its language)" : "One dot per task"}: the median R² of the fits across model size against the median R² of the fits along training. Hover a mark for its benchmark and language.`)];
+      return [row(chart), note(`${tasks}. ${s.mode === "paper" ? "The paper's highlighted examples, one label per task (its language)" : "One dot per task"}: the median R² of the fits across model size against the median R² of the fits along training. Hover a mark for its benchmark and language.`)];
     });
   };
 

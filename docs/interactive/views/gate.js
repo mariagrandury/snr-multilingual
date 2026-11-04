@@ -24,6 +24,7 @@
     return null;
   };
   const tok = (x) => (x >= 1e9 ? `${+(x / 1e9).toPrecision(2)} B` : x >= 1e6 ? `${+(x / 1e6).toPrecision(2)} M` : `${+(x / 1e3).toPrecision(2)} k`);
+  const row = (...nodes) => h("div", { style: "display:flex;flex-wrap:wrap;gap:8px;justify-content:center" }, ...nodes);
   const howTo = (text) => h("p", { class: "viz-note", style: "margin-top:0;font-style:italic" }, text);
 
   /* A control bar the caller fills, an output area, and a redraw hook. */
@@ -378,8 +379,13 @@
 
   // ---------- 9. the margin a task needs, by item count ----------
   S.VIEWS.gateMarginCalc = async (el) => {
-    const x = await S.load("gate_extra");
+    const x = await S.languages().then(() => S.load("gate_extra"));
     const tasks = x.margin.filter((t) => t.need != null).map((t) => ({ ...t, m: (t.need - t.chance) * 100, ok: t.first !== "never" }));
+    // App. D.1's four examples: the median item count and required margin of each benchmark's tasks
+    const quoted = ["global_piqa_nonparallel_cloze", "belebele", "hellaswag", "global_mmlu_full"].map((f) => {
+      const ts = tasks.filter((t) => t.family === f);
+      return ts.length && { family: f, n: d3.median(ts, (t) => t.n), m: d3.median(ts, (t) => t.m) };
+    }).filter(Boolean);
     // The bar before it is rounded to whole items: the accuracy p at which the bound over n items meets chance.
     const bar = (n, c) => {
       if (wilson(1, n) <= c) return null;
@@ -388,37 +394,42 @@
       return hi;
     };
     const grid = d3.range(1, 4.35, 0.02).map((v) => 10 ** v);
-    const st = { v: 2, opts: 4 };
-    const dom = ["above chance at 1.7B", "at chance at 1.7B"];
+    const st = { v: 2, opts: 2 };   // 100 items, two options: the non-parallel Global PIQA example of App. D.1
+    const dom = ["above chance at 1.7B", "not above chance at 1.7B"];
     frame(el, (render) => {
       const out = h("output", {}, Math.round(10 ** st.v));
       return [
-        h("label", {}, h("span", {}, "Items in the benchmark: ", out),
+        h("label", {}, h("span", {}, "Items in the task: ", out),
           h("input", { type: "range", min: 1, max: 4.3, step: 0.01, value: st.v,
             oninput: (e) => { st.v = +e.target.value; out.textContent = d3.format(",")(Math.round(10 ** st.v)); render(); } })),
-        S.control({ type: "seg", label: "Answer options", options: [2, 3, 4, 5], value: 4 }, (v) => { st.opts = v; render(); }),
+        S.control({ type: "seg", label: "Answer options", options: [2, 3, 4, 5], value: st.opts }, (v) => { st.opts = v; render(); }),
       ];
     }, () => {
       const n = Math.round(10 ** st.v), c = 1 / st.opts, nd = needed(n, c);
       const curve = grid.map((g) => { const b = bar(g, c); return b == null ? null : { n: g, m: (b - c) * 100 }; }).filter((d) => d && d.m <= 30);
       const read = nd == null
         ? `With ${n} items and ${st.opts} options (chance ${pct(c)}), not even a perfect score clears chance.`
-        : `With ${d3.format(",")(n)} items and ${st.opts} options, chance is ${fmt(100 * c, 1)} % and a run needs ${fmt(100 * nd, 1)} %: ${fmt(100 * (nd - c), 1)} points above chance.`;
-      return [h("p", { class: "viz-note", style: "font-size:0.85rem" }, h("b", {}, read)), plot({
+        : `With ${d3.format(",")(n)} items and ${st.opts} options, chance is ${fmt(100 * c, 1)} % and a model needs ${fmt(100 * nd, 1)} %: ${fmt(100 * (nd - c), 2)} points above chance.`;
+      return [h("p", { class: "viz-note", style: "font-size:0.85rem;text-align:center" }, h("b", {}, read)), row(plot({
         height: 340,
         x: { type: "log", domain: [10, 20000], label: "items in the task (log)", tickFormat: "~s", ticks: [10, 30, 100, 300, 1000, 3000, 10000] },
-        y: { label: "points above chance a run needs", grid: true, domain: [0, 30] },
-        color: { domain: dom, range: [css("--viz-s1"), css("--viz-muted")], legend: true, label: "trained tasks" },
+        y: { label: "required margin above chance (points)", grid: true, domain: [0, 30] },
+        color: { domain: dom, range: [css("--viz-s1"), css("--viz-muted")], legend: true, label: "language tasks" },
         marks: [
           Plot.dot(tasks.filter((t) => t.m <= 30), { x: "n", y: "m", fill: (t) => (t.ok ? dom[0] : dom[1]), r: 2.5, fillOpacity: 0.55, tip: true,
-            title: (t) => `${t.task} (${name(x.names, t.family)})\n${d3.format(",")(t.n)} items, chance ${fmt(t.chance, 3)}: a run needs ${fmt(t.need, 3)} (+${fmt(t.m, 1)} points)\n` +
+            title: (t) => `${name(x.names, t.family)} · ${S.langName(t.language)}\n${d3.format(",")(t.n)} items, chance ${fmt(t.chance, 3)}: a model needs ${fmt(t.need, 3)} (+${fmt(t.m, 2)} points)\n` +
               (t.ok ? `above chance from ${t.first} on` : "not above chance at 1.7B") }),
+          Plot.dot(quoted, { x: "n", y: "m", r: 4.5, fill: "none", stroke: css("--md-default-fg-color"), strokeWidth: 1.5 }),
+          // labels placed so that the four do not overlap: left of the two large benchmarks, stacked
+          ...quoted.map((q) => Plot.text([q], { x: "n", y: "m", fontWeight: 600, fill: css("--md-default-fg-color"),
+            textAnchor: q.n > 5000 ? "end" : q.n > 500 ? "middle" : "start", dx: q.n > 500 ? 0 : 7,
+            dy: q.n > 12000 ? -12 : q.n > 5000 ? -26 : q.n > 500 ? -14 : -10,
+            text: () => `${name(x.names, q.family)}: ${fmt(q.m, 2)}` })),
           Plot.line(curve, { x: "n", y: "m", stroke: css("--md-default-fg-color"), strokeWidth: 1.2, strokeDasharray: "4 2" }),
-          Plot.text(curve.filter((d) => Math.abs(d.n - 1000) / 1000 < 0.024).slice(0, 1), { x: "n", y: "m", text: () => `any task with ${st.opts} options`, dy: -12, textAnchor: "start", fill: css("--md-default-fg-color") }),
           nd == null ? null : Plot.ruleX([n], { stroke: css("--viz-s2"), strokeWidth: 1.5 }),
           nd == null ? null : Plot.dot([{ n, m: (nd - c) * 100 }], { x: "n", y: "m", r: 6, fill: css("--viz-s2"), stroke: css("--viz-surface"), strokeWidth: 2 }),
         ].filter(Boolean),
-      }), note(`Each dot is one of the ${d3.format(",")(tasks.length)} trained tasks with an item count: how far above chance a run must score for its 95 % lower bound to clear chance, given the task's item count. Dashed curve: the same bar for any task with the chosen number of options, before rounding to whole items. Drag the slider to read the bar for any item count; the orange point follows it.`)];
+      })), note(`Each dot is one of the ${d3.format(",")(tasks.length)} analysed language tasks: how far above chance a model's accuracy must be for its one-sided 95 % Wilson lower bound over the task's items to exceed chance. Circled: the median of the four benchmarks App. D.1 quotes (Global PIQA (non-parallel), Belebele, HellaSwag and Global-MMLU), at their median item count. Dashed curve: the same margin for any task with the chosen number of options, before rounding to whole items. Drag the slider to read the margin for any item count; the orange point follows it.`)];
     });
   };
 })();
