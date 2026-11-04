@@ -150,8 +150,7 @@ with the helpers `app.js` exposes there. Their data comes from
   to include READMEs from repo root
 - `docs/` — showcase pages, stub pages, `interactive/` (app.js, app.css, data/)
 - `scripts/build_site_data.py` — analysis tables → `docs/interactive/data/`
-- `requirements-docs.txt` — `mkdocs`, `mkdocs-material` (pinned to 9.7.7,
-  the last release before 9.8.0), `pymdown-extensions`
+- `requirements-docs.txt` — `mkdocs`, `mkdocs-material`, `pymdown-extensions`
 - `documents/package.json` — Slidev (pnpm)
 - `build.sh` — full build: mkdocs → `site/`, slidev → `site/slides/`
 - `netlify.toml` — runs `bash build.sh`, publishes `site/`, builds every
