@@ -106,3 +106,19 @@ Not done yet, for discussion:
      claims from their captions).
    - Figure 5 counts INCLUDE v2 (OG) in 36 languages, the site in 42; the
      site has no 3B or screened-benchmark data for its Figure 5-style bars.
+
+## 4. Pending website changes (asked on 2026-11-09)
+
+1. Center Table 1 on the Model ladder page. It is aligned to the left.
+2. One caption per figure. Each chart has its own note inside the box and a
+   second caption below it in the markdown. Merge them into a single caption
+   inside the figure that starts with "Figure N" and names the paper figure
+   when there is one.
+3. Move Figure 4 (the required margin above chance) into the "Formal
+   definition of the above-chance threshold" box on the Measurability page.
+4. Landing page: add the opening question of the slides ("People choose
+   expensive pretraining options from evaluations of small or partially
+   trained models. When does that practice make the same decision as the full
+   model in multilingual pretraining?") and `motivation.gif`
+   (`documents/public/motivation.gif`).
+5. Agreement page: update the colour palette of the bar plot.

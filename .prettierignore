@@ -1,3 +1,6 @@
 documents/slides.md
 # MkDocs pages: Prettier strips the indent of admonition bodies (!!! note) and tabs
 docs/**/*.md
+
+# Slidev decks: Prettier breaks the per-slide frontmatter (blank lines after ---)
+documents/slides_*.md

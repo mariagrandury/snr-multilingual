@@ -1,0 +1,49 @@
+<!doctype html>
+<!-- One interactive figure of the project site, for an <iframe> in the slides
+     (components/Interactive.vue): embed.html?viz=<view>[&panel=<panel>][&zoom=<0-1>].
+     The views and their data are the site's own (public/interactive is a link to
+     docs/interactive), so a figure here is the one on the Findings pages. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactive figure</title>
+<link rel="stylesheet" href="interactive/app.css">
+<style>
+  /* the Material variables the views read */
+  :root {
+    --md-default-fg-color: rgba(0, 0, 0, .87);
+    --md-default-fg-color--light: rgba(0, 0, 0, .54);
+    --md-default-fg-color--lighter: rgba(0, 0, 0, .32);
+    --md-default-fg-color--lightest: rgba(0, 0, 0, .07);
+    --md-default-bg-color: #fff;
+    --md-primary-fg-color: #1e3a5f;
+    --md-primary-bg-color: #fff;
+    --md-accent-fg-color: #2a78d6;
+  }
+  html, body { margin: 0; background: #fff; }
+  body { font: 14px/1.4 "Avenir Next", "Avenir", "Nunito Sans", sans-serif; color: var(--md-default-fg-color); padding: 4px 10px; }
+  .viz { margin: 0; }
+</style>
+</head>
+<body>
+<div id="fig" class="viz"></div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const el = document.getElementById("fig");
+  el.dataset.viz = q.get("viz") || "";
+  if (q.get("panel")) el.dataset.panel = q.get("panel");
+  if (q.get("zoom")) document.body.style.zoom = q.get("zoom");
+</script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6.17/dist/plot.umd.min.js"></script>
+<script src="interactive/app.js"></script>
+<script src="interactive/views/gate.js"></script>
+<script src="interactive/views/scaling.js"></script>
+<script src="interactive/views/english-only.js"></script>
+<script src="interactive/views/decision-accuracy.js"></script>
+<script src="interactive/views/language-transfer.js"></script>
+<script src="interactive/views/surrogates.js"></script>
+<script src="interactive/views/paper.js"></script>
+</body>
+</html>

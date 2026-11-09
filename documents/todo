@@ -1,0 +1,22 @@
+# Slides
+
+For EVERYTHING you write, you have to follow the writing guidelines from AGENTS.md, this includes the slides (also the titles and subtitles!), remove the "-" and ";" (you can use ":") and review the wording
+
+Include to start a slide with only:
+"""
+People use evaluations of cheaper, small/partially trained models to make expensive training decisions.
+
+When is that practice actually reliable
+in multilingual model development?
+"""
+(review, maybe improve it to really summarize the current version of the paper)
+
+# Website
+
+Table 1: center it, currently it's aligned to the left
+
+Figure captions: currently they are duplicated, there is a version that is part of the figure and another outside the figure. Merge them to have only one caption included in the figure that stars with "Figure N" and includes when relevant the corresponding paper figure.
+
+Figure 4: include it in the formal definition box.
+
+Landing page: include the main question (the one above) and also the motivation.gif

@@ -5,7 +5,10 @@
   "scripts": {
     "build": "slidev build",
     "dev": "slidev --open",
-    "export": "slidev export"
+    "export": "slidev export",
+    "dev:paper": "slidev slides_paper.md --open",
+    "build:paper": "slidev build slides_paper.md --out dist-paper",
+    "export:paper": "slidev export slides_paper.md"
   },
   "dependencies": {
     "@slidev/cli": "^52.13.0",

@@ -26,3 +26,15 @@
 .slidev-layout.section p {
   color: rgba(45, 55, 72, 0.75);
 }
+
+/* Tall figures (slides_paper.md): full width, scroll inside the slide. */
+.scroll-fig { height: 64vh; overflow-y: auto; border: 1px solid rgba(45, 55, 72, .1); border-radius: 6px; }
+.scroll-fig img { width: 100%; display: block; }
+
+/* Opening question (slides_paper.md). */
+.opening { max-width: 46rem; margin: 0 auto; text-align: center; font-size: 1.5rem; line-height: 1.5; color: #2d3748; }
+.opening strong { display: block; margin-top: 1.4rem; font-size: 1.9rem; line-height: 1.35; color: var(--slidev-theme-primary, #1e3a5f); }
+
+/* Definition and summary slides (slides_paper.md). */
+.definition, .summary { max-width: 52rem; margin: 1.5rem auto 0; padding: 1.2rem 1.6rem; border-left: 4px solid var(--slidev-theme-primary, #1e3a5f); background: rgba(30, 58, 95, .05); border-radius: 4px; font-size: 1.05rem; line-height: 1.55; }
+.summary p + p, .definition p + p { margin-top: .8rem; }
