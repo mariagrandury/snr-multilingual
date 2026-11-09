@@ -24,16 +24,10 @@ authors:
 
 ## Evaluating Decision Reliability in Multilingual LLM Pretraining
 
-*María Grandury, Angelika Romanou, Éléonore Hasler, Clara Meister, Antoine Bosselut*
+*María Grandury, Angelika Romanou, Éléonore Hasler,*
 
-EPFL NLP
+*Catherine TODO, Clara Meister, Antoine Bosselut*
 
-<!--
-How this deck is built. The figures are the paper's own files (documents/paper/figures, linked into public/paper), so they stay current.
-The order follows the paper: setup, then RQ1 measurability, RQ2 agreement and RQ3 anticipation. Each research question shows its main-text figure first and its appendix figures after it.
-A paper figure with an interactive version on the project site is followed by that version. public/embed.html draws the site's own view from docs/interactive, with the data of the Findings pages.
-The slides carry the figures. These notes carry the numbers.
--->
 
 ---
 layout: center
@@ -58,10 +52,10 @@ Our answer: it depends on the proxy size, the tokens seen per language, the item
 layout: agenda
 title: Outline
 items:
-  - "RQ1 measurability: when is a task above chance?"
-  - "RQ2 agreement: how small and early can a proxy be?"
-  - "RQ3 anticipation: can proxy statistics predict agreement?"
-  - Discussion and reviewer questions
+  - Experimental Setup
+  - "RQ1 Measurability: When is a task above chance?"
+  - "RQ2 Agreement: How small and early can a proxy be?"
+  - "RQ3 Anticipation: Can proxy statistics predict agreement?"
 ---
 
 <!--
@@ -69,20 +63,24 @@ The three questions follow the order in which a developer should ask them.
 First, is the score distinguishable from chance at my model size and token budget?
 Second, does the proxy rank the variants as the reference does?
 Third, can I tell in advance from the proxy runs alone?
+
+TEST
 -->
 
 ---
 layout: section
 ---
 
-# Setup
+# Experimental Setup
 
-218 models from 90M to 3B, trained on 1 to 50 languages along six design axes
+We pretrain 218 models from 90M to 3B,
+
+trained on 1 to 50 languages along six design axes.
 
 ---
 layout: figure
-title: Setup
-subtitle: The model ladder
+title: Experimental Setup
+subtitle: The Model Ladder
 ---
 
 ::figure::
@@ -101,7 +99,7 @@ layout: figure
 image: /tables/table01_notation-models.png
 fit: contain
 height: 40vh
-title: "Setup"
+title: "Experimental Setup"
 subtitle: "Table: notation for the model ladder"
 ---
 
@@ -114,7 +112,7 @@ layout: figure
 image: /tables/table02_ladder.png
 fit: contain
 height: 50vh
-title: "Setup"
+title: "Experimental Setup"
 subtitle: "Table: pretraining hyperparameters per ladder and model size"
 ---
 
@@ -127,7 +125,7 @@ layout: figure
 image: /tables/table03_training-grid.png
 fit: contain
 height: 40vh
-title: "Setup"
+title: "Experimental Setup"
 subtitle: "Table: the training grid, one row per data build and ladder"
 ---
 
@@ -137,20 +135,7 @@ A data build fixes the language-selection scheme M and the sampling temperature 
 
 ---
 layout: figure
-image: /tables/table04_grid-seeds.png
-fit: contain
-height: 30vh
-title: "Setup"
-subtitle: "Table: random seeds per cell of the deep scheme-A grid"
----
-
-<!--
-The replicate seeds are 64, 313 and 1904 at 175M and 600M, and 28, 1797 and 1904 at 1B. A seed changes both the initialization and the data order.
--->
-
----
-layout: figure
-title: Setup
+title: Experimental Setup
 subtitle: The data mixtures
 ---
 
@@ -166,7 +151,7 @@ The lists are nested: the K = 8 list is inside the K = 15 list, and so on up to 
 
 ---
 layout: figure
-title: "Setup"
+title: "Experimental Setup"
 subtitle: "Table: the training languages"
 ---
 
@@ -179,7 +164,7 @@ For each FineWeb-2 language: its script and family, the smallest K whose scheme-
 
 ---
 layout: figure
-title: Setup
+title: Experimental Setup
 subtitle: 52 benchmarks in 50 languages, scored at every tenth of training
 ---
 
@@ -193,22 +178,10 @@ Items come in three formats: letter, cloze and completion. We score them with ac
 Per-language BPB on a shared 100-language validation set is the loss-based reference signal.
 -->
 
----
-layout: figure
-image: /tables/table06_notation-evals.png
-fit: contain
-height: 30vh
-title: "Setup"
-subtitle: "Table: notation for the evaluation"
----
-
-<!--
-A benchmark b has a task b_ℓ per language ℓ. A task score Y is accuracy, bBPB or BPB. B is the evaluation suite.
--->
 
 ---
 layout: figure
-title: "Setup"
+title: "Experimental Setup"
 subtitle: "Table: every benchmark considered"
 ---
 
@@ -222,7 +195,7 @@ Langs is the number of languages the harness registers. Trained is how many of t
 
 ---
 layout: default
-title: Setup
+title: Experimental Setup
 subtitle: Decision accuracy (DA)
 ---
 
@@ -247,7 +220,7 @@ layout: figure
 image: /tables/table09_ra_defs.png
 fit: contain
 height: 30vh
-title: "Setup"
+title: "Experimental Setup"
 subtitle: "Table: the three ranking-agreement settings"
 ---
 
@@ -260,7 +233,7 @@ layout: figure
 image: /paper/app_rq02_agreement_correlation.png
 fit: contain
 height: 46vh
-title: Setup
+title: Experimental Setup
 subtitle: DA, Kendall's τ and Spearman's ρ measure nearly the same ranking agreement
 ---
 
@@ -274,13 +247,13 @@ We therefore report DA throughout.
 layout: section
 ---
 
-# RQ1: measurability
+# RQ1: Measurability
 
 At which model size and per-language token count is a task above chance?
 
 ---
 layout: default
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: Definition of the above-chance threshold
 ---
 
@@ -305,7 +278,7 @@ BPB and bBPB have no chance level and are not filtered.
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: "The above-chance threshold: the one-sided 95% Wilson bound must exceed 1/m"
 ---
 
@@ -321,7 +294,7 @@ BPB and bBPB have no chance level, so the threshold does not apply to them.
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: Letter-format benchmarks pass only at 3B, cloze benchmarks from 90M
 ---
 
@@ -339,7 +312,7 @@ Scroll for the full list.
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: Interactive version, the smallest size above chance per benchmark and language
 ---
 
@@ -353,7 +326,7 @@ Orange marks a task that never passes. White marks a language without items.
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: Every benchmark in every trained language
 ---
 
@@ -370,7 +343,7 @@ layout: figure
 image: /paper/rq0.png
 fit: contain
 height: 50vh
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: "Figure 1: reformulation moves INCLUDE above chance"
 ---
 
@@ -383,7 +356,7 @@ Size matters as well. At 100M to 1B tokens, 43% of the 90M runs are above chance
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: Interactive version of Figure 1 for any benchmark
 ---
 
@@ -397,7 +370,7 @@ Good examples are HellaSwag, above chance almost everywhere, ARC (Okapi), which 
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: Outside English, every decade of tokens from 10⁷ on raises the share above chance
 ---
 
@@ -413,7 +386,7 @@ Pooled over every language, the curve dips in the top bins because those are mos
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: "Table: training tokens of the language each size needs before a benchmark is above chance"
 ---
 
@@ -427,7 +400,7 @@ The next slide is the interactive version.
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: "The guide: tokens of the language needed for 50% and 90% of the cells to pass"
 ---
 
@@ -460,7 +433,7 @@ The rewrite adds no length cue: the correct option is the single longest in 22.2
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: One INCLUDE item as letter, RF and LLM-RF
 ---
 
@@ -477,7 +450,7 @@ layout: figure
 image: /paper/app_rq00_chance_reformulation.png
 fit: contain
 height: 46vh
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: Dropping the letters moves whole benchmarks across the threshold
 ---
 
@@ -490,19 +463,10 @@ A star marks a size where the McNemar test on the paired verdicts gives p < 0.05
 
 ---
 layout: figure
-title: "RQ1: measurability"
-subtitle: Interactive version, reformulation per benchmark and size
----
-
-::figure::
-<Interactive viz="reformulation" :zoom="0.85" />
-
----
-layout: figure
 image: /paper/rq1.png
 fit: contain
 height: 46vh
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: "Figure 2: benchmark scaling predictability"
 ---
 
@@ -516,7 +480,7 @@ So in our setting, comparing larger models earlier tells more than training smal
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: Interactive version of Figure 2a, one dot per benchmark
 ---
 
@@ -525,7 +489,7 @@ subtitle: Interactive version of Figure 2a, one dot per benchmark
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: Interactive version of Figure 2b, fits along size and along training
 ---
 
@@ -534,7 +498,7 @@ subtitle: Interactive version of Figure 2b, fits along size and along training
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: The reformulated versions rise with model size while the letter originals stay at chance
 ---
 
@@ -548,7 +512,7 @@ Belebele, Global-MMLU and INCLUDE stay on the red chance line while their RF and
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: Along training, the same split
 ---
 
@@ -562,7 +526,7 @@ The letter formats stay at chance for the whole run. Their reformulations increa
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: Interactive version, scaling curves per benchmark
 ---
 
@@ -571,7 +535,7 @@ subtitle: Interactive version, scaling curves per benchmark
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: On English-only models, the commonly used English benchmarks scale predictably
 ---
 
@@ -586,7 +550,7 @@ Global PIQA is the only popular benchmark above chance that does not scale predi
 
 ---
 layout: figure
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: Interactive version, English scaling regimes
 ---
 
@@ -595,7 +559,7 @@ subtitle: Interactive version, English scaling regimes
 
 ---
 layout: default
-title: "RQ1: measurability"
+title: "RQ1: Measurability"
 subtitle: Summary
 ---
 
@@ -618,7 +582,7 @@ The paper's Summary box for RQ1.
 layout: section
 ---
 
-# RQ2: agreement
+# RQ2: Agreement
 
 How small and how early can a proxy be while it keeps the reference decision?
 
@@ -627,7 +591,7 @@ layout: figure
 image: /paper/rq2.png
 fit: contain
 height: 40vh
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: "Figure 3: decision reliability across scale and training"
 ---
 
@@ -642,7 +606,7 @@ The Summary box reads 0.51 to 0.56 for accuracy at every proxy on all pairs, and
 
 ---
 layout: figure
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Interactive version of Figure 3a, scale agreement per design axis
 ---
 
@@ -651,7 +615,7 @@ subtitle: Interactive version of Figure 3a, scale agreement per design axis
 
 ---
 layout: figure
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Interactive version of Figure 3b, agreement within one model along training
 ---
 
@@ -660,7 +624,7 @@ subtitle: Interactive version of Figure 3b, agreement within one model along tra
 
 ---
 layout: figure
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Interactive version of Figure 3c, agreement with the target
 ---
 
@@ -672,7 +636,7 @@ layout: figure
 image: /paper/da_sensitivity.png
 fit: contain
 height: 43vh
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Near-tied reference scores raise DA but leave the trends unchanged
 ---
 
@@ -686,7 +650,7 @@ layout: figure
 image: /tables/table10_da_tolerance.png
 fit: contain
 height: 36vh
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: "Table: sensitivity of DA to the reference-gap tolerance ε"
 ---
 
@@ -699,7 +663,7 @@ layout: figure
 image: /paper/da_categories.png
 fit: contain
 height: 43vh
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Larger and later proxies miss fewer of the effects that persist at the reference
 ---
 
@@ -714,7 +678,7 @@ layout: figure
 image: /paper/app_rq02_bbpb.png
 fit: contain
 height: 46vh
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Figure 3 split by scoring, accuracy on top and bBPB below
 ---
 
@@ -729,7 +693,7 @@ layout: figure
 image: /paper/app_rq02_bbpb_acc_gate.png
 fit: contain
 height: 40vh
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Where accuracy is at chance, bBPB still ranks the variants, and BPB ranks them best
 ---
 
@@ -741,7 +705,7 @@ Against the 1.7B accuracy, the proxy's bBPB agrees more often than its accuracy 
 
 ---
 layout: figure
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Interactive version, accuracy, bBPB and BPB on the same pairs
 ---
 
@@ -753,7 +717,7 @@ layout: figure
 image: /paper/app_rq02_da_goal_multi_axes_bpb.png
 fit: contain
 height: 40vh
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: On per-language BPB, the 600M rung is the outlier, not the smallest proxy
 ---
 
@@ -766,7 +730,7 @@ The tokens seen do not set the level, and more training does not close the 600M 
 
 ---
 layout: figure
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Agreement per benchmark and language on the reliable tasks
 ---
 
@@ -783,7 +747,7 @@ layout: figure
 image: /paper/app_rq02_decisive_pairs.png
 fit: contain
 height: 40vh
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: On the pairs the reference separates beyond seed noise, DA rises
 ---
 
@@ -796,7 +760,7 @@ Seed noise in the reference explains part of the disagreement.
 
 ---
 layout: figure
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Interactive version, decisive pairs at one or two seed standard deviations
 ---
 
@@ -808,7 +772,7 @@ layout: figure
 image: /paper/app_rq10_size_generalisation.png
 fit: contain
 height: 40vh
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: A 3B reference measures more tasks but decides no differently
 ---
 
@@ -824,7 +788,7 @@ layout: figure
 image: /paper/rq2_3b_compare.png
 fit: contain
 height: 46vh
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Figure 3 against the 3B reference on top and the 1.7B reference below
 ---
 
@@ -839,7 +803,7 @@ layout: figure
 image: /paper/app_rq11_evaluation_recipe.png
 fit: contain
 height: 43vh
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Which way of evaluating a benchmark recovers the reference decision?
 ---
 
@@ -851,7 +815,7 @@ Against the same truth, the 1.7B accuracy, bBPB is the better pick for 20 of the
 
 ---
 layout: figure
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: The best way to evaluate each benchmark, per proxy size
 ---
 
@@ -868,7 +832,7 @@ layout: figure
 image: /paper/app_rq06_language_transfer.png
 fit: contain
 height: 40vh
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: The language-list decision does not transfer to untrained languages
 ---
 
@@ -879,7 +843,7 @@ At the proxy sizes, only the trained languages recover the decision.
 
 ---
 layout: figure
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Languages trained together predict each other, English does not
 ---
 
@@ -894,7 +858,7 @@ English ranks the other languages at 0.45, so English is a poor proxy for multil
 
 ---
 layout: figure
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Interactive version, which language predicts which
 ---
 
@@ -903,7 +867,7 @@ subtitle: Interactive version, which language predicts which
 
 ---
 layout: figure
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Untrained relatives gain little
 ---
 
@@ -916,7 +880,7 @@ The K = 8 scheme-A run passes more untrained tasks of the same subfamily than th
 
 ---
 layout: default
-title: "RQ2: agreement"
+title: "RQ2: Agreement"
 subtitle: Summary
 ---
 
@@ -937,13 +901,13 @@ Within one model the ranking stabilises along training, but that does not carry 
 layout: section
 ---
 
-# RQ3: anticipation
+# RQ3: Anticipation
 
 Can statistics of the proxy runs alone predict decision accuracy?
 
 ---
 layout: figure
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: "Table: the 22 signal definitions"
 ---
 
@@ -956,7 +920,7 @@ The signal definitions of the code released with Heineman et al. (2025). The cov
 
 ---
 layout: figure
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: "Table: the catalogue of statistics computed from the proxy runs alone"
 ---
 
@@ -972,7 +936,7 @@ layout: figure
 image: /paper/rq3.png
 fit: contain
 height: 45vh
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: "Figure 4: how well each surrogate predicts DA at each proxy size"
 ---
 
@@ -988,7 +952,7 @@ The signal is already moderate at 90M and does not grow with size.
 
 ---
 layout: figure
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: Interactive version of Figure 4
 ---
 
@@ -997,7 +961,7 @@ subtitle: Interactive version of Figure 4
 
 ---
 layout: figure
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: Interactive version, the correlations within each benchmark
 ---
 
@@ -1011,7 +975,7 @@ How well DA can be predicted depends on the benchmark. The appendix gives the co
 
 ---
 layout: figure
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: "Table: correlation of each catalogue statistic with DA"
 ---
 
@@ -1024,7 +988,7 @@ Spearman ρ over the benchmark tasks, one point per (benchmark, language) cluste
 
 ---
 layout: figure
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: "Table: the signal and noise grid"
 ---
 
@@ -1038,7 +1002,7 @@ The noise definition matters: with k-fold benchmark noise instead of checkpoint 
 
 ---
 layout: figure
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: "Table: correlation with DA-size within one stratum"
 ---
 
@@ -1054,7 +1018,7 @@ layout: figure
 image: /paper/app_snr_monolingual.png
 fit: contain
 height: 37vh
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: SNR predicts DA on English models and stops doing so as the models become multilingual
 ---
 
@@ -1069,7 +1033,7 @@ layout: figure
 image: /tables/table16_app_snr_monolingual.png
 fit: contain
 height: 44vh
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: "Table: SNR and DA-size of the OLMES benchmarks on English and multilingual models"
 ---
 
@@ -1079,7 +1043,7 @@ Per benchmark, the median over the proxy sizes of SNR and of DA-size, for DataDe
 
 ---
 layout: figure
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: The relative-spread SNR definitions track DA best, as a group
 ---
 
@@ -1094,7 +1058,7 @@ A seed holdout keeps the overall ranking.
 
 ---
 layout: figure
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: Interactive version, the 22 SNR definitions
 ---
 
@@ -1106,7 +1070,7 @@ layout: figure
 image: /paper/app_rq04_surrogates_by_scoring.png
 fit: contain
 height: 37vh
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: Figure 4 split by scoring into accuracy, bBPB and per-language BPB
 ---
 
@@ -1119,7 +1083,7 @@ This is what a surrogate cannot see. BPB scales almost perfectly (R² = 1.00), y
 
 ---
 layout: figure
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: Interactive version, the surrogates by scoring
 ---
 
@@ -1131,7 +1095,7 @@ layout: figure
 image: /paper/app_rq04_surrogates_mono_axis.png
 fit: contain
 height: 45vh
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: On single-axis pairs the correlations are weaker, and the relative-standard-deviation SNR leads at every size
 ---
 
@@ -1142,7 +1106,7 @@ The relative-standard-deviation SNR reaches ρ = 0.37 to 0.46, against 0.24 to 0
 
 ---
 layout: default
-title: "RQ3: anticipation"
+title: "RQ3: Anticipation"
 subtitle: Summary
 ---
 

@@ -2,6 +2,25 @@
 
 For EVERYTHING you write, you have to follow the writing guidelines from AGENTS.md, this includes the slides (also the titles and subtitles!), remove the "-" and ";" (you can use ":") and review the wording
 
+## Style
+
+Let's try a much more minimalist style:
+
+- Header and footer all white, no golden line separating the header from the main text.
+- Avenir font for all text.
+- Footer: only the page number (not even the total number of pages), same gray as the title
+
+section layout:
+
+- same as right now, just update the footer
+
+default or figure layout:
+
+- slide title: smaller font, all caps, gray (the gray from the landing page subtitle)
+- slide subtitle: normal font, capitalized, blue (the gray from the landing page title)
+
+## Motivation
+
 Include to start a slide with only:
 """
 People use evaluations of cheaper, small/partially trained models to make expensive training decisions.
@@ -10,6 +29,59 @@ When is that practice actually reliable
 in multilingual model development?
 """
 (review, maybe improve it to really summarize the current version of the paper)
+
+- Include one slide about SNR by AllenAI -> one figure and one sentence with key results
+
+---
+
+# Interactive figures
+
+Generate additional versions of the current one. Add each of them as a new slide after the current version A so I can review them. The chosen versions (and new figures) will also be added to the website, but first let's finish the slides.
+
+## Model ladder
+
+Model ladder B
+
+- instead of grouping the data build and schemes, have one list of buttons per intervention axis and the user can check which to add (by default all selected)
+
+Model ladder C
+
+- as B
+- x axis=K
+- y= size = (90M-1.7B, 3B) -> only two values, since all ladders are available for all sizes from 90M to 1.7B
+- in each cell (x,y): a vertical list of little squares (same size and colors as currently) and at the right of the little square the config (e.g. "A · T3 · deep")
+
+## Data mixtures
+
+Data mixtures B
+
+- remove the squares plot, keep only the barplot since it's smaller in height and might fit better in the slide
+
+## Benchmarks
+
+Generate a new interactive figure to see the benchmarks. Like a wenn diagram.
+
+- all benchmarks considered
+- analyzed/screened (2 columns)
+- task (the rows)
+- in each cell: one line per benchmark with the numbers next to it ("Trained"/"Lang")
+- when hovering over the benchmark: formats and low-res languages
+
+## Evals
+
+Create a grid with the formats and scoring options explained with the following example:
+
+Which is the capital of Spain?
+A. Paris
+B. Zurich
+C. Madrid
+D. Buenos Aires
+
+formats: expects "C", expects "Madrid"
+
+length-normalized accuracy, BPB, bBPB
+
+---
 
 # Website
 
