@@ -92,3 +92,21 @@ Figure captions: currently they are duplicated, there is a version that is part 
 Figure 4: include it in the formal definition box.
 
 Landing page: include the main question (the one above) and also the motivation.gif
+
+---
+
+---
+
+- website figure captions: no, i dont want any more markdown captions, only in-figure captions, i think it's weird to have both
+- format + scoring: add "continuation" which would be The capital of Spain is (add as a new version so I can compare, add to this other version also a more detalied explanation of the bBPB if possible, and the real score of a true and false options in each case)
+- model ladder versions B and C: add margin between the little squares like in A. And chnange the order between swiglu and xielu
+- model ladder C: instead of 90M to 1.7B in one line, write in the margin "90M\n175M\n...1.7B" (one size per line, one below the previous one)
+- benchmarks new figure: everything has to fit in one slide without scrolling, try other spatial dispositions. Also, INCLUDE is cultural knowledge
+- def of above chance threshold: add new slide without formal def, simpler def, and another with the example explained
+- above chance heatmap interactive: turn to put languages in the x axis (i'd like to fit it all in one slide)
+
+- rewrite all the subtitles or titles of "interactive versions of figures", do no write "interactive", write also the key finding of the figure since i will only keep or the static or the interactive version of each
+- in the current slide 38 scaling curves interactive, specify better "one task, with its fits" (specify fits wrt what). That figure has all the data from the figures of the two slides before right?
+- english only interactive: move the find bench next to the other button. In the r2 view, write on the right of the 3 plots the list of benchmarks that are orange (on top of the list the one with highest R2).
+- in the slides with the main-text agreement figures, make a version with the slides in 2-col format with the plot on the left and the key findings written in bullet points on the right
+- at the beginning of RQ3 add a slide with the main formal definitions fo the considered proxies
