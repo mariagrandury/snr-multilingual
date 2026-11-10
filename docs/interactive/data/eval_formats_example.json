@@ -1,0 +1,96 @@
+{
+ "model": "HuggingFaceTB/SmolLM2-135M",
+ "gold": 2,
+ "formats": {
+  "letter": {
+   "prompt": "Which is the capital of Spain?\nA. Paris\nB. Zurich\nC. Madrid\nD. Buenos Aires\nAnswer:",
+   "options": [
+    {
+     "option": " A",
+     "loglik": -1.641,
+     "per_byte": -0.82,
+     "bpb": 1.183
+    },
+    {
+     "option": " B",
+     "loglik": -1.641,
+     "per_byte": -0.82,
+     "bpb": 1.183
+    },
+    {
+     "option": " C",
+     "loglik": -1.391,
+     "per_byte": -0.695,
+     "bpb": 1.003
+    },
+    {
+     "option": " D",
+     "loglik": -1.703,
+     "per_byte": -0.852,
+     "bpb": 1.229
+    }
+   ],
+   "pick": 2
+  },
+  "cloze": {
+   "prompt": "Question: Which is the capital of Spain?\nAnswer:",
+   "options": [
+    {
+     "option": " Paris",
+     "loglik": -5.75,
+     "per_byte": -0.958,
+     "bpb": 1.383
+    },
+    {
+     "option": " Zurich",
+     "loglik": -12.688,
+     "per_byte": -1.812,
+     "bpb": 2.615
+    },
+    {
+     "option": " Madrid",
+     "loglik": -0.318,
+     "per_byte": -0.045,
+     "bpb": 0.066
+    },
+    {
+     "option": " Buenos Aires",
+     "loglik": -7.828,
+     "per_byte": -0.602,
+     "bpb": 0.869
+    }
+   ],
+   "pick": 2
+  },
+  "continuation": {
+   "prompt": "The capital of Spain is",
+   "options": [
+    {
+     "option": " Paris",
+     "loglik": -7.375,
+     "per_byte": -1.229,
+     "bpb": 1.773
+    },
+    {
+     "option": " Zurich",
+     "loglik": -12.375,
+     "per_byte": -1.768,
+     "bpb": 2.55
+    },
+    {
+     "option": " Madrid",
+     "loglik": -1.492,
+     "per_byte": -0.213,
+     "bpb": 0.308
+    },
+    {
+     "option": " Buenos Aires",
+     "loglik": -7.703,
+     "per_byte": -0.593,
+     "bpb": 0.855
+    }
+   ],
+   "pick": 2
+  }
+ }
+}

@@ -132,11 +132,14 @@
     const boxes = options.map(() => h("div"));
     const started = new Set();
     const seg = S.control({ type: "seg", label, options: options.map((o, i) => ({ value: i, label: o.label })) }, (i) => show(i));
+    // a mode's draw() may return controls for the top row, shown next to the mode buttons while it is active
+    const extra = options.map(() => h("span", { style: "display:contents" }));
     const show = (i) => {
       boxes.forEach((b, j) => { b.hidden = i !== j; });
-      if (!started.has(i)) { started.add(i); options[i].draw(boxes[i]); }
+      extra.forEach((x, j) => { x.style.display = i === j ? "contents" : "none"; });
+      if (!started.has(i)) { started.add(i); const c = options[i].draw(boxes[i]); if (c) extra[i].append(c); }
     };
-    el.replaceChildren(h("div", { class: "viz-controls" }, seg), ...boxes);
+    el.replaceChildren(h("div", { class: "viz-controls" }, seg, ...extra), ...boxes);
     show(0);
   };
 
@@ -172,9 +175,16 @@
         const shown = REG_ORDER.filter((g) => pts.some((r) => r.regime === g));
         const lo = Math.min(0, d3.min(pts, (r) => r.r2_size), d3.min(pts, (r) => r.r2_trajectory));
         const tip = (r) => `${r.name}${r.popular ? " (commonly used)" : ""}\n${r.corpus}: ${r.regime}\nmodel-size R² ${fmt(r.r2_size)}, ρ ${fmt(r.rho_size)} · training R² ${fmt(r.r2_trajectory)}`;
+        // the tasks predictable across both size and training (orange) in every corpus, highest model-size R² first
+        const both = tasks.filter((t) => nBoth(t) === 3)
+          .map((t) => ({ t, r2: d3.mean(CORPORA, (c) => cell[`${t}|${c}`].r2_size) })).sort((a, b) => b.r2 - a.r2);
+        const list = h("div", { style: "font-size:.66rem;line-height:1.45;min-width:9.5em;align-self:center" },
+          h("div", { style: `font-weight:600;color:${regColor(BOTH)};margin-bottom:2px` }, `Predictable across both in all three corpora (${both.length})`),
+          both.map(({ t, r2 }) => h("div", { style: "display:flex;justify-content:space-between;gap:6px" },
+            h("span", {}, meta[t].name), h("span", { style: "color:var(--md-default-fg-color--light)" }, fmt(r2)))));
         return [summary(),
-          row(plot({
-            width: 720, height: 300, marginLeft: 45, marginTop: 30,
+          h("div", { style: "display:flex;gap:10px;justify-content:center;align-items:center" }, plot({
+            width: Math.max(540, (box.clientWidth || 1000) - 200), height: 300, marginLeft: 45, marginTop: 30,
             fx: { domain: CORPORA, label: null, tickFormat: (c) => `${c} (${fitted(c).length} tasks)`, padding: 0.12 },
             x: { domain: [lo, 1], label: "R² of the model-size scaling fit", grid: true, ticks: [0, 0.5, 1] },
             y: { domain: [lo, 1], label: "Median R² across training-trajectory fits", grid: true },
@@ -188,11 +198,13 @@
               Plot.text(pts.filter(hit), { fx: "corpus", x: "r2_size", y: "r2_trajectory", text: "name", dx: -9, textAnchor: "end", fontSize: 10, fill: css("--md-default-fg-color"), stroke: css("--viz-surface"), strokeWidth: 3, paintOrder: "stroke" }),
               Plot.dot(pts, { fx: "corpus", x: "r2_size", y: "r2_trajectory", r: 7, fill: "transparent", tip: true, title: tip }),
             ],
-          })),
+          }), list),
           note(`One dot per English accuracy task with a fit, for the monolingual English models (K = 1) trained on each corpus: the R² of the fit across model size against the median R² of the fits along training, coloured by regime (the ringed dots get worse with size). ${q ? "Hover" : "Type a name above to label its dots; hover"} a dot for its task. These single-cell fits are not comparable in level with the medians over K of the multilingual figure.`)];
       });
       const input = box.querySelector("input[type=text]");
       if (input) input.placeholder = "hellaswag, mmlu, piqa…";
+      const bar = box.querySelector(":scope > .viz-controls");
+      if (bar) { bar.remove(); return h("span", { style: "display:contents" }, ...bar.childNodes); }
     };
 
     // the regime of every English task in each corpus, with its final accuracy per size

@@ -590,7 +590,7 @@
       return [
         tiles([[Object.keys(mix.shares).length, "languages"], [human(mix.ref_tokens), `training tokens of the ${mix.ref_size} reference run`],
           [`${fmt(100 * (mix.shares.eng_Latn ?? 0), 0)} %`, "English"], [`T = ${mix.T}`, "sampling temperature"]]),
-        h("div", { style: "margin-top:1em" }, treemap(rows)),
+        el.dataset.panel === "bars" ? null : h("div", { style: "margin-top:1em" }, treemap(rows)),   // data-panel="bars": the bar plot only
         bars(barRows, s.scale === "log"),
         legend(rows),
         note(`Area and bar height: each language's training tokens in a run of the ${mix.ref_size} reference model (${human(mix.ref_tokens)} tokens; every size uses the same shares, scaled to its own budget). English is fixed at ${fmt(100 * (mix.shares.eng_Latn ?? 0), 0)} %; the rest is split over the other languages as the data builder's plan splits it. ${s.english ? "" : "English is hidden, so the plots show the non-English half at its own scale. "}Hover a language for its details.`),
@@ -1350,6 +1350,20 @@
             tip: true, title: (r) => `${name(r.b)}: ${r.k} of ${n(r.b)} languages ${say(r)}` }))],
         })), note(`One bar per benchmark: the number of trained languages in which it is above chance, coloured by the smallest model size from which it passes (orange: no size up to 3B). The 3B models are the six deep configurations trained to 3B (scheme A at K ∈ {8, 15, 30, 50}, scheme B at K ∈ {8, 15}).${star}`)];
       }
+      if (el.dataset.panel === "languages-x") {
+        // languages on x and benchmarks on y, small cells, so the grid fits one slide
+        return [centred(plot({
+          width: 11 * fs.languages.length + 200, height: 9.5 * benches.length + 40,
+          marginLeft: 190, marginRight: 8, marginTop: 30, marginBottom: 4, padding: 0.08, style: { fontSize: "8px" },
+          x: { domain: fs.languages, label: null, tickSize: 0, axis: "top" },
+          y: { domain: benches, label: null, tickSize: 0, tickFormat: name },
+          color,
+          marks: [
+            Plot.cell(cells, { x: "l", y: "b", fill: "level", inset: 0.4, rx: 1 }),
+            Plot.tip(cells, Plot.pointer({ x: "l", y: "b", title: (c) => `${name(c.b)} · ${langName(c.l)} (${c.l})\n${say(c)}` })),
+          ],
+        })), note(`Each square is one benchmark (rows) in one language (columns). Its colour is the smallest model size from which every larger size passes the above-chance threshold there. Orange: no size up to 3B passes. White: no task of the benchmark in that language. Languages run from English, then from the most to the least resourced.${star}`)];
+      }
       return [centred(plot({
         width: 13 * benches.length + 50, height: 13 * fs.languages.length + 200,
         marginLeft: 34, marginRight: 8, marginTop: 4, marginBottom: 190, padding: 0.06,
@@ -1764,7 +1778,7 @@
   // the same helpers; boot() runs at DOMContentLoaded, after they have loaded.
   window.SNRSITE = { VIEWS, DATA, SIZES, PROXIES, LADDER, LS, ANON, REDRAW, css, series, dark, sizeRamp,
     diverging, fmt, pct, sizeNum, byKey, uniq, h, expand, load, plot, mount, control, note, tiles, table,
-    languages, langName, fwName };
+    languages, langName, fwName, BUILDS, buildOf, LADDERS, GRID_ROWS, gridRow, gridLabel, hoverTips };
 
   // ---------- one caption per figure ----------
   /* A figure's caption lives on its box, not in the page text:

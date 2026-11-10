@@ -80,9 +80,28 @@ const centred = (n) => (n?.tagName === "FIGURE" ? Object.assign(n.style, { displ
       const trainY = { domain: [0, 1], label: "Median R² across training fits", grid: true };
       const six = d.filter((r) => PANELS.includes(r.family));
       const fx = (f) => PANELS.indexOf(f) % 3, fy = (f) => Math.floor(PANELS.indexOf(f) / 3);
+      // as in the paper, a shaded area per benchmark: the ellipse two standard deviations wide around its tasks
+      const ellipse = (f) => {
+        const pts = six.filter((r) => r.family === f && r.r2_size != null && r.r2_train != null);
+        if (pts.length < 3) return [];
+        const mx = d3.mean(pts, (r) => r.r2_size), my = d3.mean(pts, (r) => r.r2_train);
+        const sxx = d3.mean(pts, (r) => (r.r2_size - mx) ** 2), syy = d3.mean(pts, (r) => (r.r2_train - my) ** 2);
+        const sxy = d3.mean(pts, (r) => (r.r2_size - mx) * (r.r2_train - my));
+        const tr = (sxx + syy) / 2, det = Math.sqrt(((sxx - syy) / 2) ** 2 + sxy ** 2);
+        const l1 = tr + det, l2 = Math.max(tr - det, 1e-6), th = Math.atan2(l1 - sxx, sxy || 1e-9);
+        return d3.range(0, 2 * Math.PI, Math.PI / 30).map((t) => {
+          const u = 2 * Math.sqrt(l1) * Math.cos(t), v = 2 * Math.sqrt(l2) * Math.sin(t);
+          return { f, x: mx + u * Math.cos(th) - v * Math.sin(th), y: my + u * Math.sin(th) + v * Math.cos(th) };
+        });
+      };
+      const shade = PANELS.flatMap(ellipse);
+      const shadeColor = (f) => series(PANELS.length)[PANELS.indexOf(f)];
       const chart = s.mode === "paper"
         ? plot({ width: 720, height: 420, color, ...axes, y: trainY, fx: { axis: null }, fy: { axis: null },
-          marks: [...ref, Plot.text(six, { x: "r2_size", y: "r2_train", text: "language", fill: "regime", fx: (r) => fx(r.family), fy: (r) => fy(r.family), tip: true, title: tip }),
+          marks: [...ref,
+            Plot.line(shade, { x: "x", y: "y", z: "f", fx: (r) => fx(r.f), fy: (r) => fy(r.f), curve: "linear-closed",
+              fill: (r) => shadeColor(r.f), fillOpacity: 0.18, stroke: (r) => shadeColor(r.f), strokeOpacity: 0.35, clip: true }),
+            Plot.text(six, { x: "r2_size", y: "r2_train", text: "language", fill: "regime", fx: (r) => fx(r.family), fy: (r) => fy(r.family), tip: true, title: tip }),
             Plot.text(PANELS, { fx, fy, frameAnchor: "top-left", dx: 4, dy: 4, fontWeight: "bold", text: (f) => `${name(f)} (${d.filter((r) => r.family === f).length} tasks)` })] })
         : plot({ width: 520, height: 400, color, ...axes, y: trainY, marks: [...ref, ...dots(d, "r2_train")] });
       return [row(chart), note(`${tasks}. ${s.mode === "paper" ? "The paper's highlighted examples, one label per task (its language)" : "One dot per task"}: the median R² of the fits across model size against the median R² of the fits along training. Hover a mark for its benchmark and language.`)];

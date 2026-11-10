@@ -107,7 +107,13 @@ the same caption in the box's `<noscript>` for readers without JavaScript.
 The markdown tables (Tables 1, 3, 4) keep a markdown caption with a
 `{ #table-N }` anchor. A new figure or table shifts the numbers after it:
 renumber the captions and the in-text references. The Access table and the
-Benchmarks Columns legend are not numbered. What is still open is in
+Benchmarks Columns legend are not numbered. `interactive/views/slides.js`
+holds the drafts made for the slides (`ladderAxes`, `benchmarksConsidered`
+from `scripts/site_data/benchmarks_considered.py`, `evalFormats`, whose
+`data-panel="detailed"` version reads the option scores that
+`scripts/eval_formats_example.py` computes with a small public model and
+needs torch, so the site build does not run it); no page uses them yet, and
+`mkdocs.yml` does not load the file. What is still open is in
 `plan/website.md`. The rest of this section describes the archived pages in
 `findings_all/`: a page there reads its RQ's main JSON plus the JSON of its additional
 views (`scripts/site_data/<page>.py`, often several files, e.g.

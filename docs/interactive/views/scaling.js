@@ -337,7 +337,7 @@
   S.VIEWS.scalingCurves = async (el) => {
     const show = modes(el, "Curves", [
       { label: "every run, mean over trained-language tasks (paper)", draw: paperCurves },
-      { label: "one task, with its fits", draw: taskCurves },
+      { label: "one task, with its log-linear fits against model size and training tokens", draw: taskCurves },
     ]);
     window.addEventListener(PICK, (e) => {
       let task = e.detail;
