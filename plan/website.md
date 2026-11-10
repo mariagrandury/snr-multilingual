@@ -2,60 +2,76 @@
 
 The site (`https://scaling-reliability.netlify.app`, footnote 2 of the
 submission) must help reviewers, and the LLM they may use, read the paper. It
-must never add a number, a name or a claim that the paper does not have. The
-review of 2026-10-18 compared the site with the submitted PDF. The fixes
-already made: the repo-docs pages are no longer built (`exclude_docs`), the
-Findings pages use the paper's subsection titles, numbered 1.x, 2.x and 3.x
-for the paper's Sections 4, 5 and 6, every figure and table has a site number
-and, where it has one, names its paper counterpart, every figure opens on the paper's view (other filters are buttons), "DA-target"
-replaces "DA-goal", paper Figures 2 and 3 are split into one site figure per
-panel, each under its subsection, the
-ladder page says how the benchmark counts relate, run names read `L<K>`, and
-the Benchmarks table has a Paper column (🔬 analysed, 🔍 screened, - not
-evaluated). This file lists what is still open. Figure and table numbers
-below are the paper's; "site Table 2" is the site's own number.
+must never add a number, a name or a claim that the paper does not have.
+Figure and table numbers below are the paper's; "site Figure 8" is the site's
+own number.
 
-## 1. The two guides
+## Done
 
-The paper's footnote 2 sends reviewers to "the per-benchmark guide". The site
-has two tables that answer "from how many tokens of a language is this
-benchmark usable?", and they use different rules, so they give different
-numbers for the same benchmark and size.
+- 2026-10-18: the repo-docs pages are no longer built (`exclude_docs`); the
+  Findings pages use the paper's subsection titles, numbered 1.x–3.x for its
+  Sections 4–6; every figure and table has a site number and, where it has
+  one, names its paper counterpart; every figure opens on the paper's view;
+  "DA-target" replaces "DA-goal"; paper Figures 2 and 3 are one site figure
+  per panel; the ladder page says how the benchmark counts relate; run names
+  read `L<K>`; the Benchmarks table has a Paper column.
+- 2026-11-02:
+  - The Recommender's look-up (site Table 5) is called a stricter, site-only
+    rule, with a link to site Table 2 (the paper's Table 7) as the paper's
+    guide. The Home card "A guide to evaluation configuration" points to site
+    Table 2. The Recommender's SNR column is named for the
+    relative-standard-deviation SNR it uses, and BPB's above-chance cell reads
+    "n/a".
+  - Home says the charts are interactive versions of the paper's figures.
+  - `mkdocs.yml` pins d3 7.9.0, Plot 0.6.17 and MathJax 3.2.2; every chart box
+    carries a `<noscript>` note (`mkdocs_hooks.on_post_page`).
+  - The Findings text is cut to the sentences that carry a result: whole
+    sentences removed, no wording changed.
+  - The appendix views are back on the Findings pages (site Figures 4–21,
+    site Table 4):
 
-| | Table 7 (site Table 2, Measurability page, `gateThresholdTable`) | Look-up table (Recommender, `lookup`) |
+| Site | View | Paper |
 |---|---|---|
-| In the paper | yes: Table 7, Appendix D.3 | no |
-| Unit | benchmark × answer format × model size, languages pooled | benchmark × language × model size |
-| Population | non-English (language, K, checkpoint) evaluations, seed 1904 | the same evaluations, per language |
-| Rule | a logistic fit of the share above chance against log tokens of the language; the threshold is the token count where the fit reaches 50 % (and 90 %) | a point is above chance when at least half of the benchmark's tasks in that language are; the threshold is the fewest tokens from which **every** later point stays above chance |
-| Output | two token counts per cell, `≤ X` / `> X` at the ends of the trained range | one token count per cell, `?` outside the trained range |
-| Behaviour | smooth, reads a share | strict: one later dip below chance removes the threshold |
+| Figure 4 | `gateMarginCalc` | App. D.1 margins (no figure) |
+| Figure 5 | `firstSize` | Figure 6 (buttons: Figure 5-style bars, original versions only, every considered benchmark; 3B from the six configurations trained to 3B) |
+| Figure 7 | `llmRewrite` | §4.2 / D.2 (no figure) |
+| Figure 8 | `reformulation` | Figure 7 |
+| Figure 11 | `scalingCurves` | Figures 9 and 10 |
+| Figure 12 | `englishRegimes` | Figure 11 |
+| Table 4 | static | Table 9 |
+| Figure 16 | `daChannels` | Figure 16 |
+| Figure 17 | `ltCross` | Figure 15 |
+| Figure 19 | `surrogatesVariants` | Figure 19 |
+| Figure 20 | `surrogatesBench` (new) | §6 "up to ρ = 0.93 for HellaSwag" |
+| Figure 21 | `surrogatesScoring` | Figure 20 (its "accuracy + bBPB" grid repeats site Figure 18) |
 
-So the look-up is stricter than Table 7 and per language. Both are correct
-for what they compute, but only Table 7 is the paper's guide.
+  Removed again on 2026-11-03: `sgReference`, `sgGate` (App. E.6) and
+  `daDecisive` (§5 Summary). Left out: `gateMajority`, `formatExample` (a
+  subset of `llmRewrite`), `bestVariant`, and the views of questions the paper
+  does not ask.
+- 2026-11-03: the Findings text is the paper's main text again, word for
+  word; a collapsed box gives the formal definition of the above-chance
+  threshold (App. D.1); site Figures 9 and 10 open on every task with bBPB.
 
-The Recommender's second table (`recommend`) adds a third ingredient that is
-not in Table 7: per task and size it marks "use" when the task is above
-chance (at least half of the runs) **and** its DA-size or DA-ckpt is at least
-0.66, the paper's heuristic of §5. Its `log₁₀ SNR` column does not say which
-of the paper's 22 SNR definitions it uses (it should be the
-relative-standard-deviation SNR of Figure 4), and it shows "100 % runs above
-chance" for BPB, which the paper exempts from the filter.
+## Proposal: site Figure 11 (accuracy curves, `scalingCurves`)
 
-Decision (2026-11-02): option 1 is done, a sentence under the Recommender's
-look-up (site Table 4) calls it a stricter, site-only rule and links site
-Table 2 (the paper's Table 7) as the paper's guide. Options 2 and 3 stay open:
+Not done yet, for discussion:
 
-1. Label the look-up as a stricter, site-only rule and link Table 7 as the
-   paper's guide (one sentence on the Recommender page).
-2. Point the Home card "A guide to evaluation configuration" at Table 7
-   (`findings/measurability/#table-2`) instead of the Recommender.
-3. Rename the `log₁₀ SNR` column to the SNR it uses, and show BPB's
-   above-chance cell as "n/a (no chance level)".
+1. Move it next to the reformulation figures (§1.2): its paper caption, "the
+   reformulated versions rise with model size while the letter-format
+   original benchmarks stay at chance up to 1.7B", is a §4.2 result, while
+   §1.3 is about fits.
+2. Show less by default: one line per K (the mean over ladders, builds and
+   seeds) instead of every run, so the legend is the five K values only;
+   "every run" becomes a button. Drop the "one task, with its fits" mode, or
+   keep it collapsed under the chart.
+3. Keep one of site Figure 3 (Model ladder score curves) and Figure 11: both
+   draw benchmark accuracy across sizes and training and both point to the
+   paper's Figures 9 and 10.
 
-## 2. Not yet done
+## Open
 
-0. **INCLUDE v2 links, after the review.** The benchmark card (Model ladder,
+1. **INCLUDE v2 links, after the review.** The benchmark card (Model ladder,
    site Figure 3) links INCLUDE v1 (`CohereForAI/include-base-44`) as the data
    source and no paper. Set the data source to
    `https://huggingface.co/datasets/epfl-nlp/include-2.0` and the paper to
@@ -65,72 +81,52 @@ Table 2 (the paper's Table 7) as the paper's guide. Options 2 and 3 stay open:
    `configs/tasks.json`, and `evaluation.json`. Not done during the review:
    the dataset org names the affiliation, which the anonymity guard of
    `mkdocs_hooks.py` blocks (the strict build fails).
-1. **Map the paper to the site on Home.** One line saying the charts are
-   interactive versions of the paper's figures, drawn from the same tables,
-   and a short map: contribution 1 → Model ladder, contribution 2 (the guide)
-   → Table 7, contribution 3 → Findings.
-2. **Text-only readers.** The charts are drawn in JavaScript from JSON, so a
-   page fetched by an LLM tool shows the captions only. Keep every key number
-   in the prose, and add a fallback image of the paper's figure (`<noscript>`
-   or an image under each chart).
-3. **Pin the chart libraries.** `mkdocs.yml` loads `d3@7`, `plot@0.6` and
-   `mathjax@3` from jsdelivr, which resolve to the newest release in that
-   range. A release during the review could break the charts. Pin exact
-   versions (d3 7.9.0, Plot 0.6.17, MathJax 3.2.2 are the current ones) or
-   copy the files into `docs/interactive/vendor/`.
+2. **Paper Figures 13, 14 and 18 have no data in the repo** (near-tie
+   tolerance curves, tie categories, DA-target of BPB against the tokens of
+   the language). Table 9 is typed in from the PDF.
+3. **Where the paper's text and the data behind its figures differ.** The
+   site's figures show the data; the site's text quotes the paper. A reader
+   who hovers can see both:
+   - §4.2 / D.2 at 1.7B: "from 5 to 86 of 105 languages for Belebele", "from 3
+     to 31 of 43 for INCLUDE", LLM-RF INCLUDE "32 of 43", McNemar
+     "p ≤ 5.8e-8". Figure 7's table (`reformulations_gate_paper.csv`, site
+     Figure 8) reads 4 → 85, 2 → 31, 31 of 43 and at most 2.98e-8; Global-MMLU
+     (1 → 35 of 37) matches.
+   - §4 "938 analysed benchmark–language tasks": the Figure 6 table (site
+     Figure 5) and the 38% / 34% shares are over 933.
+   - §5.2 "59–61% across all pairs": Figure 3a (site Figure 14) reads
+     0.60–0.64.
+   - §5 Summary "0.51–0.56" on accuracy: the data give 0.50–0.56. App. E.3
+     "0.58, 0.57, 0.58, 0.58, 0.58" on every pair: the decisive-pairs view (now off the site) read 0.57–0.59, because its table keeps only the tasks with a seed SD.
+   - App. F.4 accuracy rel-std SNR "0.33–0.40": the data give 0.326–0.395.
+     Figure 20's caption "on accuracy alone the relative-standard-deviation SNR
+     leads or ties" fails at 350M and 1B; Figure 19's caption says "ordered by
+     their DA-size correlation", the figure orders by the mean of DA-size and
+     DA-ckpt (site Figures 19 and 21 keep the figure's data and drop those
+     claims from their captions).
+   - Figure 5 counts INCLUDE v2 (OG) in 36 languages, the site in 42; the
+     site has no 3B or screened-benchmark data for its Figure 5-style bars.
 
-## 3. Figures to re-add to the Findings pages
+## 4. Website changes asked on 2026-11-09
 
-The PR12 deploy (before PR13) had one page per RQ; its views still exist in
-`docs/interactive/views/*.js` and the pages in `docs/findings_all/`. These
-views illustrate a claim of the paper or redraw an appendix figure, so they
-help a reviewer check the paper. Rules for each one:
+Done: Table 1 centred, one caption per figure (inside the box), Figure 4 in
+the formal definition box, the question and `motivation.gif` on the landing
+page. Still open: item 5. The new views drafted for the slides
+(`views/slides.js`: ladder versions B and C, mixtures without the treemap,
+every benchmark considered by task, formats and scorings on one item) go to
+the site once chosen.
 
-- the paper's names only (no `rf_include_base_44`, `blend_sample`, "RQ10",
-  "gate", "L", "DA-goal");
-- the paper's caption and figure number, and the default view exactly as the
-  paper's figure, other settings as buttons;
-- data regenerated from the tables behind the paper, then checked against
-  the PDF: PR12's surrogate grid read 0.57 at 90M and 0.40 for the 1B
-  dist_std SNR where Figure 20 reads 0.58 and 0.39, and its reformulation
-  bars counted Belebele 105, CulturalBench-easy 19 and BBH (MCQ) 17 tasks
-  where Figure 7 counts 94, 8 and 1.
 
-### Measurability (§4)
-
-| View | Paper | Why |
-|---|---|---|
-| `formatExample`, `llmRewrite` | §4.2 | One INCLUDE item as letter, RF and LLM-RF. The paper describes the reformulation but shows no example; reviewers will want to see one, and the Limitations mention a manual review of the rewrites. |
-| `firstSize` | Figures 6 and 5 | The smallest size above chance per benchmark and language, with the rewritten versions as a button. Backs "34 % of tasks never pass" and "letter formats stay at chance". |
-| `reformulation` (with the McNemar stars) | Figure 7 | Backs "from 5 to 86 of 105 languages for Belebele" and the other §4.2 counts. |
-| `gateMarginCalc` | §D.1, per-benchmark margin | Shows why small benchmarks need a larger margin (9.00 / 2.44 / 0.74 / 0.60 pp). |
-| `scalingCurves` | Figures 9 and 10 | The accuracy curves behind Figure 2, per benchmark. |
-| `englishRegimes` | Figure 11 | Backs "the same pattern holds for monolingual English models". |
-
-### Agreement (§5)
-
-| View | Paper | Why |
-|---|---|---|
-| `daDecisive` (was on the site, hidden 2026-11-02) | §5 Summary | The pairs the 1.7B reference separates by more than two seed SDs: 0.69–0.73 (benchmarks, pooled over pairs) and 0.74–0.94 (BPB, mean over languages, as App. E.3). Its default already matches the paper (2 seed SD, a button for 1 SD); review it with the other appendix views. |
-| `daChannels` | Figure 16 | Accuracy against bBPB against per-language BPB; backs §5.4 "BPB-based evaluations generally preserve rankings more reliably". |
-| near-ties sensitivity (no view yet) | Figure 13, Table 9 | Backs "accounting for near-tied scores increases DA without changing the main trends". |
-| `ltCross` | Figure 15 | HellaSwag cross-language DA; English predicts the others at 0.45, as in §E.5. |
-| `sgReference`, `sgGate` | Figure 21, §E.6 | The 3B reference (DA 0.51–0.52) and 612 → 778 tasks above chance (+27 %), as in §5.3 and §E.6. |
-
-### Anticipation (§6)
-
-| View | Paper | Why |
-|---|---|---|
-| `surrogatesScoring` | Figure 20 | Figure 4 split by scoring (accuracy, bBPB, BPB). |
-| `surrogatesVariants` | Figure 19 | The 22 SNR definitions; backs "performance depends strongly on how noise is defined". |
-| per-benchmark ρ | §6 | Backs "up to ρ = 0.93 for HellaSwag". |
-
-### Leave out
-
-These answer questions the paper does not ask and carry numbers it does not
-report, so they would add confusion: DataDecide (`external`), `subsets`,
-`benchmark-design`, `noise-snr`, `above-chance-items`, the design-effect
-views (`effect`, `interventions`, `ddLadder`, `early`, `ddClock`), BPB
-forecasting (`transferSummary`, `transfer`, `ltTree`), `recipe`, the
-public-model floors (`floors`, `gateFloorsLines`), `gateEarly`,
-`gateExclusion` and `gateMajority`.
+1. Center Table 1 on the Model ladder page. It is aligned to the left.
+2. One caption per figure. Each chart has its own note inside the box and a
+   second caption below it in the markdown. Merge them into a single caption
+   inside the figure that starts with "Figure N" and names the paper figure
+   when there is one.
+3. Move Figure 4 (the required margin above chance) into the "Formal
+   definition of the above-chance threshold" box on the Measurability page.
+4. Landing page: add the opening question of the slides ("People choose
+   expensive pretraining options from evaluations of small or partially
+   trained models. When does that practice make the same decision as the full
+   model in multilingual pretraining?") and `motivation.gif`
+   (`documents/public/motivation.gif`).
+5. Agreement page: update the colour palette of the bar plot.

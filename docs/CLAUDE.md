@@ -78,17 +78,42 @@ paper figure reads it from the div: `data-viz="paperRq1" data-panel="a"` (or
 `"b"`) for Figure 2a/2b, `data-viz="paperRq2" data-panel="size"` (`"ckpt"`,
 `"target"`) for Figure 3a/3b/3c, each panel under the subsection it
 illustrates. Figures are centered in their box (`row()` in `paper.js`).
+The Findings pages also carry views from the archived pages, rewritten to open
+on the paper's appendix figure (`firstSize` Fig. 6, `reformulation` Fig. 7,
+`llmRewrite`, `gateMarginCalc`, `scalingCurves` Figs. 9–10 from
+`scaling_paper/*.json`, `englishRegimes` Fig. 11; `daChannels` Fig. 16,
+`ltCross` Fig. 15; `surrogatesVariants`
+Fig. 19, `surrogatesBench`, `surrogatesScoring` Fig. 20), with the paper's
+names; Table 4 (near ties) is the paper's Table 9 typed in, as no table of the
+pipeline holds it. `mkdocs_hooks.on_post_page` puts a `<noscript>` note in
+every chart box for readers without JavaScript. The page text is the paper's
+main text, word for word; the formal definition of the above-chance threshold
+(App. D.1) sits in a collapsed box on the Measurability page.
 Every figure opens on the paper's view (its task filter, formats and panels)
-and offers the other settings as buttons. Headings keep the paper's subsection
+and offers the other settings as buttons, except the two panels of paper
+Figure 2 (site Figures 9 and 10), which open on every task with bBPB, one dot
+per task, every benchmark, the paper's view one click away. Headings keep the paper's subsection
 titles, numbered 1.x–3.x for its Sections 4–6 (the Findings landing page says
 so). Figures and tables are numbered in site order (Home, Model ladder,
-Findings 1–3, Recommender, Benchmarks: Table 1 notation … Table 6 catalogue,
-Figure 1 mixtures … Figure 10 surrogates), each caption carries an anchor
-(`{ #figure-N }` / `{ #table-N }`), and a caption ends with "This figure/table
-corresponds to … from the paper." only when it has a paper counterpart. A new
-figure or table shifts the numbers after it: renumber the captions and the
-in-text references. The Access table and the Benchmarks Columns legend are not
-numbered. What is still open is in
+Findings 1–3, Recommender, Benchmarks: Table 1 notation … Table 7 catalogue,
+Figure 1 mixtures … Figure 21 surrogates by scoring). A chart's caption is
+not page text: it lives on its box, `<div class="viz" data-viz=… id="figure-N"
+data-caption="Figure N: Title." data-text="…" data-paper="Figure 3a">`, and
+`caption()` in `app.js` draws it inside the box as the title, the text, the
+view's own description (its last paragraph note, which follows the buttons)
+and "This figure corresponds to … from the paper." when `data-paper` is set.
+So `data-text` holds only what the view does not say. `mkdocs_hooks.py` puts
+the same caption in the box's `<noscript>` for readers without JavaScript.
+The markdown tables (Tables 1, 3, 4) keep a markdown caption with a
+`{ #table-N }` anchor. A new figure or table shifts the numbers after it:
+renumber the captions and the in-text references. The Access table and the
+Benchmarks Columns legend are not numbered. `interactive/views/slides.js`
+holds the drafts made for the slides (`ladderAxes`, `benchmarksConsidered`
+from `scripts/site_data/benchmarks_considered.py`, `evalFormats`, whose
+`data-panel="detailed"` version reads the option scores that
+`scripts/eval_formats_example.py` computes with a small public model and
+needs torch, so the site build does not run it); no page uses them yet, and
+`mkdocs.yml` does not load the file. What is still open is in
 `plan/website.md`. The rest of this section describes the archived pages in
 `findings_all/`: a page there reads its RQ's main JSON plus the JSON of its additional
 views (`scripts/site_data/<page>.py`, often several files, e.g.

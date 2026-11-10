@@ -16,6 +16,34 @@ where $m_b$ is the number of answer choices; this test on one
 configuration's result is the *above-chance filter*. Since the bound depends
 on $n$, tasks with fewer items require a larger margin above chance.
 
+??? note "Formal definition of the above-chance threshold"
+    For each language task $b_\ell$ and model size $N$, we test whether the
+    observed accuracy is distinguishable from random guessing. For a task with
+    $m_b$ answer options, chance accuracy is $1/m_b$. Where the option count
+    varies across items, chance is the mean of $1/m$ over the items (0.2253 for
+    TruthfulQA MC1). For every model of size $N$, we take its final-checkpoint
+    accuracy $\hat p$ over the $n$ scored items of the task. We recover the
+    number of correct answers as $\mathrm{round}(\hat p n)$ and compute the
+    one-sided 95% Wilson lower confidence bound on the proportion,
+
+    $$\mathrm{LCB}_{95}(\hat p) = \frac{\hat p + \frac{z^2}{2n} - z\sqrt{\frac{\hat p(1-\hat p)}{n} + \frac{z^2}{4n^2}}}{1 + \frac{z^2}{n}}, \qquad z = 1.645.$$
+
+    The model is above chance when
+
+    $$\mathrm{LCB}_{95}(\hat p) > \frac{1}{m_b}.$$
+
+    We then aggregate these decisions over the models of the same size, i.e.,
+    over every ladder and every data build at seed 1904. A $(b_\ell, N)$ pair
+    passes the threshold if at least 50% of these models are above chance.
+    Only the models whose mixture trains the task's language are considered.
+    A scaling fit uses only the sizes where the task passes. A ranking against
+    the reference also requires the task to pass at the reference size.
+    Measurements without a meaningful chance baseline, such as BPB and bBPB,
+    are not filtered by this procedure.
+
+    <div class="viz" data-viz="gateMarginCalc" id="figure-4" data-caption="Figure 4: Required margin above chance."></div>
+
+
 This section examines, for each benchmark–language task, which training
 configurations score above chance. We say that a model-size passes the
 filter for a given benchmark–language task when at least half of the
@@ -44,6 +72,8 @@ smallest size (90M). This finding suggests that evaluation format affects
 measurability, which we explore below
 ([§1.2](#12-factors-influencing-chance-threshold)).
 
+<div class="viz" data-viz="firstSize" id="figure-5" data-caption="Figure 5: Language tasks that pass the above-chance threshold, per benchmark and model size." data-paper="Figure 6"></div>
+
 Model size is not the only factor that determines whether a configuration
 scores significantly above chance on a task. We also ask how many
 target-language tokens a model needs to have seen for it to pass the filter
@@ -60,11 +90,7 @@ scoring above chance after 100M–1B target-language tokens, compared with 62%
 at 1.7B. These findings suggest that both the number of target-language
 tokens and model size influence measurability ([Table 2](#table-2)).
 
-<div class="viz" data-viz="paperRq0"></div>
-
-***Figure 4:** Original and reformulated (RF) INCLUDE results across
-training. Pick any benchmark to see its plot. This figure corresponds to Figures 1 and 8 from the paper.*
-{ #figure-4 }
+<div class="viz" data-viz="paperRq0" id="figure-6" data-caption="Figure 6: Original and reformulated (RF) INCLUDE results across training." data-text="Pick any benchmark to see its plot." data-paper="Figures 1 and 8"></div>
 
 ## 1.2 Factors Influencing Chance Threshold
 
@@ -78,16 +104,20 @@ without changing the question or the options, and *model-based
 reformulation*, which uses `gemini-3.8-flash` to rewrite each question and
 options as declarative statements, without revealing the correct answer.
 
+<div class="viz" data-viz="llmRewrite" id="figure-7" data-caption="Figure 7: Task reformulation."></div>
+
 These reformulations substantially increase the number of languages for
 which training configurations pass the above-chance filter. At the 1.7B
 size, programmatic reformulation increases this number from 5 to 86 of 105
 languages for Belebele, from 1 to 35 of 37 for Global-MMLU, and from 3 to 31
-of 43 for INCLUDE. Figure 4 illustrates this effect for INCLUDE. In
+of 43 for INCLUDE. Figure 6 illustrates this effect for INCLUDE. In
 the original letter format, accuracy rarely exceeds chance, while in the
 reformulated version, the share of training configurations that pass the
 filter rises as training progresses. Model-based reformulation yields further
 improvements: on Belebele, every model size passes the filter in all trained
 languages.
+
+<div class="viz" data-viz="reformulation" id="figure-8" data-caption="Figure 8: Dropping the letters moves whole families across the threshold." data-paper="Figure 7"></div>
 
 ## 1.3 Benchmark Scaling Behavior
 
@@ -97,15 +127,9 @@ model size at the final checkpoint and against log training tokens across
 checkpoints, using $R^2$ to measure goodness of fit and Spearman's $\rho$ to
 measure monotonicity and direction.
 
-<div class="viz" data-viz="paperRq1" data-panel="a"></div>
+<div class="viz" data-viz="paperRq1" data-panel="a" id="figure-9" data-caption="Figure 9: Benchmark scaling predictability across model size." data-paper="Figure 2a"></div>
 
-***Figure 5: Benchmark scaling predictability across model size.** Median
-$R^2$ versus Spearman $\rho$ across model-size fits for each benchmark,
-showing scaling predictability and direction. This figure corresponds to
-Figure 2a from the paper.*
-{ #figure-5 }
-
-Figure 5 shows substantial variation in scaling predictability across
+Figure 9 shows substantial variation in scaling predictability across
 benchmarks. Across 431 tasks retained by the above-chance filter, the median
 $R^2$ of the model-size fits is 0.87, reaching 1.00 for the BPB across 50
 languages. For the letter-format benchmarks (Global-MMLU, INCLUDE and
@@ -116,24 +140,22 @@ across scales. For example, TruthfulQA has a median model size-fit $R^2$ of
 0.97 but $\rho=-0.75$, indicating a strong and consistent decrease in
 predictability with model size.
 
-<div class="viz" data-viz="paperRq1" data-panel="b"></div>
+<div class="viz" data-viz="paperRq1" data-panel="b" id="figure-10" data-caption="Figure 10: Benchmark scaling predictability across model size and training." data-paper="Figure 2b"></div>
 
-***Figure 6: Benchmark scaling predictability across model size and
-training.** Median $R^2$ across model-size and training-trajectory fits for
-selected benchmarks, with each point representing a benchmark–language task.
-This figure corresponds to Figure 2b from the paper.*
-{ #figure-6 }
-
-Figure 6 compares scaling predictability across model size and training
+Figure 10 compares scaling predictability across model size and training
 checkpoints. Among accuracy and BPB tasks with valid fits along both
 dimensions, 74% (311 tasks) achieve $R^2 \geq 0.5$ on both. Notably, no
 accuracy or BPB task exhibits predictable scaling across training
 checkpoints without also scaling predictably across model sizes, although
 the reverse is not always true. The same pattern holds for monolingual
-English models. We therefore recommend, within the scales we test, spending
+English models (Figure 12). We therefore recommend, within the scales we test, spending
 ablation compute on additional model sizes rather than on a longer run of
 one size: the model-size fits give a consistent trend on every task the
 training fits do, and on more.
+
+<div class="viz" data-viz="scalingCurves" id="figure-11" data-caption="Figure 11: The reformulated versions rise with model size while the letter-format original benchmarks stay at chance up to 1.7B." data-paper="Figures 9 and 10"></div>
+
+<div class="viz" data-viz="englishRegimes" id="figure-12" data-caption="Figure 12: The commonly used English benchmarks scale predictably." data-paper="Figure 11"></div>
 
 ### Above-chance thresholds
 
@@ -141,11 +163,7 @@ To make these results practically useful, Table 2 provides, per benchmark
 and answer format, the *above-chance thresholds*: the target-language token
 counts at which at least 50% and 90% of the evaluations pass the filter.
 
-<div class="viz" data-viz="gateThresholdTable"></div>
-
-***Table 2:** Training tokens of the language a model of each size needs
-before a benchmark is above chance. This table corresponds to Table 7 from the paper.*
-{ #table-2 }
+<div class="viz" data-viz="gateThresholdTable" id="table-2" data-caption="Table 2: Training tokens of the language a model of each size needs before a benchmark is above chance." data-paper="Table 7"></div>
 
 !!! success "Summary"
     A large share of the suite does not perform measurably on these

@@ -5,6 +5,20 @@ project. The deck lives in [slides.md](slides.md) and uses the
 [`slidev-theme-scholarly`](https://github.com/maxnatamo/slidev-theme-scholarly)
 theme. Deck-wide style overrides live in [style.css](style.css).
 
+A second deck, [slides_paper.md](slides_paper.md), presents the paper
+(`npm run dev:paper`). Its figures are the paper's (`public/paper` links to
+`paper/figures`), its tables are rendered by `make_slide_tables.py` into
+`public/tables/`, and its interactive slides embed the project site's views
+through `public/embed.html` (`public/interactive` links to
+`docs/interactive`; `components/Interactive.vue`). Its minimal style is the
+`html[data-deck="paper"]` block of `style.css`, set by `htmlAttrs` in its
+headmatter, so it does not touch `slides.md`. Its main sections show only the
+figures and tables of the submitted paper (`paper_submission_arr.pdf`) and
+their interactive versions; the figures that bound a claim are in its
+Limitations section and the analyses left out of the paper in "Other
+questions". `public/extra/` links single figures from the analysis tree
+(git LFS: pull them before building).
+
 ## Commands
 
 ```bash

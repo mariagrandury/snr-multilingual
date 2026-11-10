@@ -185,9 +185,9 @@ def name(k: str) -> str:
 
 # the capability each benchmark targets (the Task column), one coarse label per row
 _TASK_OF = {
-    "Knowledge": "global_mmlu_full mmlu m_mmlu mmmlu include_base_44 include_v2_en include_v2_og arc arc_mt openbookqa "
+    "Knowledge": "global_mmlu_full mmlu m_mmlu mmmlu arc arc_mt openbookqa "
                  "arabicmmlu oall_arabic_mmlu oall_exams ceval kmmlu turkishmmlu careqa headqa haerae",
-    "Cultural knowledge": "cultural_bench_easy cultural_bench_hard blend_sample oall_acva",
+    "Cultural knowledge": "include_base_44 include_v2_en include_v2_og cultural_bench_easy cultural_bench_hard blend_sample oall_acva",
     "Commonsense": "hellaswag piqa global_piqa xcopa xstorycloze commonsense_qa copal_id xwinograd winogrande",
     "Reasoning": "bbh_mcq bbh_cloze acp_bench_mcq acp_bench_cloze mathqa",
     "Reading": "belebele boolq xquad",               # reading comprehension

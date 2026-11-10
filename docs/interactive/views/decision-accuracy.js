@@ -10,6 +10,9 @@
     const r = S.sizeRamp();
     return d3.quantize(d3.interpolateRgb(r[0], r[r.length - 1]), Math.max(n, 2));
   };
+  const row = (...nodes) => h("div", { style: "display:flex;flex-wrap:wrap;gap:8px;justify-content:center" }, ...nodes);
+  const titled = (title, node) => h("div", { style: `display:flex;flex-direction:column;align-items:center;max-width:${node.getAttribute("width") ?? 720}px` },
+    h("div", { style: "font-size:.7rem;font-weight:600;margin:.4em 0 .1em;text-align:center" }, title), node);
   const howTo = (text) => h("p", { class: "viz-note", style: "margin-top:0;font-style:italic" }, text);
   const AXIS = { L: "language count", arch: "depth", activation: "activation", optimizer: "optimizer", scheme: "data scheme", T: "sampling temperature" };
   const chanceMarks = (y0) => [
@@ -97,42 +100,58 @@
     render();
   };
 
-  // ---------- 2. which score ranks like the reference: one dot per proxy size ----------
+  // ---------- 2. which score ranks like the reference (paper Figure 16, App. E.3) ----------
   S.VIEWS.daChannels = async (el) => {
     const x = await S.load("decision_accuracy_extra");
     const sizes = x.channels.map((r) => r.size);
+    const READ = [["acc_acc", "Accuracy → 1.7B accuracy", "--viz-s1"], ["bbpb_acc", "bBPB → 1.7B accuracy", "--viz-s2"],
+      ["bbpb_bbpb", "bBPB → 1.7B bBPB", "--viz-s3"]];
+    const color = { domain: READ.map((r) => r[1]), range: READ.map((r) => css(r[2])) };
+    const POPS = [["acc above chance at the proxy", "Accuracy above chance at the proxy"],
+      ["acc at chance at the proxy", "Accuracy at chance at the proxy"], ["acc at chance at every size", "Accuracy at chance at every size"]];
+    const macro = Object.fromEntries(x.acc_gate.filter((r) => r.population === POPS[0][0]).map((r) => [r.size, r.bpb_macro]));
     const bpbLang = Object.fromEntries(x.early.filter((r) => r.group === "bpb" && r.frac === 1).map((r) => [r.proxy_size, r.da]));
-    const atChance = Object.fromEntries(x.acc_gate.filter((r) => r.population === "acc at chance at the proxy").map((r) => [r.size, r]));
-    const macro = Object.fromEntries(x.acc_gate.filter((r) => r.population === "acc above chance at the proxy").map((r) => [r.size, r.bpb_macro]));
-    const chanceBbpb = d3.extent(Object.values(atChance), (r) => r.bbpb_bbpb);
-    S.mount(el, [{ key: "pop", label: "Benchmark tasks", type: "seg", options: [
-      { value: "all", label: "every gated task" }, { value: "chance", label: "accuracy still at chance at the proxy" }] }], (s) => {
-      const R = s.pop === "all"
-        ? [["accuracy → 1.7B accuracy", (z) => [x.channels.find((r) => r.size === z).acc_acc, x.channels.find((r) => r.size === z).acc_acc_n]],
-          ["bBPB → 1.7B accuracy", (z) => [x.channels.find((r) => r.size === z).bbpb_acc, x.channels.find((r) => r.size === z).bbpb_acc_n]],
-          ["bBPB → 1.7B bBPB", (z) => [x.channels.find((r) => r.size === z).bbpb_bbpb, x.channels.find((r) => r.size === z).bbpb_bbpb_n]]]
-        : [["accuracy → 1.7B accuracy", (z) => [atChance[z]?.acc_acc, atChance[z]?.acc_acc_n]],
-          ["bBPB → 1.7B bBPB", (z) => [atChance[z]?.bbpb_bbpb, atChance[z]?.bbpb_bbpb_n]]];
-      R.push(["per-language BPB (50 languages)", (z) => [bpbLang[z], 50]], ["BPB, macro average (one task)", (z) => [macro[z], 1]]);
-      const rows = R.flatMap(([reading, get]) => sizes.map((size) => {
-        const [da, n] = get(size);
-        return { reading, size, da, n };
-      })).filter((r) => r.da != null);
-      return [plot({
-        height: 52 * R.length + 80, marginLeft: 220, marginTop: 30,
-        x: { domain: [0.4, 1], label: "decision accuracy against the 1.7B final (DA-size)", tickFormat: "%", grid: true },
-        y: { domain: R.map((r) => r[0]), label: null },
-        color: { domain: sizes, range: sizeColors(sizes.length), legend: true, label: "proxy size" },
-        marks: [
-          ...chanceMarks(-22),
-          Plot.ruleY(d3.rollups(rows, (v) => d3.extent(v, (r) => r.da), (r) => r.reading).map(([reading, [lo, hi]]) => ({ reading, lo, hi })),
-            { y: "reading", x1: "lo", x2: "hi", stroke: css("--viz-grid"), strokeWidth: 6, strokeLinecap: "round" }),
-          Plot.dot(rows, { x: "da", y: "reading", fill: "size", r: 6, stroke: css("--viz-surface"), strokeWidth: 1.5, tip: true,
-            title: (r) => `${r.reading}\n${r.size} proxy: ${pct(r.da)} (${fmt(r.da)}), mean over ${r.n} task${r.n === 1 ? "" : "s"}` }),
-        ],
-      }), note(s.pop === "all"
-        ? "Each dot: one proxy size, mean DA-size over the tasks above chance at the proxy and at 1.7B (bBPB needs the reference above chance only). Accuracy sits just above chance at every size; scoring the same items by the gold answer's bits per byte (bBPB) gains a few points; the per-language BPB of the training languages agrees with the reference on more than 90 % of the decisions, except at 600M, where the depth pairs are not size-matched. A shuffled proxy scores 0.49 on benchmarks and 0.50 on BPB (permutation null)."
-        : `The tasks a proxy cannot yet answer above chance. Their accuracy ranks the designs below chance, while their bBPB still ranks them like the 1.7B bBPB on ${pct(chanceBbpb[0]).replace(" %", "")}–${pct(chanceBbpb[1])} of the decisions: scoring by log-likelihood lifts these items above chance, but not to the level of BPB.`)];
+    const TICK = { macro: "macro average of per-language BPB (406 pairs)", lang: "per-language BPB, mean over the 50 trained languages" };
+    S.mount(el, [
+      { key: "tick", label: "Black tick", type: "seg", options: [{ value: "macro", label: "macro-average BPB (paper)" }, { value: "lang", label: "per-language BPB, mean over languages" }] },
+      { key: "panels", label: "Panels", type: "seg", options: [{ value: "paper", label: "three task populations (paper)" }, { value: "ref", label: "add every task above chance at 1.7B" }] },
+    ], (s) => {
+      const panels = POPS.map(([pop, title]) => ({ title, rows: x.acc_gate.filter((r) => r.population === pop) }));
+      if (s.panels === "ref") panels.push({ title: "Every task above chance at 1.7B", rows: x.channels });
+      const tick = (z) => (s.tick === "macro" ? macro[z] : bpbLang[z]);
+      const plots = panels.map((p, i) => {
+        const bars = p.rows.flatMap((r) => READ.filter(([k]) => r[k] != null && r[`${k}_n`] > 0)
+          .map(([k, reading]) => ({ size: r.size, reading, da: r[k], n: r[`${k}_n`] })));
+        return titled(p.title, plot({
+          width: i ? 200 : 222, height: 260, marginLeft: i ? 22 : 44, marginRight: 2, marginBottom: 30,
+          fx: { domain: sizes, label: null, axis: "bottom", padding: 0.12 },
+          x: { domain: color.domain, axis: null, paddingInner: 0.08 },
+          y: { domain: [0, 1], grid: true, label: i ? null : "Decision accuracy against 1.7B", tickFormat: i ? () => "" : undefined },
+          color,
+          marks: [
+            Plot.barY(bars, { fx: "size", x: "reading", y: "da", fill: "reading", tip: true,
+              title: (r) => `${r.size} proxy, ${p.title.toLowerCase()}\n${r.reading}: ${fmt(r.da)}, mean over ${r.n} tasks` }),
+            Plot.tickY(sizes.filter((z) => tick(z) != null), { fx: (z) => z, y: tick, stroke: css("--md-default-fg-color"), strokeWidth: 2.5, tip: true,
+              title: (z) => `${z} proxy, ${TICK[s.tick]}: ${fmt(tick(z))}` }),
+            Plot.ruleY([0.5], { stroke: css("--viz-muted"), strokeDasharray: "4 3" }),
+            Plot.ruleY([0]),
+          ],
+        }));
+      });
+      const c = x.channels;
+      const gains = c.map((r) => `${r.gain >= 0 ? "+" : ""}${fmt(r.gain)} at ${r.size}`).join(", ");
+      const better = d3.extent(c, (r) => r.bbpb_better);
+      const pmax = Math.ceil(d3.max(c, (r) => r.log10_p));
+      return [
+        row(Plot.legend({ color })),
+        row(...plots),
+        note(`DA-size against the 1.7B final checkpoint on multi-axis pairs, for the tasks above chance at the proxy (left), at chance at the proxy (middle) and at chance at every size (right). `
+          + (s.panels === "ref" ? "Fourth panel: every task above chance at 1.7B (bBPB read on all of them, accuracy on those also above chance at the proxy). " : "")
+          + `Black tick: the ${TICK[s.tick]}; dashed: 0.5. Where accuracy is at chance at the proxy, bBPB still ranks the pairs like the 1.7B bBPB at `
+          + `${fmt(d3.min(x.acc_gate.filter((r) => r.population === POPS[1][0]), (r) => r.bbpb_bbpb))}–${fmt(d3.max(x.acc_gate.filter((r) => r.population === POPS[1][0]), (r) => r.bbpb_bbpb))}, `
+          + `above accuracy on the same tasks but far below BPB. Against the 1.7B accuracy, on the ${d3.min(c, (r) => r.n_paired)}–${d3.max(c, (r) => r.n_paired)} tasks where both readings are defined, `
+          + `the proxy's bBPB agrees more often than its accuracy: ${gains}; bBPB is the better proxy on ${pct(better[0]).replace(" %", "")}–${pct(better[1])} of these tasks (Wilcoxon p < 10${String(pmax).replace(/[-0-9]/g, (ch) => "⁻⁰¹²³⁴⁵⁶⁷⁸⁹"["-0123456789".indexOf(ch)])} at every size).`),
+      ];
     });
   };
 
@@ -143,7 +162,7 @@
     // As in the paper: benchmarks pooled over pairs, per-language BPB averaged over its languages (App. E.3).
     const val = (r) => (r.population === "bpb" ? r.da_cell_mean : r.da);
     S.mount(el, [{ key: "k", label: "Keep the pairs the 1.7B reference separates by more than", type: "seg", value: 2, options: [
-      { value: 2, label: "2 seed sd (paper)" }, { value: 1, label: "1 seed sd" }] }], (s) => {
+      { value: 2, label: "2 seed standard deviations (paper)" }, { value: 1, label: "1 seed standard deviation" }] }], (s) => {
       const rows = [];
       for (const r of x.decisive.filter((r) => r.axes === "multi-axis" && (r.k === 0 || r.k === s.k))) {
         const nl = x.null.find((n) => n.axes === r.axes && n.population === r.population && n.size === r.size);
@@ -163,10 +182,10 @@
         const b = rows.find((r) => r.size === z && r.pop === p && r.kind === KINDS[1]);
         return a && b ? { size: z, pop: p, x1: a.da, x2: b.da } : null;
       }).filter(Boolean));
-      return [tiles([[pct(share(POP["all benchmarks"])), `of the benchmark pairs are decisive at ${s.k} seed sd`],
-        [pct(share(POP.bpb)), `of the BPB pairs are decisive at ${s.k} seed sd`]]),
-      plot({
-        height: 2 * (28 * sizes.length) + 120, marginLeft: 60, marginTop: 30, marginRight: 130,
+      return [tiles([[pct(share(POP["all benchmarks"])), `of the benchmark pairs are separated by more than ${s.k} seed standard deviation${s.k > 1 ? "s" : ""} at 1.7B`],
+        [pct(share(POP.bpb)), `of the BPB pairs are separated by more than ${s.k} seed standard deviation${s.k > 1 ? "s" : ""} at 1.7B`]]),
+      row(plot({
+        height: 2 * (28 * sizes.length) + 120, marginLeft: 60, marginTop: 30, marginRight: 175,
         fy: { domain: Object.values(POP), label: null },
         x: { domain: [0.4, 1], label: "DA-size against the 1.7B final (benchmarks: pooled over pairs; BPB: mean over languages)", tickFormat: "%", grid: true },
         y: { domain: sizes, label: null },
@@ -179,7 +198,7 @@
           Plot.dot(rows, { x: "da", y: "size", fy: "pop", fill: "kind", r: 5.5, stroke: css("--viz-surface"), strokeWidth: 1.5, tip: true,
             title: (r) => `${r.pop}, ${r.size}\n${r.kind}: ${fmt(r.da)}` + (r.kind === KINDS[1] ? ` (${pct(r.kept)} of the pairs kept)` : "") + ` · ${r.tasks} tasks` }),
         ],
-      }), note(`Grey dot: every pair (benchmarks ${span("all benchmarks", 0)}, per-language BPB ${span("bpb", 0)}). Blue dot: only the pairs whose 1.7B gap exceeds ${s.k} seed standard deviation${s.k > 1 ? "s" : ""} of a difference, the pairs the reference itself separates (${pct(share(POP["all benchmarks"]))} of the benchmark pairs): benchmarks ${span("all benchmarks", s.k)}, per-language BPB ${span("bpb", s.k)}. Dark tick: the proxy's final scores shuffled across the designs (the no-signal null).`)];
+      })), note(`Grey dot: every pair (benchmarks ${span("all benchmarks", 0)}, per-language BPB ${span("bpb", 0)}). Blue dot: only the pairs whose 1.7B gap exceeds ${s.k} seed standard deviation${s.k > 1 ? "s" : ""} of a difference, the pairs the reference itself separates (${pct(share(POP["all benchmarks"]))} of the benchmark pairs): benchmarks ${span("all benchmarks", s.k)}, per-language BPB ${span("bpb", s.k)}. Dark tick: the proxy's final scores shuffled across the designs (the no-signal null).`)];
     });
   };
 

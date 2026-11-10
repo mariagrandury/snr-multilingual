@@ -8,6 +8,8 @@ We release a controlled grid of 218 small multilingual language models. This pag
 describes the data the models were trained on, the models themselves and how
 they were evaluated.
 
+<div class="centered" markdown>
+
 | Symbol | Meaning | Values |
 |---|---|---|
 | $N$ | Non-embedding parameter count | 90M, 175M, 350M, 600M, 1B, 1.7B, 3B |
@@ -21,6 +23,8 @@ they were evaluated.
 
 ***Table 1:** Notation for the model ladder. This table corresponds to Table 1 from the paper.*
 { #table-1 }
+
+</div>
 
 
 ## Data mixtures
@@ -48,10 +52,7 @@ Pick a mixture to see how its tokens are spread over languages. Colour shows
 the language family and texture the writing script, hover a language for
 its details.
 
-<div class="viz" data-viz="mixtures"></div>
-
-***Figure 1:** Data mixtures: the share of the training tokens of each language in the selected mixture, coloured by language family and textured by script. This figure corresponds to Table 4 from the paper.*
-{ #figure-1 }
+<div class="viz" data-viz="mixtures" id="figure-1" data-caption="Figure 1: Data mixtures." data-text="Colour gives the language family and texture the script." data-paper="Table 4"></div>
 
 ## Model ladder
 
@@ -59,10 +60,7 @@ The grid consists of **218 models**.
 Each square in Figure 2 is one model: model size $N$ on the horizontal axis, number of training languages $K$ on the vertical one. Click a square
 to see its data, its training budget and its per-language results.
 
-<div class="viz" data-viz="ladder"></div>
-
-***Figure 2:** The model ladder: one square per run, by model size $N$ and number of training languages $K$. Click a square to see its data, its training budget and its per-language results. This figure corresponds to Tables 2, 3 and 4 from the paper.*
-{ #figure-2 }
+<div class="viz" data-viz="ladder" id="figure-2" data-caption="Figure 2: The model ladder." data-text="Click a square to see its data, its training budget and its per-language results." data-paper="Tables 2, 3 and 4"></div>
 
 <!--
 ### Per-language bits per byte
@@ -78,10 +76,7 @@ checkpoints spread evenly over the run, plus the ones at 85% and 95% of training
 Pick a language, a benchmark and the x axis. Each line is one model size. The card under the chart describes the selected benchmark.
 <!-- its number of answer options, the languages it covers, where its data comes from, and one item in the selected language and in English, exactly as the model reads it (long passages are cut at the start). -->
 
-<div class="viz" data-viz="scoreCurves"></div>
-
-***Figure 3:** Benchmark scores across training, one line per model size, and the card of the selected benchmark. This figure corresponds to Figures 9 and 10 from the paper.*
-{ #figure-3 }
+<div class="viz" data-viz="scoreCurves" id="figure-3" data-caption="Figure 3: Benchmark scores across training," data-text="with the card of the selected benchmark." data-paper="Figures 9 and 10"></div>
 
 
 ??? note "How the benchmark counts relate to the paper"

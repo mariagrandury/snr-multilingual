@@ -269,9 +269,9 @@
     };
 
     mount(el, [
-      { key: "build", label: "Build", string: true, options: [{ value: "all", label: "all" },
+      { key: "build", label: "Language selection and temperature", string: true, options: [{ value: "all", label: "all" },
         ...Object.entries(BUILD_LABEL).map(([b, v]) => ({ value: b, label: `${b} \u00b7 ${v} (M = ${BUILDS[b]?.m ?? b}, T = ${BUILDS[b]?.t ?? 1})` }))] },
-      { key: "ladder", label: "Ladder", string: true, options: [{ value: "all", label: "all" },
+      { key: "ladder", label: "Model recipe", string: true, options: [{ value: "all", label: "all" },
         ...Object.entries(LADDERS).map(([k, v]) => ({ value: k, label: v }))] },
       { key: "seeds", label: "Seeds", type: "seg", options: [{ value: "main", label: "1904" }, { value: "all", label: "all" }] },
     ], (s) => {
@@ -381,7 +381,21 @@
   VIEWS.scoreCurves = async (el) => {
     await languages();
     const d = await load("evaluation");
-    const famLabel = (f) => `${d.benchmarks[f].name} [${f}]`;
+    // the paper's names: a reformulated version says so, and the two INCLUDE v2 and the cloze/MCQ variants are told apart
+    const PRETTY = {
+      "ARC-Challenge translated (LumiOpen)": "ARC (MT)", "BIG-Bench Hard": "BBH", "KoBEST (Korean)": "KoBEST", "LAMBADA multilingual": "LAMBADA",
+      "MultiBLiMP 1.0": "MultiBLiMP", "NorEval (Norwegian)": "NorEval", "Okapi m_MMLU (machine-translated, alexandrainst/m_mmlu), lettered": "MMLU (Okapi)",
+      "Okapi m_arc": "ARC (Okapi)", "Okapi m_hellaswag": "HellaSwag (Okapi)", "OpenAI MMMLU (professional human translation), lettered, 57-subject group": "MMMLU",
+      "TokSuite parallel set": "TokSuite", "TruthfulQA-Multi": "TruthfulQA-Multi (MC1)", blend_sample: "BLEnD", boolq: "BoolQ", commonsense_qa: "CommonsenseQA",
+      cultural_bench_easy: "CulturalBench-easy", cultural_bench_hard: "CulturalBench-hard", global_piqa_nonparallel_cloze: "Global PIQA (non-parallel)",
+      global_piqa_parallel_cloze: "Global PIQA (parallel)", mathqa: "MathQA", mmlu: "MMLU", openbookqa: "OpenBookQA", piqa: "PIQA", toxigen: "ToxiGen",
+      truthfulqa_mc2: "TruthfulQA (MC2)", winogrande: "WinoGrande" };
+    const famLabel = (f) => {
+      const base = PRETTY[d.benchmarks[f].name] ?? d.benchmarks[f].name;
+      const fmt = f.startsWith("rfgm_") ? " LLM-RF" : f.startsWith("rf_") ? " RF" : "";
+      const variant = base.includes("(") ? "" : /_cloze$/.test(f) ? " (cloze)" : /_mcq$/.test(f) ? " (MCQ)" : f === "include_v2_en" ? " RF (EN)" : f === "include_v2_og" ? " RF (OG)" : "";
+      return base + variant + fmt;
+    };
     const fams = Object.keys(d.benchmarks).sort((x, y) => famLabel(x).localeCompare(famLabel(y), "en", { sensitivity: "base" }));
     const ramp = sizeRamp();
     mount(el, [
@@ -410,7 +424,7 @@
       return [plot({
         height: 360, marginBottom: 40,
         x: { type: "log", label: xLabel, tickFormat: s.x === "tokens" ? tokensLabel : sci, ticks: 6 },
-        y: { label: "score", grid: true },
+        y: { label: "accuracy (mean over the tasks of the benchmark)", grid: true },
         color: { domain: sizes, range: color, legend: true, label: "model size" },
         marks: [
           c.chance != null ? Plot.ruleY([c.chance], { stroke: css("--viz-bad"), strokeDasharray: "4,3" }) : null,
@@ -590,7 +604,7 @@
       return [
         tiles([[Object.keys(mix.shares).length, "languages"], [human(mix.ref_tokens), `training tokens of the ${mix.ref_size} reference run`],
           [`${fmt(100 * (mix.shares.eng_Latn ?? 0), 0)} %`, "English"], [`T = ${mix.T}`, "sampling temperature"]]),
-        h("div", { style: "margin-top:1em" }, treemap(rows)),
+        el.dataset.panel === "bars" ? null : h("div", { style: "margin-top:1em" }, treemap(rows)),   // data-panel="bars": the bar plot only
         bars(barRows, s.scale === "log"),
         legend(rows),
         note(`Area and bar height: each language's training tokens in a run of the ${mix.ref_size} reference model (${human(mix.ref_tokens)} tokens; every size uses the same shares, scaled to its own budget). English is fixed at ${fmt(100 * (mix.shares.eng_Latn ?? 0), 0)} %; the rest is split over the other languages as the data builder's plan splits it. ${s.english ? "" : "English is hidden, so the plots show the non-English half at its own scale. "}Hover a language for its details.`),
@@ -1031,9 +1045,10 @@
         h("div", { style: "margin-top:1em" }, table(rows, [
           { key: "rank", label: "Verdict", render: badge },
           { key: "name", label: "Benchmark", render: (r) => h("span", { class: "has-tip", "data-tip": r.task }, r.name) },
-          { key: "share", label: "Runs above chance", num: true, render: (r) => pct(r.share), title: `share of ${s.size} runs above chance (rq00)` },
-          { key: "logSnr", label: "log₁₀ SNR", num: true, title: `at ${s.size} (rq03)` },
-          { key: "decision_acc", label: "Decision accuracy", num: true, title: `${comp} (rq02)` },
+          { key: "share", label: "Runs above chance", num: true, render: (r) => (r.task.startsWith("bpb") ? "n/a" : pct(r.share)),
+            title: `share of ${s.size} runs above chance (n/a: BPB has no chance level)` },
+          { key: "logSnr", label: "log₁₀ SNR (relative std)", num: true, title: `relative-standard-deviation SNR at ${s.size}` },
+          { key: "decision_acc", label: "Decision accuracy", num: true, title: comp },
         ], { sort: "decision_acc" })),
         note(`Decision accuracy here is ${s.q === "size" ? `the ranking of our design variants at ${s.size} against 1.7B` : `the ranking at ${s.frac} % of a ${s.size} run against its final checkpoint`}, over ${s.pairs === "mono" ? "the one-axis pairs (variants that differ in a single design choice, as in the paper's figure)" : "every pair of design variants, whatever choices they differ in"}. ✓ use: above chance at this size (at least half of the runs) and decision accuracy ≥ ${USE_DA}, the paper's threshold. Treat it as a prior and confirm it on your own runs.`),
       ];
@@ -1306,29 +1321,74 @@
     }
   }
 
+  // A chart centred in its box (as paper.js's row()).
+  const centred = (...nodes) => h("div", { style: "display:flex;flex-wrap:wrap;gap:8px;justify-content:center" }, ...nodes);
+
   VIEWS.firstSize = async (el) => {
     const g = await languages().then(() => load("gate"));
     const fs = g.first_size;
     const levels = [...fs.levels, "never"];
+    const levelName = (lv) => (lv === "never" ? "Never" : lv);
+    const screened = new Set(fs.screened ?? []);
+    // the paper's names; INCLUDE v2 is an RF version too; * marks a screened benchmark (Figure 5)
+    const name = (b) => benchName(g.names, b) + (screened.has(b) ? "*" : "");
+    const isRF = (b) => isTwin(b) || / (LLM-)?RF\b/.test(benchName(g.names, b));
+    // 90M–1.7B as the other size scales, 3B one step darker, never in orange
+    const ramp = sizeColors(fs.levels.filter((lv) => lv !== "3B"));
+    const range = [...ramp, ...(fs.levels.includes("3B") ? [d3.color(ramp[ramp.length - 1]).darker(dark() ? 1.2 : 2).formatHex()] : []), css("--viz-s2")];
     mount(el, [
-      { key: "twins", label: "Versions", type: "seg", options: [{ value: "orig", label: "as published" }, { value: "all", label: "with rewritten versions" }] },
+      { key: "layout", label: "Layout", type: "seg", options: [{ value: "grid", label: "per language (paper)" }, { value: "bars", label: "languages per benchmark" }] },
+      { key: "twins", label: "Benchmarks format", type: "seg", value: el.dataset.panel === "languages-x" ? "orig" : "all", options: [{ value: "all", label: "all formats (paper)" }, { value: "orig", label: "original versions only" }] },
+      { key: "set", label: "Benchmarks", type: "seg", options: [{ value: "analysed", label: "analysed (paper)" }, { value: "all", label: "all" }] },
     ], (s) => {
-      const benches = fs.benchmarks.filter((b) => s.twins === "all" || !isTwin(b));
+      const benches = fs.benchmarks.filter((b) => (s.twins === "all" || !isRF(b)) && (s.set === "all" || !screened.has(b)));
       const cells = fs.cells.filter(([b]) => benches.includes(b)).map(([b, l, level]) => ({ b, l, level }));
-      const colors = [...sizeColors(fs.levels), css("--viz-bad")];
-      return [plot({
-        width: Math.max(720, 14 * fs.languages.length + 190), height: 15 * benches.length + 70,
-        marginLeft: 180, marginBottom: 10, padding: 0.06,
-        x: { domain: fs.languages, axis: "top", label: null, tickRotate: -90, tickSize: 0 },
-        y: { domain: benches, label: null, tickFormat: (b) => benchName(g.names, b), tickSize: 0 },
-        color: { domain: levels, range: colors, legend: true, label: "smallest model size above chance" },
+      const color = { domain: levels, range, legend: true, label: "Smallest size above chance", tickFormat: levelName };
+      const say = (c) => (c.level === "never" ? "never above chance up to 3B" : `above chance from ${c.level} on`);
+      const star = s.set === "all" ? " A * marks a benchmark that was screened but not analysed: it was evaluated from 600M on only." : "";
+      if (s.layout === "bars") {
+        // Figure 5's bars and order: share passing at 90M, languages above chance, smallest size, languages, analysed first
+        const per = d3.group(cells, (c) => c.b);
+        const n = (b) => per.get(b).length, k = (b, f) => per.get(b).filter(f).length;
+        const first = (b) => d3.min(per.get(b), (c) => (c.level === "never" ? levels.length : levels.indexOf(c.level)));
+        const order = [...per.keys()].sort((a, b) => k(b, (c) => c.level === "90M") / n(b) - k(a, (c) => c.level === "90M") / n(a)
+          || k(b, (c) => c.level !== "never") - k(a, (c) => c.level !== "never") || first(a) - first(b) || n(b) - n(a)
+          || screened.has(a) - screened.has(b));
+        const rows = order.flatMap((b) => levels.map((level) => ({ b, level, k: k(b, (c) => c.level === level) })).filter((r) => r.k));
+        return [centred(plot({
+          width: 640, height: 14 * order.length + 70, marginLeft: 210, marginTop: 40,
+          x: { label: "Number of languages above the chance threshold", axis: "top", grid: true },
+          y: { domain: order, label: null, tickFormat: (b) => `${name(b)} (${n(b)})`, tickSize: 0 },
+          color,
+          marks: [Plot.barX(rows, Plot.stackX({ x: "k", y: "b", fill: "level", order: levels, insetTop: 1.5, insetBottom: 1.5,
+            tip: true, title: (r) => `${name(r.b)}: ${r.k} of ${n(r.b)} languages ${say(r)}` }))],
+        })), note(`One bar per benchmark: the number of trained languages in which it is above chance, coloured by the smallest model size from which it passes (orange: no size up to 3B). The 3B models are the six deep configurations trained to 3B (scheme A at K ∈ {8, 15, 30, 50}, scheme B at K ∈ {8, 15}).${star}`)];
+      }
+      if (el.dataset.panel === "languages-x") {
+        // languages on x and benchmarks on y, small cells, so the grid fits one slide
+        return [centred(plot({
+          width: 15 * fs.languages.length + 170, height: 11 * benches.length + 40,
+          marginLeft: 165, marginRight: 8, marginTop: 30, marginBottom: 4, padding: 0.08, style: { fontSize: "10px" },
+          x: { domain: fs.languages, label: null, tickSize: 0, axis: "top" },
+          y: { domain: benches, label: null, tickSize: 0, tickFormat: name },
+          color,
+          marks: [
+            Plot.cell(cells, { x: "l", y: "b", fill: "level", inset: 0.4, rx: 1 }),
+            Plot.tip(cells, Plot.pointer({ x: "l", y: "b", title: (c) => `${name(c.b)} · ${langName(c.l)} (${c.l})\n${say(c)}` })),
+          ],
+        })), note(`Each square is one benchmark (rows) in one language (columns). Its colour is the smallest model size from which every larger size passes the above-chance threshold there. Orange: no size up to 3B passes. White: no task of the benchmark in that language. Languages run from English, then from the most to the least resourced.${star}`)];
+      }
+      return [centred(plot({
+        width: 13 * benches.length + 50, height: 13 * fs.languages.length + 200,
+        marginLeft: 34, marginRight: 8, marginTop: 4, marginBottom: 190, padding: 0.06,
+        x: { domain: benches, label: null, tickRotate: -90, tickSize: 0, tickFormat: name },
+        y: { domain: fs.languages, label: null, tickSize: 0 },
+        color,
         marks: [
-          Plot.cell(cells, { x: "l", y: "b", fill: "level", inset: 0.5, rx: 2 }),
-          Plot.tip(cells, Plot.pointer({ x: "l", y: "b",
-            title: (c) => `${benchName(g.names, c.b)} · ${langName(c.l)} (${c.l})\n` +
-              (c.level === "never" ? "never above chance, up to 1.7B" : `above chance from ${c.level} on`) })),
+          Plot.cell(cells, { x: "b", y: "l", fill: "level", inset: 0.5, rx: 1.5 }),
+          Plot.tip(cells, Plot.pointer({ x: "b", y: "l", title: (c) => `${name(c.b)} · ${langName(c.l)} (${c.l})\n${say(c)}` })),
         ],
-      }), note("Each square is one benchmark in one language. Its colour is the smallest model size from which at least half of the runs that trained on the language score above chance, and every larger size does too. Red: no size up to 1.7B gets there. White: the benchmark has no items in that language. Languages run from English, then from the most to the least training data; benchmarks from the most to the fewest languages above chance.")];
+      })), note(`Each square is one benchmark in one language (a language task). Its colour is the smallest model size that passes the above-chance threshold there (at least half of the models of that size whose mixture trains the language are above chance) and from which every larger size up to 1.7B passes too; 3B marks a task that passes only on the 3B models (the six configurations trained to 3B). Orange: no size up to 3B passes. White: no task of the benchmark in that language. Languages run from English, then from the most to the least resourced; benchmarks from the most to the fewest languages above chance up to 1.7B.${star}`)];
     });
   };
 
@@ -1359,34 +1419,34 @@
     });
   };
 
-  VIEWS.formatExample = async (el) => {
-    const g = await load("gate");
-    const f = g.format_example;
-    if (!f.og) return el.replaceChildren(h("div", { class: "viz-empty" }, "The example items are not in this build."));
-    const letters = "ABCDEFGH";
-    const question = f.og.prompt.replace(/\s*Answer:\s*$/, "");
-    const asLetters = {
-      task: f.og.task, gold: f.og.gold, options: f.og.options.map((_, i) => ` ${letters[i]}`),
-      prompt: `${question}\n${f.og.options.map((o, i) => `${letters[i]}. ${o.trim()}`).join("\n")}\nAnswer:`,
-    };
-    el.replaceChildren(
-      h("div", { class: "viz-examples" },
-        example(asLetters, "Letter format: the model must output the letter"),
-        example(f.og, "Answer-text format: the model scores each answer")),
-      f.en ? h("details", { class: "viz-details" }, h("summary", {}, "The same question in English (the benchmark's own translation)"),
-        h("div", { class: "viz-examples" }, example(f.en, "English"))) : null,
-      note("Both formats ask the same INCLUDE question from a Greek exam with the same four answers. In the letter format the model only compares the four letters, so it has to have learned the A/B/C/D convention first; in the answer-text format it compares the four answers themselves."));
-  };
+  /* One item of a letter-format benchmark in its formats (gate.json format_example:
+     the same item as published, RF and LLM-RF), with an item picker. */
+  const FORMATS = { letter: "Original (letter format)", rf: "RF", llm: "LLM-RF" };
+  async function formatItems(el, formats, text) {
+    const items = (await load("gate")).format_example?.items ?? [];
+    if (!items.length) return el.replaceChildren(h("div", { class: "viz-empty" }, "The example items are not in this build."));
+    await languages();
+    const label = (it) => `${it.name}, ${langName(it.language)}`;
+    mount(el, items.length > 1 ? [{ key: "i", label: "Item", type: "seg", options: items.map((it, i) => ({ value: i, label: label(it) })) }] : [],
+      (s) => {
+        const it = items[s.i ?? 0];
+        return [h("div", { class: `viz-examples${formats.length > 2 ? " viz-examples-3" : ""}` },
+          formats.map((f) => example({ ...it[f], task: `${label(it)}, ${FORMATS[f]}` }, FORMATS[f]))), note(text(it))];
+      });
+  }
 
-  VIEWS.llmRewrite = async (el) => {
-    const g = await load("gate");
-    const f = g.format_example;
-    if (!f.letter || !f.llm) return el.replaceChildren(h("div", { class: "viz-empty" }, "The example items are not in this build."));
-    el.replaceChildren(h("div", { class: "viz-examples viz-examples-3" },
-      example(f.letter, "As published (letter format)"),
-      f.rf ? example(f.rf, "Reformatted (RF): the answer text") : null,
-      example(f.llm, "Rewritten by an LLM (LLM-RF)")),
-    note("One item of the INCLUDE benchmark in Greek, in the three versions we evaluate. RF keeps the question and scores the answer texts. LLM-RF asks a language model to rewrite the question so that each answer reads as its natural continuation."));
+  VIEWS.formatExample = (el) => formatItems(el, ["letter", "rf"], (it) =>
+    `One ${it.name} item in ${langName(it.language)}, as published and in its RF version. In the original letter format the model compares how likely it finds the letters A, B, C and D after the listed options, so it must first map each letter to its answer. The RF version removes the letters without changing the question or the options and scores the text of each option directly.`);
+
+  // llmRewrite: the three columns share their rows (title, prompt, options, note) so the option lists line up
+  const ALIGNED = `.viz[data-viz="llmRewrite"] .viz-examples { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 0; }
+    .viz[data-viz="llmRewrite"] .viz-example { display: grid; grid-row: span 4; grid-template-rows: subgrid; align-content: start; }
+    .viz[data-viz="llmRewrite"] .viz-example > * { align-self: start; }
+    @media (max-width: 44em) { .viz[data-viz="llmRewrite"] .viz-examples { grid-template-columns: minmax(0, 1fr); row-gap: 1em; } }`;
+  VIEWS.llmRewrite = (el) => {
+    if (!document.getElementById("viz-llmrewrite-css")) document.head.append(h("style", { id: "viz-llmrewrite-css" }, ALIGNED));
+    return formatItems(el, ["letter", "rf", "llm"], (it) =>
+      `The same ${it.name} item in ${langName(it.language)} in the three formats. RF removes the answer letters and scores each option as a continuation of the question. LLM-RF has an LLM (gemini-3.8-flash) rewrite the question and options as a declarative statement that each option completes, without revealing the correct option (Belebele and INCLUDE only).`);
   };
 
   VIEWS.reformulation = async (el) => {
@@ -1394,26 +1454,45 @@
     const rows = g.reformulation;
     const fams = uniq(rows.map((r) => r.family)).sort((a, b) =>
       d3.max(rows.filter((r) => r.family === b), (r) => r.languages) - d3.max(rows.filter((r) => r.family === a), (r) => r.languages) || a.localeCompare(b));
-    const rf = rows.filter((r) => r.set === "rf"), llm = rows.filter((r) => r.set === "rfgm");
+    const rf = rows.filter((r) => r.set === "rf" && r.languages), llm = rows.filter((r) => r.set === "rfgm" && r.languages);
     const sizes = SIZES.filter((z) => rows.some((r) => r.size === z));
-    const tip = (r) => `${benchName(g.names, r.family)} at ${r.size}, ${r.languages} languages\n` +
-      `${r.set === "rf" ? "RF" : "LLM-RF"} version: ${pct(r.share_twin)} above the threshold\nas published: ${pct(r.share_original)}\n` +
-      `McNemar p = ${fmt(r.p_mcnemar, 3)}${r.p_mcnemar < 0.05 ? " (significant)" : ""}`;
-    mount(el, [], () => [plot({
-      height: 340, marginBottom: 60, marginLeft: 45, width: 760,
-      fx: { domain: fams, label: null, tickRotate: -20, axis: "bottom",
-            tickFormat: (f) => `${benchName(g.names, f)} (${d3.max(rf.filter((r) => r.family === f), (r) => r.languages)})` },
-      x: { domain: sizes, axis: null, paddingInner: 0.15 },
-      y: { domain: [0, 1.08], label: "share of languages above chance", tickFormat: "%", grid: true },
-      color: { domain: sizes, range: sizeColors(sizes), legend: true, label: "RF version at model size" },
+    // Figure 7's label counts languages (n_languages); the bars are a share of tasks (languages: the paired tasks)
+    const nLang = (f) => d3.max(rows.filter((r) => r.family === f), (r) => r.n_languages);
+    const slot = (kind, z) => `${kind} ${z}`;   // per size, the original's bar, then the RF bar
+    const bars = rf.flatMap((r) => [{ ...r, slot: slot("o", r.size), fill: "Original", y: r.share_original, version: "original" },
+                                    { ...r, slot: slot("t", r.size), fill: r.size, y: r.share_twin, version: "RF version" }]);
+    const marks = llm.map((r) => ({ ...r, slot: slot("t", r.size), y: r.share_twin, version: "LLM-RF version" }));
+    const count = (r, share) => Math.round(share * r.languages);
+    const p = (x) => (x == null ? "–" : x < 1e-3 ? x.toExponential(1) : fmt(x, 3));
+    const tip = (r) => `${benchName(g.names, r.family)} at ${r.size}: ${r.languages} tasks in ${r.n_languages} languages\n` +
+      `${r.version === "original" ? "original" : r.version}: ${count(r, r.y)} of ${r.languages} tasks above the threshold\n` +
+      (r.version === "original" ? `RF version: ${count(r, r.share_twin)}` : `original: ${count(r, r.share_original)}`) +
+      `\nMcNemar p = ${p(r.p_mcnemar)} (${r.twin_only} tasks pass only in the ${r.set === "rf" ? "RF" : "LLM-RF"} version, ${r.original_only} only in the original)`;
+    const multi = fams.map((f) => [f, d3.max(rf.filter((r) => r.family === f), (r) => r.languages)]).filter(([f, n]) => n > nLang(f));
+    const many = multi.length ? `Some benchmarks have more tasks than languages (${multi.map(([f, n]) => `${benchName(g.names, f)}: ${n} tasks in ${nLang(f)} language${nLang(f) > 1 ? "s" : ""}`).join("; ")}); their shares are over tasks.` : "";
+    // the diamond and the star close the size legend, after its last swatch
+    const withKey = (fig) => {
+      const last = [...fig.querySelectorAll('span[class$="-swatch"]')].pop();
+      last?.after(h("span", { class: last.getAttribute("class") }, h("span", { style: `color:${css("--viz-s2")}` }, "◆"), " LLM-RF version"),
+                  h("span", { class: last.getAttribute("class") }, h("b", {}, "*"), " McNemar p < 0.05 (original against the RF version)"));
+      return fig;
+    };
+    mount(el, [], () => [centred(withKey(plot({
+      height: 360, marginBottom: 90, marginLeft: 50, width: 780,
+      fx: { domain: fams, label: null, tickRotate: -30, axis: "bottom", padding: 0.12,
+            tickFormat: (f) => `${benchName(g.names, f)} (${nLang(f)})` },
+      x: { domain: sizes.flatMap((z) => [slot("o", z), slot("t", z)]), axis: null, paddingInner: 0.1 },
+      y: { domain: [0, 1.1], label: "Share of tasks above threshold", grid: true },
+      color: { domain: ["Original", ...sizes], range: [css("--viz-grid"), ...sizeColors(sizes)], legend: true,
+               tickFormat: (d) => (d === "Original" ? "Original" : `RF version at ${d}`) },
       marks: [
-        Plot.barY(rf, { fx: "family", x: "size", y: "share_twin", fill: "size" }),
-        Plot.tickY(rf, { fx: "family", x: "size", y: "share_original", stroke: css("--viz-muted"), strokeWidth: 2.5 }),
-        Plot.dot(llm, { fx: "family", x: "size", y: "share_twin", symbol: "diamond", fill: css("--viz-s2"), r: 4.5 }),
-        Plot.text(rf.filter((r) => r.p_mcnemar < 0.05), { fx: "family", x: "size", y: "share_twin", text: () => "*", dy: -6, fontSize: 13 }),
-        Plot.tip([...rf, ...llm], Plot.pointer({ fx: "family", x: "size", y: "share_twin", title: tip })),
+        Plot.barY(bars.filter((d) => d.version === "original"), { fx: "family", x: "slot", y: "y", fill: "fill", stroke: css("--viz-muted"), strokeWidth: 0.4 }),
+        Plot.barY(bars.filter((d) => d.version !== "original"), { fx: "family", x: "slot", y: "y", fill: "fill" }),
+        Plot.dot(marks, { fx: "family", x: "slot", y: "y", symbol: "diamond", fill: css("--viz-s2"), r: 4 }),
+        Plot.text(rf.filter((r) => r.p_mcnemar < 0.05), { fx: "family", x: (r) => slot("t", r.size), y: "share_twin", text: () => "*", dy: -7, fontSize: 13 }),
+        Plot.tip([...bars, ...marks], Plot.pointer({ fx: "family", x: "slot", y: "y", title: tip })),
       ],
-    }), note("Bars: the share of a benchmark's languages above chance once the answers are scored as text (RF), one bar per model size. Grey tick: the same share for the benchmark as published. Orange diamond: the LLM-rewritten version (LLM-RF). Star: the change from the published version is significant (McNemar test over the languages, p < 0.05).")]);
+    }))), note(`For each letter-format benchmark (its number of languages in parentheses), the share of its tasks above the chance threshold: grey bars for the original items, blue bars for the RF version at each model size (darker is larger), orange diamonds for the LLM-RF version (Belebele and INCLUDE). A star marks a size at which the McNemar test on the paired verdicts of the original and its RF version, one pair per task, gives p < 0.05. ${many} Hover a bar for its counts.`)]);
   };
 
   // The bins of above_random_external.py, smallest first.
@@ -1713,7 +1792,40 @@
   // the same helpers; boot() runs at DOMContentLoaded, after they have loaded.
   window.SNRSITE = { VIEWS, DATA, SIZES, PROXIES, LADDER, LS, ANON, REDRAW, css, series, dark, sizeRamp,
     diverging, fmt, pct, sizeNum, byKey, uniq, h, expand, load, plot, mount, control, note, tiles, table,
-    languages, langName, fwName };
+    languages, langName, fwName, BUILDS, buildOf, LADDERS, GRID_ROWS, gridRow, gridLabel, hoverTips };
+
+  // ---------- one caption per figure ----------
+  /* A figure's caption lives on its box, not in the page text:
+     <div class="viz" data-viz=… id="figure-N" data-caption="Figure N: Title."
+          data-text="…" data-paper="Figure 3a">. It is drawn inside the box as
+     "Figure N: Title. {text} {the view's own description} This figure
+     corresponds to {paper} from the paper." The view's description is its last
+     paragraph note, which can change with the buttons; notes inside an example,
+     a card or a run's detail stay where they are. */
+  function caption(el) {
+    const kind = /^Table/.test(el.dataset.caption) ? "table" : "figure";
+    const slot = h("span", { class: "viz-caption-note" });
+    const p = h("p", { class: "viz-caption" }, h("strong", {}, el.dataset.caption), " ",
+      el.dataset.text ? `${el.dataset.text} ` : null, slot,
+      el.dataset.paper ? `This ${kind} corresponds to ${el.dataset.paper} from the paper.` : null);
+    el.append(p);
+    const title = el.dataset.caption.replace(/^(Figure|Table) \d+:\s*/, "").replace(/\.\s*$/, "").toLowerCase();
+    const sync = () => {
+      const notes = [...el.querySelectorAll(".viz-note")].filter((n) => n.tagName === "P" && !n.closest(".viz-example, .viz-card, .ladder-detail, .lk-mix"));
+      const n = notes.at(-1);
+      let text = n ? n.textContent.trim() : "";
+      if (n) n.hidden = true;
+      // a note that opens by repeating the caption's title keeps only what follows its first colon
+      if (title && text.toLowerCase().startsWith(title.slice(0, 30)) && text.includes(":")) {
+        text = text.slice(text.indexOf(":") + 1).trim();
+        text = text.charAt(0).toUpperCase() + text.slice(1);
+      }
+      const want = text ? `${text} ` : "";
+      if (slot.textContent !== want) slot.textContent = want;
+    };
+    sync();
+    new MutationObserver(sync).observe(el, { childList: true, subtree: true });
+  }
 
   // ---------- boot ----------
   function boot() {
@@ -1721,7 +1833,8 @@
       const view = VIEWS[el.dataset.viz];
       if (!view) continue;
       el.replaceChildren(h("div", { class: "viz-empty" }, "Loading…"));
-      Promise.resolve(view(el)).catch((e) => { el.replaceChildren(h("div", { class: "viz-empty" }, `Could not draw this view (${e.message}).`)); console.error(e); });
+      Promise.resolve(view(el)).then(() => el.dataset.caption && caption(el))
+        .catch((e) => { el.replaceChildren(h("div", { class: "viz-empty" }, `Could not draw this view (${e.message}).`)); console.error(e); });
     }
     new MutationObserver(() => REDRAW.forEach((f) => f()))
       .observe(document.body, { attributes: true, attributeFilter: ["data-md-color-scheme"] });

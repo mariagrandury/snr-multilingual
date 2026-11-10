@@ -3,6 +3,7 @@
   const S = window.SNRSITE;
   const { h, load, mount, note, fmt, pct, css, plot, uniq, LADDER } = S;
   const PROX = ["90M", "175M", "350M", "600M", "1B"];
+  const row = (...nodes) => h("div", { style: "display:flex;flex-wrap:wrap;gap:8px;justify-content:center" }, ...nodes);
   const chin = (f) => `${+(f * 5).toFixed(1)}C`;
 
   const style = () => document.getElementById("lt-style") || document.head.append(h("style", { id: "lt-style" }, `
@@ -125,23 +126,68 @@ button.lt-chip:hover { background: var(--viz-neutral); }
     });
   };
 
-  // ---------- which language predicts which ----------
+  // ---------- which language predicts which (paper Figure 15, App. E.5) ----------
   S.VIEWS.ltCross = async (el) => {
     style();
-    const [LANG, d] = await Promise.all([S.languages(), load("language_transfer_views")]);
-    const SETS = [{ value: "hellaswag", label: "HellaSwag" }, { value: "above_66_either", label: "reliable tasks (rq2)" }, { value: "above_chance", label: "every task above chance" }];
+    const [LANG, d, ladder] = await Promise.all([S.languages(), load("language_transfer_views"), load("ladder")]);
+    const SETS = [{ value: "hellaswag", label: "HellaSwag (paper)" }, { value: "above_66_either", label: "tasks that rank reliably (DA ≥ 0.66)" },
+      { value: "above_chance", label: "every task above chance" }];
+    // The paper figure's axis order, then the rest of the K = 50 list (resource order), then by name.
+    const PAPER_ORDER = "en ru de es fr it pt nl id vi uk sv hu ro da hi bn sk ca ta hr ne mr ml te kn gu hy eu ar sr".split(" ");
+    const K50 = ["en", ...(ladder.language_sets.A.FW_L50 ?? []).map((fw) => LANG.fw[fw.split("_")[0]])];
+    const rank = (c) => (PAPER_ORDER.includes(c) ? PAPER_ORDER.indexOf(c) : K50.includes(c) ? 100 + K50.indexOf(c) : 1000);
+    const byRank = (a, b) => rank(a) - rank(b) || S.langName(a).localeCompare(S.langName(b));
     const all = uniq(Object.values(d.cross).flatMap((m) => Object.keys(m))).sort((a, b) => S.langName(a).localeCompare(S.langName(b)));
     let ui;
     ui = mount(el, [
+      { key: "view", label: "View", type: "seg", value: el.dataset.panel === "family" ? "tree" : "map",
+        options: [{ value: "map", label: "language × language map (paper)" }, { value: "tree", label: "one language, by family" }] },
       { key: "set", label: "Tasks", type: "seg", options: SETS },
       { key: "dir", label: "The picked language is", type: "seg", options: [{ value: "src", label: "the proxy" }, { value: "tgt", label: "the target" }] },
       { key: "lang", label: "Language", options: all.map((c) => ({ value: c, label: S.langName(c) })), value: "en", string: true },
     ], (s) => {
+      // the direction and language pickers only serve the family view
+      // data-panel="map" or "family" fixes the view: its switch is hidden
+      el.querySelectorAll(":scope > .viz-controls > label").forEach((l, i) => {
+        if (i === 0 && el.dataset.panel) l.style.display = "none";
+        if (i >= 2) l.style.display = s.view === "map" ? "none" : "";
+      });
       const M = d.cross[s.set];
       const codes = uniq([...Object.keys(M), ...Object.values(M).flatMap((m) => Object.keys(m))]);
-      const val = (c) => (s.dir === "src" ? M[s.lang]?.[c] : M[c]?.[s.lang]);
       const neg = css("--viz-s2"), mid = css("--viz-neutral"), pos = css("--viz-s1");
       const col = (v) => { const t = Math.max(-1, Math.min(1, (v - 0.5) / 0.3)); return t < 0 ? d3.interpolateRgb(mid, neg)(-t) : d3.interpolateRgb(mid, pos)(t); };
+      const da = (p, t) => M[p]?.[t];
+      // the paper's two numbers: the four European languages of the K = 8 list among themselves, English to the others
+      const EU = ["de", "es", "fr", "it"].filter((c) => M[c]);
+      const among = EU.flatMap((a) => EU.filter((b) => b !== a).map((b) => da(a, b))).filter((v) => v != null);
+      const own = EU.map((a) => da(a, a)).filter((v) => v != null);
+      const enOthers = Object.entries(M.en ?? {}).filter(([t]) => t !== "en").map(([, v]) => v);
+      const summary = among.length && enOthers.length
+        ? `German, Spanish, French and Italian predict each other's 1.7B ranking at ${fmt(d3.mean(among))} on average, almost as well as each predicts its own (${fmt(d3.mean(own))}); English predicts the rankings of the other languages at only ${fmt(d3.mean(enOthers))}.`
+        : "";
+      if (s.view === "map") {
+        const order = codes.slice().sort(byRank);
+        const cells = order.flatMap((p) => order.map((t) => ({ p, t, v: da(p, t) }))).filter((c) => c.v != null);
+        const side = Math.max(9, Math.min(20, Math.floor(560 / order.length)));
+        const small = order.length > 45;
+        return [
+          row(plot({
+            width: side * order.length + 110, height: side * order.length + 90, marginLeft: 70, marginBottom: 50, marginRight: 40,
+            x: { domain: order, label: "Target task, its ranking at 1.7B", tickRotate: -90, tickFormat: small ? () => "" : (c) => c, tickSize: 0 },
+            y: { domain: order, label: "Proxy task, its ranking at 90M to 1B", tickFormat: small ? () => "" : (c) => c, tickSize: 0 },
+            color: { type: "diverging", scheme: "rdbu", domain: [0, 1], pivot: 0.5, legend: true, label: "DA-size, mean over 90M to 1B" },
+            marks: [
+              Plot.cell(cells, { x: "t", y: "p", fill: "v", tip: true,
+                title: (c) => `${S.langName(c.p)} at the proxies → ${S.langName(c.t)} at 1.7B: DA-size ${fmt(c.v)}${c.p === c.t ? " (the task's own DA-size)" : ""}` }),
+              Plot.line([[order[0], order[0]], [order.at(-1), order.at(-1)]], { x: (z) => z[0], y: (z) => z[1], stroke: css("--viz-muted"), strokeWidth: 0.6 }),
+            ],
+          })),
+          note(`DA-size of the ranking on the ${s.set === "hellaswag" ? "HellaSwag task" : "tasks"} of one language at the proxy (rows) against the 1.7B ranking on another language (columns), averaged over 90M–1B; the diagonal is the task's own DA-size. `
+            + "Single-axis pairs of the seed-1904 runs, at least three per size, each task above chance where it is read. Languages that no list trains (e.g. Basque) are read on the scheme-A runs, which are evaluated on every language. Colour centred at 0.5. "
+            + (s.set === "hellaswag" ? summary : "Hover a cell for the two languages.")),
+        ];
+      }
+      const val = (c) => (s.dir === "src" ? da(s.lang, c) : da(c, s.lang));
       if (!codes.includes(s.lang)) return note(`${S.langName(s.lang)} has no task in this set; pick another language or task set.`);
       const others = codes.filter((c) => c !== s.lang && val(c) != null).map((c) => [c, val(c)]).sort((a, b) => b[1] - a[1]);
       const tree = familyTree(LANG, codes, (c) => {
@@ -149,7 +195,7 @@ button.lt-chip:hover { background: var(--viz-neutral); }
         if (v == null) return c === s.lang ? { color: "transparent", cls: "src", tip: "the picked language" } : null;
         const [p, t] = s.dir === "src" ? [s.lang, c] : [c, s.lang];
         return { color: col(v), cls: c === s.lang ? "src" : null,
-          tip: `${S.langName(p)} at the proxies → ${S.langName(t)} at 1.7B: DA-size ${fmt(v)}${p === t ? " (the language's own DA)" : ""}\nclick to pick ${S.langName(c)}` };
+          tip: `${S.langName(p)} at the proxies → ${S.langName(t)} at 1.7B: DA-size ${fmt(v)}${p === t ? " (the language's own DA-size)" : ""}\nclick to pick ${S.langName(c)}` };
       }, (c) => { ui.state.lang = c; el.querySelector(".viz-controls select").value = c; ui.render(); });
       const mean = d3.mean(others, (x) => x[1]);
       const name = (x) => `${S.langName(x[0])} ${fmt(x[1])}`;
@@ -160,7 +206,7 @@ button.lt-chip:hover { background: var(--viz-neutral); }
           h("span", {}, h("span", { class: "lt-chip src" }, S.langName(s.lang)), " = picked (click any chip to pick it)")),
         tree,
         note(others.length
-          ? `${S.langName(s.lang)} ${s.dir === "src" ? "ranks the other languages' 1.7B ranking" : "is ranked by the other languages"} at ${fmt(mean)} on average over ${others.length}. `
+          ? `${S.langName(s.lang)} ${s.dir === "src" ? "predicts the other languages' 1.7B ranking" : "is predicted by the other languages"} at ${fmt(mean)} on average over ${others.length}. `
             + `Best: ${others.slice(0, 3).map(name).join(", ")}. Worst: ${others.slice(-3).reverse().map(name).join(", ")}.`
           : "No other language shares pairs with this one in this task set."),
       ];

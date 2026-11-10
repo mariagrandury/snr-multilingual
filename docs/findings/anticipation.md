@@ -19,7 +19,7 @@ Specifically, we test whether statistics computed from proxy evaluations
 alone can serve as surrogates for DA. For each benchmark–language task and
 proxy size, we compute each surrogate without using the reference model. We
 then measure its Spearman correlation ($\rho$) with DA across
-benchmark–language tasks at each proxy size. Figure 10 reports these
+benchmark–language tasks at each proxy size. Figure 18 reports these
 correlations across proxy sizes for tasks passing the above-chance
 threshold. We compare scaling-fit $R^2$, SNR variants and their signal/noise
 components, margin above chance, and early-checkpoint ranking agreement.
@@ -28,12 +28,7 @@ trend, the separation and variability of model scores, performance relative
 to chance, and ranking agreement between early and final checkpoints at the
 same size.
 
-<div class="viz" data-viz="paperRq3"></div>
-
-***Figure 10:** Spearman rank correlation ($\rho$) between each surrogate and DA for the
-1.7B model across benchmark–language tasks. Cells report the $\rho$ and
-sample size (n). This figure corresponds to Figure 4 from the paper.*
-{ #figure-10 }
+<div class="viz" data-viz="paperRq3" id="figure-18" data-caption="Figure 18: Spearman rank correlation (ρ) between each surrogate and DA for the 1.7B model across benchmark–language tasks." data-paper="Figure 4"></div>
 
 We find that no single surrogate consistently predicts DA across
 multilingual settings. Early-checkpoint ranking agreement
@@ -48,6 +43,10 @@ early in training and whose scores exhibit less evaluation noise are also
 more likely to preserve the ranking of model variants across scales.
 Stronger associations emerge for individual benchmarks, up to $\rho=0.93$
 for HellaSwag, demonstrating that predictability is benchmark-dependent.
+
+<div class="viz" data-viz="surrogatesVariants" id="figure-19" data-caption="Figure 19: The relative-spread SNR definitions track decision accuracy best, as a block." data-paper="Figure 19"></div>
+
+<div class="viz" data-viz="surrogatesBench" id="figure-20" data-caption="Figure 20: Stronger associations emerge for individual benchmarks."></div>
 
 We next examine how these associations change with model size. Moderate
 correlations are already present at small scales and do not consistently
@@ -65,6 +64,8 @@ SNR of 8.7 against 2.0 for benchmark tasks), yet DA against the 1.7B
 reference remains at $0.70$–$0.74$ throughout training. This highlights the
 distinction between reliably measuring performance differences at the proxy
 scale and preserving model rankings across scales.
+
+<div class="viz" data-viz="surrogatesScoring" id="figure-21" data-caption="Figure 21: Surrogates split by scoring." data-paper="Figure 20"></div>
 
 !!! success "Summary"
     No metrics computed from proxy evaluations predicts DA consistently across

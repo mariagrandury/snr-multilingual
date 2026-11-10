@@ -304,9 +304,26 @@ def _link_repo_images(text, page_path, page_uri):
 _HREF = re.compile(r'<a\b[^>]*\bhref="([^"]*)"[^>]*>(.*?)</a>', re.S)
 
 
+_VIZ = re.compile(r'(<div class="viz"[^>]*>)')
+_ATTR = re.compile(r'data-(caption|text|paper)="([^"]*)"')
+
+
+def _noscript(div: str) -> str:
+    """What readers without JavaScript (and LLM page fetchers) see in place of a
+    chart: its caption, read from the box's data-caption / data-text /
+    data-paper attributes (app.js draws the same caption inside the box)."""
+    a = dict(_ATTR.findall(div))
+    kind = "table" if a.get("caption", "").startswith("Table") else "figure"
+    cap = f'<strong>{a["caption"]}</strong> {a.get("text", "")} ' if "caption" in a else ""
+    ref = f'This {kind} corresponds to {a["paper"]} from the paper. ' if "paper" in a else ""
+    return (f"<noscript><p>{cap}{ref}This chart is interactive and needs JavaScript. "
+            f"The paper has the static version.</p></noscript>")
+
+
 def on_post_page(output, page, config):
-    """Safety net on the rendered HTML (theme, raw HTML in pages), and the
-    <meta> app.js reads the notice from."""
+    """Safety net on the rendered HTML (theme, raw HTML in pages), the <meta>
+    app.js reads the notice from, and a no-JavaScript note in every chart box."""
+    output = _VIZ.sub(lambda m: m.group(1) + _noscript(m.group(1)), output)
     output = _HREF.sub(
         lambda m: f'{m.group(2)} (<em>{_NOTICE["text"]}</em>)' if _BLOCKED_URL.search(m.group(1)) else m.group(0),
         output,

@@ -13,6 +13,16 @@ hide:
 
 </div>
 
+<div class="motivation" markdown>
+
+![Motivation animation](assets/motivation.gif)
+
+People choose expensive pretraining options from evaluations of small or partially trained models.
+
+**When does that practice make the same decision as the full model in multilingual pretraining?**
+
+</div>
+
 ## Abstract
 
 Design choices for training large multilingual language models are typically
@@ -67,11 +77,14 @@ lead to cheaper, better-informed multilingual model development.
 
 ## Contributions
 
+The charts on this site are interactive versions of the paper's figures, drawn
+from the same tables. Each contribution below links to the page that holds it.
+
 <div class="cards" markdown>
 
 <a class="card" href="ladder/"><b>An open multilingual scaling ladder</b><span>An openly-available controlled multilingual scaling ladder together with evaluation measurements.</span></a>
 
-<a class="card" href="recommend/"><b>A guide to evaluation configuration</b><span>Per benchmark, the per-language training-token counts at which scores clear the above-chance threshold and at which we observe decision reliability.</span></a>
+<a class="card" href="findings/measurability/#table-2"><b>A guide to evaluation configuration</b><span>Per benchmark, the per-language training-token counts at which scores clear the above-chance threshold and at which we observe decision reliability.</span></a>
 
 <a class="card" href="findings/"><b>Trends in decision reliability</b><span>An analysis of general trends in decision reliability to inform multilingual ablation design, including recommendations on task filtering, reformatting, and scoring.</span></a>
 

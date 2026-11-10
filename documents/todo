@@ -1,0 +1,112 @@
+# Slides
+
+For EVERYTHING you write, you have to follow the writing guidelines from AGENTS.md, this includes the slides (also the titles and subtitles!), remove the "-" and ";" (you can use ":") and review the wording
+
+## Style
+
+Let's try a much more minimalist style:
+
+- Header and footer all white, no golden line separating the header from the main text.
+- Avenir font for all text.
+- Footer: only the page number (not even the total number of pages), same gray as the title
+
+section layout:
+
+- same as right now, just update the footer
+
+default or figure layout:
+
+- slide title: smaller font, all caps, gray (the gray from the landing page subtitle)
+- slide subtitle: normal font, capitalized, blue (the gray from the landing page title)
+
+## Motivation
+
+Include to start a slide with only:
+"""
+People use evaluations of cheaper, small/partially trained models to make expensive training decisions.
+
+When is that practice actually reliable
+in multilingual model development?
+"""
+(review, maybe improve it to really summarize the current version of the paper)
+
+- Include one slide about SNR by AllenAI -> one figure and one sentence with key results
+
+---
+
+# Interactive figures
+
+Generate additional versions of the current one. Add each of them as a new slide after the current version A so I can review them. The chosen versions (and new figures) will also be added to the website, but first let's finish the slides.
+
+## Model ladder
+
+Model ladder B
+
+- instead of grouping the data build and schemes, have one list of buttons per intervention axis and the user can check which to add (by default all selected)
+
+Model ladder C
+
+- as B
+- x axis=K
+- y= size = (90M-1.7B, 3B) -> only two values, since all ladders are available for all sizes from 90M to 1.7B
+- in each cell (x,y): a vertical list of little squares (same size and colors as currently) and at the right of the little square the config (e.g. "A · T3 · deep")
+
+## Data mixtures
+
+Data mixtures B
+
+- remove the squares plot, keep only the barplot since it's smaller in height and might fit better in the slide
+
+## Benchmarks
+
+Generate a new interactive figure to see the benchmarks. Like a wenn diagram.
+
+- all benchmarks considered
+- analyzed/screened (2 columns)
+- task (the rows)
+- in each cell: one line per benchmark with the numbers next to it ("Trained"/"Lang")
+- when hovering over the benchmark: formats and low-res languages
+
+## Evals
+
+Create a grid with the formats and scoring options explained with the following example:
+
+Which is the capital of Spain?
+A. Paris
+B. Zurich
+C. Madrid
+D. Buenos Aires
+
+formats: expects "C", expects "Madrid"
+
+length-normalized accuracy, BPB, bBPB
+
+---
+
+# Website
+
+Table 1: center it, currently it's aligned to the left
+
+Figure captions: currently they are duplicated, there is a version that is part of the figure and another outside the figure. Merge them to have only one caption included in the figure that stars with "Figure N" and includes when relevant the corresponding paper figure.
+
+Figure 4: include it in the formal definition box.
+
+Landing page: include the main question (the one above) and also the motivation.gif
+
+---
+
+---
+
+- website figure captions: no, i dont want any more markdown captions, only in-figure captions, i think it's weird to have both
+- format + scoring: add "continuation" which would be The capital of Spain is (add as a new version so I can compare, add to this other version also a more detalied explanation of the bBPB if possible, and the real score of a true and false options in each case)
+- model ladder versions B and C: add margin between the little squares like in A. And chnange the order between swiglu and xielu
+- model ladder C: instead of 90M to 1.7B in one line, write in the margin "90M\n175M\n...1.7B" (one size per line, one below the previous one)
+- benchmarks new figure: everything has to fit in one slide without scrolling, try other spatial dispositions. Also, INCLUDE is cultural knowledge
+- def of above chance threshold: add new slide without formal def, simpler def, and another with the example explained
+- above chance heatmap interactive: turn to put languages in the x axis (i'd like to fit it all in one slide)
+
+- rewrite all the subtitles or titles of "interactive versions of figures", do no write "interactive", write also the key finding of the figure since i will only keep or the static or the interactive version of each
+- in the current slide 38 scaling curves interactive, specify better "one task, with its fits" (specify fits wrt what). That figure has all the data from the figures of the two slides before right?
+- english only interactive: move the find bench next to the other button. In the r2 view, write on the right of the 3 plots the list of benchmarks that are orange (on top of the list the one with highest R2).
+- in the slides with the main-text agreement figures, make a version with the slides in 2-col format with the plot on the left and the key findings written in bullet points on the right
+- at the beginning of RQ3 add a slide with the main formal definitions fo the considered proxies
