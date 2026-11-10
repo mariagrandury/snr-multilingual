@@ -1766,13 +1766,47 @@
     diverging, fmt, pct, sizeNum, byKey, uniq, h, expand, load, plot, mount, control, note, tiles, table,
     languages, langName, fwName };
 
+  // ---------- one caption per figure ----------
+  /* A figure's caption lives on its box, not in the page text:
+     <div class="viz" data-viz=… id="figure-N" data-caption="Figure N: Title."
+          data-text="…" data-paper="Figure 3a">. It is drawn inside the box as
+     "Figure N: Title. {text} {the view's own description} This figure
+     corresponds to {paper} from the paper." The view's description is its last
+     paragraph note, which can change with the buttons; notes inside an example,
+     a card or a run's detail stay where they are. */
+  function caption(el) {
+    const kind = /^Table/.test(el.dataset.caption) ? "table" : "figure";
+    const slot = h("span", { class: "viz-caption-note" });
+    const p = h("p", { class: "viz-caption" }, h("strong", {}, el.dataset.caption), " ",
+      el.dataset.text ? `${el.dataset.text} ` : null, slot,
+      el.dataset.paper ? `This ${kind} corresponds to ${el.dataset.paper} from the paper.` : null);
+    el.append(p);
+    const title = el.dataset.caption.replace(/^(Figure|Table) \d+:\s*/, "").replace(/\.\s*$/, "").toLowerCase();
+    const sync = () => {
+      const notes = [...el.querySelectorAll(".viz-note")].filter((n) => n.tagName === "P" && !n.closest(".viz-example, .viz-card, .ladder-detail, .lk-mix"));
+      const n = notes.at(-1);
+      let text = n ? n.textContent.trim() : "";
+      if (n) n.hidden = true;
+      // a note that opens by repeating the caption's title keeps only what follows its first colon
+      if (title && text.toLowerCase().startsWith(title.slice(0, 30)) && text.includes(":")) {
+        text = text.slice(text.indexOf(":") + 1).trim();
+        text = text.charAt(0).toUpperCase() + text.slice(1);
+      }
+      const want = text ? `${text} ` : "";
+      if (slot.textContent !== want) slot.textContent = want;
+    };
+    sync();
+    new MutationObserver(sync).observe(el, { childList: true, subtree: true });
+  }
+
   // ---------- boot ----------
   function boot() {
     for (const el of document.querySelectorAll("[data-viz]")) {
       const view = VIEWS[el.dataset.viz];
       if (!view) continue;
       el.replaceChildren(h("div", { class: "viz-empty" }, "Loading…"));
-      Promise.resolve(view(el)).catch((e) => { el.replaceChildren(h("div", { class: "viz-empty" }, `Could not draw this view (${e.message}).`)); console.error(e); });
+      Promise.resolve(view(el)).then(() => el.dataset.caption && caption(el))
+        .catch((e) => { el.replaceChildren(h("div", { class: "viz-empty" }, `Could not draw this view (${e.message}).`)); console.error(e); });
     }
     new MutationObserver(() => REDRAW.forEach((f) => f()))
       .observe(document.body, { attributes: true, attributeFilter: ["data-md-color-scheme"] });

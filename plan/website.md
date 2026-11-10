@@ -107,7 +107,15 @@ Not done yet, for discussion:
    - Figure 5 counts INCLUDE v2 (OG) in 36 languages, the site in 42; the
      site has no 3B or screened-benchmark data for its Figure 5-style bars.
 
-## 4. Pending website changes (asked on 2026-11-09)
+## 4. Website changes asked on 2026-11-09
+
+Done: Table 1 centred, one caption per figure (inside the box), Figure 4 in
+the formal definition box, the question and `motivation.gif` on the landing
+page. Still open: item 5. The new views drafted for the slides
+(`views/slides.js`: ladder versions B and C, mixtures without the treemap,
+every benchmark considered by task, formats and scorings on one item) go to
+the site once chosen.
+
 
 1. Center Table 1 on the Model ladder page. It is aligned to the left.
 2. One caption per figure. Each chart has its own note inside the box and a

@@ -10,12 +10,7 @@ hide:
 Table 7 lists every multilingual (or non-English) benchmark we found implemented in [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) or [lighteval](https://github.com/huggingface/lighteval).
 The Paper column marks the ones the paper analyses (🔬) or screened (🔍), as listed in Table 6 of the paper. Filter by language, evaluation framework, or benchmark characteristics.
 
-<div class="viz" data-viz="benchmarks"></div>
-
-***Table 7:** Multilingual and non-English benchmarks implemented in lm-evaluation-harness
-or lighteval, with the languages they cover and whether the paper analyses or
-screened them. This table corresponds to Table 6 from the paper.*
-{ #table-7 }
+<div class="viz" data-viz="benchmarks" id="table-7" data-caption="Table 7:" data-text="Multilingual and non-English benchmarks implemented in lm-evaluation-harness or lighteval, with the languages they cover and whether the paper analyses or screened them." data-paper="Table 6"></div>
 
 **Before you pick benchmarks for your small-model ablations**, check whether it carries
 signal at your scale, since most four-option benchmarks sit at chance below 1B in our model ladder ([Measurability](findings/measurability.md)). Tip: the [recommender](recommend.md) ranks the benchmarks of our suite per language and proxy size.

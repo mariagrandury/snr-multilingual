@@ -28,12 +28,7 @@ trend, the separation and variability of model scores, performance relative
 to chance, and ranking agreement between early and final checkpoints at the
 same size.
 
-<div class="viz" data-viz="paperRq3"></div>
-
-***Figure 18:** Spearman rank correlation ($\rho$) between each surrogate and DA for the
-1.7B model across benchmark–language tasks. Cells report the $\rho$ and
-sample size (n). This figure corresponds to Figure 4 from the paper.*
-{ #figure-18 }
+<div class="viz" data-viz="paperRq3" id="figure-18" data-caption="Figure 18: Spearman rank correlation (ρ) between each surrogate and DA for the 1.7B model across benchmark–language tasks." data-paper="Figure 4"></div>
 
 We find that no single surrogate consistently predicts DA across
 multilingual settings. Early-checkpoint ranking agreement
@@ -49,19 +44,9 @@ more likely to preserve the ranking of model variants across scales.
 Stronger associations emerge for individual benchmarks, up to $\rho=0.93$
 for HellaSwag, demonstrating that predictability is benchmark-dependent.
 
-<div class="viz" data-viz="surrogatesVariants"></div>
+<div class="viz" data-viz="surrogatesVariants" id="figure-19" data-caption="Figure 19: The relative-spread SNR definitions track decision accuracy best, as a block." data-paper="Figure 19"></div>
 
-***Figure 19: The relative-spread SNR definitions track decision accuracy best, as a
-block.** For each of the 22 SNR definitions, the mean over languages of the Pearson
-r between log10 SNR and decision accuracy across the tasks of one language,
-for DA-size (blue) and DA-ckpt (orange). This figure corresponds to Figure 19 from the paper.*
-{ #figure-19 }
-
-<div class="viz" data-viz="surrogatesBench"></div>
-
-***Figure 20: Stronger associations emerge for individual benchmarks.** Spearman ρ with DA-size within one benchmark, for the
-relative-standard-deviation SNR and the strongest SNR definition.*
-{ #figure-20 }
+<div class="viz" data-viz="surrogatesBench" id="figure-20" data-caption="Figure 20: Stronger associations emerge for individual benchmarks."></div>
 
 We next examine how these associations change with model size. Moderate
 correlations are already present at small scales and do not consistently
@@ -80,12 +65,7 @@ reference remains at $0.70$–$0.74$ throughout training. This highlights the
 distinction between reliably measuring performance differences at the proxy
 scale and preserving model rankings across scales.
 
-<div class="viz" data-viz="surrogatesScoring"></div>
-
-***Figure 21: Surrogates split by scoring.** Spearman ρ between each surrogate and DA-size against 1.7B at each proxy
-size, on the benchmark tasks above chance scored by accuracy, their bBPB
-versions and per-language BPB; n is the number of tasks. This figure corresponds to Figure 20 from the paper.*
-{ #figure-21 }
+<div class="viz" data-viz="surrogatesScoring" id="figure-21" data-caption="Figure 21: Surrogates split by scoring." data-paper="Figure 20"></div>
 
 !!! success "Summary"
     No metrics computed from proxy evaluations predicts DA consistently across

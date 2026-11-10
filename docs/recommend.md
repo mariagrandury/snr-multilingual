@@ -47,13 +47,7 @@ We calculate the tokens of each language your proxy sees multiplying share x bud
 
 Table 5 is a stricter rule we use only on this site; the paper's guide is [Table 2](findings/measurability.md#table-2) (Table 7 of the paper), the tokens of the language from which 50% and 90% of the evaluations are above chance.
 
-<div class="viz" data-viz="lookup"></div>
-
-***Table 5:** Above chance per training tokens: for your proxy size, token budget and
-mixture, the tokens of each language the proxy sees and, per evaluation and
-language, whether they reach the fewest tokens from which the evaluation stays
-above chance in our runs of that size.*
-{ #table-5 }
+<div class="viz" data-viz="lookup" id="table-5" data-caption="Table 5:" data-text="Above chance per training tokens: for your proxy size, token budget and mixture, the tokens of each language the proxy sees and, per evaluation and language, whether they reach the fewest tokens from which the evaluation stays above chance in our runs of that size."></div>
 
 <!--
 ??? note "How the minimum-tokens table is built"
@@ -72,9 +66,4 @@ above chance in our runs of that size.*
 
 Select the language you care about, the size of the proxy models given your compute budget, and the reliability question you want the proxy to answer.
 
-<div class="viz" data-viz="recommend"></div>
-
-***Table 6:** Decision reliability per size: for the selected language, proxy size
-and question, each benchmark's share of runs above chance, its log₁₀ SNR and
-its decision accuracy, with a verdict.*
-{ #table-6 }
+<div class="viz" data-viz="recommend" id="table-6" data-caption="Table 6:" data-text="Decision reliability per size: for the selected language, proxy size and question, each benchmark&#x27;s share of runs above chance, its log₁₀ SNR and its decision accuracy, with a verdict."></div>

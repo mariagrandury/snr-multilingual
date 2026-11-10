@@ -50,14 +50,7 @@ observed ranking agreement.
 
 ## 2.1 Within-Model Training Agreement
 
-<div class="viz" data-viz="paperRq2" data-panel="ckpt"></div>
-
-***Figure 13: Within-model training agreement.** DA of each intermediate
-checkpoint relative to the final checkpoint of the same model size, averaged
-over tasks, over the benchmark–language tasks (accuracy and bBPB) whose median DA in
-the scale or within-model training agreement setting is at least 0.66. This figure corresponds to
-Figure 3b from the paper.*
-{ #figure-13 }
+<div class="viz" data-viz="paperRq2" data-panel="ckpt" id="figure-13" data-caption="Figure 13: Within-model training agreement." data-paper="Figure 3b"></div>
 
 Figure 13 shows the mean DA across benchmark–language tasks and model-variant
 comparisons at each training checkpoint, using the final checkpoint at the
@@ -72,14 +65,7 @@ and ranking agreement.
 
 ## 2.2 Scale Agreement
 
-<div class="viz" data-viz="paperRq2" data-panel="size"></div>
-
-***Figure 14: Scale agreement.** DA of the final checkpoint of each
-model size against the final 1.7B ranking, pooled over decisions, one line
-per design axis and a black line over all pairs, over the benchmark–language tasks (accuracy and bBPB) whose median DA in
-the scale or within-model training agreement setting is at least 0.66. This figure corresponds to
-Figure 3a from the paper.*
-{ #figure-14 }
+<div class="viz" data-viz="paperRq2" data-panel="size" id="figure-14" data-caption="Figure 14: Scale agreement." data-paper="Figure 3a"></div>
 
 Figure 14 shows the mean DA between fully trained models at different scales
 and the fully trained 1.7B reference, across model-variant comparisons
@@ -93,14 +79,7 @@ the size of the proxy model alone.
 
 ## 2.3 Target Agreement
 
-<div class="viz" data-viz="paperRq2" data-panel="target"></div>
-
-***Figure 15: Target agreement.** DA of each intermediate checkpoint
-relative to the final 1.7B reference model, measuring how early partially
-trained and smaller models recover the decision at the reference size, over the benchmark–language tasks (accuracy and bBPB) whose median DA in
-the scale or within-model training agreement setting is at least 0.66. This figure corresponds to
-Figure 3c from the paper.*
-{ #figure-15 }
+<div class="viz" data-viz="paperRq2" data-panel="target" id="figure-15" data-caption="Figure 15: Target agreement," data-text="how early partially trained and smaller models recover the decision at the reference size." data-paper="Figure 3c"></div>
 
 Figure 15 shows the mean DA between intermediate checkpoints across model
 sizes and the target (the fully trained 1.7B reference model), measuring the
@@ -147,23 +126,9 @@ newly reclassified as correct; pairs whose rankings already agree remain
 unchanged. This table corresponds to Table 9 from the paper.*
 { #table-4 }
 
-<div class="viz" data-viz="daChannels"></div>
+<div class="viz" data-viz="daChannels" id="figure-16" data-caption="Figure 16: Where accuracy is at chance at the proxy, bBPB still ranks the design variants like the 1.7B bBPB, though far below per-language BPB." data-text="Blue: accuracy against the 1.7B accuracy. Orange: the proxy&#x27;s bBPB against the 1.7B accuracy. Green: bBPB against the 1.7B bBPB." data-paper="Figure 16"></div>
 
-***Figure 16: Where accuracy is at chance at the proxy, bBPB still ranks the design
-variants like the 1.7B bBPB, though far below per-language BPB.** DA-size against the 1.7B final checkpoint on multi-axis pairs, for the
-tasks above chance at the proxy, at chance at the proxy and at chance at
-every size. Blue: accuracy against the 1.7B accuracy. Orange: the proxy's
-bBPB against the 1.7B accuracy. Green: bBPB against the 1.7B bBPB. Black
-tick: the macro average of per-language BPB. Dashed: 0.5. This figure corresponds to Figure 16 from the paper.*
-{ #figure-16 }
-
-<div class="viz" data-viz="ltCross"></div>
-
-***Figure 17: On HellaSwag, the languages that the K = 8 list trains together predict
-each other's 1.7B ranking, while English does not.** DA-size of the ranking on the HellaSwag task of one language at the proxy
-(rows) against the 1.7B ranking on another language (columns), averaged
-over 90M–1B; the diagonal is the task's own DA-size. This figure corresponds to Figure 15 from the paper.*
-{ #figure-17 }
+<div class="viz" data-viz="ltCross" id="figure-17" data-caption="Figure 17: On HellaSwag, the languages that the K = 8 list trains together predict each other&#x27;s 1.7B ranking, while English does not." data-paper="Figure 15"></div>
 
 !!! success "Summary"
     On accuracy-scored benchmarks, the share of variant pairs that a proxy

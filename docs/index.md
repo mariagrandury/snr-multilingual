@@ -13,6 +13,16 @@ hide:
 
 </div>
 
+<div class="motivation" markdown>
+
+![Motivation animation](assets/motivation.gif)
+
+People choose expensive pretraining options from evaluations of small or partially trained models.
+
+**When does that practice make the same decision as the full model in multilingual pretraining?**
+
+</div>
+
 ## Abstract
 
 Design choices for training large multilingual language models are typically

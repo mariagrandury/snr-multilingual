@@ -96,12 +96,18 @@ per task, every benchmark, the paper's view one click away. Headings keep the pa
 titles, numbered 1.x–3.x for its Sections 4–6 (the Findings landing page says
 so). Figures and tables are numbered in site order (Home, Model ladder,
 Findings 1–3, Recommender, Benchmarks: Table 1 notation … Table 7 catalogue,
-Figure 1 mixtures … Figure 21 surrogates by scoring), each caption carries an anchor
-(`{ #figure-N }` / `{ #table-N }`), and a caption ends with "This figure/table
-corresponds to … from the paper." only when it has a paper counterpart. A new
-figure or table shifts the numbers after it: renumber the captions and the
-in-text references. The Access table and the Benchmarks Columns legend are not
-numbered. What is still open is in
+Figure 1 mixtures … Figure 21 surrogates by scoring). A chart's caption is
+not page text: it lives on its box, `<div class="viz" data-viz=… id="figure-N"
+data-caption="Figure N: Title." data-text="…" data-paper="Figure 3a">`, and
+`caption()` in `app.js` draws it inside the box as the title, the text, the
+view's own description (its last paragraph note, which follows the buttons)
+and "This figure corresponds to … from the paper." when `data-paper` is set.
+So `data-text` holds only what the view does not say. `mkdocs_hooks.py` puts
+the same caption in the box's `<noscript>` for readers without JavaScript.
+The markdown tables (Tables 1, 3, 4) keep a markdown caption with a
+`{ #table-N }` anchor. A new figure or table shifts the numbers after it:
+renumber the captions and the in-text references. The Access table and the
+Benchmarks Columns legend are not numbered. What is still open is in
 `plan/website.md`. The rest of this section describes the archived pages in
 `findings_all/`: a page there reads its RQ's main JSON plus the JSON of its additional
 views (`scripts/site_data/<page>.py`, often several files, e.g.
