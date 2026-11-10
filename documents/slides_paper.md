@@ -305,7 +305,7 @@ subtitle: We evaluate 10 ckpts per model
 
 <!--
 We evaluate every run at each tenth of training, only on the languages it trains.
-Live: Pick HellaSwag (Okapi): Every size scores rise above the dashed chance line. Then INCLUDE: Every size stays at chance. Switch the x axis to compute.
+Live: Pick HellaSwag (Okapi): Every size scores rise above the dashed chance line. Also xnli, xcopa, xstorycloze. Then INCLUDE: Every size stays at chance. Also belebele, global mmlu.
 -->
 
 
@@ -317,41 +317,20 @@ layout: section
 
 At which model size and per-language token count is a task above chance?
 
----
-layout: default
-title: "RQ1: Measurability"
-subtitle: When is a score above chance?
----
-
-<div class="definition">
-
-A model guessing at random gets about **1 in m** answers right on a task with m options.
-
-We call a model **above chance** when its accuracy is so high that random guessing would very rarely reach it.
-
-The fewer items a task has, the further above chance the accuracy must be.
-
-A model size **passes** a task when at least half of its models are above chance.
-
-</div>
-
-<!--
-A score that is statistically indistinguishable from chance provides no reliable information about which model is better.
--->
 
 ---
 layout: default
 title: "RQ1: Measurability"
-subtitle: Definition of the above-chance threshold
+subtitle: The above-chance threshold
 ---
 
 <div class="definition">
 
-$$\mathrm{LCB}_{95}(\hat p) = \frac{\hat p + \frac{z^2}{2n} - z\sqrt{\frac{\hat p(1-\hat p)}{n} + \frac{z^2}{4n^2}}}{1 + \frac{z^2}{n}}, \qquad z = 1.645$$
+A model is above chance on a task when $\mathrm{LCB}_{95}(\hat p) > 1/m_b$, with $m_b$ the number of options of benchmark $b$.
 
-A model is above chance on a task when $\mathrm{LCB}_{95}(\hat p) > 1/m_b$.
+$\mathrm{LCB}_{95}$ is the one-sided 95% Wilson lower confidence bound on the final-ckpt accuracy over the task's n items ($\hat p$).
 
-A model size passes the task when at least half of its models are above chance.
+A model size passes the task when at least half of its configurations are above chance. BPB and bBPB have no chance level and are not filtered.
 
 </div>
 
@@ -368,93 +347,35 @@ BPB and bBPB have no chance level and are not filtered.
 
 ---
 layout: figure
-image: /extra/above_random_example.png
+image: /paper/app_rq00_chance_reformulation.png
 fit: contain
-height: 44vh
+height: 46vh
 title: "RQ1: Measurability"
-subtitle: "The threshold on one task: INCLUDE v2 in Hungarian, from 350M on"
+subtitle: "Cloze benchmark version scores pass the threshold"
 ---
 
 <!--
-INCLUDE v2 in Hungarian: 4 options, 1,386 items, so a run needs 27.0% (2 points above chance).
-Per size, runs passing over runs that train Hungarian: 90M 1 of 11, 175M 5 of 11, 350M 6 of 11, 600M 5 of 11, 1B 7 of 11, 1.7B 9 of 11.
-So the task enters the analysis at 350M, 1B and 1.7B. The orange run (350M) scores 25.8%: above the chance line, but its lower bound (23.9%) is not.
+At 1.7B, programmatic reformulation increases the languages above chance from 5 to 86 of 105 for Belebele, from 1 to 35 of 37 for Global-MMLU, and from 3 to 31 of 43 for INCLUDE.
+
+LLM-RF: Belebele passes in every trained language at every size. INCLUDE passes in 32 of 43 languages at 1.7B.
 -->
 
----
-layout: figure
-title: "RQ1: Measurability"
-subtitle: "The above-chance threshold: The one-sided 95% Wilson bound must exceed 1/m"
----
 
-::figure::
-<Interactive viz="gateMarginCalc" :zoom="0.9" />
-
-<!--
-A configuration is above chance when the one-sided 95% Wilson lower bound on its accuracy exceeds 1/m, where m is the number of options.
-A model size passes a task when at least half of its configurations are above chance. The (task, size) cells that fail are dropped from later analyses.
-Small benchmarks need a larger margin. The median margin is 9.00 points for non-parallel Global PIQA (100 items), 2.44 for Belebele (900), 0.74 for HellaSwag (about 9,000) and 0.60 for Global-MMLU (about 14,000).
-BPB and bBPB have no chance level, so the threshold does not apply to them.
--->
-
----
-layout: default
-title: "RQ1: Measurability"
-subtitle: "Letter-format benchmarks pass only at 3B, cloze benchmarks from 90M"
----
-
-<div class="fig-side">
-<div class="fig-side-img"><img src="/paper/app_rq00_chance_share_considered_counts_3b.png"></div>
-<ul>
-<li>For only 38% of tasks does every model size pass the above-chance filter.</li>
-<li>For 34% of tasks, no model up to 1.7B passes the filter.</li>
-<li>These tasks are predominantly from benchmarks requiring letter-format answers like Belebele, Global-MMLU and INCLUDE.</li>
-<li>On benchmarks scored on the answer text, such as HellaSwag (Okapi) and MultiBLiMP, configurations score above chance in all trained languages even at 90M.</li>
-</ul>
-</div>
-
-<!--
--->
 
 ---
 layout: figure
 title: "RQ1: Measurability"
 subtitle: "Letter-format benchmarks pass only at 3B, cloze benchmarks from 90M"
----
-
-::figure::
-<Interactive viz="firstSize" :zoom="0.85" />
-
-<!--
-Each square is one benchmark in one language, coloured by the smallest size that passes. Orange marks a task that never passes, up to 3B. White marks a language without items.
-Live: Switch to 'original versions only' and back: The RF rows are what turns Belebele, Global-MMLU and INCLUDE blue.
--->
-
----
-layout: figure
-title: "RQ1: Measurability"
-subtitle: "The smallest size above chance, version B: languages on the x axis"
 ---
 
 ::figure::
 <Interactive viz="firstSize" panel="languages-x" :zoom="0.68" height="500px" />
 
 <!--
-Version B turns the grid: languages run along the x axis and benchmarks down the y axis, with smaller cells, so the whole grid fits on one slide.
--->
-
----
-layout: figure
-title: "RQ1: Measurability"
-subtitle: Every benchmark in every trained language
----
-
-::figure::
-<div class="scroll-fig"><img src="/paper/app_rq00_chance_full.png"></div>
-
-<!--
-The full grid behind the previous slides: the smallest size at which each language task passes.
-The columns that stay red are the letter-format benchmarks.
+For only 38% of tasks does every model size pass the above-chance filter.
+For 34% of tasks, no model up to 1.7B passes the filter.
+These tasks are predominantly from benchmarks requiring letter-format answers like Belebele, Global-MMLU and INCLUDE.
+On benchmarks scored on the answer text, such as HellaSwag (Okapi) and MultiBLiMP, configurations score above chance in all trained languages even at 90M.
 -->
 
 ---
@@ -463,40 +384,19 @@ image: /paper/rq0.png
 fit: contain
 height: 50vh
 title: "RQ1: Measurability"
-subtitle: "Figure 1: Reformulation moves INCLUDE above chance"
+subtitle: "Language training tokens and format effect: the case of INCLUDE"
 ---
 
 <!--
 The share of (language, K, checkpoint) evaluations above chance, against the training tokens of the language.
-In the original letter format (top), the share stays near zero at every size and token count. Scored on the answer text (bottom), it rises from about 100M tokens and reaches nearly 100% by 10B.
-Outside English, 42% of the cells below 100M tokens are above chance, 55% between 100M and 10B, and 64% beyond 10B. A third stay at chance after 10B tokens, the full Chinchilla budget of a 500M monolingual model.
-Size matters as well. At 100M to 1B tokens, 43% of the 90M runs are above chance against 62% of the 1.7B runs. Exposure to the language is necessary but not sufficient.
--->
-
----
-layout: default
-title: "RQ1: Measurability"
-subtitle: "Figure 1: Reformulation moves INCLUDE above chance, with its findings"
----
-
-<div class="fig-side">
-<div class="fig-side-img"><img src="/paper/rq0.png"></div>
-<ul>
-<li>On the original letter-based format, models rarely exceed chance.</li>
-<li>For the reformulated version, filter pass rates increase with training.</li>
-<li>At the 1.7B size, programmatic reformulation increases the number of languages above chance from 3 to 31 of 43 for INCLUDE.</li>
-<li>Across non-English benchmarks, configurations with at most 100M target-language tokens score above chance on 42% of tasks, and 64% with 10B to 100B tokens.</li>
-</ul>
-</div>
-
-<!--
-Same figure as the previous slide. The bullets are the paper's sentences.
+Original (top): Accuracy rarely exceeds chance. Reformulated (bottom): The share of configurations that pass the filter rises as training progresses.
+At 100M to 1B target-language tokens, 43% of 90M configurations are above chance, against 62% at 1.7B.
 -->
 
 ---
 layout: figure
 title: "RQ1: Measurability"
-subtitle: "Figure 1: Reformulation moves INCLUDE above chance, and the other benchmarks one click away"
+subtitle: "Language training tokens and format effect"
 ---
 
 ::figure::
@@ -509,229 +409,70 @@ Live: Pick HellaSwag (above chance from the fewest tokens), ARC (Okapi) (needs a
 ---
 layout: figure
 title: "RQ1: Measurability"
-subtitle: Outside English, every decade of tokens from 10⁷ on raises the share above chance
----
-
-::figure::
-<div class="scroll-fig"><img src="/paper/app_rq00_chance_vs_train_tokens.png"></div>
-
-<!--
-One panel per benchmark and one line per model size.
-HellaSwag (Okapi), MultiBLiMP and TokSuite pass in nearly every run below 100M tokens.
-Both versions of ARC need about 10B tokens.
-Pooled over every language, the curve dips in the top bins because those are mostly English.
--->
-
----
-layout: figure
-title: "RQ1: Measurability"
-subtitle: "Table: Training tokens of the language each size needs before a benchmark is above chance"
----
-
-::figure::
-<div class="scroll-fig"><img src="/tables/table08_app_rq0_thresholds.png"></div>
-
-<!--
-For each non-English benchmark and answer format, the tokens of the language at which 50% and 90% of its (language, K, checkpoint) cells are above chance. Lang. is the number of non-English trained languages. Margin is the median accuracy above chance a task needs for its Wilson bound to clear chance. Items is the median item count.
-The next slide is the interactive version.
--->
-
----
-layout: figure
-title: "RQ1: Measurability"
-subtitle: "The guide: tokens of the language needed for 50% and 90% of the cells to pass"
+subtitle: "Language training tokens needed to pass the threshold"
 ---
 
 ::figure::
 <Interactive viz="gateThresholdTable" :zoom="0.85" />
 
 <!--
-This is the paper's threshold table, per benchmark, answer format and model size.
-HellaSwag, MultiBLiMP and the LLM-RF Belebele reach 90% with the fewest tokens.
-The letter-format Belebele, Global-MMLU and INCLUDE, BLEnD, CulturalBench-hard and TruthfulQA (MC2) never reach 50%. Their reformatted versions do.
+For each non-English benchmark and answer format, the tokens of the language at which 50% and 90% of its (language, K, checkpoint) cells are above chance. Lang. is the number of non-English trained languages. Margin is the median accuracy above chance a task needs for its Wilson bound to clear chance. Items is the median item count.
+
+How to read it: A cell gives the tokens of the language a model of that size needs before 50% (top) and 90% (bottom) of its evaluations pass. '≤ X': It passes from the fewest tokens we saw. '> X', orange: never reached in our runs.
+Live: HellaSwag passes from the start at every size. ARC (Okapi) reaches 50% at 3.3B tokens at 600M and at 320M at 1.7B: ten times fewer. Click Format 'Original', then 'RF': Belebele goes from orange everywhere to light blue.
+
+Examples: The letter-format Belebele, Global-MMLU and INCLUDE, BLEnD, CulturalBench-hard and TruthfulQA (MC2) never reach 50%. Their reformatted versions do.
 ARC (Okapi) reaches 50% after 3.3B tokens at 600M and after 320M at 1.7B. A 1.7B model needs about ten times fewer tokens of a language than a 90M one.
-The later analyses do not apply these token thresholds, because dropping the cells below them lowers the DA of the aggregate scores.
 -->
 
----
-layout: focus
-color: amber
----
 
-## Most tasks at chance expect the letter of the answer
-
-We score the answer text instead
-
-<!--
-Mapping a label to its content is a separate ability that small models may lack, whether or not they know the answer (Khatun and Brown 2024, Madaan et al. 2024).
-The programmatic reformatting (RF) drops the letters and scores the text of each option.
-The model-based reformulation (LLM-RF) asks gemini-3.8-flash to restate each question as a declarative stem and each option as a statement that completes it, without revealing the answer.
-The rewrite adds no length cue: the correct option is the single longest in 22.2% of the original items and in 21.9% of the rewritten ones, against 25% by chance.
--->
-
----
-layout: figure
-title: "RQ1: Measurability"
-subtitle: One INCLUDE item as letter, RF and LLM-RF
----
-
-::figure::
-<Interactive viz="llmRewrite" :zoom="0.85" />
-
-<!--
-The same item in the three formats. RF keeps the question and scores the option texts. LLM-RF turns each option into a natural continuation of the stem.
-Pick another benchmark or language to inspect the rewrites. We reviewed the generations by hand in six languages.
--->
-
----
-layout: figure
-image: /paper/app_rq00_chance_reformulation.png
-fit: contain
-height: 46vh
-title: "RQ1: Measurability"
-subtitle: Dropping the letters moves whole benchmarks across the threshold
----
-
-<!--
-At 1.7B, RF raises the number of languages above chance from 5 to 86 of 105 for Belebele, from 1 to 35 of 37 for Global-MMLU and from 3 to 31 of 43 for INCLUDE.
-LLM-RF Belebele passes in every trained language at every size. LLM-RF INCLUDE passes in 32 of 43.
-The INCLUDE accuracy gain from the original to RF widens with size, from 0.015 at 175M to 0.075 at 1.7B.
-A star marks a size where the McNemar test on the paired verdicts gives p < 0.05.
--->
 
 ---
 layout: default
 title: "RQ1: Measurability"
-subtitle: "Dropping the letters moves whole benchmarks across the threshold, with its findings"
+subtitle: "Benchmark scaling predictability across sizes"
 ---
 
-<div class="fig-side">
-<ul>
-<li>At 1.7B, RF passes in 86 of 105 Belebele, 35 of 37 Global-MMLU and 31 of 43 INCLUDE languages, against 5, 1 and 3 for the originals.</li>
-<li>The difference is significant at every size for Belebele and Global-MMLU and from 175M for INCLUDE.</li>
-<li>LLM-RF Belebele passes in every trained language at every size.</li>
-<li>LLM-RF INCLUDE passes in 32 of 43 languages at 1.7B.</li>
-</ul>
-<div class="fig-side-img"><img src="/paper/app_rq00_chance_reformulation.png"></div>
-</div>
+Most benchmarks above chance scale predictably with size. Across 431 tasks retained by the above-chance filter, the median R² of the model-size fits is 0.87, reaching 1.00 for the BPB across 50 languages.
 
-<!--
-The findings version of the previous slide: the bullets are the paper's sentences, as close to its wording as possible.
--->
-
----
-layout: figure
-image: /paper/rq1.png
-fit: contain
-height: 46vh
-title: "RQ1: Measurability"
-subtitle: "Figure 2: Benchmark scaling predictability"
----
+<Interactive viz="paperRq1" panel="a" :zoom="0.85" />
 
 <!--
 We fit the final-checkpoint score against log N (at least three sizes) and the score along a run against log tokens (at least five checkpoints), and report R² and Spearman's ρ.
 (a) Above chance, the median size-fit R² is 0.87 over 389 benchmark tasks and 1.00 for the per-language BPB of 30 languages. HellaSwag reaches 0.88 and LAMBADA 0.96. The letter-format Global-MMLU, INCLUDE and Belebele have no fit because they stay at chance. Their RF versions fit at 0.84 to 0.92.
 A high R² does not mean improvement: Spanish TruthfulQA-Multi has R² 0.97 with ρ = −0.75.
-(b) 311 of the 419 accuracy and BPB tasks (74%) are predictable along both axes. None is predictable along training but not along size. Only 9 of the 688 bBPB tasks are.
-So in our setting, comparing larger models earlier tells more than training smaller models longer.
+
+Live: Click 'one dot per benchmark (paper)' and 'accuracy and BPB (paper)' for the paper's view. Then highlight TruthfulQA-Multi: R² 0.97 but ρ = −0.75, a strong and consistent decrease with size.
 -->
 
 ---
 layout: default
 title: "RQ1: Measurability"
-subtitle: "Figure 2: benchmark scaling predictability, with its findings"
+subtitle: "Benchmark scaling predictability across sizes and training checkpoints"
 ---
 
-<div class="fig-below">
-<div class="fig-below-img"><img src="/paper/rq1.png"></div>
-<ul>
-<li>Across 431 tasks retained by the above-chance filter, the median R² of the model-size fits is 0.87, reaching 1.00 for the BPB across 50 languages.</li>
-<li>A high R², though, does not necessarily imply improvement across scales.</li>
-<li>Among accuracy and BPB tasks with valid fits along both dimensions, 74% (311 tasks) achieve R² ≥ 0.5 on both.</li>
-<li>No accuracy or BPB task exhibits predictable scaling across training checkpoints without also scaling predictably across model sizes.</li>
-</ul>
-</div>
+No accuracy or BPB task exhibits predictable scaling across training checkpoints without also scaling predictably across model sizes. Comparing larger models earlier tells more than training smaller models longer.
 
-<!--
-Same figure as the previous slide. The bullets are the paper's sentences.
--->
-
----
-layout: figure
-title: "RQ1: Measurability"
-subtitle: "Figure 2a: Most benchmarks above chance scale predictably with size, and a high R² can hide a decline"
----
-
-::figure::
-<Interactive viz="paperRq1" panel="a" :zoom="0.85" />
-
-<!--
-Live: Click 'one dot per benchmark (paper)' and 'accuracy and BPB (paper)' for the paper's view. Then highlight TruthfulQA-Multi: R² 0.97 but ρ = −0.75, a strong and consistent decrease with size.
--->
-
----
-layout: figure
-title: "RQ1: Measurability"
-subtitle: "Figure 2b: No accuracy or BPB task is predictable along training without being predictable across size"
----
-
-::figure::
 <Interactive viz="paperRq1" panel="b" :zoom="0.85" />
 
 <!--
+(b) 311 of the 419 accuracy and BPB tasks (74%) are predictable along both axes. None is predictable along training but not along size. Only 9 of the 688 bBPB tasks are.
+So in our setting, comparing larger models earlier tells more than training smaller models longer.
+
 Live: Click 'highlighted examples (paper)'. Point at MultiBLiMP: most languages top right, Danish and Swedish weak on both axes. No dot sits top left: none is predictable along training only.
 -->
 
----
-layout: figure
-title: "RQ1: Measurability"
-subtitle: The reformulated versions rise with model size while the letter originals stay at chance
----
 
-::figure::
-<div class="scroll-fig"><img src="/paper/app_rq00_benchmark_size_curves.png"></div>
-
-<!--
-Final-checkpoint accuracy against non-embedding parameters, one line per design. These curves are not filtered by the threshold.
-Belebele, Global-MMLU and INCLUDE stay on the red chance line while their RF and LLM-RF versions climb.
--->
 
 ---
 layout: figure
 title: "RQ1: Measurability"
-subtitle: Along training, the same split
----
-
-::figure::
-<div class="scroll-fig"><img src="/paper/app_rq00_benchmark_curves.png"></div>
-
-<!--
-Accuracy at each evaluated tenth of a run, in Chinchilla multiples.
-The letter formats stay at chance for the whole run. Their reformulations increase steadily.
--->
-
----
-layout: figure
-title: "RQ1: Measurability"
-subtitle: "The reformulated versions rise with size and along training while the letter originals stay at chance"
----
-
-::figure::
-<Interactive viz="scalingCurves" :zoom="0.85" />
-
-<!--
-Live: Benchmark INCLUDE shows the three formats side by side. Switch 'Accuracy against' to training progress. Then 'one task, with its fits' and pick a HellaSwag language to show the fitted lines.
--->
-
----
-layout: figure
-title: "RQ1: Measurability"
-subtitle: On English-only models, the commonly used English benchmarks scale predictably
+subtitle: English-only scaling predictability
 ---
 
 
 ::figure::
-<Interactive viz="englishRegimes" :zoom="0.85" />
+<Interactive viz="englishRegimes" panel="r2" :zoom="0.85" />
 
 <!--
 The same pattern holds for monolingual English models.
@@ -745,8 +486,6 @@ subtitle: Summary
 ---
 
 <div class="summary">
-
-**Summary.**
 
 - A large share of the suite does not perform measurably on these benchmarks.
 - In 34% of the 938 analysed benchmark–language tasks, no model size up to 1.7B passes the above-chance filter.
@@ -778,14 +517,18 @@ subtitle: Ranking agreement
 
 | | Proxy | Reference | Question |
 |---|---|---|---|
-| RA-size | $(N,\ f{=}1)$ | $(N_\text{ref},\ f{=}1)$ | How small? |
-| RA-ckpt | $(N,\ f{<}1)$ | $(N,\ f{=}1)$ | How early? |
-| RA-target | $(N,\ f{<}1)$ | $(N_\text{ref},\ f{=}1)$ | How small and how early? |
+| Scale agreement | $(N,\ f{=}1)$ | $(N_\text{ref},\ f{=}1)$ | How small can the proxy model be? |
+| Within-model training agreement | $(N,\ f{<}1)$ | $(N,\ f{=}1)$ | How early does the ranking stabilize? |
+| Target agreement | $(N,\ f{<}1)$ | $(N_\text{ref},\ f{=}1)$ | How small and how early? |
+
+We quantify ranking agreement using decision accuracy:
 
 $$\text{DA}(N,f)=\frac{1}{|\mathcal P|}\sum_{(a,b)\in\mathcal P}\mathbb 1\big[\,s_{ab}(N,f)=s_{ab}(N_\text{ref},1)\,\big]$$
 
 
 <!--
+We examine three settings.
+
 DA is the fraction of pairwise model preferences preserved between the proxy and the reference points. We compute it only with at least three variant pairs.
 -->
 
@@ -799,7 +542,7 @@ subtitle: "Table: The three ranking-agreement settings"
 ---
 
 <!--
-The proxy and the reference rank the same variants but differ in model size, training progress or both. N_ref is the 1.7B reference, or 3B in the size-generalisation appendix.
+The proxy and the reference rank the same variants but differ in model size, training progress or both. N_ref is the 1.7B reference, or 3B in the size-generalisation.
 -->
 
 ---
@@ -889,7 +632,7 @@ Same figure, findings beside it.
 ---
 layout: figure
 title: "RQ2: Agreement"
-subtitle: "Figure 3b: within one model, agreement with the final checkpoint rises from about 0.65 to about 0.9"
+subtitle: "Figure 3b: Within one model, agreement with the final checkpoint rises from about 0.65 to about 0.9"
 ---
 
 ::figure::
@@ -1115,8 +858,6 @@ subtitle: Summary
 
 <div class="summary">
 
-**Summary.**
-
 - On accuracy-scored benchmarks, the share of variant pairs that a proxy point orders the same way as the final 1.7B checkpoint is close to pairwise chance: 0.51 to 0.56 at every proxy size.
 - On per-language BPB, the share is higher, ranging from 0.74 to 0.94 over the same proxies.
 - Seed-to-seed noise in the reference models accounts for part of the disagreement.
@@ -1302,8 +1043,6 @@ subtitle: Summary
 
 <div class="summary">
 
-**Summary.**
-
 - No metrics computed from proxy evaluations predicts DA consistently across benchmarks or proxy sizes.
 - The two metrics with the strongest association are early-checkpoint ranking agreement and the relative-standard-deviation SNR.
 - Early-checkpoint ranking agreement is the DA between a run's 10% checkpoint and final checkpoint (ρ = 0.54 to 0.62).
@@ -1370,9 +1109,8 @@ subtitle: Which evaluations rank the design variants as the 1.7B reference does
 <Interactive viz="recommend" :zoom="0.85" />
 
 <!--
-The developer picks the target language, the proxy size, the decision (will the ranking hold at 1.7B, or can I decide before the run ends) and the kind of pairs.
-A benchmark gets "use" when it is above chance at that size (at least half of the runs) and its decision accuracy is at least 0.66, the paper's threshold.
-The SNR column is the relative-standard-deviation SNR at the proxy size.
+A benchmark gets 'use' when it is above chance at that size and its decision accuracy is at least 0.66, the paper's threshold.
+Live: German at 350M, then switch the language to Hungarian or Hindi, then the decision to 'Can I decide before the run ends?'.
 -->
 
 ---
@@ -1385,13 +1123,93 @@ subtitle: "Example: German, a 350M proxy, will the one-axis ranking hold at 1.7B
 ---
 
 <!--
-For German at 350M, 8 of the 40 measurements pass. Per-language BPB is the most reliable, with a decision accuracy of 0.82.
-The other seven are the bBPB of INCLUDE v2 RF (OG), ARC (Okapi), HellaSwag (Okapi), MultiBLiMP and INCLUDE LLM-RF (0.67 to 0.71), and the accuracy of HellaSwag (Okapi) and XNLI (0.67).
-Global-MMLU in its letter format is above chance in only 8% of the runs, so it is not usable here. Its RF version is above chance in every run but reaches only 0.61.
-BPB at 350M ranks like the 1.7B reference from 10% of the run.
-Read it as a prior and confirm it on your own runs.
+8 of 40 measurements pass. Per-language BPB is the most reliable (0.82). Global-MMLU in its letter format is above chance in only 8% of the runs. Read it as a prior and confirm it on your own runs.
 -->
 
+---
+layout: section
+---
+
+# Appendix
+
+Additinoal details
+
+---
+layout: figure
+title: "RQ1: Measurability"
+subtitle: Final-checkpoint accuracy against non-embedding parameters
+---
+
+::figure::
+<div class="scroll-fig"><img src="/paper/app_rq00_benchmark_size_curves.png"></div>
+
+<!--
+Final-checkpoint accuracy against non-embedding parameters, one line per design. These curves are not filtered by the threshold.
+Belebele, Global-MMLU and INCLUDE stay on the red chance line while their RF and LLM-RF versions climb.
+-->
+
+---
+layout: figure
+title: "RQ1: Measurability"
+subtitle: Accuracy across training checkpoints
+---
+
+::figure::
+<div class="scroll-fig"><img src="/paper/app_rq00_benchmark_curves.png"></div>
+
+<!--
+Accuracy at each evaluated tenth of a run, in Chinchilla multiples.
+The letter formats stay at chance for the whole run. Their reformulations increase steadily.
+-->
+
+---
+layout: default
+title: "RQ1: Measurability"
+subtitle: The above-chance threshold
+---
+
+<div class="definition">
+
+A model is above chance on a task when $\mathrm{LCB}_{95}(\hat p) > 1/m_b$, with $m_b$ the number of options of benchmark $b$.
+
+$\mathrm{LCB}_{95}$ is the one-sided 95% Wilson lower confidence bound on the final-ckpt accuracy over the task's n items ($\hat p$).
+
+$$\mathrm{LCB}_{95}(\hat p) = \frac{\hat p + \frac{z^2}{2n} - z\sqrt{\frac{\hat p(1-\hat p)}{n} + \frac{z^2}{4n^2}}}{1 + \frac{z^2}{n}}, \qquad z = 1.645$$
+
+A model size passes the task when at least half of its configurations are above chance. BPB and bBPB have no chance level and are not filtered.
+
+</div>
+
+---
+layout: figure
+image: /extra/above_random_example.png
+fit: contain
+height: 44vh
+title: "RQ1: Measurability"
+subtitle: "The threshold on one task: INCLUDE v2 in Hungarian, from 350M on"
+---
+
+<!--
+INCLUDE v2 in Hungarian: 4 options, 1,386 items, so a run needs 27.0% (2 points above chance).
+Per size, runs passing over runs that train Hungarian: 90M 1 of 11, 175M 5 of 11, 350M 6 of 11, 600M 5 of 11, 1B 7 of 11, 1.7B 9 of 11.
+So the task enters the analysis at 350M, 1B and 1.7B. The orange run (350M) scores 25.8%: above the chance line, but its lower bound (23.9%) is not.
+-->
+
+---
+layout: figure
+title: "RQ1: Measurability"
+subtitle: "The above-chance threshold: The one-sided 95% Wilson bound must exceed 1/m"
+---
+
+::figure::
+<Interactive viz="gateMarginCalc" :zoom="0.9" />
+
+<!--
+A configuration is above chance when the one-sided 95% Wilson lower bound on its accuracy exceeds 1/m, where m is the number of options.
+A model size passes a task when at least half of its configurations are above chance. The (task, size) cells that fail are dropped from later analyses.
+Small benchmarks need a larger margin. The median margin is 9.00 points for non-parallel Global PIQA (100 items), 2.44 for Belebele (900), 0.74 for HellaSwag (about 9,000) and 0.60 for Global-MMLU (about 14,000).
+BPB and bBPB have no chance level, so the threshold does not apply to them.
+-->
 
 
 ---
@@ -1400,7 +1218,7 @@ layout: section
 
 # Limitations
 
-What the results depend on
+Besides classic compute/data limitations.
 
 ---
 layout: figure

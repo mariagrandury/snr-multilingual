@@ -382,11 +382,18 @@
     await languages();
     const d = await load("evaluation");
     // the paper's names: a reformulated version says so, and the two INCLUDE v2 and the cloze/MCQ variants are told apart
-    const PRETTY = { commonsense_qa: "CommonsenseQA", cultural_bench_easy: "CulturalBench-easy", mmlu: "MMLU" };
+    const PRETTY = {
+      "ARC-Challenge translated (LumiOpen)": "ARC (MT)", "BIG-Bench Hard": "BBH", "KoBEST (Korean)": "KoBEST", "LAMBADA multilingual": "LAMBADA",
+      "MultiBLiMP 1.0": "MultiBLiMP", "NorEval (Norwegian)": "NorEval", "Okapi m_MMLU (machine-translated, alexandrainst/m_mmlu), lettered": "MMLU (Okapi)",
+      "Okapi m_arc": "ARC (Okapi)", "Okapi m_hellaswag": "HellaSwag (Okapi)", "OpenAI MMMLU (professional human translation), lettered, 57-subject group": "MMMLU",
+      "TokSuite parallel set": "TokSuite", "TruthfulQA-Multi": "TruthfulQA-Multi (MC1)", blend_sample: "BLEnD", boolq: "BoolQ", commonsense_qa: "CommonsenseQA",
+      cultural_bench_easy: "CulturalBench-easy", cultural_bench_hard: "CulturalBench-hard", global_piqa_nonparallel_cloze: "Global PIQA (non-parallel)",
+      global_piqa_parallel_cloze: "Global PIQA (parallel)", mathqa: "MathQA", mmlu: "MMLU", openbookqa: "OpenBookQA", piqa: "PIQA", toxigen: "ToxiGen",
+      truthfulqa_mc2: "TruthfulQA (MC2)", winogrande: "WinoGrande" };
     const famLabel = (f) => {
       const base = PRETTY[d.benchmarks[f].name] ?? d.benchmarks[f].name;
       const fmt = f.startsWith("rfgm_") ? " LLM-RF" : f.startsWith("rf_") ? " RF" : "";
-      const variant = /_cloze$/.test(f) ? " (cloze)" : /_mcq$/.test(f) ? " (MCQ)" : f === "include_v2_en" ? " RF (EN)" : f === "include_v2_og" ? " RF (OG)" : "";
+      const variant = base.includes("(") ? "" : /_cloze$/.test(f) ? " (cloze)" : /_mcq$/.test(f) ? " (MCQ)" : f === "include_v2_en" ? " RF (EN)" : f === "include_v2_og" ? " RF (OG)" : "";
       return base + variant + fmt;
     };
     const fams = Object.keys(d.benchmarks).sort((x, y) => famLabel(x).localeCompare(famLabel(y), "en", { sensitivity: "base" }));

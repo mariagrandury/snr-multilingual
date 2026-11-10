@@ -139,7 +139,7 @@
       extra.forEach((x, j) => { x.style.display = i === j ? "contents" : "none"; });
       if (!started.has(i)) { started.add(i); const c = options[i].draw(boxes[i]); if (c) extra[i].append(c); }
     };
-    el.replaceChildren(h("div", { class: "viz-controls" }, seg, ...extra), ...boxes);
+    el.replaceChildren(h("div", { class: "viz-controls" }, options.length > 1 ? seg : null, ...extra), ...boxes);
     show(0);
   };
 
@@ -153,17 +153,7 @@
     const nFilt = (t) => CORPORA.filter((c) => cell[`${t}|${c}`]?.regime === "filtered").length;
     const fitted = (c) => d.rows.filter((r) => r.corpus === c && r.regime !== "filtered");
     const pop = tasks.filter((t) => meta[t].popular);
-    const popAbove = pop.filter((t) => nFilt(t) < 3);
-    const popAll = pop.filter((t) => nBoth(t) === 3);
-    const popNot = popAbove.filter((t) => nBoth(t) < 3);
-    const allThree = tasks.filter((t) => nBoth(t) === 3);
     const nFit = uniq(d.rows.filter((r) => r.regime !== "filtered").map((r) => r.task)).length;
-    const summary = () => tiles([
-      [`${allThree.length} of ${nFit}`, "English accuracy tasks predictable across both size and training in all three corpora"],
-      [CORPORA.map((c) => fitted(c).filter((r) => r.regime === BOTH).length).join(" / "),
-        `of the ${nFit} tasks with a fit predictable across both size and training on ${CORPORA.join(" / ")}, each corpus on its own`],
-      [`${popAll.length} of ${popAbove.length}`, `commonly used tasks above chance that do so in all three${popNot.length ? ` (all but ${popNot.map((t) => meta[t].name).join(", ")})` : ""}`],
-    ]);
 
     // the paper's view: R² of the model-size fit against the median R² of the training fits, one panel per corpus
     const scatter = (box) => {
@@ -179,10 +169,10 @@
         const both = tasks.filter((t) => nBoth(t) === 3)
           .map((t) => ({ t, r2: d3.mean(CORPORA, (c) => cell[`${t}|${c}`].r2_size) })).sort((a, b) => b.r2 - a.r2);
         const list = h("div", { style: "font-size:.66rem;line-height:1.45;min-width:9.5em;align-self:center" },
-          h("div", { style: `font-weight:600;color:${regColor(BOTH)};margin-bottom:2px` }, `Predictable across both in all three corpora (${both.length})`),
+          h("div", { style: `font-weight:600;color:${regColor(BOTH)};margin-bottom:2px` }, `Predictable across both in all three corpora (${both.length}/${nFit})`),
           both.map(({ t, r2 }) => h("div", { style: "display:flex;justify-content:space-between;gap:6px" },
             h("span", {}, meta[t].name), h("span", { style: "color:var(--md-default-fg-color--light)" }, fmt(r2)))));
-        return [summary(),
+        return [
           h("div", { style: "display:flex;gap:10px;justify-content:center;align-items:center" }, plot({
             width: Math.max(540, (box.clientWidth || 1000) - 200), height: 300, marginLeft: 45, marginTop: 30,
             fx: { domain: CORPORA, label: null, tickFormat: (c) => `${c} (${fitted(c).length} tasks)`, padding: 0.12 },
@@ -237,7 +227,6 @@
             h("thead", {}, h("tr", {}, h("th", {}, "task (click one for its curves)"), ...CORPORA.map((c) => h("th", { title: CORPUS_NOTE[c] }, c)))),
             h("tbody", {}, rows)));
         return [
-          summary(),
           h("div", { class: "ladder-legend" }, Object.entries(REGIMES).map(([k, [word, long]]) => h("span", { title: long },
             h("i", { style: `display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:.35em;vertical-align:-2px;background:${regColor(k)}` }), `${word}: ${long}`))),
           keep.length ? table : h("div", { class: "viz-empty" }, "No English task matches."),
@@ -271,9 +260,10 @@
         legend(CORPORA.map((corpus, i) => [col(i), CORPUS_NOTE[corpus]])));
     }
 
+    // data-panel="r2" (the slides): the paper's scatter only, without the Show switch
     modes(el, "Show", [
       { label: "R² of the fits (paper)", draw: scatter },
       { label: "regime per corpus, with the scores", draw: tableView },
-    ]);
+    ].slice(0, el.dataset.panel === "r2" ? 1 : 2));
   };
 })();
