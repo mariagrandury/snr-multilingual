@@ -36,5 +36,61 @@
 .opening strong { display: block; margin-top: 1.4rem; font-size: 1.9rem; line-height: 1.35; color: var(--slidev-theme-primary, #1e3a5f); }
 
 /* Definition and summary slides (slides_paper.md). */
-.definition, .summary { max-width: 52rem; margin: 1.5rem auto 0; padding: 1.2rem 1.6rem; border-left: 4px solid var(--slidev-theme-primary, #1e3a5f); background: rgba(30, 58, 95, .05); border-radius: 4px; font-size: 1.05rem; line-height: 1.55; }
-.summary p + p, .definition p + p { margin-top: .8rem; }
+.definition { max-width: 52rem; margin: 1.5rem auto 0; padding: 1.2rem 1.6rem; border-left: 4px solid var(--slidev-theme-primary, #1e3a5f); background: rgba(30, 58, 95, .05); border-radius: 4px; font-size: 1.05rem; line-height: 1.55; }
+.definition p + p { margin-top: .8rem; }
+/* the paper's summary boxes (tcolorbox: teal!8 background, teal!55 frame, 0.7pt rule, 3pt corners) */
+.summary { max-width: 52rem; margin: 1.2rem auto 0; padding: .9rem 1.3rem; background: color-mix(in srgb, teal 8%, white); border: 1px solid color-mix(in srgb, teal 55%, white); border-radius: 4px; font-size: 1rem; line-height: 1.5; color: #2d3748; }
+.summary p + p { margin-top: .6rem; }
+.summary ul { margin: .4rem 0 0 1.1rem; padding: 0; list-style: disc; }
+.summary li + li { margin-top: .45rem; }
+
+/* ---- Minimal style of slides_paper.md (htmlAttrs data-deck="paper") ----
+   White header and footer, no accent line, Avenir everywhere, and a footer
+   that shows only the current page number. */
+html[data-deck="paper"] {
+  --paper-gray: rgba(45, 55, 72, 0.75);   /* the subtitle grey of the section slides */
+  --paper-blue: var(--slidev-theme-primary, #1e3a5f);
+}
+html[data-deck="paper"] .beamer-header {
+  background: #fff;
+  border-bottom: 0;
+  padding-top: 1.1rem;
+}
+html[data-deck="paper"] .header-title {
+  color: var(--paper-gray);
+  text-shadow: none;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  line-height: 1rem;
+  font-weight: 600;
+}
+html[data-deck="paper"] .header-subtitle {
+  color: var(--paper-blue);
+  font-size: 1.5rem;
+  line-height: 1.9rem;
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+html[data-deck="paper"] .header-subtitle::first-letter { text-transform: uppercase; }
+html[data-deck="paper"] .beamer-footer { border-top: 0; }
+html[data-deck="paper"] .beamer-footer-left,
+html[data-deck="paper"] .beamer-footer-center,
+html[data-deck="paper"] .beamer-footer-right { background: #fff; color: var(--paper-gray); }
+html[data-deck="paper"] .beamer-footer-left,
+html[data-deck="paper"] .beamer-footer-center,
+html[data-deck="paper"] .beamer-footer-nav,
+html[data-deck="paper"] .footer-toc-control,
+html[data-deck="paper"] .beamer-footer-page-separator,
+html[data-deck="paper"] .beamer-footer-page-total { visibility: hidden; }
+html[data-deck="paper"] .beamer-footer-page { background: transparent; border: 0; box-shadow: none; color: var(--paper-gray); }
+html[data-deck="paper"] .beamer-footer-toolbar .beamer-footer-page-current { font-size: 0.8rem; }
+html[data-deck="paper"] .beamer-footer-toolbar { background: none; border: 0; box-shadow: none; }
+
+/* Two-column figure slides and the definitions table (slides_paper.md). */
+.two-col { display: flex; gap: 1.2rem; align-items: center; }
+.two-col-plot { flex: 0 0 60%; }
+.two-col-points { flex: 1; text-align: left; font-size: 1.05rem; line-height: 1.5; color: #2d3748; }
+.two-col-points li + li { margin-top: .8rem; }
+.defs { max-width: 58rem; margin: 0.6rem auto 0; font-size: .8rem; }
+.defs td, .defs th { padding: 4px 8px; }
