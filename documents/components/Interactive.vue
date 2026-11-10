@@ -20,5 +20,5 @@ const height = computed(() => props.height ?? '390px')
 </script>
 
 <style scoped>
-.interactive { display: block; width: 900px; max-width: 100%; margin: 0 auto; border: 1px solid rgba(45, 55, 72, .15); border-radius: 6px; background: #fff; }
+.interactive { display: block; width: 900px; max-width: 100%; margin: 0 auto; border: 1px solid #fff; border-radius: 6px; background: #fff; box-shadow: none; }
 </style>

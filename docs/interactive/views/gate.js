@@ -165,7 +165,7 @@
     const shade = d3.scaleSequentialLog(d3.interpolateBlues).domain([1e5, 3e11]);
     const cell = (r, label) => {
       const v = value(r);
-      const bg = v == null ? null : v >= 1e13 ? `color-mix(in srgb, ${css("--viz-bad")} 22%, transparent)` : shade(v);
+      const bg = v == null ? null : v >= 1e13 ? `color-mix(in srgb, ${css("--viz-s2")} 55%, transparent)` : shade(v);
       const dark = v != null && v < 1e13 && v > 3e8;
       const [top, sub] = [label].flat();
       return h("span", { style: `display:block;padding:.15em .35em;border-radius:3px;white-space:nowrap;line-height:1.25;${bg ? `background:${bg};` : ""}${dark ? "color:white;" : v != null ? "color:#1a1a1a;" : ""}`,
@@ -200,7 +200,7 @@
         { key: "margin", label: "Margin", num: true, digits: 3, title: "median accuracy above chance a task needs for its Wilson bound to clear chance" },
         { key: "items", label: "Items", render: (r) => d3.format(",")(r.items), num: true },
       ], { sort: "order" }),
-      note("Training tokens of the language a model of each size needs before a benchmark is above chance: the token count at which a logistic fit of its (language, K, checkpoint) cells reaches 50 % (and 90 %) above chance, on the non-English cells. ≤ X: the share holds from the fewest tokens that size saw. > X: not reached by the most tokens that size saw. Darker = more tokens; red = never reached in the sweep. † the text is English while the task carries a country's language. With both shares shown, a cell gives 50 % on top and 90 % below. Click a column to sort; the paper's version is the thresholds table of the measurability appendix.")];
+      note("Training tokens of the language a model of each size needs before a benchmark is above chance: the token count at which a logistic fit of its (language, K, checkpoint) cells reaches 50 % (and 90 %) above chance, on the non-English cells. ≤ X: the share holds from the fewest tokens that size saw. > X: not reached by the most tokens that size saw. Darker = more tokens; orange = never reached in the sweep. † the text is English while the task carries a country's language. With both shares shown, a cell gives 50 % on top and 90 % below. Click a column to sort; the paper's version is the thresholds table of the measurability appendix.")];
     });
   };
 

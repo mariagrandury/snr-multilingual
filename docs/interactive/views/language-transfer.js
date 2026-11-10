@@ -140,13 +140,18 @@ button.lt-chip:hover { background: var(--viz-neutral); }
     const all = uniq(Object.values(d.cross).flatMap((m) => Object.keys(m))).sort((a, b) => S.langName(a).localeCompare(S.langName(b)));
     let ui;
     ui = mount(el, [
-      { key: "view", label: "View", type: "seg", options: [{ value: "map", label: "language × language map (paper)" }, { value: "tree", label: "one language, by family" }] },
+      { key: "view", label: "View", type: "seg", value: el.dataset.panel === "family" ? "tree" : "map",
+        options: [{ value: "map", label: "language × language map (paper)" }, { value: "tree", label: "one language, by family" }] },
       { key: "set", label: "Tasks", type: "seg", options: SETS },
       { key: "dir", label: "The picked language is", type: "seg", options: [{ value: "src", label: "the proxy" }, { value: "tgt", label: "the target" }] },
       { key: "lang", label: "Language", options: all.map((c) => ({ value: c, label: S.langName(c) })), value: "en", string: true },
     ], (s) => {
       // the direction and language pickers only serve the family view
-      el.querySelectorAll(":scope > .viz-controls > label").forEach((l, i) => { if (i >= 2) l.style.display = s.view === "map" ? "none" : ""; });
+      // data-panel="map" or "family" fixes the view: its switch is hidden
+      el.querySelectorAll(":scope > .viz-controls > label").forEach((l, i) => {
+        if (i === 0 && el.dataset.panel) l.style.display = "none";
+        if (i >= 2) l.style.display = s.view === "map" ? "none" : "";
+      });
       const M = d.cross[s.set];
       const codes = uniq([...Object.keys(M), ...Object.values(M).flatMap((m) => Object.keys(m))]);
       const neg = css("--viz-s2"), mid = css("--viz-neutral"), pos = css("--viz-s1");

@@ -269,9 +269,9 @@
     };
 
     mount(el, [
-      { key: "build", label: "Build", string: true, options: [{ value: "all", label: "all" },
+      { key: "build", label: "Language selection and temperature", string: true, options: [{ value: "all", label: "all" },
         ...Object.entries(BUILD_LABEL).map(([b, v]) => ({ value: b, label: `${b} \u00b7 ${v} (M = ${BUILDS[b]?.m ?? b}, T = ${BUILDS[b]?.t ?? 1})` }))] },
-      { key: "ladder", label: "Ladder", string: true, options: [{ value: "all", label: "all" },
+      { key: "ladder", label: "Model recipe", string: true, options: [{ value: "all", label: "all" },
         ...Object.entries(LADDERS).map(([k, v]) => ({ value: k, label: v }))] },
       { key: "seeds", label: "Seeds", type: "seg", options: [{ value: "main", label: "1904" }, { value: "all", label: "all" }] },
     ], (s) => {
@@ -381,7 +381,14 @@
   VIEWS.scoreCurves = async (el) => {
     await languages();
     const d = await load("evaluation");
-    const famLabel = (f) => `${d.benchmarks[f].name} [${f}]`;
+    // the paper's names: a reformulated version says so, and the two INCLUDE v2 and the cloze/MCQ variants are told apart
+    const PRETTY = { commonsense_qa: "CommonsenseQA", cultural_bench_easy: "CulturalBench-easy", mmlu: "MMLU" };
+    const famLabel = (f) => {
+      const base = PRETTY[d.benchmarks[f].name] ?? d.benchmarks[f].name;
+      const fmt = f.startsWith("rfgm_") ? " LLM-RF" : f.startsWith("rf_") ? " RF" : "";
+      const variant = /_cloze$/.test(f) ? " (cloze)" : /_mcq$/.test(f) ? " (MCQ)" : f === "include_v2_en" ? " RF (EN)" : f === "include_v2_og" ? " RF (OG)" : "";
+      return base + variant + fmt;
+    };
     const fams = Object.keys(d.benchmarks).sort((x, y) => famLabel(x).localeCompare(famLabel(y), "en", { sensitivity: "base" }));
     const ramp = sizeRamp();
     mount(el, [
@@ -410,7 +417,7 @@
       return [plot({
         height: 360, marginBottom: 40,
         x: { type: "log", label: xLabel, tickFormat: s.x === "tokens" ? tokensLabel : sci, ticks: 6 },
-        y: { label: "score", grid: true },
+        y: { label: "accuracy (mean over the tasks of the benchmark)", grid: true },
         color: { domain: sizes, range: color, legend: true, label: "model size" },
         marks: [
           c.chance != null ? Plot.ruleY([c.chance], { stroke: css("--viz-bad"), strokeDasharray: "4,3" }) : null,
@@ -1324,7 +1331,7 @@
     const range = [...ramp, ...(fs.levels.includes("3B") ? [d3.color(ramp[ramp.length - 1]).darker(dark() ? 1.2 : 2).formatHex()] : []), css("--viz-s2")];
     mount(el, [
       { key: "layout", label: "Layout", type: "seg", options: [{ value: "grid", label: "per language (paper)" }, { value: "bars", label: "languages per benchmark" }] },
-      { key: "twins", label: "Benchmarks format", type: "seg", options: [{ value: "all", label: "all formats (paper)" }, { value: "orig", label: "original versions only" }] },
+      { key: "twins", label: "Benchmarks format", type: "seg", value: el.dataset.panel === "languages-x" ? "orig" : "all", options: [{ value: "all", label: "all formats (paper)" }, { value: "orig", label: "original versions only" }] },
       { key: "set", label: "Benchmarks", type: "seg", options: [{ value: "analysed", label: "analysed (paper)" }, { value: "all", label: "all" }] },
     ], (s) => {
       const benches = fs.benchmarks.filter((b) => (s.twins === "all" || !isRF(b)) && (s.set === "all" || !screened.has(b)));
@@ -1353,8 +1360,8 @@
       if (el.dataset.panel === "languages-x") {
         // languages on x and benchmarks on y, small cells, so the grid fits one slide
         return [centred(plot({
-          width: 11 * fs.languages.length + 200, height: 9.5 * benches.length + 40,
-          marginLeft: 190, marginRight: 8, marginTop: 30, marginBottom: 4, padding: 0.08, style: { fontSize: "8px" },
+          width: 15 * fs.languages.length + 170, height: 11 * benches.length + 40,
+          marginLeft: 165, marginRight: 8, marginTop: 30, marginBottom: 4, padding: 0.08, style: { fontSize: "10px" },
           x: { domain: fs.languages, label: null, tickSize: 0, axis: "top" },
           y: { domain: benches, label: null, tickSize: 0, tickFormat: name },
           color,

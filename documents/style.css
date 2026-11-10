@@ -28,8 +28,12 @@
 }
 
 /* Tall figures (slides_paper.md): full width, scroll inside the slide. */
-.scroll-fig { height: 64vh; overflow-y: auto; border: 1px solid rgba(45, 55, 72, .1); border-radius: 6px; }
+.scroll-fig { height: 64vh; overflow-y: auto; }
 .scroll-fig img { width: 100%; display: block; }
+/* No frame, so a thin always-visible scrollbar is the cue that a figure scrolls. */
+.scroll-fig, .fig-side-img, .fig-below-img { scrollbar-width: thin; scrollbar-color: rgba(45, 55, 72, .35) transparent; }
+.scroll-fig::-webkit-scrollbar, .fig-side-img::-webkit-scrollbar, .fig-below-img::-webkit-scrollbar { width: 6px; }
+.scroll-fig::-webkit-scrollbar-thumb, .fig-side-img::-webkit-scrollbar-thumb, .fig-below-img::-webkit-scrollbar-thumb { background: rgba(45, 55, 72, .35); border-radius: 3px; }
 
 /* Opening question (slides_paper.md). */
 .opening { max-width: 46rem; margin: 0 auto; text-align: center; font-size: 1.5rem; line-height: 1.5; color: #2d3748; }
@@ -94,3 +98,53 @@ html[data-deck="paper"] .beamer-footer-toolbar { background: none; border: 0; bo
 .two-col-points li + li { margin-top: .8rem; }
 .defs { max-width: 58rem; margin: 0.6rem auto 0; font-size: .8rem; }
 .defs td, .defs th { padding: 4px 8px; }
+
+/* ARR review slides (slides_paper.md): the concern and a possible answer */
+.review { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: .8rem; font-size: .88rem; line-height: 1.5; color: #2d3748; }
+.review-concern, .review-answer { padding: .8rem 1rem; border-radius: 4px; }
+.review-concern { background: color-mix(in srgb, #c0392b 6%, white); border: 1px solid color-mix(in srgb, #c0392b 40%, white); }
+.review-answer { background: color-mix(in srgb, teal 8%, white); border: 1px solid color-mix(in srgb, teal 55%, white); }
+
+/* Motivation (slides_paper.md): the practice as a flow, the decision, the findings */
+.practice { display: flex; align-items: stretch; justify-content: center; gap: .5rem; margin-top: 3rem; }
+.practice-step { flex: 1; max-width: 12rem; padding: .9rem 1rem; border-radius: 6px; background: rgba(30, 58, 95, .06); color: #2d3748; display: flex; flex-direction: column; gap: .4rem; }
+.practice-step b { color: var(--slidev-theme-primary, #1e3a5f); font-size: 1.05rem; }
+.practice-step span { font-size: .85rem; line-height: 1.4; }
+.practice-step.strong { background: var(--slidev-theme-primary, #1e3a5f); }
+.practice-step.strong b, .practice-step.strong span { color: #fff; }
+.practice-arrow { align-self: center; font-size: 1.6rem; color: rgba(45, 55, 72, .5); }
+.decision { display: flex; align-items: center; justify-content: center; gap: 2rem; margin-top: 1.5rem; }
+.decision-col { width: 13rem; padding: .8rem 1.1rem; border-radius: 6px; border: 1px solid rgba(30, 58, 95, .2); }
+.decision-head { font-weight: 600; color: var(--slidev-theme-primary, #1e3a5f); margin-bottom: .4rem; }
+.decision-col ol { margin: 0 0 0 1.2rem; }
+.decision-mid { font-size: 1.1rem; color: rgba(45, 55, 72, .7); font-style: italic; }
+.decision-def { max-width: 46rem; margin: 1.6rem auto 0; text-align: center; }
+.findings-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin-top: 1.2rem; }
+.finding { padding: .9rem 1rem; border-radius: 6px; background: color-mix(in srgb, teal 8%, white); border: 1px solid color-mix(in srgb, teal 55%, white); display: flex; flex-direction: column; gap: .4rem; }
+.finding b { font-size: 1.5rem; color: var(--slidev-theme-primary, #1e3a5f); }
+.finding span { font-size: .85rem; line-height: 1.4; color: #2d3748; }
+
+/* A figure with the paper's findings: beside it, or below a wide figure */
+.fig-side { display: flex; gap: 1.4rem; align-items: flex-start; margin-top: .4rem; }
+.fig-side ul, .fig-below ul { font-size: .9rem; line-height: 1.45; color: #2d3748; }
+.fig-side ul { flex: 0 0 38%; margin: 0; padding-left: 1.1rem; font-size: .82rem; }
+.fig-side li + li { margin-top: .5rem; }
+.fig-below li + li { margin-top: .3rem; }
+.fig-side-img { flex: 1; max-height: 60vh; overflow-y: auto; }
+.fig-side-img img { width: 100%; display: block; }
+.fig-below-img { max-height: 32vh; overflow-y: auto; }
+.fig-below-img img { width: 100%; display: block; }
+.fig-below ul { margin: .6rem 0 0; padding-left: 1.1rem; columns: 2; column-gap: 2rem; font-size: .76rem; line-height: 1.35; }
+.fig-below li { break-inside: avoid; }
+
+/* Figures plain: no frame, shadow or rounded corners (the theme's figure layout
+   adds them), and Avenir in the theme's serif slots (the agenda items). */
+html[data-deck="paper"] .slidev-layout img { border: 0; border-radius: 0; box-shadow: none; }
+html[data-deck="paper"] .font-serif { font-family: var(--scholarly-font-body); }
+
+/* Benchmarks considered, version A′: two plain tables side by side, small type. */
+.bench-tables { display: grid; grid-template-columns: 3fr 2fr; gap: 1.2rem; font-size: .5rem; line-height: 1.3; }
+.bench-tables p { margin: 0 0 .3rem; font-size: .62rem; }
+.bench-tables table { margin: 0; }
+.bench-tables th, .bench-tables td { padding: .12rem .35rem; vertical-align: top; }
+.bench-tables td:first-child { white-space: nowrap; }

@@ -131,21 +131,24 @@
     if (el.dataset.panel === "detailed") return evalFormatsDetailed(el);
     const opts = (labels, gold) => h("ol", { style: "margin:.3em 0 0 1.2em;padding:0" },
       labels.map((o, i) => h("li", { style: i === gold ? "font-weight:600;color:var(--viz-good)" : null }, o, i === gold ? "  (gold)" : "")));
-    el.replaceChildren(h("div", { style: "display:grid;grid-template-columns:10em 1fr 1fr;gap:6px;font-size:.78rem" },
+    el.replaceChildren(h("div", { style: "display:grid;grid-template-columns:9em 1fr 1fr 1fr;gap:6px;font-size:.74rem" },
       h("div", {}),
       box("Letter format: expects \u201cC\u201d",
         pre("Which is the capital of Spain?\nA. Paris\nB. Zurich\nC. Madrid\nD. Buenos Aires\nAnswer:"), opts(["A", "B", "C", "D"], 2)),
       box("Cloze format: expects \u201cMadrid\u201d",
         pre("Question: Which is the capital of Spain?\nAnswer:"), opts(["Paris", "Zurich", "Madrid", "Buenos Aires"], 2)),
+      box("Continuation: expects \u201cMadrid\u201d",
+        pre("The capital of Spain is"), opts(["Paris", "Zurich", "Madrid", "Buenos Aires"], 2)),
       head("Accuracy (length-normalised)"),
       cell("The model picks the letter with the highest likelihood. Every option has one character, so the normalisation changes nothing. Chance is 1/4."),
       cell("The model picks the answer text with the highest likelihood per byte, so longer options are not penalised. Chance is 1/4."),
+      cell("The model picks the ending of the sentence with the highest likelihood per byte, with no question and no answer cue. Chance is 1/4."),
       head("bBPB"),
-      cell("Bits per byte of the gold continuation \u201cC\u201d. Lower is better, and there is no chance level."),
-      cell("Bits per byte of the gold continuation \u201cMadrid\u201d. Lower is better, and there is no chance level."),
+      cell(h("span", {}, "The negative log-probability of the gold option (\u201cC\u201d, or \u201cMadrid\u201d in the cloze and continuation formats), divided by ln 2 and by its length in UTF-8 bytes, so that options and languages of different lengths compare. ",
+        "Lower is better. There is no chance level, so a model at chance in accuracy still has a bBPB that moves as it trains."), "2 / 5"),
       head("BPB"),
-      cell("Bits per byte of held-out text in the language, with no question at all: the language-modelling signal behind every benchmark.", "2 / 4"),
-    ), note("One item in the two answer formats and the three scorings we use. Accuracy needs a chance level, so the above-chance threshold applies to it. bBPB and BPB have none."));
+      cell("The same bits per byte on held-out text in the language, with no question at all: the language-modelling signal behind every benchmark.", "2 / 5"),
+    ), note("One item in the three answer formats and the three scorings we use. Accuracy needs a chance level, so the above-chance threshold applies to it. bBPB and BPB have none."));
   };
 
   async function evalFormatsDetailed(el) {

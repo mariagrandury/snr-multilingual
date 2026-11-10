@@ -31,7 +31,7 @@ const centred = (n) => (n?.tagName === "FIGURE" ? Object.assign(n.style, { displ
           Plot.dot(rows.filter((r) => r.f === f), { x: "tokens", y: "share", fill: "size", r: 2.5, tip: true,
             title: (r) => `${r.size}, ${fmt(r.tokens / 1e6, 1)}M tokens of the language\n${pct(r.share)} of ${r.n} evaluations above chance` }),
         ],
-      }))), note("Each marker: the share of (language, K, checkpoint) evaluations of the benchmark above chance, binned by the tokens of the task's language seen by the checkpoint; one line per model size. RF scores the answer text instead of the letter, LLM-RF rewrites each item as a cloze statement.")];
+      }))), note("Each marker: the share of evaluations of the benchmark that are above chance, where an evaluation is one checkpoint of one run (K = its number of training languages) on the task of one language. Evaluations are binned by the training tokens of that language the checkpoint has seen; one line per model size. RF scores the answer text instead of the letter, LLM-RF rewrites each item as a cloze statement.")];
     });
   };
 
@@ -47,7 +47,7 @@ const centred = (n) => (n?.tagName === "FIGURE" ? Object.assign(n.style, { displ
     const PANELS = ["bpb", "hellaswag", "xnli", "multiblimp", "xwinograd", "xcopa"];   // the paper's panel (b)
     const name = (f) => all.find((r) => r.family === f).name;
     const tip = (r) => `${r.name}, ${r.language}\nsize R² ${fmt(r.r2_size)}, ρ ${fmt(r.rho_size)}, training R² ${fmt(r.r2_train)}\n${r.regime}`;
-    const axes = { x: { domain: [0, 1], label: "Median R² across model-size fits", grid: true } };
+    const axes = { x: { domain: [0, 1], label: "Median R² of the fits against model size →", grid: true } };
     const ref = [Plot.ruleX([0.5], { stroke: css("--viz-muted"), strokeDasharray: "4 3" }), Plot.ruleY([0.5], { stroke: css("--viz-muted"), strokeDasharray: "4 3" })];
     const fams = uniq(all.map((r) => r.family)).sort((a, b) => name(a).localeCompare(name(b)));
     const mode = panel === "a"
@@ -73,11 +73,11 @@ const centred = (n) => (n?.tagName === "FIGURE" ? Object.assign(n.style, { displ
           ? dots(bench, "rho_size", { r: "n", title: (b) => `${b.name} (${b.n} task${b.n > 1 ? "s" : ""})\nmedian size R² ${fmt(b.r2_size)}, median ρ ${fmt(b.rho_size)}` })
           : dots(d, "rho_size");
         return [row(plot({ width: 520, height: 400, color, ...axes, r: { range: [3, 14] },
-          y: { domain: [-1, 1], label: "Median Spearman ρ with model size", grid: true },
+          y: { domain: [-1, 1], label: "Median Spearman ρ of accuracy with model size", grid: true },
           marks: [Plot.ruleY([0], { stroke: css("--viz-muted") }), ...marks] })),
-        note(`${tasks}. ${s.mode === "paper" ? "One dot per benchmark at the median over its tasks, sized by its number of tasks" : "One dot per task"}: the R² and Spearman ρ of the log-linear fits across model size. Hover a dot for its benchmark.`)];
+        note(`${tasks}. ${s.mode === "paper" ? "One dot per benchmark at the median over its tasks, sized by its number of tasks" : "One dot per task"}: the R² and Spearman ρ of its fits against model size. A fit is a least-squares line of accuracy (or BPB) against log₁₀ of the model size, on the final checkpoints of the sizes where the task is above chance (at least three sizes), or against log₁₀ of the training tokens, on the checkpoints of one run (at least five); R² and Spearman ρ are the medians over the runs that train the task's language. Regimes: predictable when R² ≥ 0.5 (dashed lines); declines with size when ρ < 0. Hover a dot for its benchmark.`)];
       }
-      const trainY = { domain: [0, 1], label: "Median R² across training fits", grid: true };
+      const trainY = { domain: [0, 1], label: "Median R² of the fits along training", grid: true };
       const six = d.filter((r) => PANELS.includes(r.family));
       const fx = (f) => PANELS.indexOf(f) % 3, fy = (f) => Math.floor(PANELS.indexOf(f) / 3);
       // as in the paper, a shaded area per benchmark: the ellipse two standard deviations wide around its tasks
@@ -104,7 +104,7 @@ const centred = (n) => (n?.tagName === "FIGURE" ? Object.assign(n.style, { displ
             Plot.text(six, { x: "r2_size", y: "r2_train", text: "language", fill: "regime", fx: (r) => fx(r.family), fy: (r) => fy(r.family), tip: true, title: tip }),
             Plot.text(PANELS, { fx, fy, frameAnchor: "top-left", dx: 4, dy: 4, fontWeight: "bold", text: (f) => `${name(f)} (${d.filter((r) => r.family === f).length} tasks)` })] })
         : plot({ width: 520, height: 400, color, ...axes, y: trainY, marks: [...ref, ...dots(d, "r2_train")] });
-      return [row(chart), note(`${tasks}. ${s.mode === "paper" ? "The paper's highlighted examples, one label per task (its language)" : "One dot per task"}: the median R² of the fits across model size against the median R² of the fits along training. Hover a mark for its benchmark and language.`)];
+      return [row(chart), note(`${tasks}. ${s.mode === "paper" ? "The paper's highlighted examples, one label per task (its language)" : "One dot per task"}: the median R² of its fits against model size and of its fits along training. A fit is a least-squares line of accuracy (or BPB) against log₁₀ of the model size, on the final checkpoints of the sizes where the task is above chance (at least three sizes), or against log₁₀ of the training tokens, on the checkpoints of one run (at least five); R² and Spearman ρ are the medians over the runs that train the task's language. Regimes: predictable when R² ≥ 0.5 (dashed lines); declines with size when ρ < 0. Hover a mark for its benchmark and language.`)];
     });
   };
 
@@ -115,14 +115,14 @@ const centred = (n) => (n?.tagName === "FIGURE" ? Object.assign(n.style, { displ
     const groups = uniq(d.size.map((r) => r.group)).filter((g) => g !== "all pairs");
     const greens = d3.quantize(d3.interpolateRgb("#0b5d2b", "#74c476"), groups.length);
     const gColor = { domain: ["all pairs", ...groups], range: [css("--md-default-fg-color"), ...greens] };
-    const label = (g) => (g === "all pairs" ? "all pairs" : g.replace(/ \(.*\)/, ""));
-    const TASKS = "Single-axis decisions, over the tasks whose median DA-size or DA-ckpt is at least 0.66.";
+    const label = (g) => ({ "language count": "number of languages K (1 to 50)", optimizer: "optimizer (AdEMAMix vs Muon)", "data scheme (A vs B vs C)": "language selection (A vs B vs C)", "activation (XIELU vs SwiGLU)": "activation (xIELU vs SwiGLU)" }[g] ?? g);
+    const TASKS = "DA is the share of variant pairs that the proxy orders like the reference. Pairs differ in a single design choice (single-axis), over the accuracy and bBPB tasks whose median DA-size or DA-ckpt is at least 0.66. 1C = one Chinchilla budget, 20 training tokens per parameter; every run ends at 5C.";
     mount(el, [], () => {
       if (panel !== "size") {
         const name = panel === "ckpt" ? "DA-ckpt" : "DA-target";
         const rows = d.run.filter((r) => r.panel === name);
         return [row(plot({ width: 520, height: 340, marginLeft: 40,
-          x: { domain: [0.3, 5.2], ticks: [1, 2, 3, 4, 5], tickFormat: (v) => `${v}C`, label: "Proxy training tokens" },
+          x: { domain: [0.3, 5.2], ticks: [1, 2, 3, 4, 5], tickFormat: (v) => `${v}C`, label: "Proxy training tokens (× Chinchilla)" },
           y: { domain: [0.3, 1.02], label: name, grid: true },
           color: { domain: SIZES, range: sizeColor(), legend: true, label: "Proxy size" },
           marks: [Plot.line(rows, { x: "x", y: "da", stroke: "size", strokeWidth: 1.8, sort: "x" }),
@@ -165,6 +165,6 @@ const centred = (n) => (n?.tagName === "FIGURE" ? Object.assign(n.style, { displ
         Plot.text(d, { x: "proxy", y: "metric", text: (r) => `${fmt(r.rho)}\n(n=${r.n})`, fontSize: 10,
           fill: (r) => (Math.abs(r.rho) > 0.45 ? "white" : css("--md-default-fg-color")) }),
       ],
-    })), note("Spearman ρ between each surrogate statistic, computed at the proxy alone, and the proxy's DA-size against the 1.7B reference, across benchmark-language tasks at each proxy size; n is the number of tasks. The scaling-fit R² needs three model sizes, so it starts at 350M.")]);
+    })), note("Spearman ρ between each surrogate statistic, computed at the proxy alone, and the proxy's DA-size against the 1.7B reference, across benchmark-language tasks at each proxy size; n is the number of tasks. Early-checkpoint agreement: DA between the ranking at 10% of the run and the final ranking. Signal: standard deviation of the variants' final scores divided by their mean. Noise: standard deviation of a variant's score over the last 20% of its run (trend removed), divided by the mean. SNR: signal divided by noise; dist_std and discrepancy use other spread measures as the signal. Margin above chance: mean accuracy minus 1/m. Scaling-fit R²: R² of the fit of accuracy against log model size up to the proxy, which needs three sizes, so it starts at 350M.")]);
   };
 })();

@@ -186,8 +186,8 @@
           h("div", { style: "display:flex;gap:10px;justify-content:center;align-items:center" }, plot({
             width: Math.max(540, (box.clientWidth || 1000) - 200), height: 300, marginLeft: 45, marginTop: 30,
             fx: { domain: CORPORA, label: null, tickFormat: (c) => `${c} (${fitted(c).length} tasks)`, padding: 0.12 },
-            x: { domain: [lo, 1], label: "R² of the model-size scaling fit", grid: true, ticks: [0, 0.5, 1] },
-            y: { domain: [lo, 1], label: "Median R² across training-trajectory fits", grid: true },
+            x: { domain: [lo, 1], label: "R² of the fit against model size →", grid: true, ticks: [0, 0.5, 1] },
+            y: { domain: [lo, 1], label: "Median R² of the fits along training", grid: true },
             color: { domain: shown, range: shown.map((g) => regColor(g)), legend: true, label: "Regime" },
             marks: [
               Plot.ruleX([0.5], { stroke: css("--viz-muted"), strokeDasharray: "4 3" }),

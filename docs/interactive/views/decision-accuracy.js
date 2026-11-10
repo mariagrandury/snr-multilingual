@@ -162,7 +162,7 @@
     // As in the paper: benchmarks pooled over pairs, per-language BPB averaged over its languages (App. E.3).
     const val = (r) => (r.population === "bpb" ? r.da_cell_mean : r.da);
     S.mount(el, [{ key: "k", label: "Keep the pairs the 1.7B reference separates by more than", type: "seg", value: 2, options: [
-      { value: 2, label: "2 seed sd (paper)" }, { value: 1, label: "1 seed sd" }] }], (s) => {
+      { value: 2, label: "2 seed standard deviations (paper)" }, { value: 1, label: "1 seed standard deviation" }] }], (s) => {
       const rows = [];
       for (const r of x.decisive.filter((r) => r.axes === "multi-axis" && (r.k === 0 || r.k === s.k))) {
         const nl = x.null.find((n) => n.axes === r.axes && n.population === r.population && n.size === r.size);
@@ -182,8 +182,8 @@
         const b = rows.find((r) => r.size === z && r.pop === p && r.kind === KINDS[1]);
         return a && b ? { size: z, pop: p, x1: a.da, x2: b.da } : null;
       }).filter(Boolean));
-      return [tiles([[pct(share(POP["all benchmarks"])), `of the benchmark pairs are decisive at ${s.k} seed sd`],
-        [pct(share(POP.bpb)), `of the BPB pairs are decisive at ${s.k} seed sd`]]),
+      return [tiles([[pct(share(POP["all benchmarks"])), `of the benchmark pairs are separated by more than ${s.k} seed standard deviation${s.k > 1 ? "s" : ""} at 1.7B`],
+        [pct(share(POP.bpb)), `of the BPB pairs are separated by more than ${s.k} seed standard deviation${s.k > 1 ? "s" : ""} at 1.7B`]]),
       row(plot({
         height: 2 * (28 * sizes.length) + 120, marginLeft: 60, marginTop: 30, marginRight: 175,
         fy: { domain: Object.values(POP), label: null },

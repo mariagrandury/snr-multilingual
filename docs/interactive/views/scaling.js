@@ -105,6 +105,8 @@
   // mode, one task's own curves with the per-K fits behind the medians of the scaling-predictability figure.
   const row = (...nodes) => h("div", { style: "display:flex;flex-wrap:wrap;gap:8px;justify-content:center" }, ...nodes);
   const BUILDS = ["A", "AT3", "B", "ZH", "ES", "DCLMP", "FWEB"];
+  // the paper's names: language-selection scheme M and temperature T (and, at K = 1 and 2, the variant)
+  const BUILD_NAME = { A: "scheme A, T = 1", AT3: "scheme A, T = 3", B: "scheme B", ZH: "scheme B (K = 2, Chinese)", ES: "scheme C (K = 2, Spanish)", DCLMP: "scheme B (K = 1, DCLM)", FWEB: "scheme C (K = 1, FineWeb)" };
   const LADDERS = ["deep", "shallow", "swiglu", "muon"];
   const LADDER_NAME = { deep: "Deep", shallow: "Shallow", swiglu: "SwiGLU", muon: "Muon" };
   // The paper figures' encoding: line width = ladder, dash = data build (analysis/style.py), colour = K or size.
@@ -151,8 +153,8 @@
       { key: "b", label: "Benchmark", string: true, value: def.base, options: idx.benchmarks.map((b) => ({ value: b.base, label: fmtLabel(b) })) },
       { key: "x", label: "Accuracy against", type: "seg", options: [{ value: "size", label: "model size" }, { value: "train", label: "training progress" }] },
       { key: "K", label: "K", options: [{ value: "all", label: "every K (paper)" }, ...LS.map((K) => ({ value: K, label: `K = ${K}` }))] },
-      { key: "ladder", label: "Ladder", options: [{ value: "all", label: "every ladder (paper)" }, ...LADDERS.map((l) => ({ value: l, label: LADDER_NAME[l] }))] },
-      { key: "data", label: "Data build", options: [{ value: "all", label: "every build (paper)" }, ...BUILDS.map((b) => ({ value: b, label: `Data ${b}` }))] },
+      { key: "ladder", label: "Model recipe", options: [{ value: "all", label: "every recipe (paper)" }, ...LADDERS.map((l) => ({ value: l, label: LADDER_NAME[l] }))] },
+      { key: "data", label: "Language selection", options: [{ value: "all", label: "every scheme (paper)" }, ...BUILDS.map((b) => ({ value: b, label: BUILD_NAME[b] }))] },
     ], (s) => {
       const d = got[s.b];
       if (!d) {
@@ -164,7 +166,7 @@
       const formats = Object.keys(d);
       const kc = kColors(), sc = sizeColors();
       const color = bySize ? { type: "ordinal", domain: LS, range: kc } : { type: "ordinal", domain: LADDER, range: sc };
-      const desc = (r) => `K = ${r.K} · ${LADDER_NAME[r.ladder]} · Data ${r.data} · seed ${r.seed}`;
+      const desc = (r) => `K = ${r.K} · ${LADDER_NAME[r.ladder]} · ${BUILD_NAME[r.data]} · seed ${r.seed}`;
       // one facet per format, on a shared accuracy axis
       const rows = formats.flatMap((f) => (bySize
         ? d[f].size.map(([K, ladder, data, seed, size, y]) => ({ f, K, ladder, data, seed, size, N: sizeNum(size), y })).filter(keep)
@@ -196,11 +198,11 @@
         ...(bySize ? present("K", LS).map((K) => lineKey(`K = ${K}`, { color: kc[LS.indexOf(K)], width: 2.5 }))
           : sizesShown.map((z2) => lineKey(z2, { color: sc[LADDER.indexOf(z2)], width: 2.5 }))),
         ...present("ladder", LADDERS).map((l) => lineKey(LADDER_NAME[l], { color: css("--viz-muted"), width: WIDTH[l] })),
-        ...present("data", BUILDS).map((b) => lineKey(`Data ${b}`, { width: 1.2, dash: DASH[b] })),
+        ...present("data", BUILDS).map((b) => lineKey(BUILD_NAME[b], { width: 1.2, dash: DASH[b] })),
         lineKey("Chance", { color: css("--viz-bad"), width: 1.3, dash: "2 3" }));
       return [row(panels), keyRow,
         note(bySize
-          ? "Final-checkpoint accuracy against non-embedding parameters, averaged over the tasks in the languages each configuration trains: one line per (K, ladder, data build, seed), colour = K, width = ladder, dash = data build. Not filtered by the above-chance threshold. Hover a point for its run."
+          ? "Final-checkpoint accuracy against non-embedding parameters, averaged over the tasks in the languages each configuration trains: one line per training configuration (K, model recipe, language selection, seed): colour = number of languages K, width = model recipe, dash = language selection. Not filtered by the above-chance threshold. Hover a point for its run."
           : "Accuracy at the ten evaluated tenths of each run against Chinchilla multiples of its token budget (5C = the full run), averaged over the tasks in the languages the run trains (every seed and data build, 90M–1.7B): colour = size, width = ladder, dash = data build. Not filtered by the above-chance threshold.")];
     });
   }
@@ -316,9 +318,9 @@
       }) : h("div", { class: "viz-empty" }, "No checkpoints of this task at this K.");
 
       out.replaceChildren(head,
-        h("p", { class: "viz-note" }, "Across model size: the final accuracy of the deep models trained on data build A (seed 1904), one colour per K. Filled dots pass the above-chance filter and enter the fit (the line); hollow ones do not. The median of these per-K fits is the task's model-size R²."),
+        h("p", { class: "viz-note" }, "Across model size: the final accuracy of the deep models with scheme A, T = 1 (seed 1904), one colour per K. The line is the least-squares fit of accuracy against log₁₀ of the model size, on the filled dots, which pass the above-chance filter; hollow dots do not enter the fit. The median R² of these per-K fits is the task's model-size R²."),
         row(sizeChart), sizeLegend,
-        h("p", { class: "viz-note", style: "margin-top:1em" }, `Along training at K = ${Lt}${st.L === "all" ? " (pick a K above to change it)" : ""}: one line per model size, light to dark blue from 90M to 1.7B. Dashed, faded runs are at chance at that size and stay out of the training fit.`),
+        h("p", { class: "viz-note", style: "margin-top:1em" }, `Along training at K = ${Lt}${st.L === "all" ? " (pick a K above to change it)" : ""}: one line per model size, light to dark blue from 90M to 1.7B. The training fit of a run is the least-squares line of accuracy against log₁₀ of its training tokens, over its evaluated checkpoints (at least five). Dashed, faded runs are at chance at that size and stay out of the training fit.`),
         row(trainChart),
         legend(LADDER.filter((s) => runs.some((r) => r.size === s)).map((s) => [sc[LADDER.indexOf(s)], s])));
     };

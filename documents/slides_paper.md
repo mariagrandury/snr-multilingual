@@ -20,22 +20,14 @@ authors:
   - name: "Antoine Bosselut"
 ---
 
-# Small Scale, Big Decisions
+# Small Scale, Big Decisions:<br>Evaluating Decision Reliability in Multilingual LLM Pretraining
 
-## Evaluating Decision Reliability in Multilingual LLM Pretraining
+<br>
 
 *María Grandury, Angelika Romanou, Éléonore Hasler,*
 
 *Catherine Arnett, Clara Meister, Antoine Bosselut*
 
-
----
-layout: section
----
-
-# Motivation
-
-Small models decide how large models are trained
 
 ---
 layout: figure
@@ -47,42 +39,36 @@ subtitle: "Every pretraining run starts with many design decisions"
 ---
 
 <!--
-Training a large model means choosing a data mixture, an architecture, an optimizer, a tokenizer.
-No team can try each option at full scale, so they run ablations on small models or read early checkpoints and keep the option that wins.
+Modern language model development relies on smaller proxy models and intermediate training checkpoints to guide decisions about data mixtures, architectures, tokenizers, and other training choices.
 -->
 
+
 ---
-layout: center
+layout: default
+title: Motivation
+subtitle: "Decision reliability"
 ---
 
-<div class="opening">
+Development relies on small proxies to decide what the large model gets. The practice assumes that the small run decides like the large one.
 
-People choose expensive pretraining options from evaluations of small or partially trained models.
+<div class="decision">
+<div class="decision-col"><div class="decision-head">Proxy, 350M</div><ol><li><b>Option A</b></li><li>Option B</li></ol></div>
+<div class="decision-mid">same choice?</div>
+<div class="decision-col"><div class="decision-head">Reference, 1.7B</div><ol><li><b>Option A</b></li><li>Option B</li></ol></div>
+</div>
 
-**When does that practice make the same decision as the full model in multilingual pretraining?**
+<div class="decision-def">
+
+**Decision reliability**: Whether decisions at small scale would be the same as those taken for models of the reference scale.
 
 </div>
 
 <!--
-Design choices such as data mixtures, architecture and optimizer are decided on small proxy models or early checkpoints.
-That works only if the proxy ranks the options as the large model would. We call this decision reliability.
-Magnusson et al. (2025) studied it in English. Multilingual pretraining adds per-language token budgets, tokenization cost, cross-lingual transfer and interference, and many tasks that stay at chance at small scale.
-Our answer: it depends on the proxy size, the tokens seen per language, the item format and the scoring rule.
+Every large run is the result of many such decisions. Only the winning option is ever trained at full scale.
+This practice rests on the assumption that measured performance of smaller training runs is predictive of the performance of larger training runs.
+The predictive property of an evaluation configuration (a benchmark task, an answer format and a scoring rule) is its decision reliability.
 -->
 
----
-layout: figure
-image: /snr_paper_figure_1.png
-fit: contain
-height: 40vh
-title: Motivation
-subtitle: "Benchmarks differ in how well they separate models (signal) and how much their scores move (noise)"
----
-
-<!--
-Heineman et al. (2025): signal is how far apart the scores of different models are, noise is how much one model's score moves across its last checkpoints.
-A benchmark with high signal and low noise separates models reliably. One with low signal or high noise gives rankings that change from checkpoint to checkpoint.
--->
 
 ---
 layout: figure
@@ -102,45 +88,88 @@ Their models are English and their benchmarks are already measurable at small sc
 ---
 layout: default
 title: Motivation
-subtitle: Multilingual pretraining makes small-scale decisions harder
+subtitle: "These findings come from English, and multilingual pretraining adds new factors"
 ---
 
 <div class="summary">
 
-Languages differ in their share of the mixture, their tokenization cost and how they scale.
+**Why English findings may not transfer.**
 
-Adding data for one language can help or hurt the others, depending on model capacity and language similarity.
-
-Many language and benchmark pairs stay at chance at small scale.
-
-So the English findings on decision reliability need not carry over.
+- Languages vary in training mixture allocation, tokenization cost, and scaling behaviour.
+- Cross-lingual transfer and interference couple decisions across languages: Adding data for one language can help or hurt others depending on model capacity and language similarity.
+- Many multilingual language–benchmark pairs exhibit little measurable signal at small scales, with performance often remaining near chance or floor levels.
 
 </div>
 
 <!--
-Petrov et al. 2023, Ahia et al. 2023 and He et al. 2025 on how languages differ.
-Chang et al. 2024 and Longpre et al. 2026 on transfer and interference.
-Penedo et al. 2025 and Kydlíček et al. 2024 (FineTasks) on the tasks at chance.
-Prior decision-reliability work (Magnusson et al. 2025, Heineman et al. 2025) used English models and English benchmarks.
+Decision reliability has been studied (Magnusson et al., 2025), but only in English settings.
+These challenges suggest that decision reliability findings in monolingual settings cannot be transferred directly to multilingual settings.
+-->
+
+---
+layout: center
+---
+
+<div class="opening">
+
+People choose expensive pretraining options from evaluations of small or partially trained models.
+
+**When does that practice make the same decision as the full model in multilingual pretraining?**
+
+</div>
+
+<!--
+-->
+
+---
+layout: default
+title: Motivation
+subtitle: "What we find: Small multilingual runs often cannot make the decision"
+---
+
+<div class="findings-grid">
+<div class="finding"><b>34%</b><span>of the 938 analysed tasks: No model size up to 1.7B is above chance</span></div>
+<div class="finding"><b>0.51 to 0.56</b><span>of variant pairs ordered like the 1.7B reference on accuracy, close to pairwise chance</span></div>
+<div class="finding"><b>0.74 to 0.94</b><span>of variant pairs ordered like the reference on per-language BPB</span></div>
+<div class="finding"><b>No statistic</b><span>computed from the proxies predicts this agreement consistently</span></div>
+</div>
+
+<div class="decision-def">
+
+The per-language training tokens seen, the expected answer format and the scoring strategy impact decision reliability more than changes to proxy model size across the scales we test.
+
+</div>
+
+
+---
+layout: default
+title: Motivation
+subtitle: Our contributions
+---
+
+<div class="summary">
+
+- **An open controlled multilingual scaling ladder**: 218 models from 90M to 3B, with evaluation measurements.
+- **A guide to evaluation configuration for multilingual ablations**: For each benchmark, the per-language training-token thresholds at which training configurations pass the above-chance filter, and the counts at which we observe decision reliability.
+- **An analysis of general trends in decision reliability** to inform multilingual ablation design, including recommendations on task filtering, reformatting, and scoring.
+
+</div>
+
+<!--
+The guide is on the project site, scaling-reliability.netlify.app.
 -->
 
 ---
 layout: agenda
-title: Outline
+title: Research Questions
 items:
-  - Experimental Setup
   - "RQ1 Measurability: When is a task above chance?"
   - "RQ2 Agreement: How small and early can a proxy be?"
   - "RQ3 Anticipation: Can proxy statistics predict agreement?"
 ---
 
 <!--
-The three questions follow the order in which a developer should ask them.
-First, is the score distinguishable from chance at my model size and token budget?
-Second, does the proxy rank the variants as the reference does?
-Third, can I tell in advance from the proxy runs alone?
-
-TEST
+The three questions, in the order a developer should ask them: is the score above chance, does the proxy rank like the reference, can I tell in advance.
 -->
 
 ---
@@ -156,57 +185,14 @@ trained on 1 to 50 languages along six design axes.
 ---
 layout: figure
 title: Experimental Setup
-subtitle: The Model Ladder
----
-
-::figure::
-<Interactive viz="ladder" :zoom="0.85" />
-
-<!--
-218 models at seven sizes, from 90M to 3B non-embedding parameters. The 90M to 1B models are the proxies, 1.7B is the reference, and 3B checks whether the conclusions hold one size up.
-All models follow the Apertus recipe with a budget of D = 100N tokens (5× Chinchilla) and a warmup-stable-decay schedule. Pretraining used 199,200 GPU hours.
-The six design axes are the number of languages K (1, 2, 8, 15, 30 or 50), the language-selection scheme (A ranks by available data, B by diversity, C is the alternative at K ≤ 2), the sampling temperature (1 or 3), depth, the optimizer (AdEMAMix or Muon) and the activation (xIELU or SwiGLU).
-Every configuration trains with seed 1904. Replicate seeds at 175M, 600M and 1B estimate seed noise.
-Click a square to see the run's data, budget and per-language BPB.
--->
-
----
-layout: figure
-title: Experimental Setup
-subtitle: "The model ladder, version B: one row of buttons per design axis"
----
-
-::figure::
-<Interactive viz="ladderAxes" :zoom="0.85" />
-
-<!--
-Version B of the ladder. Each design axis has its own row of buttons, all selected by default: language selection, temperature, depth, activation, optimizer and seed. Squares are runs, coloured by configuration, as in version A.
--->
-
----
-layout: figure
-title: Experimental Setup
-subtitle: "The model ladder, version C: configurations per number of languages"
+subtitle: The model ladder
 ---
 
 ::figure::
 <Interactive viz="ladderAxes" panel="sizes" :zoom="0.85" />
 
 <!--
-Version C. Columns are the number of training languages K. Rows are the sizes 90M to 1.7B, which every configuration covers, and 3B. Each cell lists its configurations with the number of runs. The same axis buttons as version B.
--->
-
----
-layout: figure
-image: /tables/table01_notation-models.png
-fit: contain
-height: 40vh
-title: "Experimental Setup"
-subtitle: "Table: notation for the model ladder"
----
-
-<!--
-N is the non-embedding parameter count. The axes are depth, optimizer, activation, number of languages K, language-selection scheme M and sampling temperature T. Seed S is 1904 by default. Training progress f is the share of a run's token budget, so f = 0.2 is one Chinchilla multiple.
+N is the non-embedding parameter count. The axes are depth, optimizer, activation, number of languages K, language-selection scheme M and sampling temperature T. Seed S is 1904 by default. 2 is one Chinchilla multiple.
 -->
 
 ---
@@ -215,25 +201,16 @@ image: /tables/table02_ladder.png
 fit: contain
 height: 50vh
 title: "Experimental Setup"
-subtitle: "Table: pretraining hyperparameters per ladder and model size"
+subtitle: "Pretraining hyperparameters"
 ---
 
 <!--
+Every rung has its own hyperparameters. The token budget is D = 100N.
+
 N counts non-embedding parameters, and the tied embedding adds d_model × 131,072. The budget is D = 100N tokens. Grouped-query attention with four query heads per key-value head. The SwiGLU ladder narrows the FFN so that the three projections match the deep parameter count. 90M and 175M train at a smaller batch with proportionally more steps.
 -->
 
----
-layout: figure
-image: /tables/table03_training-grid.png
-fit: contain
-height: 40vh
-title: "Experimental Setup"
-subtitle: "Table: the training grid, one row per data build and ladder"
----
 
-<!--
-A data build fixes the language-selection scheme M and the sampling temperature T. A ladder fixes the model recipe: deep, shallow, deep with SwiGLU or deep with Muon. 218 runs in total, 20 of them replicate seeds.
--->
 
 ---
 layout: figure
@@ -242,7 +219,7 @@ subtitle: The data mixtures
 ---
 
 ::figure::
-<Interactive viz="mixtures" :zoom="0.85" />
+<Interactive viz="mixtures" panel="bars" :zoom="0.85" />
 
 <!--
 Each mixture is half English (DCLM-Edu) and half FineWeb-2, split over the other K−1 languages.
@@ -251,53 +228,60 @@ At temperature 1 each language gets its share of the corpus. Temperature 3 flatt
 The lists are nested: the K = 8 list is inside the K = 15 list, and so on up to K = 50.
 -->
 
+
+
+
 ---
-layout: figure
+layout: default
 title: Experimental Setup
-subtitle: "The data mixtures, version B: the bar plot only"
+subtitle: "Every benchmark considered"
 ---
 
-::figure::
-<Interactive viz="mixtures" panel="bars" :zoom="0.85" />
+<div class="bench-tables">
+<div>
+
+**Analysed (40)**
+
+| Task | Benchmarks (trained / available languages) |
+|---|---|
+| **Knowledge** | ARC (MT) 11/11, ARC (Okapi) 27/32, Global-MMLU 29/37, MMLU 1/1, MMLU (Okapi) 27/27, MMMLU 12/12, OpenBookQA 1/1 |
+| **Commonsense** | CommonsenseQA 1/1, Global PIQA 48/77, HellaSwag (Okapi) 26/31, PIQA 1/1, WinoGrande 1/1, XCOPA 8/11, XStoryCloze 8/13, XWinograd 6/6 |
+| **Mixed suite** | KoBEST 1/1, NorEval 1/1 |
+| **Cultural knowledge** | BLEnD 4/4, CulturalBench-easy 8/8, CulturalBench-hard 8/8, INCLUDE 36/43, INCLUDE v2 RF (EN) 42/42, INCLUDE v2 RF (OG) 42/42 |
+| **Truthfulness** | TruthfulQA (MC2) 3/3, TruthfulQA-Multi (MC1) 2/3 |
+| **Reasoning** | ACP-Bench (cloze) 1/1, ACP-Bench (MCQ) 1/1, BBH (cloze) 1/1, BBH (MCQ) 1/1, MathQA 1/1 |
+| **Grammar** | MultiBLiMP 37/60 |
+| **Reading** | Belebele 49/94, BoolQ 1/1 |
+| **Tokenization** | TokSuite 5/5, TokSuite math 1/1, TokSuite STEM 1/1 |
+| **Inference** | PAWS-X 8/10, XNLI 15/18 |
+| **Toxicity** | ToxiGen 1/1 |
+| **Language modelling** | LAMBADA 5/5 |
+
+</div>
+<div>
+
+**Screened, not analysed (26)**
+
+| Task | Benchmarks (trained / available languages) |
+|---|---|
+| **Knowledge** | Arabic EXAMS (OALL) 1/1, Arabic MMLU (OALL) 1/1, ArabicMMLU 1/1, C-Eval 1/1, CareQA 1/1, HAE-RAE Bench 1/1, HEAD-QA 1/1, KMMLU 1/1, TurkishMMLU 1/1 |
+| **Commonsense** | COPAL-ID 1/1 |
+| **Mixed suite** | AlGhafa (OALL) 1/1, AlGhafa translated (OALL) 1/1, Bangla 1/1, EVALITA-LLM 1/1, FrenchBench 1/1, IberoBench 3/5 |
+| **Cultural knowledge** | ACVA (OALL) 1/1 |
+| **Truthfulness** | TruthfulQA (MC1) 1/1, TruthfulQA (Okapi, MC1) 26/27, TruthfulQA (Okapi, MC2) 24/24, TruthfulQA-Multi (MC2) 3/3 |
+| **Grammar** | BLiMP-NL 1/1, MELA 9/10, TurBLiMP 1/1, ZhoBLiMP 1/1 |
+| **Reading** | XQuAD 1/1 |
+
+</div>
+</div>
 
 <!--
-Version B of the mixtures: the treemap is gone, so the figure is shorter and fits the slide.
 -->
 
 ---
 layout: figure
-title: "Experimental Setup"
-subtitle: "Table: the training languages"
----
-
-::figure::
-<div class="scroll-fig"><img src="/tables/table05_app-languages.png"></div>
-
-<!--
-For each FineWeb-2 language: its script and family, the smallest K whose scheme-A list and scheme-B list contain it, and the number of benchmark families the harness offers for it. The lists are nested, so a language also trains at every larger K of its scheme. The languages marked val are only in the 100-language validation set.
--->
-
----
-layout: figure
 title: Experimental Setup
-subtitle: 52 benchmarks in 50 languages, scored at every tenth of training
----
-
-::figure::
-<Interactive viz="scoreCurves" :zoom="0.85" />
-
-<!--
-We considered 95 benchmarks with 1,488 tasks and analyse 52 benchmarks with 938 tasks, counting the RF and LLM-RF versions separately. These cover 20 multilingual benchmark families.
-Every run is evaluated at each tenth of its training, plus 85% and 95% for the noise window, and only on the languages it trains on.
-Items come in three formats: letter, cloze and completion. We score them with accuracy and with bBPB, the bits per byte of the gold answer, which has no chance level.
-Per-language BPB on a shared 100-language validation set is the loss-based reference signal.
--->
-
-
----
-layout: figure
-title: Experimental Setup
-subtitle: "Two answer formats and three scorings on one item"
+subtitle: "Answer formats and scoring settings"
 ---
 
 ::figure::
@@ -312,62 +296,18 @@ BPB is the bits per byte of held-out text in the language, with no question.
 
 ---
 layout: figure
-title: "Experimental Setup"
-subtitle: "Two answer formats and three scorings, version B: three formats with real scores"
----
-
-::figure::
-<Interactive viz="evalFormats" panel="detailed" :zoom="0.85" />
-
-<!--
-Version B adds the continuation format, "The capital of Spain is", and the scores that SmolLM2-135M, a small public model, gives each option.
-In the letter format the model barely separates the options: C at −1.39 against A at −1.64. In the cloze and continuation formats "Madrid" is far ahead.
-bBPB divides the negative log-probability of the gold option by ln 2 and by its length in bytes. "Madrid" in the cloze format costs 0.32 nats over 7 bytes, so 0.07 bits per byte.
--->
-
----
-layout: figure
-title: "Experimental Setup"
-subtitle: "Table: every benchmark considered"
----
-
-::figure::
-<div class="scroll-fig"><img src="/tables/table07_app_benchmarks_considered.png"></div>
-
-<!--
-Analysed: 40 benchmarks with 695 tasks, the reformulated versions folded into the row of their original. Screened and not analysed: 26 benchmarks with 485 tasks.
-Langs is the number of languages the harness registers. Trained is how many of them the ladder trains. The last column lists the benchmark's languages among ranks 30 to 50 of our 50-language list.
--->
-
----
-layout: figure
 title: Experimental Setup
-subtitle: "Every benchmark considered, version A: analysed and screened side by side"
+subtitle: We evaluate 10 ckpts per model
 ---
 
 ::figure::
-<Interactive viz="benchmarksConsidered" :zoom="0.85" />
+<Interactive viz="scoreCurves" :zoom="0.85" />
 
 <!--
-Analysed on the left (40 benchmarks), screened but not analysed on the right (26). The numbers are the trained languages over the languages the harness offers. Hover a benchmark for its formats and its low-resource languages.
-Knowledge is the largest task group. Most screened benchmarks cover a single language.
+We evaluate every run at each tenth of training, only on the languages it trains.
+Live: Pick HellaSwag (Okapi): Every size scores rise above the dashed chance line. Then INCLUDE: Every size stays at chance. Switch the x axis to compute.
 -->
 
-
-
----
-layout: figure
-title: "Experimental Setup"
-subtitle: "Every benchmark considered, version B: one flow by task"
----
-
-::figure::
-<Interactive viz="benchmarksConsidered" panel="flow" :zoom="0.85" />
-
-<!--
-Version B puts every benchmark in one flow of task blocks: analysed in dark, screened in grey.
-INCLUDE and its versions are now under cultural knowledge.
--->
 
 ---
 layout: section
@@ -396,8 +336,7 @@ A model size **passes** a task when at least half of its models are above chance
 </div>
 
 <!--
-The simple version of the threshold, before the formula.
-"Very rarely" means the one-sided 95% Wilson lower bound on the accuracy is above 1/m.
+A score that is statistically indistinguishable from chance provides no reliable information about which model is better.
 -->
 
 ---
@@ -417,6 +356,8 @@ A model size passes the task when at least half of its models are above chance.
 </div>
 
 <!--
+One-sided 95% Wilson lower confidence bound on the accuracy over the task's n items. A model size passes when at least half of its configurations are above chance. BPB and bBPB have no chance level and are not filtered.
+
 For each language task b_ℓ and model size N, we test whether the observed accuracy can be told apart from random guessing.
 Chance is 1/m_b for a task with m_b options. Where the option count varies across items, chance is the mean of 1/m over the items (0.2253 for TruthfulQA MC1).
 We take the final-checkpoint accuracy p̂ over the n scored items, recover round(p̂ n) correct answers, and compute the one-sided 95% Wilson lower bound.
@@ -427,8 +368,23 @@ BPB and bBPB have no chance level and are not filtered.
 
 ---
 layout: figure
+image: /extra/above_random_example.png
+fit: contain
+height: 44vh
 title: "RQ1: Measurability"
-subtitle: "The above-chance threshold: the one-sided 95% Wilson bound must exceed 1/m"
+subtitle: "The threshold on one task: INCLUDE v2 in Hungarian, from 350M on"
+---
+
+<!--
+INCLUDE v2 in Hungarian: 4 options, 1,386 items, so a run needs 27.0% (2 points above chance).
+Per size, runs passing over runs that train Hungarian: 90M 1 of 11, 175M 5 of 11, 350M 6 of 11, 600M 5 of 11, 1B 7 of 11, 1.7B 9 of 11.
+So the task enters the analysis at 350M, 1B and 1.7B. The orange run (350M) scores 25.8%: above the chance line, but its lower bound (23.9%) is not.
+-->
+
+---
+layout: figure
+title: "RQ1: Measurability"
+subtitle: "The above-chance threshold: The one-sided 95% Wilson bound must exceed 1/m"
 ---
 
 ::figure::
@@ -442,21 +398,22 @@ BPB and bBPB have no chance level, so the threshold does not apply to them.
 -->
 
 ---
-layout: figure
+layout: default
 title: "RQ1: Measurability"
-subtitle: Letter-format benchmarks pass only at 3B, cloze benchmarks from 90M
+subtitle: "Letter-format benchmarks pass only at 3B, cloze benchmarks from 90M"
 ---
 
-::figure::
-<div class="scroll-fig"><img src="/paper/app_rq00_chance_share_considered_counts_3b.png"></div>
+<div class="fig-side">
+<div class="fig-side-img"><img src="/paper/app_rq00_chance_share_considered_counts_3b.png"></div>
+<ul>
+<li>For only 38% of tasks does every model size pass the above-chance filter.</li>
+<li>For 34% of tasks, no model up to 1.7B passes the filter.</li>
+<li>These tasks are predominantly from benchmarks requiring letter-format answers like Belebele, Global-MMLU and INCLUDE.</li>
+<li>On benchmarks scored on the answer text, such as HellaSwag (Okapi) and MultiBLiMP, configurations score above chance in all trained languages even at 90M.</li>
+</ul>
+</div>
 
 <!--
-Of the 933 analysed tasks with a chance level, 40% are above chance at 90M and 64% at 1.7B. 34% never pass at any size.
-Up to 1.7B, the letter-format Belebele, Global-MMLU and INCLUDE pass in only 3 of 49, 1 of 29 and 2 of 36 trained languages, and MMLU and CommonsenseQA stay at chance in English. Most of these languages pass only at 3B.
-Among the screened benchmarks, MMMLU stays at chance in all 12 trained languages and MMLU (Okapi) in 26 of 27, even at 3B.
-HellaSwag (Okapi) and MultiBLiMP pass at 90M in every trained language.
-TruthfulQA (MC2), ToxiGen, BBH and ACP-Bench stay at chance up to 3B in every format.
-Scroll for the full list.
 -->
 
 ---
@@ -469,8 +426,8 @@ subtitle: "Letter-format benchmarks pass only at 3B, cloze benchmarks from 90M"
 <Interactive viz="firstSize" :zoom="0.85" />
 
 <!--
-The buttons switch the layout, add or remove the reformulated versions, and include the screened benchmarks.
-Orange marks a task that never passes. White marks a language without items.
+Each square is one benchmark in one language, coloured by the smallest size that passes. Orange marks a task that never passes, up to 3B. White marks a language without items.
+Live: Switch to 'original versions only' and back: The RF rows are what turns Belebele, Global-MMLU and INCLUDE blue.
 -->
 
 ---
@@ -480,7 +437,7 @@ subtitle: "The smallest size above chance, version B: languages on the x axis"
 ---
 
 ::figure::
-<Interactive viz="firstSize" panel="languages-x" :zoom="0.6" height="420px" />
+<Interactive viz="firstSize" panel="languages-x" :zoom="0.68" height="500px" />
 
 <!--
 Version B turns the grid: languages run along the x axis and benchmarks down the y axis, with smaller cells, so the whole grid fits on one slide.
@@ -506,7 +463,7 @@ image: /paper/rq0.png
 fit: contain
 height: 50vh
 title: "RQ1: Measurability"
-subtitle: "Figure 1: reformulation moves INCLUDE above chance"
+subtitle: "Figure 1: Reformulation moves INCLUDE above chance"
 ---
 
 <!--
@@ -517,17 +474,36 @@ Size matters as well. At 100M to 1B tokens, 43% of the 90M runs are above chance
 -->
 
 ---
+layout: default
+title: "RQ1: Measurability"
+subtitle: "Figure 1: Reformulation moves INCLUDE above chance, with its findings"
+---
+
+<div class="fig-side">
+<div class="fig-side-img"><img src="/paper/rq0.png"></div>
+<ul>
+<li>On the original letter-based format, models rarely exceed chance.</li>
+<li>For the reformulated version, filter pass rates increase with training.</li>
+<li>At the 1.7B size, programmatic reformulation increases the number of languages above chance from 3 to 31 of 43 for INCLUDE.</li>
+<li>Across non-English benchmarks, configurations with at most 100M target-language tokens score above chance on 42% of tasks, and 64% with 10B to 100B tokens.</li>
+</ul>
+</div>
+
+<!--
+Same figure as the previous slide. The bullets are the paper's sentences.
+-->
+
+---
 layout: figure
 title: "RQ1: Measurability"
-subtitle: "Figure 1: reformulation moves INCLUDE above chance, and the other benchmarks one click away"
+subtitle: "Figure 1: Reformulation moves INCLUDE above chance, and the other benchmarks one click away"
 ---
 
 ::figure::
 <Interactive viz="paperRq0" :zoom="0.85" />
 
 <!--
-Pick a benchmark. The button adds the LLM-RF version.
-Good examples are HellaSwag, above chance almost everywhere, ARC (Okapi), which needs about 10B tokens, and Belebele in its three formats.
+Live: Pick HellaSwag (above chance from the fewest tokens), ARC (Okapi) (needs about 10B tokens), then Belebele with 'also LLM-RF'.
 -->
 
 ---
@@ -549,7 +525,7 @@ Pooled over every language, the curve dips in the top bins because those are mos
 ---
 layout: figure
 title: "RQ1: Measurability"
-subtitle: "Table: training tokens of the language each size needs before a benchmark is above chance"
+subtitle: "Table: Training tokens of the language each size needs before a benchmark is above chance"
 ---
 
 ::figure::
@@ -624,12 +600,32 @@ A star marks a size where the McNemar test on the paired verdicts gives p < 0.05
 -->
 
 ---
+layout: default
+title: "RQ1: Measurability"
+subtitle: "Dropping the letters moves whole benchmarks across the threshold, with its findings"
+---
+
+<div class="fig-side">
+<ul>
+<li>At 1.7B, RF passes in 86 of 105 Belebele, 35 of 37 Global-MMLU and 31 of 43 INCLUDE languages, against 5, 1 and 3 for the originals.</li>
+<li>The difference is significant at every size for Belebele and Global-MMLU and from 175M for INCLUDE.</li>
+<li>LLM-RF Belebele passes in every trained language at every size.</li>
+<li>LLM-RF INCLUDE passes in 32 of 43 languages at 1.7B.</li>
+</ul>
+<div class="fig-side-img"><img src="/paper/app_rq00_chance_reformulation.png"></div>
+</div>
+
+<!--
+The findings version of the previous slide: the bullets are the paper's sentences, as close to its wording as possible.
+-->
+
+---
 layout: figure
 image: /paper/rq1.png
 fit: contain
 height: 46vh
 title: "RQ1: Measurability"
-subtitle: "Figure 2: benchmark scaling predictability"
+subtitle: "Figure 2: Benchmark scaling predictability"
 ---
 
 <!--
@@ -641,22 +637,50 @@ So in our setting, comparing larger models earlier tells more than training smal
 -->
 
 ---
+layout: default
+title: "RQ1: Measurability"
+subtitle: "Figure 2: benchmark scaling predictability, with its findings"
+---
+
+<div class="fig-below">
+<div class="fig-below-img"><img src="/paper/rq1.png"></div>
+<ul>
+<li>Across 431 tasks retained by the above-chance filter, the median R² of the model-size fits is 0.87, reaching 1.00 for the BPB across 50 languages.</li>
+<li>A high R², though, does not necessarily imply improvement across scales.</li>
+<li>Among accuracy and BPB tasks with valid fits along both dimensions, 74% (311 tasks) achieve R² ≥ 0.5 on both.</li>
+<li>No accuracy or BPB task exhibits predictable scaling across training checkpoints without also scaling predictably across model sizes.</li>
+</ul>
+</div>
+
+<!--
+Same figure as the previous slide. The bullets are the paper's sentences.
+-->
+
+---
 layout: figure
 title: "RQ1: Measurability"
-subtitle: "Figure 2a: most benchmarks above chance scale predictably with size, and a high R² can hide a decline"
+subtitle: "Figure 2a: Most benchmarks above chance scale predictably with size, and a high R² can hide a decline"
 ---
 
 ::figure::
 <Interactive viz="paperRq1" panel="a" :zoom="0.85" />
 
+<!--
+Live: Click 'one dot per benchmark (paper)' and 'accuracy and BPB (paper)' for the paper's view. Then highlight TruthfulQA-Multi: R² 0.97 but ρ = −0.75, a strong and consistent decrease with size.
+-->
+
 ---
 layout: figure
 title: "RQ1: Measurability"
-subtitle: "Figure 2b: no accuracy or BPB task is predictable along training without being predictable across size"
+subtitle: "Figure 2b: No accuracy or BPB task is predictable along training without being predictable across size"
 ---
 
 ::figure::
 <Interactive viz="paperRq1" panel="b" :zoom="0.85" />
+
+<!--
+Live: Click 'highlighted examples (paper)'. Point at MultiBLiMP: most languages top right, Danish and Swedish weak on both axes. No dot sits top left: none is predictable along training only.
+-->
 
 ---
 layout: figure
@@ -695,6 +719,10 @@ subtitle: "The reformulated versions rise with size and along training while the
 ::figure::
 <Interactive viz="scalingCurves" :zoom="0.85" />
 
+<!--
+Live: Benchmark INCLUDE shows the three formats side by side. Switch 'Accuracy against' to training progress. Then 'one task, with its fits' and pick a HellaSwag language to show the fitted lines.
+-->
+
 ---
 layout: figure
 title: "RQ1: Measurability"
@@ -704,6 +732,11 @@ subtitle: On English-only models, the commonly used English benchmarks scale pre
 
 ::figure::
 <Interactive viz="englishRegimes" :zoom="0.85" />
+
+<!--
+The same pattern holds for monolingual English models.
+Live: Type 'piqa' in Find a task: Global PIQA is the only popular benchmark above chance that does not scale predictably. The list on the right gives the 17 tasks predictable in all three corpora.
+-->
 
 ---
 layout: default
@@ -739,23 +772,21 @@ How small and how early can a proxy be while it keeps the reference decision?
 ---
 layout: default
 title: Experimental Setup
-subtitle: Decision accuracy (DA)
+subtitle: Ranking agreement
 ---
 
-$$\text{DA}(N,f)=\frac{1}{|\mathcal P|}\sum_{(a,b)\in\mathcal P}\mathbb 1\big[\,s_{ab}(N,f)=s_{ab}(N_\text{ref},1)\,\big]$$
 
 | | Proxy | Reference | Question |
 |---|---|---|---|
-| DA-size | $(N,\ f{=}1)$ | $(N_\text{ref},\ f{=}1)$ | How small? |
-| DA-ckpt | $(N,\ f{<}1)$ | $(N,\ f{=}1)$ | How early? |
-| DA-target | $(N,\ f{<}1)$ | $(N_\text{ref},\ f{=}1)$ | How small and how early? |
+| RA-size | $(N,\ f{=}1)$ | $(N_\text{ref},\ f{=}1)$ | How small? |
+| RA-ckpt | $(N,\ f{<}1)$ | $(N,\ f{=}1)$ | How early? |
+| RA-target | $(N,\ f{<}1)$ | $(N_\text{ref},\ f{=}1)$ | How small and how early? |
+
+$$\text{DA}(N,f)=\frac{1}{|\mathcal P|}\sum_{(a,b)\in\mathcal P}\mathbb 1\big[\,s_{ab}(N,f)=s_{ab}(N_\text{ref},1)\,\big]$$
+
 
 <!--
-DA is the share of pairwise preferences that the proxy keeps from the reference (Magnusson et al. 2025).
-A pair tied on one side only counts as a disagreement. A random ranking without ties scores 0.5.
-A (task, proxy) cell needs at least three pairs.
-Single-axis pairs differ in one design choice, as an ablation does. Multi-axis pairs may differ in several, as on a leaderboard.
-The main text calls the third setting DA-target. Some appendix figures still label it DA-goal.
+DA is the fraction of pairwise model preferences preserved between the proxy and the reference points. We compute it only with at least three variant pairs.
 -->
 
 ---
@@ -764,7 +795,7 @@ image: /tables/table09_ra_defs.png
 fit: contain
 height: 30vh
 title: "Experimental Setup"
-subtitle: "Table: the three ranking-agreement settings"
+subtitle: "Table: The three ranking-agreement settings"
 ---
 
 <!--
@@ -781,9 +812,7 @@ subtitle: DA, Kendall's τ and Spearman's ρ measure nearly the same ranking agr
 ---
 
 <!--
-Over 6,803 (task, proxy) values of DA-size, DA correlates with Kendall's τ_b at r = 0.99 and with Spearman's ρ at r = 0.97.
-2·DA − 1 = τ_a + (T_both − T_one)/n, so DA and τ_a differ only in how they treat ties.
-We therefore report DA throughout.
+DA, Kendall's τ and Spearman's ρ measure nearly the same ranking agreement (r = 0.99 and 0.97), so we report DA.
 -->
 
 ---
@@ -792,7 +821,7 @@ image: /paper/rq2.png
 fit: contain
 height: 40vh
 title: "RQ2: Agreement"
-subtitle: "Figure 3: decision reliability across scale and training"
+subtitle: "Figure 3: Decision reliability across scale and training"
 ---
 
 <!--
@@ -805,13 +834,37 @@ The Summary box reads 0.51 to 0.56 for accuracy at every proxy on all pairs, and
 -->
 
 ---
+layout: default
+title: "RQ2: Agreement"
+subtitle: "Figure 3: Decision reliability across scale and training, with its findings"
+---
+
+<div class="fig-below">
+<div class="fig-below-img"><img src="/paper/rq2.png"></div>
+<ul>
+<li>Within one model, agreement rises from approximately 62 to 68% at early checkpoints to 83 to 93% in the later stages of training.</li>
+<li>Across scales, agreement remains modest (59 to 61% across all pairs) and shows no consistent improvement with model size.</li>
+<li>Sampling temperature consistently exhibits higher agreement (72 to 75%) than other design choices.</li>
+<li>Against the target, smaller models remain at approximately 58 to 64%, while agreement at 1.7B increases steadily throughout training.</li>
+</ul>
+</div>
+
+<!--
+Same figure as the previous slide. The bullets are the paper's sentences.
+-->
+
+---
 layout: figure
 title: "RQ2: Agreement"
-subtitle: "Figure 3a: fully trained proxies agree with the 1.7B ranking at about 0.6, whatever their size"
+subtitle: "Figure 3a: Fully trained proxies agree with the 1.7B ranking at about 0.6, whatever their size"
 ---
 
 ::figure::
 <Interactive viz="paperRq2" panel="size" :zoom="0.9" />
+
+<!--
+Live: Hover the temperature line (0.72 to 0.75) and the black all-pairs line (no gain from 90M to 1B).
+-->
 
 ---
 layout: figure
@@ -823,14 +876,14 @@ subtitle: "Figure 3a, two-column version: scale agreement"
 <div class="two-col">
 <div class="two-col-plot"><Interactive viz="paperRq2" panel="size" :zoom="0.8" height="400px" /></div>
 <ul class="two-col-points">
-<li>Fully trained proxies agree with the 1.7B ranking at about 0.60 to 0.64 over all pairs.</li>
-<li>A larger proxy does not agree more.</li>
-<li>Sampling temperature is the easiest axis, at about 0.72 to 0.75.</li>
+<li>Overall, agreement remains modest (59 to 61% across all pairs) and shows no consistent improvement with increasing model size.</li>
+<li>Sampling temperature consistently exhibits higher agreement (72 to 75%) than other design choices.</li>
+<li>The reliability of cross-scale decisions depends more on the type of model intervention than on the size of the proxy model alone.</li>
 </ul>
 </div>
 
 <!--
-Two-column version of Figure 3a: the plot on the left and its findings on the right.
+Same figure, findings beside it.
 -->
 
 ---
@@ -842,6 +895,10 @@ subtitle: "Figure 3b: within one model, agreement with the final checkpoint rise
 ::figure::
 <Interactive viz="paperRq2" panel="ckpt" :zoom="0.9" />
 
+<!--
+Live: Hover the 350M line, which agrees most, and the 1.7B line, which agrees least near the end.
+-->
+
 ---
 layout: figure
 title: "RQ2: Agreement"
@@ -852,24 +909,28 @@ subtitle: "Figure 3b, two-column version: agreement within one model"
 <div class="two-col">
 <div class="two-col-plot"><Interactive viz="paperRq2" panel="ckpt" :zoom="0.8" height="400px" /></div>
 <ul class="two-col-points">
-<li>Early checkpoints recover 62 to 68% of their own final decisions.</li>
-<li>Agreement rises to 83 to 93% at 4.5 Chinchilla multiples.</li>
-<li>Smaller models settle earlier than larger ones.</li>
+<li>Ranking agreement generally increases with training progress, rising from approximately 62 to 68% at early checkpoints to 83 to 93% in the later stages of training.</li>
+<li>Disagreement persists even near the end of training.</li>
+<li>We observe no consistent relationship between model size and ranking agreement.</li>
 </ul>
 </div>
 
 <!--
-Two-column version of Figure 3b.
+Same figure, findings beside it.
 -->
 
 ---
 layout: figure
 title: "RQ2: Agreement"
-subtitle: "Figure 3c: smaller proxies stay near 0.6 against the 1.7B target however long they train"
+subtitle: "Figure 3c: Smaller proxies stay near 0.6 against the 1.7B target however long they train"
 ---
 
 ::figure::
 <Interactive viz="paperRq2" panel="target" :zoom="0.9" />
+
+<!--
+Live: The 1.7B line climbs because it converges to itself. Every smaller proxy stays flat.
+-->
 
 ---
 layout: figure
@@ -881,14 +942,14 @@ subtitle: "Figure 3c, two-column version: agreement with the target"
 <div class="two-col">
 <div class="two-col-plot"><Interactive viz="paperRq2" panel="target" :zoom="0.8" height="400px" /></div>
 <ul class="two-col-points">
-<li>Smaller proxies stay at about 0.58 to 0.64 however long they train.</li>
-<li>Only the 1.7B run climbs towards its own final ranking.</li>
-<li>Training a cheap proxy longer does not close the gap across scale.</li>
+<li>For smaller models, agreement remains modest (approximately 58 to 64%) and shows little systematic improvement with additional training.</li>
+<li>Agreement at 1.7B increases steadily throughout training.</li>
+<li>Improvements in ranking agreement during training do not necessarily transfer across model scales.</li>
 </ul>
 </div>
 
 <!--
-Two-column version of Figure 3c.
+Same figure, findings beside it.
 -->
 
 ---
@@ -964,6 +1025,26 @@ Against the 1.7B accuracy, the proxy's bBPB agrees more often than its accuracy 
 -->
 
 ---
+layout: default
+title: "RQ2: Agreement"
+subtitle: "Where accuracy is at chance, bBPB still ranks the variants, and BPB ranks them best, with its findings"
+---
+
+<div class="fig-below">
+<div class="fig-below-img"><img src="/paper/app_rq02_bbpb_acc_gate.png"></div>
+<ul>
+<li>Where accuracy is at chance at the proxy, bBPB still ranks the pairs like the 1.7B bBPB at 0.60 to 0.63.</li>
+<li>That is above accuracy on the same tasks (0.46 to 0.50) but far below BPB.</li>
+<li>Against the 1.7B accuracy, the proxy's bBPB agrees more often than its accuracy, by +0.10 at 90M down to +0.03 at 1B.</li>
+<li>bBPB is the better proxy on 57 to 71% of these tasks.</li>
+</ul>
+</div>
+
+<!--
+The findings version of the previous slide: the bullets are the paper's sentences, as close to its wording as possible.
+-->
+
+---
 layout: figure
 image: /paper/rq2_3b_compare.png
 fit: contain
@@ -976,6 +1057,26 @@ subtitle: Figure 3 against the 3B reference on top and the 1.7B reference below
 The same six configurations, the same nine single-axis pairs and 553 tasks reliable under both references.
 Only the language-count axis has three or more pairs. DA-ckpt does not depend on the reference.
 Against 3B, even the 1.7B models reach only about 0.51 on accuracy and 0.95 on BPB.
+-->
+
+---
+layout: default
+title: "RQ2: Agreement"
+subtitle: "Figure 3 against the 3B reference on top and the 1.7B reference below, with its findings"
+---
+
+<div class="fig-side">
+<ul>
+<li>At 3B more tasks pass the above-chance threshold but ranking agreement does not improve.</li>
+<li>The number of tasks above chance rises from 612 to 778 of 933 (+27%).</li>
+<li>DA-size against 3B is 0.49 to 0.54 for benchmark accuracy and 0.78 to 0.91 for per-language BPB.</li>
+<li>The 1.7B models themselves reach only 0.51 on accuracy and 0.95 on BPB.</li>
+</ul>
+<div class="fig-side-img"><img src="/paper/rq2_3b_compare.png"></div>
+</div>
+
+<!--
+The findings version of the previous slide: the bullets are the paper's sentences, as close to its wording as possible.
 -->
 
 ---
@@ -1000,8 +1101,11 @@ subtitle: "Languages trained together predict each other, English does not"
 ---
 
 ::figure::
-<Interactive viz="ltCross" :zoom="0.85" />
+<Interactive viz="ltCross" panel="map" :zoom="0.85" />
 
+<!--
+Live: Hover the German–Spanish–French–Italian block (blue), then the English row (red): English is a poor proxy for the other languages.
+-->
 
 ---
 layout: default
@@ -1043,7 +1147,7 @@ subtitle: The proxy statistics we test as surrogates of DA
 
 | Surrogate | Definition, over the V variants of one proxy size |
 |---|---|
-| Early-checkpoint agreement | $\mathrm{DA}(N, 0.1)$: the ranking at 10% of the run against the run's final ranking |
+| Early-checkpoint agreement | $\mathrm{DA}(N, 0.1)$: The ranking at 10% of the run against the run's final ranking |
 | Signal (relative std) | $S_\mathrm{rel} = \frac{1}{\bar c}\sqrt{\frac{1}{V}\sum_{a}(c_a - \bar c)^2}$, on the final scores $c_a$ |
 | Checkpoint noise (relative) | the standard deviation of a variant's detrended score over 80 to 100% of its run, averaged over variants, divided by $\bar c$ |
 | SNR | signal divided by noise, for each signal and noise definition |
@@ -1081,13 +1185,37 @@ The signal is already moderate at 90M and does not grow with size.
 -->
 
 ---
+layout: default
+title: "RQ3: Anticipation"
+subtitle: "Figure 4: How well each surrogate predicts DA at each proxy size, with its findings"
+---
+
+<div class="fig-side">
+<div class="fig-side-img"><img src="/paper/rq3.png"></div>
+<ul>
+<li>Early-checkpoint ranking agreement (ρ = 0.54 to 0.62) and the relative-standard-deviation SNR (ρ = 0.53 to 0.60) show the strongest overall associations.</li>
+<li>They are followed by scaling-fit R² (ρ = 0.45 to 0.49).</li>
+<li>Signal alone and margin above chance show little association with DA.</li>
+<li>Moderate correlations are already present at small scales and do not consistently improve as models grow.</li>
+</ul>
+</div>
+
+<!--
+The findings version of the previous slide: the bullets are the paper's sentences, as close to its wording as possible.
+-->
+
+---
 layout: figure
 title: "RQ3: Anticipation"
-subtitle: "Figure 4: early-checkpoint agreement and the relative-standard-deviation SNR predict DA best"
+subtitle: "Figure 4: Early-checkpoint agreement and the relative-standard-deviation SNR predict DA best"
 ---
 
 ::figure::
 <Interactive viz="paperRq3" :zoom="0.85" />
+
+<!--
+Live: Hover the top two rows at 175M (0.62) and 350M (0.60), then the bottom two rows, near zero.
+-->
 
 ---
 layout: figure
@@ -1113,6 +1241,10 @@ subtitle: "The relative-spread SNR definitions track DA best, as a group"
 ::figure::
 <Interactive viz="surrogatesVariants" :zoom="0.85" />
 
+<!--
+Live: The relative-spread definitions (rel_std, rel_mpd, rel_dispersion) lead as a group. The depth ones (tukey, projection) fall below zero.
+-->
+
 ---
 layout: figure
 image: /paper/app_rq04_surrogates_by_scoring.png
@@ -1130,6 +1262,26 @@ This is what a surrogate cannot see. BPB scales almost perfectly (R² = 1.00), y
 -->
 
 ---
+layout: default
+title: "RQ3: Anticipation"
+subtitle: "Figure 4 split by scoring into accuracy, bBPB and per-language BPB, with its findings"
+---
+
+<div class="fig-below">
+<div class="fig-below-img"><img src="/paper/app_rq04_surrogates_by_scoring.png"></div>
+<ul>
+<li>Split by scoring, bBPB raises both the level of the correlations in Figure 4 and the lead of early-checkpoint agreement.</li>
+<li>On bBPB, early-checkpoint agreement reaches ρ = 0.57 to 0.68 and the relative-standard-deviation SNR 0.46 to 0.58.</li>
+<li>On accuracy, they reach 0.28 to 0.39 and 0.33 to 0.40.</li>
+<li>On per-language BPB, five of the six statistics turn negative at 600M.</li>
+</ul>
+</div>
+
+<!--
+Same figure as the previous slide. The bullets are the paper's sentences.
+-->
+
+---
 layout: figure
 title: "RQ3: Anticipation"
 subtitle: "Split by scoring, the bBPB versions carry most of the correlation"
@@ -1137,6 +1289,10 @@ subtitle: "Split by scoring, the bBPB versions carry most of the correlation"
 
 ::figure::
 <Interactive viz="surrogatesScoring" :zoom="0.85" />
+
+<!--
+Live: Switch to 'one scoring as a grid' and pick per-language BPB: The 600M column turns negative.
+-->
 
 ---
 layout: default
@@ -1167,12 +1323,6 @@ layout: section
 # The recommender
 
 From the findings to a choice of benchmarks for one ablation
-
----
-layout: section
----
-
-# Takeaways
 
 ---
 layout: bullets
@@ -1262,6 +1412,8 @@ subtitle: "Without the 0.66 filter, Figure 3 reads about 0.55 to 0.59 at every p
 ---
 
 <!--
+The 0.66 filter is a cut on DA itself. On every task above chance, DA-size stays at 0.55 to 0.59 at every proxy size.
+
 Figure 3 shows the tasks whose median DA-size or DA-ckpt is at least 0.66. That filter is a cut on DA itself, so part of the rise it shows is the cut.
 On every task above chance (single-axis pairs), DA-size stays at about 0.55 to 0.59 from 90M to 1B, DA-ckpt still rises along training, and DA-target stays near 0.55 for every proxy below the reference.
 The paper reports the unfiltered population in its appendix, with accuracy DA at 0.51 to 0.56.
@@ -1293,6 +1445,8 @@ subtitle: On the pairs the reference separates beyond seed noise, DA rises
 ---
 
 <!--
+On the pairs the 1.7B reference separates by more than two seed standard deviations, the share ordered correctly is 0.69 to 0.73. Only about a quarter of the pairs are that decisive.
+
 A pair is decisive when its 1.7B gap exceeds k·√2 seed standard deviations, for k = 1 or 2.
 On benchmarks, DA goes from about 0.57 to 0.59 on every pair to 0.69 to 0.73 at two seed standard deviations. Only about a quarter of the benchmark pairs are that decisive.
 Per-language BPB is near perfect on decisive pairs, and its 600M dip shrinks.
@@ -1309,6 +1463,8 @@ subtitle: A 3B reference measures more tasks but decides no differently
 ---
 
 <!--
+At 3B more tasks pass the above-chance threshold (612 to 778 of 933) but ranking agreement does not improve.
+
 Six configurations trained to 3B: deep, scheme A at K = 8, 15, 30 and 50, scheme B at K = 8 and 15.
 At 3B, 778 of 933 tasks pass the threshold against 612 at 1.7B, mostly the letter-format Belebele, Global-MMLU and INCLUDE.
 Per-language BPB carries over. The 1.7B models predict the 3B decisions at 0.94 to 0.95, and every proxy from 90M on reaches at least 0.78.
@@ -1327,6 +1483,8 @@ subtitle: On single-axis pairs the correlations are weaker, and the relative-sta
 <!--
 Figure 4 redrawn with DA-size and early-checkpoint agreement on the single-axis pairs.
 The relative-standard-deviation SNR reaches ρ = 0.37 to 0.46, against 0.24 to 0.36 for early-checkpoint agreement.
+
+On single-axis pairs the correlations are weaker. The relative-standard-deviation SNR leads at every size (ρ = 0.37 to 0.46).
 -->
 
 ---
@@ -1347,6 +1505,8 @@ subtitle: Agreement per benchmark and language on the reliable tasks
 <div class="scroll-fig"><img src="/paper/app_rq02_da_by_language.png"></div>
 
 <!--
+Not in the paper's main argument: agreement per benchmark and language on the reliable tasks.
+
 Averaged over the proxies 90M to 1B, DA-size is above 0.5 (95% interval) on 7 of 9 benchmarks and 32 of 40 languages. DA-target is above 0.5 on 7 of 9 and 31 of 40, DA-ckpt on 11 of 11 and 38 of 40.
 The mean cell reads 0.65 for DA-size, 0.71 for DA-ckpt and 0.61 for DA-target.
 -->
@@ -1361,6 +1521,8 @@ subtitle: Which way of evaluating a benchmark recovers the reference decision?
 ---
 
 <!--
+Not in the paper: which format and scoring of a benchmark recovers the reference decision best.
+
 A benchmark can be read with its original, RF or LLM-RF items, scored by accuracy or by bBPB.
 No way of reading a benchmark reaches a mean DA-size of 0.75 against the reference accuracy at any proxy up to 1B.
 Against the same truth, the 1.7B accuracy, bBPB is the better pick for 20 of the 36 benchmarks and accuracy for 16.
@@ -1391,6 +1553,8 @@ subtitle: "Within one benchmark the association is stronger, up to ρ = 0.93 for
 <Interactive viz="surrogatesBench" :zoom="0.85" />
 
 <!--
+Stronger associations emerge for individual benchmarks, up to ρ = 0.93 for HellaSwag, a best-of-many value.
+
 The strongest pooled correlation is ρ = 0.75. Within HellaSwag, the best SNR definition reaches ρ = 0.93.
 How well DA can be predicted depends on the benchmark. The appendix gives the correlations per stratum.
 -->
@@ -1405,6 +1569,8 @@ subtitle: MultiBLiMP, HellaSwag and XStoryCloze separate the designs most sharpl
 ---
 
 <!--
+Not in the paper: which benchmark properties go with a high SNR.
+
 Median SNR at 1.7B per benchmark family with at least five tasks.
 Seven of the nine sharpest families have two answer options.
 -->
@@ -1420,9 +1586,23 @@ subtitle: Grouped by any single characteristic, the levels overlap
 
 <!--
 The 113 reliable tasks have a median DA-size of 0.65. The medians of the levels with at least five tasks lie between 0.55 and 0.72.
+Grouped by any single characteristic, the levels overlap.
 -->
 
 
+
+---
+layout: figure
+title: "Other questions"
+subtitle: "On HellaSwag, which untrained relatives does a language predict?"
+---
+
+::figure::
+<Interactive viz="ltCross" panel="family" :zoom="0.85" />
+
+<!--
+Not in the paper. Live: Pick Spanish as the proxy: Its Romance relatives are blue, unrelated families red.
+-->
 
 ---
 layout: bullets
@@ -1440,11 +1620,11 @@ icon: "▸"
 
 <!--
 The 0.66 filter is a heuristic that shows the trends on the tasks that rank at all. The appendix reports the unfiltered population, where accuracy DA is 0.51 to 0.56.
-The changing task set: the Limitations report comparisons on a fixed population, and the guide gives the thresholds per size.
-LLM-RF: we reviewed the rewrites by hand in six languages and iterated on the prompt. The length check gives 22.2% against 21.9%.
-bBPB: we read it against its own 1.7B value and against the 1.7B accuracy. Against the accuracy it still agrees more often, by 0.03 to 0.10.
-Pooling: the appendix gives the single-axis results, where the correlations are weaker and the relative-standard-deviation SNR leads, and a table per stratum.
-Threshold: rerunning it with the majority class as chance lowers the share of tasks above chance by only 1.5 to 2.8 points.
+The changing task set: The Limitations report comparisons on a fixed population, and the guide gives the thresholds per size.
+LLM-RF: We reviewed the rewrites by hand in six languages and iterated on the prompt. The length check gives 22.2% against 21.9%.
+bBPB: We read it against its own 1.7B value and against the 1.7B accuracy. Against the accuracy it still agrees more often, by 0.03 to 0.10.
+Pooling: The appendix gives the single-axis results, where the correlations are weaker and the relative-standard-deviation SNR leads, and a table per stratum.
+Threshold: Rerunning it with the majority class as chance lowers the share of tasks above chance by only 1.5 to 2.8 points.
 -->
 
 ---
@@ -1461,11 +1641,441 @@ icon: "▸"
 - What should a team actually run?
 
 <!--
-Scope: the paper states the recommendation within the scales we test.
+Scope: The paper states the recommendation within the scales we test.
 600M: the seed draw of the deep 600M runs, on pairs whose 1.7B gap is about one seed standard deviation. More training does not close it.
-Guide: the thresholds are per benchmark, format and size. A held-out-language test is future work.
+Guide: The thresholds are per benchmark, format and size. A held-out-language test is future work.
 DataDecide: SNR predicts DA on the English OLMES benchmarks, and the association weakens as K grows (appendix figure).
 A practical recipe: RF or LLM-RF formats, BPB and bBPB alongside accuracy, several small sizes, and early-checkpoint agreement and the relative-standard-deviation SNR as checks.
+-->
+
+---
+layout: section
+---
+
+# An ARR review of our own paper
+
+The main reasons a reviewer could give to reject it, and how we could answer
+
+---
+layout: default
+title: "ARR review"
+subtitle: "Overall assessment: a useful resource with conclusions that need more support"
+---
+
+<div class="summary">
+
+**Summary of the review.**
+
+- Strengths: a controlled, released ladder of 218 multilingual models, a careful above-chance filter, and a practical per-benchmark guide.
+- Main weakness: The central negative result (proxies decide close to chance) is not separated from the noise of a single-seed reference or from the selection of tasks by DA.
+- Scale: Proxies and reference are small for claims about pretraining decisions.
+- Several findings (letter formats at chance, scoring the answer text) are known in English.
+- Likely scores: soundness 3, excitement 3, overall borderline.
+
+</div>
+---
+layout: default
+title: "ARR review"
+subtitle: "The headline result may measure the reference's noise, not the proxy's unreliability"
+---
+
+<div class="review">
+<div class="review-concern">
+
+**Concern.** Accuracy DA is 0.51 to 0.56 against a 1.7B reference trained with one seed per configuration. Two seeds of the same design already disagree with each other often, so the reference ranking is itself noisy. Without dividing DA by that ceiling, a reader cannot tell a bad proxy from an unstable target. The Summary box admits seed noise accounts for part of the disagreement, but the main figures and the conclusion do not separate the two.
+
+</div>
+<div class="review-answer">
+
+**Possible answer.** Report DA next to its seed ceiling in the main text: the decisive-pairs analysis (pairs the reference separates by more than two seed standard deviations reach 0.69 to 0.73) and the seed null of two seeds of one design. Make this the main reading of RQ2 rather than an appendix figure, and phrase the conclusion as agreement on the decisions the reference itself makes reliably.
+
+</div>
+</div>
+
+---
+layout: figure
+image: /paper/app_rq02_decisive_pairs.png
+fit: contain
+height: 42vh
+title: "ARR review"
+subtitle: "For our answer: On the pairs the reference separates beyond seed noise, DA rises to 0.69 to 0.73"
+---
+
+<!--
+Decisive pairs: The 1.7B gap exceeds k·√2 seed standard deviations. Benchmark DA rises, BPB is near perfect.
+-->
+
+---
+layout: figure
+title: "ARR review"
+subtitle: "For our answer: the same at one or two seed standard deviations"
+---
+
+::figure::
+<Interactive viz="daDecisive" :zoom="0.85" />
+
+<!--
+Show both thresholds live, and the share of pairs that stay decisive (about a quarter of the benchmark pairs at two SD).
+-->
+
+---
+layout: default
+title: "ARR review"
+subtitle: "The 0.66 filter selects tasks on the quantity it then plots"
+---
+
+<div class="review">
+<div class="review-concern">
+
+**Concern.** Figure 3 keeps the tasks whose median DA-size or DA-ckpt is at least 0.66 and then shows their DA. Part of the level and of the rise is the cut itself. The text quotes 59 to 61% for Figure 3a, the figure shows about 0.60 to 0.64, and the Summary box quotes 0.51 to 0.56 on the unfiltered population. A reviewer will find three numbers for one question and a selected figure in the main text.
+
+</div>
+<div class="review-answer">
+
+**Possible answer.** Swap the main figure for the unfiltered one (DA-size 0.55 to 0.59 at every proxy size on single-axis pairs) and show the filtered version as a conditional analysis with its selection rule stated, or choose the tasks out of sample (the cross-fitted selection already exists). Align the text with the figure values.
+
+</div>
+</div>
+
+---
+layout: figure
+image: /paper/rq2.png
+fit: contain
+height: 36vh
+title: "ARR review"
+subtitle: "For the reviewer: Figure 3 as published, on the tasks kept by the 0.66 filter"
+---
+
+<!--
+The published figure: single-axis pairs, accuracy and bBPB tasks with median DA-size or DA-ckpt at least 0.66.
+-->
+
+---
+layout: figure
+image: /extra/rq2_da_all_mono_axis.png
+fit: contain
+height: 36vh
+title: "ARR review"
+subtitle: "For our answer: the same figure on every task above chance"
+---
+
+<!--
+Without the filter DA-size reads about 0.55 to 0.59 at every proxy size. The conclusion (no gain with proxy size) holds on both.
+-->
+
+---
+layout: default
+title: "ARR review"
+subtitle: "The scales are too small for the claim about pretraining decisions"
+---
+
+<div class="review">
+<div class="review-concern">
+
+**Concern.** Proxies are 90M to 1B and the reference is 1.7B, with 3B for six configurations only. Real development decisions are taken for 7B to 70B models. The gap between the largest proxy and the reference is small, so low agreement at 1B against 1.7B mostly says that rankings at these sizes are unstable, not how far a small proxy can be trusted for a large model.
+
+</div>
+<div class="review-answer">
+
+**Possible answer.** The question is whether proxy evaluation works at all in the regime where ablations are actually run, and the answer is already negative at a 1.7× gap. The 3B check shows the conclusions do not change with a larger reference. The released ladder lets others extend it. State the scale limitation in the abstract, not only in the Limitations section.
+
+</div>
+</div>
+
+---
+layout: figure
+image: /paper/rq2_3b_compare.png
+fit: contain
+height: 42vh
+title: "ARR review"
+subtitle: "For our answer: A 3B reference ranks the proxies no better than the 1.7B one"
+---
+
+<!--
+Figure 21: The six configurations trained to 3B, against the 3B (top) and 1.7B (bottom) final checkpoints.
+-->
+
+---
+layout: figure
+image: /paper/app_rq10_size_generalisation.png
+fit: contain
+height: 42vh
+title: "ARR review"
+subtitle: "For our answer: The 3B rung measures more tasks but decides no differently"
+---
+
+<!--
+612 to 778 of 933 tasks above chance at 3B, with the same agreement.
+-->
+
+---
+layout: default
+title: "ARR review"
+subtitle: "High agreement on per-language BPB may be arithmetic, not reliability"
+---
+
+<div class="review">
+<div class="review-concern">
+
+**Concern.** Several design axes (number of languages, temperature, language list) change how many tokens of each language a model sees. Per-language BPB then ranks the variants by their token share at every size, so proxy and reference agree almost by construction. The contrast between BPB (0.74 to 0.94) and accuracy may be driven by those axes.
+
+</div>
+<div class="review-answer">
+
+**Possible answer.** Split BPB agreement by design axis and show it on the axes that do not change the language shares (depth, activation, optimizer). The 600M dip already shows BPB is not trivially reliable. Report the per-axis numbers in the main text so the BPB recommendation rests on decisions where the shares are fixed.
+
+</div>
+</div>
+
+---
+layout: figure
+image: /paper/app_rq02_da_goal_multi_axes_bpb.png
+fit: contain
+height: 42vh
+title: "ARR review"
+subtitle: "For our answer: BPB agreement is not automatic, the 600M rung stays at 0.69 to 0.74"
+---
+
+<!--
+Figure 18: If BPB agreement were only token-share arithmetic, every proxy size would agree. The 600M proxies stay at 0.69 to 0.74 over their whole run.
+-->
+
+---
+layout: figure
+title: "ARR review"
+subtitle: "For the reviewer: agreement per design axis, where temperature leads"
+---
+
+::figure::
+<Interactive viz="paperRq2" panel="size" :zoom="0.85" />
+
+<!--
+Figure 3a per axis: Temperature, an axis that changes the language shares, agrees best (0.72 to 0.75). A per-axis split of BPB agreement would answer the concern directly.
+-->
+
+---
+layout: default
+title: "ARR review"
+subtitle: "Agreement counts every reversal, even when the decision does not matter"
+---
+
+<div class="review">
+<div class="review-concern">
+
+**Concern.** DA treats a reversal between two variants that differ by 0.1 points like one between variants that differ by 5 points. Many design pairs are near ties at the reference, so low DA may come from decisions that cost nothing when taken wrong. The paper never measures the cost of a wrong decision.
+
+</div>
+<div class="review-answer">
+
+**Possible answer.** The near-ties tolerance analysis and the tie and difference categories already show that larger and later proxies miss fewer effects that persist. Add a regret measure: the reference score lost when choosing the proxy's winner. That turns DA into the quantity a developer cares about.
+
+</div>
+</div>
+
+---
+layout: figure
+image: /paper/da_sensitivity.png
+fit: contain
+height: 42vh
+title: "ARR review"
+subtitle: "For our answer: Treating near ties as ties raises DA but not the trends"
+---
+
+<!--
+Figure 13 and Table 9: 755 reversed pairs become agreements at 0.5 points, 1,099 at 1 point, 1,308 at 2 points.
+-->
+
+---
+layout: figure
+image: /paper/da_categories.png
+fit: contain
+height: 42vh
+title: "ARR review"
+subtitle: "For our answer: Larger and later proxies miss fewer effects that persist"
+---
+
+<!--
+Figure 14: Tie and difference categories at ε = 0.5 points.
+-->
+
+---
+layout: default
+title: "ARR review"
+subtitle: "The decisions tested are few and not all comparable"
+---
+
+<div class="review">
+<div class="review-concern">
+
+**Concern.** Each design axis has only a handful of pairs at the reference (temperature has four), and multi-axis pairs mix decisions no developer would compare. Models with different language counts are evaluated on different sets of languages, so a pair is compared only on the tasks both train, which changes the population across pairs. Confidence intervals are not shown for the per-axis curves.
+
+</div>
+<div class="review-answer">
+
+**Possible answer.** Report the number of pairs and tasks per point and add bootstrap intervals over tasks and pairs. Present single-axis results as the main reading, since they match real ablations, and keep multi-axis as a leaderboard-style complement.
+
+</div>
+</div>
+
+---
+layout: figure
+image: /tables/table03_training-grid.png
+fit: contain
+height: 40vh
+title: "ARR review"
+subtitle: "For the reviewer: the training grid, one row per data build and ladder"
+---
+
+<!--
+Table 3: The runs behind each design axis. Temperature has four single-axis pairs at the reference.
+-->
+
+---
+layout: figure
+title: "ARR review"
+subtitle: "For our answer: the configurations available at each number of languages"
+---
+
+::figure::
+<Interactive viz="ladderAxes" panel="sizes" :zoom="0.85" />
+
+<!--
+Ladder version C: every configuration and its number of runs per K.
+-->
+
+---
+layout: default
+title: "ARR review"
+subtitle: "Measurability and reformulation findings are largely known"
+---
+
+<div class="review">
+<div class="review-concern">
+
+**Concern.** That small models fail letter-format multiple choice and do better when the answer text is scored is reported by OLMES, by Gu et al. (2025) and by the FineTasks work. The multilingual extension and the token thresholds are useful, but RQ1 alone is not a new finding, and the LLM reformulation changes the benchmark that practitioners use.
+
+</div>
+<div class="review-answer">
+
+**Possible answer.** The contribution is the measurement across 50 languages and the per-language token thresholds, which no prior work gives, together with the link to decision reliability. State the overlap with prior work explicitly and present RQ1 as the filter the later questions need, not as a finding on its own.
+
+</div>
+</div>
+
+---
+layout: figure
+image: /paper/app_rq00_chance_share_considered_counts_3b.png
+fit: contain
+height: 50vh
+title: "ARR review"
+subtitle: "For the reviewer: Letter formats pass only at 3B, cloze formats from 90M"
+---
+
+<!--
+Figure 5: The pattern known from English (OLMES, Gu et al. 2025), now across 50 languages.
+-->
+
+---
+layout: figure
+image: /tables/table08_app_rq0_thresholds.png
+fit: contain
+height: 50vh
+title: "ARR review"
+subtitle: "For our answer: per-language token thresholds no prior work gives"
+---
+
+<!--
+Table 7: The tokens of the language each size needs before a benchmark is above chance.
+-->
+
+---
+layout: default
+title: "ARR review"
+subtitle: "The surrogate search risks reporting the best of many correlations"
+---
+
+<div class="review">
+<div class="review-concern">
+
+**Concern.** Twenty-two signal definitions times six noise definitions, pooled across heterogeneous tasks, are compared with DA, and the best value (ρ = 0.93 for HellaSwag) is quoted. Without held-out validation this is a best-of-many estimate. Pooled correlations across benchmarks can also reflect differences between benchmarks rather than a usable per-task signal.
+
+</div>
+<div class="review-answer">
+
+**Possible answer.** Fix the surrogates before looking (early-checkpoint agreement and the relative-standard-deviation SNR, as in the prior work), validate on held-out seeds or languages (the seed holdout exists) and apply the multiple-comparison correction already computed. Quote the within-benchmark correlations as exploratory.
+
+</div>
+</div>
+
+---
+layout: figure
+image: /paper/app_rq04_surrogates.png
+fit: contain
+height: 50vh
+title: "ARR review"
+subtitle: "For the reviewer: 22 SNR definitions compared with DA"
+---
+
+<!--
+Figure 19: Many definitions, one best value per language.
+-->
+
+---
+layout: figure
+image: /paper/app_rq04_surrogates_mono_axis.png
+fit: contain
+height: 42vh
+title: "ARR review"
+subtitle: "For our answer: The leaders are fixed in advance and hold on single-axis pairs"
+---
+
+<!--
+The relative-standard-deviation SNR, the definition of Heineman et al. (2025), leads at every size on single-axis pairs (ρ = 0.37 to 0.46).
+-->
+
+---
+layout: default
+title: "ARR review"
+subtitle: "Clarity: inconsistent numbers and terms, and a 40-page appendix"
+---
+
+<div class="review">
+<div class="review-concern">
+
+**Concern.** The paper uses DA-target and DA-goal, filter and gate, 20 families, 40, 52 and 95 benchmarks, and 938, 933 and 1,488 tasks without saying how they relate. Some figures are hard to read (Figure 2a labels overlap, Figures 8 to 10 are tiny), and the main claims depend on appendix analyses.
+
+</div>
+<div class="review-answer">
+
+**Possible answer.** Unify the terms, add one table relating the counts, redraw Figure 2 with fewer labels, and move the decisive pairs and the unfiltered agreement into the main text in place of the filtered figure. The project site already reconciles the counts and offers every figure interactively.
+
+</div>
+</div>
+
+---
+layout: figure
+image: /paper/rq1.png
+fit: contain
+height: 40vh
+title: "ARR review"
+subtitle: "For the reviewer: Figure 2 as published, with overlapping labels"
+---
+
+<!--
+The published Figure 2 is hard to read.
+-->
+
+---
+layout: figure
+title: "ARR review"
+subtitle: "For our answer: the same figure, readable and interactive on the project site"
+---
+
+::figure::
+<Interactive viz="paperRq1" panel="a" :zoom="0.85" />
+
+<!--
+The site version of Figure 2a, one dot per benchmark.
 -->
 
 ---
